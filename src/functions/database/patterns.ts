@@ -16,14 +16,20 @@ export type TypePatternResponse = {
   updated: string;
 };
 
-export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumber: number, tag: string) => {
+export const useQueryGetAllPatternsByPagination = (
+  searchTerm: string,
+  pageNumber: number,
+  tag: string,
+  difficulty: string,
+  author: string,
+) => {
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber, tag],
+    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber, tag, difficulty, author],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       let filter = '';
 
       if (searchTerm) {
-        filter += `(name ~ '${searchTerm}' || description ~ '${searchTerm}' || authors ~ '${searchTerm}' || difficulty ~ '${searchTerm}') `;
+        filter += `(name ~ '${searchTerm}' || description ~ '${searchTerm}') `;
       }
 
       if (tag) {
@@ -32,6 +38,22 @@ export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumbe
         }
         filter += `(tags ~ '${tag}') `;
       }
+
+      if (difficulty) {
+        if (filter) {
+          filter += '&& ';
+        }
+        filter += `(difficulty ~ '${difficulty}') `;
+      }
+
+      if (author) {
+        if (filter) {
+          filter += '&& ';
+        }
+        filter += `(authors ~ '${author}') `;
+      }
+
+      console.log('>>>filter', filter);
 
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         sort: '-created',

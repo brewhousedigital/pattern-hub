@@ -2,13 +2,20 @@ import React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination, type TypePatternResponse } from '@/functions/database/patterns';
 import { useQueryGetAllTags } from '@/functions/database/tags';
+import { useQueryGetAllDifficulties } from '@/functions/database/difficulties';
+import { useQueryGetAllAuthors } from '@/functions/database/authors';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
+import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import Masonry from '@mui/lab/Masonry';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Box,
   Container,
   Grid,
@@ -27,6 +34,8 @@ import {
   CircularProgress,
   IconButton,
   Alert,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 export const Route = createFileRoute('/')({
@@ -36,6 +45,9 @@ export const Route = createFileRoute('/')({
 const BORDER_CSS = `1px solid #25424C`;
 
 function RouteComponent() {
+  const theme = useTheme();
+  const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
+
   const [patternPageNumber, setPatternPageNumber] = React.useState(1);
   const handleChangePage = (event: React.ChangeEvent<unknown>, value: number) => {
     setPatternPageNumber(value);
@@ -49,18 +61,89 @@ function RouteComponent() {
   };
 
   const [tag, setTag] = React.useState<string>('');
+  const [difficulty, setDifficulty] = React.useState<string>('');
+  const [author, setAuthor] = React.useState<string>('');
 
-  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(debouncedSearchTerm, patternPageNumber, tag);
-  console.log('>>>data', data);
+  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(
+    debouncedSearchTerm,
+    patternPageNumber,
+    tag,
+    difficulty,
+    author,
+  );
 
   const { isPending: isPendingTags, isError: isErrorTags, data: dataTags } = useQueryGetAllTags();
+
+  const {
+    isPending: isPendingDifficulties,
+    isError: isErrorDifficulties,
+    data: dataDifficulties,
+  } = useQueryGetAllDifficulties();
+
+  const { isPending: isPendingAuthors, isError: isErrorAuthors, data: dataAuthors } = useQueryGetAllAuthors();
 
   const handleTagClick = (tag: string) => {
     setTag(tag);
   };
 
+  const handleDifficultyClick = (tag: string) => {
+    setDifficulty(tag);
+  };
+
+  const handleAuthorClick = (tag: string) => {
+    setAuthor(tag);
+  };
+
   const handleClearTags = () => {
     setTag('');
+  };
+
+  const handleClearDifficulties = () => {
+    setDifficulty('');
+  };
+
+  const handleClearAuthors = () => {
+    setAuthor('');
+  };
+
+  const SidebarBlock = () => {
+    return (
+      <>
+        <SidebarCategoryTitle title="All Tags" hasItem={tag.length > 0} handleClearTags={handleClearTags} />
+
+        <SidebarList
+          isPending={isPendingTags}
+          isError={isErrorTags}
+          data={dataTags}
+          selectedValue={tag}
+          handleClick={handleTagClick}
+        />
+
+        <SidebarCategoryTitle
+          title="All Difficulties"
+          hasItem={difficulty.length > 0}
+          handleClearTags={handleClearDifficulties}
+        />
+
+        <SidebarList
+          isPending={isPendingDifficulties}
+          isError={isErrorDifficulties}
+          data={dataDifficulties}
+          selectedValue={difficulty}
+          handleClick={handleDifficultyClick}
+        />
+
+        <SidebarCategoryTitle title="All Authors" hasItem={author.length > 0} handleClearTags={handleClearAuthors} />
+
+        <SidebarList
+          isPending={isPendingAuthors}
+          isError={isErrorAuthors}
+          data={dataAuthors}
+          selectedValue={author}
+          handleClick={handleAuthorClick}
+        />
+      </>
+    );
   };
 
   return (
@@ -71,7 +154,7 @@ function RouteComponent() {
             id="homepage-search"
             fullWidth
             aria-label="Search for a Pattern"
-            placeholder="Search for a pattern name, difficulty, or author"
+            placeholder="Search for a pattern name, or description"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             slotProps={{
@@ -94,44 +177,23 @@ function RouteComponent() {
       </Box>
 
       <Grid container>
-        <Grid size={{ xs: 12, md: 'auto' }} sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: 300 }}>
-          <Stack
-            direction="row"
-            sx={{
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#15252B',
-              padding: '12px 16px',
-              borderBottom: BORDER_CSS,
-            }}
-          >
-            <Typography color="primary" sx={{ fontWeight: 600 }}>
-              All Tags
-            </Typography>
+        <Grid
+          size={{ xs: 12, md: 'auto' }}
+          sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: { xs: 0, md: 300 } }}
+        >
+          {isMediumSizeAndUp ? (
+            <SidebarBlock />
+          ) : (
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="filters-content" id="filters-header">
+                Filters
+              </AccordionSummary>
 
-            <IconButton
-              type="button"
-              onClick={handleClearTags}
-              sx={{ transition: 'opacity 300ms', opacity: tag.length > 0 ? 1 : 0 }}
-            >
-              <CloseRoundedIcon />
-            </IconButton>
-          </Stack>
-
-          <List disablePadding>
-            {isPendingTags && <SkeletonLink />}
-            {isErrorTags && <>Error</>}
-            {dataTags &&
-              dataTags.map((thisTag) => {
-                return (
-                  <ListItem key={`sidebar-link-${thisTag.id}`} disablePadding secondaryAction={thisTag.count}>
-                    <ListItemButton selected={tag === thisTag.tag} onClick={() => handleTagClick(thisTag.tag)}>
-                      {thisTag.tag}
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-          </List>
+              <AccordionDetails>
+                <SidebarBlock />
+              </AccordionDetails>
+            </Accordion>
+          )}
         </Grid>
 
         <Grid size={{ xs: 12, md: 'grow' }} sx={{ p: 3 }}>
@@ -170,10 +232,11 @@ const MainContent = (props: MainContentProps) => {
 
   if (props.data && props.data.length > 0) {
     return (
-      <Masonry columns={5} spacing={2}>
+      <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={2}>
         {props.data.map((pattern) => {
           const tags = pattern.tags.split(',');
           const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
+          const joinedTags = cleanedTags.join(', ');
 
           const authors = pattern.authors.split(',');
           const cleanedAuthors = authors
@@ -217,33 +280,45 @@ const MainContent = (props: MainContentProps) => {
                   </Stack>*/}
 
                   <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
-                    {cleanedTags.map((tag, index) => (
+                    {/*{cleanedTags.map((tag, index) => (
                       <Chip
                         key={`tag-chip-${pattern.id}-${index}-${tag}`}
                         label={tag}
                         variant="outlined"
                         color="primary"
-                        onClick={handleChipClick}
+                        //onClick={handleChipClick}
                         sx={{ textTransform: 'capitalize' }}
                       />
-                    ))}
+                    ))}*/}
 
-                    <Chip
+                    {/*<Chip
                       label={`Difficulty: ${cleanedDifficulty}`}
                       variant="outlined"
                       color="primary"
-                      onClick={handleChipClick}
+                      //onClick={handleChipClick}
                       sx={{ textTransform: 'capitalize' }}
-                    />
+                    />*/}
 
-                    <Chip
+                    {/*<Chip
                       label={`Authors: ${cleanedAuthors}`}
                       variant="outlined"
                       color="primary"
-                      onClick={handleChipClick}
+                      //onClick={handleChipClick}
                       sx={{ textTransform: 'capitalize' }}
-                    />
+                    />*/}
                   </Stack>
+
+                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                    Tags: {joinedTags}
+                  </Typography>
+
+                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                    Difficulty: {cleanedDifficulty}
+                  </Typography>
+
+                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                    Authors: {cleanedAuthors}
+                  </Typography>
                 </CardContent>
               </Card>
             </Link>
@@ -274,5 +349,79 @@ const SkeletonLink = () => {
       <Skeleton width="100%" height={40} />
       <Skeleton width="100%" height={40} />
     </Stack>
+  );
+};
+
+type SidebarCategoryTitleProps = {
+  title: string;
+  hasItem: boolean;
+  handleClearTags: () => void;
+};
+
+const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
+  return (
+    <Stack
+      direction="row"
+      sx={{
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#15252B',
+        padding: '12px 16px',
+        borderBottom: BORDER_CSS,
+      }}
+    >
+      <Typography color="primary" sx={{ fontWeight: 600 }}>
+        {props.title}
+      </Typography>
+
+      <IconButton
+        type="button"
+        onClick={props.handleClearTags}
+        sx={{ transition: 'opacity 300ms', opacity: props.hasItem ? 1 : 0 }}
+      >
+        <CloseRoundedIcon />
+      </IconButton>
+    </Stack>
+  );
+};
+
+type SidebarListProps = {
+  isPending: boolean;
+  isError: boolean;
+  data?: TypeReadOnlyDatabaseItem[];
+  selectedValue: string;
+  handleClick: (value: string) => void;
+};
+
+const SidebarList = (props: SidebarListProps) => {
+  return (
+    <List
+      disablePadding
+      sx={{
+        borderBottom: BORDER_CSS,
+        maxHeight: '25svh',
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+        scrollbarColor: (theme) => `${theme.palette.primary.main} #222222`,
+      }}
+    >
+      {props.isPending && <SkeletonLink />}
+      {props.isError && <Alert severity="error">Unable to load this category</Alert>}
+      {props.data &&
+        props.data.map((thisTag) => {
+          // Removing secondaryAction={thisTag.count}
+          return (
+            <ListItem key={`sidebar-link-${thisTag.id}`} disablePadding>
+              <ListItemButton
+                sx={{ textTransform: 'capitalize' }}
+                selected={props.selectedValue === thisTag.tag}
+                onClick={() => props.handleClick(thisTag.tag)}
+              >
+                {thisTag.tag}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+    </List>
   );
 };
