@@ -119,29 +119,29 @@ function RouteComponent() {
           handleClick={handleTagClick}
         />
 
-        <SidebarCategoryTitle
+        {/*<SidebarCategoryTitle
           title="All Difficulties"
           hasItem={difficulty.length > 0}
           handleClearTags={handleClearDifficulties}
-        />
+        />*/}
 
-        <SidebarList
+        {/*<SidebarList
           isPending={isPendingDifficulties}
           isError={isErrorDifficulties}
           data={dataDifficulties}
           selectedValue={difficulty}
           handleClick={handleDifficultyClick}
-        />
+        />*/}
 
-        <SidebarCategoryTitle title="All Authors" hasItem={author.length > 0} handleClearTags={handleClearAuthors} />
+        {/*<SidebarCategoryTitle title="All Authors" hasItem={author.length > 0} handleClearTags={handleClearAuthors} />*/}
 
-        <SidebarList
+        {/*<SidebarList
           isPending={isPendingAuthors}
           isError={isErrorAuthors}
           data={dataAuthors}
           selectedValue={author}
           handleClick={handleAuthorClick}
-        />
+        />*/}
       </>
     );
   };
@@ -266,7 +266,7 @@ const MainContent = (props: MainContentProps) => {
                     />
                   </Box>
 
-                  <CardContent>
+                  <CardContent sx={{ display: 'none' }}>
                     <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
 
                     {pattern.description && (
@@ -366,8 +366,7 @@ const SidebarList = (props: SidebarListProps) => {
     <List
       disablePadding
       sx={{
-        borderBottom: BORDER_CSS,
-        maxHeight: '25svh',
+        maxHeight: '70svh',
         overflowY: 'auto',
         scrollbarWidth: 'thin',
         scrollbarColor: (theme) => `${theme.palette.primary.main} #222222`,
