@@ -3,6 +3,12 @@ import { Box, Typography } from '@mui/material';
 
 export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
   const logoStyles = {
+    textAlign: 'center',
+    WebkitTextStroke: '2px #222',
+    textStroke: '2px #222',
+  };
+
+  const gradientStyles = {
     background: 'linear-gradient(to right, #FD8D35, #EE5F0D)',
     WebkitBackgroundClip: 'text',
     backgroundClip: 'text',
@@ -12,8 +18,8 @@ export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
 
   return (
     <Box>
-      <Typography variant="h1" sx={{ textAlign: 'center' }}>
-        <Typography variant="h1" component="span" sx={logoStyles}>
+      <Typography variant="h1" sx={logoStyles}>
+        <Typography variant="h1" component="span" sx={gradientStyles}>
           Pattern
         </Typography>{' '}
         Hub
