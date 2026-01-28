@@ -7,19 +7,33 @@ export type TypePatternResponse = {
   collectionName: string;
   id: string;
   name: string;
+  description: string;
   tags: string;
   pattern_file: string;
   created: string;
   updated: string;
 };
 
-export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumber: number) => {
+export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumber: number, tag: string) => {
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber],
+    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber, tag],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
+      let filter = '';
+
+      if (searchTerm) {
+        filter += `name ~ '${searchTerm}' || description ~ '${searchTerm}' `;
+      }
+
+      if (tag) {
+        if (filter) {
+          filter += '&& ';
+        }
+        filter += `tags ~ '${tag}' `;
+      }
+
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         sort: '-created',
-        filter: searchTerm ? `name ~ '${searchTerm}' || tags ~ '${searchTerm}'` : '',
+        filter: filter,
       });
     },
     enabled: !!pageNumber,

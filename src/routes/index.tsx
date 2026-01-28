@@ -1,8 +1,10 @@
 import React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination, type TypePatternResponse } from '@/functions/database/patterns';
+import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import Masonry from '@mui/lab/Masonry';
 import {
@@ -15,12 +17,14 @@ import {
   ListItemButton,
   Card,
   CardContent,
-  CardMedia,
   Rating,
   TextField,
   Typography,
   Pagination,
   Stack,
+  Chip,
+  CircularProgress,
+  IconButton,
 } from '@mui/material';
 
 export const Route = createFileRoute('/')({
@@ -38,9 +42,19 @@ function RouteComponent() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 600);
 
-  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(debouncedSearchTerm, patternPageNumber);
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
 
-  console.log('>>>data', data);
+  const [tag, setTag] = React.useState<string>('');
+
+  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(debouncedSearchTerm, patternPageNumber, tag);
+
+  const { isPending: isPendingTags, isError: isErrorTags, data: dataTags } = useQueryGetAllTags();
+
+  const handleTagClick = (tag: string) => {
+    setTag(tag);
+  };
 
   return (
     <Box>
@@ -56,6 +70,15 @@ function RouteComponent() {
             slotProps={{
               input: {
                 startAdornment: <SearchRoundedIcon />,
+                endAdornment: (
+                  <IconButton
+                    type="button"
+                    onClick={handleClearSearch}
+                    sx={{ transition: 'opacity 300ms', opacity: searchTerm.length > 0 ? 1 : 0 }}
+                  >
+                    <CloseRoundedIcon />
+                  </IconButton>
+                ),
               },
             }}
             variant="outlined"
@@ -68,13 +91,14 @@ function RouteComponent() {
           <TagsTitle />
 
           <List disablePadding>
-            <ListItem disablePadding secondaryAction="24">
-              <ListItemButton>lol</ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton>lol</ListItemButton>
-            </ListItem>
+            {isPendingTags && <SkeletonLink />}
+            {isErrorTags && <>Error</>}
+            {dataTags &&
+              dataTags.map((tag) => (
+                <ListItem key={`sidebar-link-${tag.id}`} disablePadding secondaryAction={tag.count}>
+                  <ListItemButton onClick={() => handleTagClick(tag.tag)}>{tag.tag}</ListItemButton>
+                </ListItem>
+              ))}
           </List>
         </Grid>
 
@@ -117,88 +141,75 @@ type MainContentProps = {
 const MainContent = (props: MainContentProps) => {
   if (props.isLoading) {
     return (
-      <Grid container spacing={3} sx={{ p: 4 }}>
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-        <SkeletonPattern />
-      </Grid>
+      <Stack sx={{ minHeight: '50svh', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Stack>
     );
   }
 
   if (props.data && props.data.length > 0) {
     return (
       <Masonry columns={4} spacing={2}>
-        {props.data.map((pattern) => (
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <Card elevation={0}>
-              <Box sx={{ p: 2 }}>
-                <img
-                  src={`https://stained-glass.pockethost.io/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
-                  alt={`pattern template for ${pattern.name}`}
-                  style={{ width: '100%', height: 'auto' }}
-                />
-              </Box>
+        {props.data.map((pattern) => {
+          const tags = pattern.tags.split(',');
+          const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
 
-              <CardContent>
-                <Typography>Daedra</Typography>
+          const handleChipClick = (e: any) => {
+            e.preventDefault();
+          };
 
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging across all
-                  continents except Antarctica
-                </Typography>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+          return (
+            <Link key={`pattern-${pattern.id}`} to={`/`} style={{ textDecoration: 'none' }}>
+              <Card elevation={0}>
+                <Box sx={{ p: 2 }}>
+                  <img
+                    src={`https://stained-glass.pockethost.io/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
+                    alt={`pattern template for ${pattern.name}`}
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </Box>
+
+                <CardContent>
+                  <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
+
+                  {pattern.description && (
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                      {pattern.description}
+                    </Typography>
+                  )}
+
+                  <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
+                    {cleanedTags.map((tag, index) => (
+                      <Chip
+                        key={`tag-chip-${pattern.id}-${index}-${tag}`}
+                        label={tag}
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleChipClick}
+                      />
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </Masonry>
     );
   }
-
-  /*return (
-    <Grid spacing={3} container sx={{ p: 4 }}>
-      {props.data?.map((pattern) => (
-        <Grid size={{ xs: 12, md: 6, lg: 4, xl: 3 }}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <Card elevation={0}>
-              <Box sx={{ p: 2 }}>
-                <img
-                  src={`https://stained-glass.pockethost.io/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
-                  alt={`pattern template for ${pattern.name}`}
-                  style={{ width: '100%', height: 'auto' }}
-                />
-              </Box>
-
-              <CardContent>
-                <Typography>Daedra</Typography>
-
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging across all
-                  continents except Antarctica
-                </Typography>
-
-                {/!*<Rating name="read-only" value={3.5} readOnly />*!/}
-              </CardContent>
-            </Card>
-          </Link>
-        </Grid>
-      ))}
-    </Grid>
-  );*/
 };
 
-const SkeletonPattern = () => {
+const SkeletonLink = () => {
   return (
-    <Grid size={{ xs: 12, md: 6, lg: 4, xl: 3 }}>
-      <Skeleton variant="rounded" width="100%" height={285} />
-    </Grid>
+    <Stack sx={{ spacing: 2, px: 2 }}>
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+      <Skeleton width="100%" height={40} />
+    </Stack>
   );
 };

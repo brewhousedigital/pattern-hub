@@ -11,3 +11,9 @@ export type TypePaginationDatabaseResponse<PassThrough> = {
   totalItems: number;
   items: PassThrough[];
 };
+
+export type TypeReadOnlyDatabaseItem = {
+  id: string;
+  tag: string;
+  count: number;
+};

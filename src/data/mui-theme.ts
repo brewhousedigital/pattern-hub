@@ -64,11 +64,13 @@ const baseTheme = createTheme({
             border: 0,
           },
           '& svg': {
-            marginRight: '6px',
             opacity: 0.6,
           },
           '& fieldset': {
             borderColor: '#25424C',
+          },
+          '& input': {
+            paddingLeft: '6px',
           },
         },
       },
