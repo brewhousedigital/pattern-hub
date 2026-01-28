@@ -232,7 +232,7 @@ const MainContent = (props: MainContentProps) => {
 
   if (props.data && props.data.length > 0) {
     return (
-      <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={2}>
+      <Grid container spacing={2}>
         {props.data.map((pattern) => {
           const tags = pattern.tags.split(',');
           const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
@@ -255,76 +255,44 @@ const MainContent = (props: MainContentProps) => {
           };
 
           return (
-            <Link key={`pattern-${pattern.id}`} to={`/`} style={{ textDecoration: 'none' }}>
-              <Card elevation={0}>
-                <Box sx={{ p: 2 }}>
-                  <img
-                    src={`${pocketbaseDomain}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
-                    alt={`pattern template for ${pattern.name}`}
-                    style={{ width: '100%', height: 'auto' }}
-                  />
-                </Box>
+            <Grid key={`pattern-${pattern.id}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
+              <Link to={`/`} style={{ textDecoration: 'none' }}>
+                <Card elevation={0}>
+                  <Box sx={{ p: 2 }}>
+                    <img
+                      src={`${pocketbaseDomain}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
+                      alt={`pattern template for ${pattern.name}`}
+                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                    />
+                  </Box>
 
-                <CardContent>
-                  <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
+                  <CardContent>
+                    <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
 
-                  {pattern.description && (
-                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-                      {pattern.description}
+                    {pattern.description && (
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                        {pattern.description}
+                      </Typography>
+                    )}
+
+                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                      Tags: {joinedTags}
                     </Typography>
-                  )}
 
-                  {/*<Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography sx={{ fontSize: 11, opacity: 0.6 }}>Difficulty: Easy</Typography>
-                    <Typography sx={{ fontSize: 11, opacity: 0.6 }}>Author: Zach</Typography>
-                  </Stack>*/}
+                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                      Difficulty: {cleanedDifficulty}
+                    </Typography>
 
-                  <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
-                    {/*{cleanedTags.map((tag, index) => (
-                      <Chip
-                        key={`tag-chip-${pattern.id}-${index}-${tag}`}
-                        label={tag}
-                        variant="outlined"
-                        color="primary"
-                        //onClick={handleChipClick}
-                        sx={{ textTransform: 'capitalize' }}
-                      />
-                    ))}*/}
-
-                    {/*<Chip
-                      label={`Difficulty: ${cleanedDifficulty}`}
-                      variant="outlined"
-                      color="primary"
-                      //onClick={handleChipClick}
-                      sx={{ textTransform: 'capitalize' }}
-                    />*/}
-
-                    {/*<Chip
-                      label={`Authors: ${cleanedAuthors}`}
-                      variant="outlined"
-                      color="primary"
-                      //onClick={handleChipClick}
-                      sx={{ textTransform: 'capitalize' }}
-                    />*/}
-                  </Stack>
-
-                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                    Tags: {joinedTags}
-                  </Typography>
-
-                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                    Difficulty: {cleanedDifficulty}
-                  </Typography>
-
-                  <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                    Authors: {cleanedAuthors}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Link>
+                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+                      Authors: {cleanedAuthors}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Link>
+            </Grid>
           );
         })}
-      </Masonry>
+      </Grid>
     );
   }
 
@@ -425,3 +393,64 @@ const SidebarList = (props: SidebarListProps) => {
     </List>
   );
 };
+
+/* Masonry Layout */
+
+/*
+<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={2}>
+  {props.data.map((pattern) => {
+    const tags = pattern.tags.split(',');
+    const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
+    const joinedTags = cleanedTags.join(', ');
+
+    const authors = pattern.authors.split(',');
+    const cleanedAuthors = authors
+      .map((tag) => tag.trim())
+      .map((tag) => tag.toLowerCase())
+      .join(', ');
+
+    const difficulties = pattern.difficulty.split(',');
+    const cleanedDifficulty = difficulties
+      .map((tag) => tag.trim())
+      .map((tag) => tag.toLowerCase())
+      .join(', ');
+
+    const handleChipClick = (e: any) => {
+      e.preventDefault();
+    };
+
+    return (
+      <Link key={`pattern-${pattern.id}`} to={`/`} style={{ textDecoration: 'none' }}>
+        <Card elevation={0}>
+          <Box sx={{ p: 2 }}>
+            <img
+              src={`${pocketbaseDomain}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
+              alt={`pattern template for ${pattern.name}`}
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </Box>
+
+          <CardContent>
+            <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
+
+            {pattern.description && (
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                {pattern.description}
+              </Typography>
+            )}
+
+            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>Tags: {joinedTags}</Typography>
+
+            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+              Difficulty: {cleanedDifficulty}
+            </Typography>
+
+            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
+              Authors: {cleanedAuthors}
+            </Typography>
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  })}
+</Masonry>*/
