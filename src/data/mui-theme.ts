@@ -6,6 +6,9 @@ const baseTheme = createTheme({
     background: {
       default: '#0F1D21',
     },
+    primary: {
+      main: '#F97316',
+    },
   },
   typography: {
     fontFamily: '"Google Sans Flex", system-ui',
@@ -48,6 +51,41 @@ const baseTheme = createTheme({
           borderRadius: 12,
           padding: '6px 24px',
           letterSpacing: '1px',
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#15252B',
+
+          borderRadius: 36,
+          '&::before': {
+            border: 0,
+          },
+          '& svg': {
+            marginRight: '6px',
+            opacity: 0.6,
+          },
+          '& fieldset': {
+            borderColor: '#25424C',
+          },
+        },
+      },
+    },
+    MuiListItemSecondaryAction: {
+      styleOverrides: {
+        root: {
+          opacity: 0.6,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#16262C',
+          border: '1px solid #25424C',
+          borderRadius: 24,
         },
       },
     },

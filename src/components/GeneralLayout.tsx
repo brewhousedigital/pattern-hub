@@ -6,6 +6,7 @@ export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
     textAlign: 'center',
     WebkitTextStroke: '2px #222',
     textStroke: '2px #222',
+    mb: 2,
   };
 
   const gradientStyles = {
