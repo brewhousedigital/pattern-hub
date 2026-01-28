@@ -8,6 +8,8 @@ export type TypePatternResponse = {
   id: string;
   name: string;
   description: string;
+  difficulty: string;
+  authors: string;
   tags: string;
   pattern_file: string;
   created: string;
@@ -21,14 +23,14 @@ export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumbe
       let filter = '';
 
       if (searchTerm) {
-        filter += `name ~ '${searchTerm}' || description ~ '${searchTerm}' `;
+        filter += `(name ~ '${searchTerm}' || description ~ '${searchTerm}' || authors ~ '${searchTerm}' || difficulty ~ '${searchTerm}') `;
       }
 
       if (tag) {
         if (filter) {
           filter += '&& ';
         }
-        filter += `tags ~ '${tag}' `;
+        filter += `(tags ~ '${tag}') `;
       }
 
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
