@@ -12,6 +12,11 @@ export type TypeAuthData = {
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;
 type AuthUserDataType = Promise<TypeAuthData>;
 
+type CreateUserPayload = {
+  email: string;
+  password: string;
+};
+
 export const authSignOut = () => {
   pocketbase.authStore.clear();
   window.location.href = '/';
@@ -26,6 +31,18 @@ export const useMutationAuthGetUser = () => {
     mutationFn: (payload: { userId: string }): AuthUserDataType => {
       return pocketbase.collection('users').getOne(payload.userId, {
         expand: 'avatar,background,bias,captain_decor,topThree,title',
+      });
+    },
+  });
+};
+
+export const useMutationAuthCreateUser = () => {
+  return useMutation({
+    mutationFn: (payload: CreateUserPayload): AuthCreationType => {
+      return pocketbase.collection('users').create({
+        email: payload.email,
+        password: payload.password,
+        passwordConfirm: payload.password,
       });
     },
   });
