@@ -363,7 +363,7 @@ const SidebarList = (props: SidebarListProps) => {
       disablePadding
       sx={{
         minWidth: 250,
-        maxWidth: 250,
+        maxWidth: isMediumSizeAndUp ? '100%' : 250,
         maxHeight: isMediumSizeAndUp ? '70svh' : 'calc(100svh - 50px)',
         overflowY: 'auto',
         scrollbarWidth: 'thin',
