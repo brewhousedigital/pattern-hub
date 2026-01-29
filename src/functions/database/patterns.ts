@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 
@@ -16,44 +16,43 @@ export type TypePatternResponse = {
   updated: string;
 };
 
-export const useQueryGetAllPatternsByPagination = (
-  searchTerm: string,
-  pageNumber: number,
-  tag: string,
-  difficulty: string,
-  author: string,
-) => {
+export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber, tag, difficulty, author],
+    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       let filter = '';
 
       if (searchTerm) {
-        filter += `(name ~ '${searchTerm}' || description ~ '${searchTerm}') `;
-      }
+        const terms = searchTerm.trim().split(/\s+/); // Split by whitespace
+        const includeTags: string[] = [];
+        const excludeTags: string[] = [];
 
-      if (tag) {
-        if (filter) {
-          filter += '&& ';
+        terms.forEach((term) => {
+          if (term.startsWith('-')) {
+            // Exclude tag (remove the - prefix)
+            excludeTags.push(term.slice(1));
+          } else {
+            // Include tag
+            includeTags.push(term);
+          }
+        });
+
+        const filterParts: string[] = [];
+
+        // Add include filters
+        if (includeTags.length > 0) {
+          const includeFilters = includeTags.map((tag) => `tags ~ "${tag}"`);
+          filterParts.push(`(${includeFilters.join(' && ')})`);
         }
-        filter += `(tags ~ '${tag}') `;
-      }
 
-      if (difficulty) {
-        if (filter) {
-          filter += '&& ';
+        // Add exclude filters
+        if (excludeTags.length > 0) {
+          const excludeFilters = excludeTags.map((tag) => `tags !~ "${tag}"`);
+          filterParts.push(`(${excludeFilters.join(' && ')})`);
         }
-        filter += `(difficulty ~ '${difficulty}') `;
-      }
 
-      if (author) {
-        if (filter) {
-          filter += '&& ';
-        }
-        filter += `(authors ~ '${author}') `;
+        filter = filterParts.join(' && ');
       }
-
-      console.log('>>>filter', filter);
 
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         sort: '-created',
@@ -61,5 +60,6 @@ export const useQueryGetAllPatternsByPagination = (
       });
     },
     enabled: !!pageNumber,
+    placeholderData: keepPreviousData,
   });
 };

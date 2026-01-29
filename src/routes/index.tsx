@@ -1,17 +1,15 @@
 import React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination, type TypePatternResponse } from '@/functions/database/patterns';
-import { useQueryGetAllTags } from '@/functions/database/tags';
-import { useQueryGetAllDifficulties } from '@/functions/database/difficulties';
-import { useQueryGetAllAuthors } from '@/functions/database/authors';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
-import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import Masonry from '@mui/lab/Masonry';
+
 import {
   Accordion,
   AccordionSummary,
@@ -22,20 +20,19 @@ import {
   Skeleton,
   List,
   ListItem,
-  ListItemButton,
+  ListItemText,
   Card,
   CardContent,
-  Rating,
   TextField,
   Typography,
   Pagination,
   Stack,
-  Chip,
   CircularProgress,
   IconButton,
   Alert,
   useTheme,
   useMediaQuery,
+  Fade,
 } from '@mui/material';
 
 export const Route = createFileRoute('/')({
@@ -43,6 +40,11 @@ export const Route = createFileRoute('/')({
 });
 
 const BORDER_CSS = `1px solid #25424C`;
+
+type TypeTagObject = {
+  tag: string;
+  count: number;
+};
 
 function RouteComponent() {
   const theme = useTheme();
@@ -60,94 +62,91 @@ function RouteComponent() {
     setSearchTerm('');
   };
 
-  const [tag, setTag] = React.useState<string>('');
-  const [difficulty, setDifficulty] = React.useState<string>('');
-  const [author, setAuthor] = React.useState<string>('');
-
-  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(
+  const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
     debouncedSearchTerm,
     patternPageNumber,
-    tag,
-    difficulty,
-    author,
   );
+  console.log('>>>data', data);
 
-  const { isPending: isPendingTags, isError: isErrorTags, data: dataTags } = useQueryGetAllTags();
+  // Generate the list of tags based on the API Query
+  const dataTags =
+    data?.items
+      ?.map((item) => {
+        const tags = item.tags.split(',');
+        return tags.map((tag) => tag.trim().toLowerCase());
+      })
+      .flat() || [];
 
-  const {
-    isPending: isPendingDifficulties,
-    isError: isErrorDifficulties,
-    data: dataDifficulties,
-  } = useQueryGetAllDifficulties();
+  const tagCounts = dataTags
+    .reduce<TypeTagObject[]>((acc, tag) => {
+      const existing = acc.find((item) => item.tag === tag);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ tag, count: 1 });
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.tag.localeCompare(b.tag));
+  console.log('>>>tagCounts', tagCounts);
 
-  const { isPending: isPendingAuthors, isError: isErrorAuthors, data: dataAuthors } = useQueryGetAllAuthors();
+  const handleTagClickAdd = (tag: string) => {
+    setSearchTerm((prev) => {
+      if (prev) {
+        return `${prev} ${tag}`;
+      }
 
-  const handleTagClick = (tag: string) => {
-    setTag(tag);
+      return tag;
+    });
   };
 
-  const handleDifficultyClick = (tag: string) => {
-    setDifficulty(tag);
-  };
+  const handleTagClickRemove = (tag: string) => {
+    setSearchTerm((prev) => {
+      if (prev) {
+        return `${prev} -${tag}`;
+      }
 
-  const handleAuthorClick = (tag: string) => {
-    setAuthor(tag);
-  };
-
-  const handleClearTags = () => {
-    setTag('');
-  };
-
-  const handleClearDifficulties = () => {
-    setDifficulty('');
-  };
-
-  const handleClearAuthors = () => {
-    setAuthor('');
+      return tag;
+    });
   };
 
   const SidebarBlock = () => {
     return (
       <>
-        <SidebarCategoryTitle title="All Tags" hasItem={tag.length > 0} handleClearTags={handleClearTags} />
+        <SidebarCategoryTitle title="Current Page Tags" />
 
         <SidebarList
-          isPending={isPendingTags}
-          isError={isErrorTags}
-          data={dataTags}
-          selectedValue={tag}
-          handleClick={handleTagClick}
+          isPending={isPending}
+          isError={isError}
+          data={tagCounts}
+          handleClickAdd={handleTagClickAdd}
+          handleClickRemove={handleTagClickRemove}
         />
-
-        {/*<SidebarCategoryTitle
-          title="All Difficulties"
-          hasItem={difficulty.length > 0}
-          handleClearTags={handleClearDifficulties}
-        />*/}
-
-        {/*<SidebarList
-          isPending={isPendingDifficulties}
-          isError={isErrorDifficulties}
-          data={dataDifficulties}
-          selectedValue={difficulty}
-          handleClick={handleDifficultyClick}
-        />*/}
-
-        {/*<SidebarCategoryTitle title="All Authors" hasItem={author.length > 0} handleClearTags={handleClearAuthors} />*/}
-
-        {/*<SidebarList
-          isPending={isPendingAuthors}
-          isError={isErrorAuthors}
-          data={dataAuthors}
-          selectedValue={author}
-          handleClick={handleAuthorClick}
-        />*/}
       </>
     );
   };
 
   return (
     <Box>
+      <Fade in={isFetching}>
+        <Stack
+          sx={{
+            minHeight: '100svh',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100svw',
+            margin: '0 auto',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            zIndex: 1000,
+          }}
+        >
+          <CircularProgress />
+        </Stack>
+      </Fade>
+
       <Box sx={{ borderBottom: BORDER_CSS, pb: 3.75 }}>
         <Container>
           <TextField
@@ -197,7 +196,7 @@ function RouteComponent() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 'grow' }} sx={{ p: 3 }}>
-          <MainContent isLoading={isLoading} isError={isError} data={data?.items} />
+          <MainContent isPending={isPending} isError={isError} data={data?.items} />
 
           <Stack sx={{ alignItems: 'center', justifyContent: 'center', py: 4 }}>
             <Pagination
@@ -217,19 +216,12 @@ function RouteComponent() {
 
 type MainContentProps = {
   data?: TypePatternResponse[];
-  isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
 };
 
 const MainContent = (props: MainContentProps) => {
-  if (props.isLoading) {
-    return (
-      <Stack sx={{ minHeight: '50svh', alignItems: 'center', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Stack>
-    );
-  }
-
+  // props.isPending
   if (props.data && props.data.length > 0) {
     return (
       <Grid container spacing={2}>
@@ -322,8 +314,6 @@ const SkeletonLink = () => {
 
 type SidebarCategoryTitleProps = {
   title: string;
-  hasItem: boolean;
-  handleClearTags: () => void;
 };
 
 const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
@@ -341,14 +331,6 @@ const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
       <Typography color="primary" sx={{ fontWeight: 600 }}>
         {props.title}
       </Typography>
-
-      <IconButton
-        type="button"
-        onClick={props.handleClearTags}
-        sx={{ transition: 'opacity 300ms', opacity: props.hasItem ? 1 : 0 }}
-      >
-        <CloseRoundedIcon />
-      </IconButton>
     </Stack>
   );
 };
@@ -356,9 +338,9 @@ const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
 type SidebarListProps = {
   isPending: boolean;
   isError: boolean;
-  data?: TypeReadOnlyDatabaseItem[];
-  selectedValue: string;
-  handleClick: (value: string) => void;
+  data?: TypeTagObject[];
+  handleClickAdd: (value: string) => void;
+  handleClickRemove: (value: string) => void;
 };
 
 const SidebarList = (props: SidebarListProps) => {
@@ -378,78 +360,28 @@ const SidebarList = (props: SidebarListProps) => {
         props.data.map((thisTag) => {
           // Removing secondaryAction={thisTag.count}
           return (
-            <ListItem key={`sidebar-link-${thisTag.id}`} disablePadding>
-              <ListItemButton
-                sx={{ textTransform: 'capitalize' }}
-                selected={props.selectedValue === thisTag.tag}
-                onClick={() => props.handleClick(thisTag.tag)}
-              >
-                {thisTag.tag}
-              </ListItemButton>
+            <ListItem
+              key={`sidebar-link-${thisTag.tag}`}
+              sx={{ textTransform: 'capitalize' }}
+              secondaryAction={
+                <Stack direction="row" sx={{ alignItems: 'center' }}>
+                  <Box>
+                    <IconButton size="small" onClick={() => props.handleClickAdd(thisTag.tag)}>
+                      <AddRoundedIcon />
+                    </IconButton>
+                  </Box>
+                  <Box>
+                    <IconButton size="small" onClick={() => props.handleClickRemove(thisTag.tag)}>
+                      <RemoveRoundedIcon />
+                    </IconButton>
+                  </Box>
+                </Stack>
+              }
+            >
+              <ListItemText primary={`${thisTag.tag} (${thisTag.count})`} />
             </ListItem>
           );
         })}
     </List>
   );
 };
-
-/* Masonry Layout */
-
-/*
-<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={2}>
-  {props.data.map((pattern) => {
-    const tags = pattern.tags.split(',');
-    const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
-    const joinedTags = cleanedTags.join(', ');
-
-    const authors = pattern.authors.split(',');
-    const cleanedAuthors = authors
-      .map((tag) => tag.trim())
-      .map((tag) => tag.toLowerCase())
-      .join(', ');
-
-    const difficulties = pattern.difficulty.split(',');
-    const cleanedDifficulty = difficulties
-      .map((tag) => tag.trim())
-      .map((tag) => tag.toLowerCase())
-      .join(', ');
-
-    const handleChipClick = (e: any) => {
-      e.preventDefault();
-    };
-
-    return (
-      <Link key={`pattern-${pattern.id}`} to={`/`} style={{ textDecoration: 'none' }}>
-        <Card elevation={0}>
-          <Box sx={{ p: 2 }}>
-            <img
-              src={`${pocketbaseDomain}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
-              alt={`pattern template for ${pattern.name}`}
-              style={{ width: '100%', height: 'auto' }}
-            />
-          </Box>
-
-          <CardContent>
-            <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
-
-            {pattern.description && (
-              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-                {pattern.description}
-              </Typography>
-            )}
-
-            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>Tags: {joinedTags}</Typography>
-
-            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-              Difficulty: {cleanedDifficulty}
-            </Typography>
-
-            <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-              Authors: {cleanedAuthors}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Link>
-    );
-  })}
-</Masonry>*/
