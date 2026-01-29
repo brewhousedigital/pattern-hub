@@ -4,16 +4,13 @@ import { useQueryGetAllPatternsByPagination, type TypePatternResponse } from '@/
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 
+import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Box,
   Container,
   Grid,
@@ -33,6 +30,7 @@ import {
   useTheme,
   useMediaQuery,
   Fade,
+  SwipeableDrawer,
 } from '@mui/material';
 
 export const Route = createFileRoute('/')({
@@ -49,6 +47,16 @@ type TypeTagObject = {
 function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
+
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+
+  const handleOpenMobileSidebar = () => {
+    setIsMobileSidebarOpen(true);
+  };
+
+  const handleCloseMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
 
   const [patternPageNumber, setPatternPageNumber] = React.useState(1);
   const handleChangePage = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -76,6 +84,8 @@ function RouteComponent() {
         return tags.map((tag) => tag.trim().toLowerCase());
       })
       .flat() || [];
+
+  console.log('>>dataTags', dataTags);
 
   const tagCounts = dataTags
     .reduce<TypeTagObject[]>((acc, tag) => {
@@ -140,7 +150,7 @@ function RouteComponent() {
             width: '100svw',
             margin: '0 auto',
             backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            zIndex: 1000,
+            zIndex: 1500,
           }}
         >
           <CircularProgress />
@@ -149,50 +159,55 @@ function RouteComponent() {
 
       <Box sx={{ borderBottom: BORDER_CSS, pb: 3.75 }}>
         <Container>
-          <TextField
-            id="homepage-search"
-            fullWidth
-            aria-label="Search for a Pattern"
-            placeholder="Search for a pattern name, or description"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: <SearchRoundedIcon />,
-                endAdornment: (
-                  <IconButton
-                    type="button"
-                    onClick={handleClearSearch}
-                    sx={{ transition: 'opacity 300ms', opacity: searchTerm.length > 0 ? 1 : 0 }}
-                  >
-                    <CloseRoundedIcon />
-                  </IconButton>
-                ),
-              },
-            }}
-            variant="outlined"
-          />
+          <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}>
+            <TextField
+              id="homepage-search"
+              fullWidth
+              aria-label="Search for a Pattern"
+              placeholder="Search for a pattern name, or description"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: <SearchRoundedIcon />,
+                  endAdornment: (
+                    <IconButton
+                      type="button"
+                      onClick={handleClearSearch}
+                      sx={{ transition: 'opacity 300ms', opacity: searchTerm.length > 0 ? 1 : 0 }}
+                    >
+                      <CloseRoundedIcon />
+                    </IconButton>
+                  ),
+                },
+              }}
+              variant="outlined"
+            />
+
+            {!isMediumSizeAndUp && (
+              <IconButton onClick={handleOpenMobileSidebar}>
+                <MenuOpenRoundedIcon />
+              </IconButton>
+            )}
+          </Stack>
         </Container>
       </Box>
+
+      <SwipeableDrawer
+        anchor="right"
+        open={isMobileSidebarOpen}
+        onClose={handleCloseMobileSidebar}
+        onOpen={handleOpenMobileSidebar}
+      >
+        <SidebarBlock />
+      </SwipeableDrawer>
 
       <Grid container>
         <Grid
           size={{ xs: 12, md: 'auto' }}
           sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: { xs: 0, md: 300 } }}
         >
-          {isMediumSizeAndUp ? (
-            <SidebarBlock />
-          ) : (
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="filters-content" id="filters-header">
-                Filters
-              </AccordionSummary>
-
-              <AccordionDetails>
-                <SidebarBlock />
-              </AccordionDetails>
-            </Accordion>
-          )}
+          {isMediumSizeAndUp && <SidebarBlock />}
         </Grid>
 
         <Grid size={{ xs: 12, md: 'grow' }} sx={{ p: 3 }}>
@@ -241,10 +256,6 @@ const MainContent = (props: MainContentProps) => {
             .map((tag) => tag.trim())
             .map((tag) => tag.toLowerCase())
             .join(', ');
-
-          const handleChipClick = (e: any) => {
-            e.preventDefault();
-          };
 
           return (
             <Grid key={`pattern-${pattern.id}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
@@ -344,11 +355,16 @@ type SidebarListProps = {
 };
 
 const SidebarList = (props: SidebarListProps) => {
+  const theme = useTheme();
+  const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
+
   return (
     <List
       disablePadding
       sx={{
-        maxHeight: '70svh',
+        minWidth: 250,
+        maxWidth: 250,
+        maxHeight: isMediumSizeAndUp ? '70svh' : 'calc(100svh - 50px)',
         overflowY: 'auto',
         scrollbarWidth: 'thin',
         scrollbarColor: (theme) => `${theme.palette.primary.main} #222222`,
@@ -362,7 +378,7 @@ const SidebarList = (props: SidebarListProps) => {
           return (
             <ListItem
               key={`sidebar-link-${thisTag.tag}`}
-              sx={{ textTransform: 'capitalize' }}
+              sx={{ textTransform: 'capitalize', paddingRight: '94px' }}
               secondaryAction={
                 <Stack direction="row" sx={{ alignItems: 'center' }}>
                   <Box>

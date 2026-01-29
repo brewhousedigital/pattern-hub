@@ -54,6 +54,8 @@ export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumbe
         filter = filterParts.join(' && ');
       }
 
+      console.log('>>>filter', filter);
+
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         sort: '-created',
         filter: filter,
