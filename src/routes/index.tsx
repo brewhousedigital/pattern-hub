@@ -65,13 +65,19 @@ function RouteComponent() {
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 600);
+  const [readyToSearchTerm, setReadyToSearchTerm] = React.useState('');
+
+  React.useEffect(() => {
+    setReadyToSearchTerm(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
 
   const handleClearSearch = () => {
     setSearchTerm('');
+    setReadyToSearchTerm('');
   };
 
   const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
-    debouncedSearchTerm,
+    readyToSearchTerm,
     patternPageNumber,
   );
   console.log('>>>data', data);
@@ -108,10 +114,26 @@ function RouteComponent() {
 
       return tag;
     });
+
+    setReadyToSearchTerm((prev) => {
+      if (prev) {
+        return `${prev} ${tag}`;
+      }
+
+      return tag;
+    });
   };
 
   const handleTagClickRemove = (tag: string) => {
     setSearchTerm((prev) => {
+      if (prev) {
+        return `${prev} -${tag}`;
+      }
+
+      return tag;
+    });
+
+    setReadyToSearchTerm((prev) => {
       if (prev) {
         return `${prev} -${tag}`;
       }
