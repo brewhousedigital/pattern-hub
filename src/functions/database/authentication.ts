@@ -7,6 +7,7 @@ export type TypeAuthData = {
   email: string;
   id: string;
   level: number;
+  admin?: boolean;
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;
@@ -26,12 +27,22 @@ export const authRefreshSession = async (): AuthCreationType => {
   return await pocketbase.collection('users').authRefresh();
 };
 
+export const authRefreshAdminSession = async (): AuthCreationType => {
+  return await pocketbase.collection('admins').authRefresh();
+};
+
 export const useMutationAuthGetUser = () => {
   return useMutation({
     mutationFn: (payload: { userId: string }): AuthUserDataType => {
-      return pocketbase.collection('users').getOne(payload.userId, {
-        expand: 'avatar,background,bias,captain_decor,topThree,title',
-      });
+      return pocketbase.collection('users').getOne(payload.userId);
+    },
+  });
+};
+
+export const useMutationAuthGetAdmin = () => {
+  return useMutation({
+    mutationFn: (payload: { userId: string }): AuthUserDataType => {
+      return pocketbase.collection('admins').getOne(payload.userId);
     },
   });
 };
@@ -44,6 +55,27 @@ export const useMutationAuthCreateUser = () => {
         password: payload.password,
         passwordConfirm: payload.password,
       });
+    },
+  });
+};
+
+type SignInPayload = {
+  email: string;
+  password: string;
+};
+
+export const useMutationAuthSignIn = () => {
+  return useMutation({
+    mutationFn: (payload: SignInPayload): AuthCreationType => {
+      return pocketbase.collection('users').authWithPassword(payload.email, payload.password);
+    },
+  });
+};
+
+export const useMutationAuthAdminSignIn = () => {
+  return useMutation({
+    mutationFn: (payload: SignInPayload): AuthCreationType => {
+      return pocketbase.collection('admins').authWithPassword(payload.email, payload.password);
     },
   });
 };
