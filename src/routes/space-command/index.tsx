@@ -6,33 +6,63 @@ import { enqueueSnackbar } from 'notistack';
 import { useGlobalAuthData, useRefreshAdminAuth } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
+import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
   useQueryGetAllPatternsByPagination,
   useMutationEditPattern,
 } from '@/functions/database/patterns';
-import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
+
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import CancelIcon from '@mui/icons-material/Cancel';
+import SearchIcon from '@mui/icons-material/Search';
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
 import {
   Autocomplete,
   Box,
   Button,
+  Badge,
   Chip,
   Container,
   Dialog,
+  Divider,
+  Menu,
+  MenuItem,
   IconButton,
   DialogActions,
+  InputAdornment,
   DialogContent,
   DialogTitle,
   TextField,
   Stack,
   Typography,
+  Tooltip,
   styled,
   Grid,
 } from '@mui/material';
+
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRenderCellParams,
+  Toolbar,
+  ToolbarButton,
+  ColumnsPanelTrigger,
+  FilterPanelTrigger,
+  ExportCsv,
+  ExportPrint,
+  QuickFilter,
+  QuickFilterControl,
+  QuickFilterClear,
+  QuickFilterTrigger,
+} from '@mui/x-data-grid';
 
 export const Route = createFileRoute('/space-command/')({
   component: RouteComponent,
@@ -110,25 +140,18 @@ const LoginView = () => {
 };
 
 const AdminPageContent = () => {
-  const [patternPageNumber, setPatternPageNumber] = React.useState(1);
-
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 600);
-  const [readyToSearchTerm, setReadyToSearchTerm] = React.useState('');
-
-  React.useEffect(() => {
-    setReadyToSearchTerm(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
-
   const [rows, setRows] = React.useState<TypePatternResponse[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
-  const [paginationModel, setPaginationModel] = React.useState({
-    page: 1,
-    pageSize: 5,
-  });
-  const [filterModel, setFilterModel] = React.useState({ items: [] });
 
-  const { isLoading, isError, data } = useQueryGetAllPatternsByPagination(readyToSearchTerm, paginationModel.page);
+  const { paginationModel, setPaginationModel } = useGlobalAdminPagination();
+
+  const { setFilterModel, searchResult } = useGlobalAdminFilter();
+  const debouncedSearchTerm = useDebounce(searchResult, 600);
+
+  const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
+    debouncedSearchTerm,
+    paginationModel.page,
+  );
 
   React.useEffect(() => {
     if (data) {
@@ -197,7 +220,7 @@ const AdminPageContent = () => {
       headerName: 'Actions',
       width: 100,
       cellClassName: 'actions',
-      renderCell: (params) => <EditModal searchTerm={''} pageNumber={1} {...params.row} />,
+      renderCell: (params) => <EditModal mode="edit" {...params.row} />,
     },
   ];
 
@@ -205,11 +228,12 @@ const AdminPageContent = () => {
     <Container>
       <Box sx={{ height: 'calc(100svh - 150px)', width: '100%' }}>
         <DataGrid
-          loading={isLoading}
-          rows={data?.items ?? []}
+          loading={isPending || isFetching}
+          rows={rows ?? []}
           columns={columns}
+          slots={{ toolbar: CustomToolbar }}
           showToolbar
-          pageSizeOptions={[5]}
+          pageSizeOptions={[25]}
           checkboxSelection={false}
           disableRowSelectionOnClick
           pagination
@@ -228,13 +252,13 @@ const AdminPageContent = () => {
           }}
           onFilterModelChange={(newFilterModel) => {
             // fetch data from server
-            console.log('>>>Filter Change', newFilterModel);
+            setFilterModel(newFilterModel);
           }}
           //getRowHeight={() => 'auto'}
           initialState={{
             pagination: {
               paginationModel: {
-                pageSize: 5,
+                pageSize: 25,
               },
             },
             columns: {
@@ -249,17 +273,21 @@ const AdminPageContent = () => {
   );
 };
 
-type TypeEditModalProps = TypePatternResponse & {
-  searchTerm: string;
-  pageNumber: number;
+type TypeModalMode = 'edit' | 'add';
+
+type TypeEditModalProps = Partial<TypePatternResponse> & {
+  mode: TypeModalMode;
 };
 
 const EditModal = (props: TypeEditModalProps) => {
   const { isPending, isError, data: allTagsData, refetch: refetchTags } = useQueryGetAllTags();
 
+  const { searchResult } = useGlobalAdminFilter();
+  const { paginationModel } = useGlobalAdminPagination();
+
   const savePattern = useMutationEditPattern();
 
-  const { refetch: refetchPatterns } = useQueryGetAllPatternsByPagination(props.searchTerm, props.pageNumber);
+  const { refetch: refetchPatterns } = useQueryGetAllPatternsByPagination(searchResult, paginationModel.page);
 
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -374,9 +402,15 @@ const EditModal = (props: TypeEditModalProps) => {
 
   return (
     <>
-      <IconButton onClick={handleOpen} size="small">
-        <EditRoundedIcon fontSize="inherit" />
-      </IconButton>
+      {props.mode === 'edit' ? (
+        <IconButton onClick={handleOpen} size="small">
+          <EditRoundedIcon fontSize="inherit" />
+        </IconButton>
+      ) : (
+        <Button onClick={handleOpen} startIcon={<AddRoundedIcon />}>
+          Add Pattern
+        </Button>
+      )}
 
       <Dialog
         fullWidth
@@ -478,11 +512,15 @@ const EditModal = (props: TypeEditModalProps) => {
                   <Box sx={{ p: 2 }}>
                     <Typography>Old</Typography>
 
-                    <img
-                      src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
-                      alt={`pattern template for ${props.name}`}
-                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                    />
+                    {props.pattern_file ? (
+                      <img
+                        src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                        alt={`pattern template for ${props.name}`}
+                        style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                      />
+                    ) : (
+                      <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                    )}
                   </Box>
                 </Grid>
 
@@ -506,11 +544,15 @@ const EditModal = (props: TypeEditModalProps) => {
               </Grid>
             ) : (
               <Box sx={{ p: 2 }}>
-                <img
-                  src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
-                  alt={`pattern template for ${props.name}`}
-                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                />
+                {props.pattern_file ? (
+                  <img
+                    src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                    alt={`pattern template for ${props.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                  />
+                ) : (
+                  <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
+                )}
               </Box>
             )}
 
@@ -554,3 +596,157 @@ const VisuallyHiddenInput = styled('input')({
   whiteSpace: 'nowrap',
   width: 1,
 });
+
+type OwnerState = {
+  expanded: boolean;
+};
+
+const StyledQuickFilter = styled(QuickFilter)({
+  display: 'grid',
+  alignItems: 'center',
+});
+
+const StyledToolbarButton = styled(ToolbarButton)<{ ownerState: OwnerState }>(({ theme, ownerState }) => ({
+  gridArea: '1 / 1',
+  width: 'min-content',
+  height: 'min-content',
+  zIndex: 1,
+  opacity: ownerState.expanded ? 0 : 1,
+  pointerEvents: ownerState.expanded ? 'none' : 'auto',
+  transition: theme.transitions.create(['opacity']),
+}));
+
+const StyledTextField = styled(TextField)<{
+  ownerState: OwnerState;
+}>(({ theme, ownerState }) => ({
+  gridArea: '1 / 1',
+  overflowX: 'clip',
+  width: ownerState.expanded ? 260 : 'var(--trigger-width)',
+  opacity: ownerState.expanded ? 1 : 0,
+  transition: theme.transitions.create(['width', 'opacity']),
+}));
+
+function CustomToolbar() {
+  const [exportMenuOpen, setExportMenuOpen] = React.useState(false);
+  const exportMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
+
+  return (
+    <Toolbar>
+      <Typography fontWeight="medium" sx={{ flex: 1, mx: 0.5 }}>
+        List of Patterns
+      </Typography>
+
+      {/*<Tooltip title="Columns">
+        <ColumnsPanelTrigger render={<ToolbarButton />}>
+          <ViewColumnIcon fontSize="small" />
+        </ColumnsPanelTrigger>
+      </Tooltip>*/}
+
+      {/*<Tooltip title="Filters">
+        <FilterPanelTrigger
+          render={(props, state) => (
+            <ToolbarButton {...props} color="default">
+              <Badge badgeContent={state.filterCount} color="primary" variant="dot">
+                <FilterListIcon fontSize="small" />
+              </Badge>
+            </ToolbarButton>
+          )}
+        />
+      </Tooltip>*/}
+
+      {/*<Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 0.5 }} />*/}
+
+      {/*<Tooltip title="Export">
+        <ToolbarButton
+          ref={exportMenuTriggerRef}
+          id="export-menu-trigger"
+          aria-controls="export-menu"
+          aria-haspopup="true"
+          aria-expanded={exportMenuOpen ? 'true' : undefined}
+          onClick={() => setExportMenuOpen(true)}
+        >
+          <FileDownloadIcon fontSize="small" />
+        </ToolbarButton>
+      </Tooltip>*/}
+
+      {/*<Button startIcon={<AddRoundedIcon />}>Add Pattern</Button>*/}
+
+      <EditModal mode="add" />
+
+      <Menu
+        id="export-menu"
+        // eslint-disable-next-line react-hooks/refs
+        anchorEl={exportMenuTriggerRef.current}
+        open={exportMenuOpen}
+        onClose={() => setExportMenuOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          list: {
+            'aria-labelledby': 'export-menu-trigger',
+          },
+        }}
+      >
+        <ExportPrint render={<MenuItem />} onClick={() => setExportMenuOpen(false)}>
+          Print
+        </ExportPrint>
+
+        <ExportCsv render={<MenuItem />} onClick={() => setExportMenuOpen(false)}>
+          Download as CSV
+        </ExportCsv>
+      </Menu>
+
+      <StyledQuickFilter>
+        <QuickFilterTrigger
+          render={(triggerProps, state) => (
+            <Tooltip title="Search" enterDelay={0}>
+              <StyledToolbarButton
+                {...triggerProps}
+                ownerState={{ expanded: state.expanded }}
+                color="default"
+                aria-disabled={state.expanded}
+              >
+                <SearchIcon fontSize="small" />
+              </StyledToolbarButton>
+            </Tooltip>
+          )}
+        />
+        <QuickFilterControl
+          render={({ ref, ...controlProps }, state) => (
+            <StyledTextField
+              {...controlProps}
+              ownerState={{ expanded: state.expanded }}
+              inputRef={ref}
+              aria-label="Search"
+              placeholder="Search..."
+              size="small"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: state.value ? (
+                    <InputAdornment position="end">
+                      <QuickFilterClear
+                        edge="end"
+                        size="small"
+                        aria-label="Clear search"
+                        material={{ sx: { marginRight: -0.75 } }}
+                      >
+                        <CancelIcon fontSize="small" />
+                      </QuickFilterClear>
+                    </InputAdornment>
+                  ) : null,
+                  ...controlProps.slotProps?.input,
+                },
+                ...controlProps.slotProps,
+              }}
+            />
+          )}
+        />
+      </StyledQuickFilter>
+    </Toolbar>
+  );
+}
