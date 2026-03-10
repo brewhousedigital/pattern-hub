@@ -10,6 +10,7 @@ export type TypePatternResponse = {
   description: string;
   difficulty: string;
   authors: string;
+  uploaded_by: string;
   tags: string;
   pattern_file: string;
   pieces: number;
@@ -76,6 +77,7 @@ export type TypePatternCreatePayload = {
   description: string;
   difficulty?: string;
   authors?: string;
+  uploaded_by?: string;
   tags: string;
   pattern_file?: File;
   pieces: string;
@@ -93,7 +95,8 @@ export const useMutationEditPattern = () => {
       formData.append('name', payload?.name || '');
       formData.append('description', payload?.description || '');
       formData.append('tags', payload?.tags || '');
-      //formData.append('authors', "test");
+      formData.append('authors', payload?.authors || '');
+      formData.append('uploaded_by', payload?.uploaded_by || '');
       //formData.append('difficulty', "test");
       formData.append('pieces', payload?.pieces || '');
       formData.append('design_width', payload?.design_width || '');

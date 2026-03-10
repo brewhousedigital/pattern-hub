@@ -5,6 +5,8 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { enqueueSnackbar } from 'notistack';
 import { useGlobalAuthData, useRefreshAdminAuth } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
+import { useQueryGetAllAuthors } from '@/functions/database/authors';
+import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
@@ -298,7 +300,29 @@ type TypeEditModalProps = Partial<TypePatternResponse> & {
 };
 
 const EditModal = (props: TypeEditModalProps) => {
-  const { isPending, isError, data: allTagsData, refetch: refetchTags } = useQueryGetAllTags();
+  console.log('>>>props', props);
+
+  const {
+    isPending: isPendingTags,
+    isError: isErrorTags,
+    data: allTagsData,
+    refetch: refetchTags,
+  } = useQueryGetAllTags();
+  const {
+    isPending: isPendingAuthors,
+    isError: isErrorAuthors,
+    data: allAuthorsData,
+    refetch: refetchAuthors,
+  } = useQueryGetAllAuthors();
+  const {
+    isPending: isPendingUploadedBy,
+    isError: isErrorUploadedBy,
+    data: allUploadedByData,
+    refetch: refetchUploadedBy,
+  } = useQueryGetAllUploadedBy();
+
+  const isLoading = isPendingTags || isPendingAuthors || isPendingUploadedBy;
+  const isError = isErrorTags || isErrorAuthors || isErrorUploadedBy;
 
   const { searchResult } = useGlobalAdminFilter();
   const { paginationModel } = useGlobalAdminPagination();
@@ -328,8 +352,19 @@ const EditModal = (props: TypeEditModalProps) => {
   const [designWidth, setDesignWidth] = React.useState(String(props?.design_width) || '0');
   const [designHeight, setDesignHeight] = React.useState(String(props?.design_height) || '0');
 
+  // Tags
   const [tagValue, setTagValue] = React.useState<string[] | undefined>(props?.tags?.split(',') || []);
   const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
+
+  // Authors
+  const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors?.split(',') || []);
+  const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
+
+  // Uploaded By
+  const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
+    props?.uploaded_by?.split(',') || [],
+  );
+  const [uploadedByAutoCompleteInputValue, setUploadedByAutoCompleteInputValue] = React.useState('');
 
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -389,6 +424,8 @@ const EditModal = (props: TypeEditModalProps) => {
         design_width: designWidth,
         design_height: designHeight,
         tags: tagValue?.join(',') || '',
+        authors: authorValue?.join(',') || '',
+        uploaded_by: uploadedByValue?.join(',') || '',
       };
 
       if (props?.id) {
@@ -402,6 +439,8 @@ const EditModal = (props: TypeEditModalProps) => {
       await savePattern.mutateAsync(payload);
       await refetchPatterns();
       await refetchTags();
+      await refetchAuthors();
+      await refetchUploadedBy();
       handleClose();
     } catch (error: any) {
       console.warn('Error', error);
@@ -432,7 +471,7 @@ const EditModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(false);
   };
 
-  if (isPending) {
+  if (isLoading) {
     return <FullScreenLoader />;
   }
 
@@ -521,6 +560,8 @@ const EditModal = (props: TypeEditModalProps) => {
               </Grid>
             </Grid>
 
+            <Divider />
+
             <FancyAutocomplete
               label="Tags"
               data={allTagsData}
@@ -531,6 +572,30 @@ const EditModal = (props: TypeEditModalProps) => {
             />
 
             <Typography variant="body2">Total Tags Used: {allTagsData?.length}/500</Typography>
+
+            <FancyAutocomplete
+              label="Author"
+              data={allAuthorsData}
+              value={authorValue}
+              onChange={setAuthorValue}
+              inputValue={authorAutoCompleteInputValue}
+              onInputChange={setAuthorAutoCompleteInputValue}
+            />
+
+            <Typography variant="body2">Total Authors Used: {allAuthorsData?.length}/500</Typography>
+
+            <FancyAutocomplete
+              label="Uploaded By"
+              data={allUploadedByData}
+              value={uploadedByValue}
+              onChange={setUploadedByValue}
+              inputValue={uploadedByAutoCompleteInputValue}
+              onInputChange={setUploadedByAutoCompleteInputValue}
+            />
+
+            <Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>
+
+            <Divider />
 
             {file && previewUrl ? (
               <Grid container>
