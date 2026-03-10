@@ -12,6 +12,7 @@ export const FullScreenLoader = () => {
         top: 0,
         left: 0,
         zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
       }}
     >
       <CircularProgress />

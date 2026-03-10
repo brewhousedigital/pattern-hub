@@ -1,8 +1,10 @@
 import React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination, type TypePatternResponse } from '@/functions/database/patterns';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
+import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -48,6 +50,8 @@ function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
+  const navigate = useNavigate();
+
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
   const handleOpenMobileSidebar = () => {
@@ -63,13 +67,17 @@ function RouteComponent() {
     setPatternPageNumber(value);
   };
 
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const { searchTerm, setSearchTerm } = useGlobalSearch();
+  const { readyToSearchTerm, setReadyToSearchTerm } = useGlobalReadyToSearch();
   const debouncedSearchTerm = useDebounce(searchTerm, 600);
-  const [readyToSearchTerm, setReadyToSearchTerm] = React.useState('');
 
   React.useEffect(() => {
     setReadyToSearchTerm(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
+
+  React.useEffect(() => {
+    navigate({ to: '/', search: { q: readyToSearchTerm } }).then();
+  }, [readyToSearchTerm]);
 
   const handleClearSearch = () => {
     setSearchTerm('');
@@ -157,22 +165,9 @@ function RouteComponent() {
   return (
     <Box>
       <Fade in={isFetching}>
-        <Stack
-          sx={{
-            minHeight: '100svh',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100svw',
-            margin: '0 auto',
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            zIndex: 1500,
-          }}
-        >
-          <CircularProgress />
-        </Stack>
+        <Box>
+          <FullScreenLoader />
+        </Box>
       </Fade>
 
       <Box sx={{ borderBottom: BORDER_CSS, pb: 3.75 }}>
@@ -223,7 +218,7 @@ function RouteComponent() {
       <Grid container>
         <Grid
           size={{ xs: 12, md: 'auto' }}
-          sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: { xs: 0, md: 300 } }}
+          sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: { xs: 0, md: 381 }, maxWidth: 381 }}
         >
           {isMediumSizeAndUp && <SidebarBlock />}
         </Grid>

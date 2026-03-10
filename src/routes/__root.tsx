@@ -1,3 +1,4 @@
+import React from 'react';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
@@ -18,18 +19,20 @@ const queryClient = new QueryClient({
   },
 });
 
-const RootLayout = () => (
-  <ThemeProvider theme={muiTheme}>
-    <CssBaseline />
+const RootLayout = () => {
+  return (
+    <ThemeProvider theme={muiTheme}>
+      <CssBaseline />
 
-    <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
-      <QueryClientProvider client={queryClient}>
-        <GeneralLayout>
-          <Outlet />
-        </GeneralLayout>
-      </QueryClientProvider>
-    </SnackbarProvider>
-  </ThemeProvider>
-);
+      <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
+        <QueryClientProvider client={queryClient}>
+          <GeneralLayout>
+            <Outlet />
+          </GeneralLayout>
+        </QueryClientProvider>
+      </SnackbarProvider>
+    </ThemeProvider>
+  );
+};
 
 export const Route = createRootRoute({ component: RootLayout });
