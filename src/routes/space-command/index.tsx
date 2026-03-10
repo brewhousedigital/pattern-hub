@@ -13,6 +13,7 @@ import {
   type TypePatternCreatePayload,
   useQueryGetAllPatternsByPagination,
   useMutationEditPattern,
+  useMutationDeletePattern,
 } from '@/functions/database/patterns';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -21,8 +22,6 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import {
@@ -202,15 +201,32 @@ const AdminPageContent = () => {
       disableColumnMenu: true,
       headerName: 'Pattern',
       width: 100,
-      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => (
-        <Box sx={{ p: 2 }}>
-          <img
-            src={`${pocketbaseDomain}/api/files/${params.row.collectionId}/${params.row.id}/${params.row.pattern_file}`}
-            alt={`pattern template for ${params.row.name}`}
-            style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-          />
-        </Box>
-      ),
+      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
+        const filePath = `${pocketbaseDomain}/api/files/${params.row.collectionId}/${params.row.id}/${params.row.pattern_file}`;
+
+        return (
+          <Box sx={{ p: 2 }}>
+            <Tooltip
+              placement="left-start"
+              arrow
+              title={
+                <Stack direction="row" sx={{ alignItems: 'center' }}>
+                  <FileDownloadIcon />
+                  <>Download</>
+                </Stack>
+              }
+            >
+              <a href={filePath} download style={{ display: 'block' }}>
+                <img
+                  src={filePath}
+                  alt={`pattern template for ${params.row.name}`}
+                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                />
+              </a>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       field: 'actions',
@@ -287,6 +303,7 @@ const EditModal = (props: TypeEditModalProps) => {
   const { paginationModel } = useGlobalAdminPagination();
 
   const savePattern = useMutationEditPattern();
+  const deletePattern = useMutationDeletePattern();
 
   const { refetch: refetchPatterns } = useQueryGetAllPatternsByPagination(searchResult, paginationModel.page);
 
@@ -388,6 +405,27 @@ const EditModal = (props: TypeEditModalProps) => {
     } catch (error: any) {
       console.warn('Error', error);
       enqueueSnackbar(`Unable to save... Refresh and try again. Error: ${error?.message}`, { variant: 'error' });
+    }
+
+    setIsButtonLoading(false);
+  };
+
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this pattern? This action cannot be undone.');
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    setIsButtonLoading(true);
+
+    try {
+      await deletePattern.mutateAsync(props.id!);
+      await refetchPatterns();
+      handleClose();
+    } catch (error: any) {
+      console.warn('Error', error);
+      enqueueSnackbar(`Unable to delete... Refresh and try again. Error: ${error?.message}`, { variant: 'error' });
     }
 
     setIsButtonLoading(false);
@@ -576,7 +614,20 @@ const EditModal = (props: TypeEditModalProps) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            sx={{ mr: 'auto' }}
+            loading={isButtonLoading}
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+
+          <Button onClick={handleClose} loading={isButtonLoading}>
+            Cancel
+          </Button>
+
           <Button onClick={handleSave} loading={isButtonLoading} variant="contained">
             Save
           </Button>

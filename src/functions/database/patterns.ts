@@ -118,3 +118,11 @@ export const useMutationEditPattern = () => {
     },
   });
 };
+
+export const useMutationDeletePattern = () => {
+  return useMutation({
+    mutationFn: async (patternId: string) => {
+      await pocketbase.collection('patterns').delete(patternId);
+    },
+  });
+};
