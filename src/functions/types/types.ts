@@ -17,3 +17,8 @@ export type TypeReadOnlyDatabaseItem = {
   tag: string;
   count: number;
 };
+
+export type TypeTagObject = {
+  tag: string;
+  count: number;
+};
