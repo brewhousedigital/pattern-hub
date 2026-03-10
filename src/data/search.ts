@@ -6,7 +6,7 @@ const globalSearchAtom = atomWithStorage('globalSearchAtom', '');
 
 export const useGlobalSearch = () => {
   const [searchTerm, setSearchTerm] = useAtom(globalSearchAtom);
-  return { searchTerm, setSearchTerm };
+  return { searchTerm, setSearchTerm, resetSearchTerm: () => setSearchTerm('') };
 };
 
 const globalReadyToSearchAtom = atomWithStorage('globalReadyToSearchAtom', '');
@@ -14,5 +14,5 @@ const globalReadyToSearchAtom = atomWithStorage('globalReadyToSearchAtom', '');
 
 export const useGlobalReadyToSearch = () => {
   const [readyToSearchTerm, setReadyToSearchTerm] = useAtom(globalReadyToSearchAtom);
-  return { readyToSearchTerm, setReadyToSearchTerm };
+  return { readyToSearchTerm, setReadyToSearchTerm, resetReadyToSearchTerm: () => setReadyToSearchTerm('') };
 };

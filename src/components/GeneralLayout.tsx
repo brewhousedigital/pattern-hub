@@ -3,6 +3,7 @@ import type { TypeComponentWithChildrenProps } from '../functions/types/types';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { useGlobalAuthData, useRefreshAuth } from '@/data/auth-data';
 import { authSignOut } from '@/functions/database/authentication';
+import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 
 import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
@@ -16,24 +17,17 @@ import Logout from '@mui/icons-material/Logout';
 import { Avatar, Divider, Box, Typography, Menu, IconButton, MenuItem, ListItemIcon } from '@mui/material';
 
 export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
-  const logoStyles = {
-    textAlign: 'center',
-    WebkitTextStroke: '2px #222',
-    textStroke: '2px #222',
-    mb: 2,
-  };
+  const { resetSearchTerm } = useGlobalSearch();
+  const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
 
-  const gradientStyles = {
-    background: 'linear-gradient(to right, #FD8D35, #EE5F0D)',
-    WebkitBackgroundClip: 'text',
-    backgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    color: 'transparent',
+  const handleReturnHome = () => {
+    resetSearchTerm();
+    resetReadyToSearchTerm();
   };
 
   return (
     <Box>
-      <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link to="/" onClick={handleReturnHome} style={{ textDecoration: 'none', color: 'inherit' }}>
         <Typography variant="h1" sx={logoStyles}>
           <Typography variant="h1" component="span" sx={gradientStyles}>
             Pattern
@@ -183,4 +177,19 @@ const ProfileButton = () => {
       </Menu>
     </>
   );
+};
+
+const logoStyles = {
+  textAlign: 'center',
+  WebkitTextStroke: '2px #222',
+  textStroke: '2px #222',
+  mb: 2,
+};
+
+const gradientStyles = {
+  background: 'linear-gradient(to right, #FD8D35, #EE5F0D)',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  color: 'transparent',
 };

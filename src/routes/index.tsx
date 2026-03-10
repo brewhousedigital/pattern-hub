@@ -110,7 +110,31 @@ function RouteComponent() {
     }, [])
     .sort((a, b) => a.tag.localeCompare(b.tag));
 
-  const handleTagClickAdd = (tag: string) => {
+  const buildUpdatedTerm = (prev: string, tag: string, prefix = '') => {
+    const fullTag = `${prefix}${tag}`;
+    const opposite = prefix === '-' ? tag : `-${tag}`;
+    const existing = prev ? prev.split(' ') : [];
+
+    if (existing.includes(fullTag)) return prev; // already present, no-op
+
+    if (existing.includes(opposite)) {
+      // swap the opposite polarity to this one
+      return existing.map((t) => (t === opposite ? fullTag : t)).join(' ');
+    }
+
+    return existing.length ? `${prev} ${fullTag}` : fullTag;
+  };
+
+  const syncTerms = (tag: string, prefix = '') => {
+    const updater = (prev: string) => buildUpdatedTerm(prev, tag, prefix);
+    setSearchTerm(updater);
+    setReadyToSearchTerm(updater);
+  };
+
+  const handleTagClickAdd = (tag: string) => syncTerms(tag);
+  const handleTagClickRemove = (tag: string) => syncTerms(tag, '-');
+
+  /*const handleTagClickAdd = (tag: string) => {
     setSearchTerm((prev) => {
       if (prev) {
         return `${prev} ${tag}`;
@@ -126,9 +150,9 @@ function RouteComponent() {
 
       return tag;
     });
-  };
+  };*/
 
-  const handleTagClickRemove = (tag: string) => {
+  /*const handleTagClickRemove = (tag: string) => {
     setSearchTerm((prev) => {
       if (prev) {
         return `${prev} -${tag}`;
@@ -144,7 +168,7 @@ function RouteComponent() {
 
       return tag;
     });
-  };
+  };*/
 
   const SidebarBlock = () => {
     return (
