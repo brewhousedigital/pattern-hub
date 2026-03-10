@@ -80,7 +80,6 @@ function RouteComponent() {
     readyToSearchTerm,
     patternPageNumber,
   );
-  console.log('>>>data', data);
 
   // Generate the list of tags based on the API Query
   const dataTags =
@@ -90,8 +89,6 @@ function RouteComponent() {
         return tags.map((tag) => tag.trim().toLowerCase());
       })
       .flat() || [];
-
-  console.log('>>dataTags', dataTags);
 
   const tagCounts = dataTags
     .reduce<TypeTagObject[]>((acc, tag) => {
@@ -104,7 +101,6 @@ function RouteComponent() {
       return acc;
     }, [])
     .sort((a, b) => a.tag.localeCompare(b.tag));
-  console.log('>>>tagCounts', tagCounts);
 
   const handleTagClickAdd = (tag: string) => {
     setSearchTerm((prev) => {

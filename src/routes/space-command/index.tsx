@@ -263,7 +263,6 @@ const AdminPageContent = () => {
           paginationMode="server"
           onPaginationModelChange={(newPaginationModel) => {
             // fetch data from server
-            console.log('>>>Pagination Change', newPaginationModel);
             setPaginationModel({
               ...newPaginationModel,
               // Pocktbase starts at page 1, not 0, so we have to manually increment
@@ -300,8 +299,6 @@ type TypeEditModalProps = Partial<TypePatternResponse> & {
 };
 
 const EditModal = (props: TypeEditModalProps) => {
-  console.log('>>>props', props);
-
   const {
     isPending: isPendingTags,
     isError: isErrorTags,

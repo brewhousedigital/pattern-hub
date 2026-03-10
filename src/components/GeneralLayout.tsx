@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TypeComponentWithChildrenProps } from '../functions/types/types';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, Link } from '@tanstack/react-router';
 import { useGlobalAuthData, useRefreshAuth } from '@/data/auth-data';
 import { authSignOut } from '@/functions/database/authentication';
 
@@ -33,12 +33,14 @@ export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
 
   return (
     <Box>
-      <Typography variant="h1" sx={logoStyles}>
-        <Typography variant="h1" component="span" sx={gradientStyles}>
-          Pattern
-        </Typography>{' '}
-        Hub
-      </Typography>
+      <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Typography variant="h1" sx={logoStyles}>
+          <Typography variant="h1" component="span" sx={gradientStyles}>
+            Pattern
+          </Typography>{' '}
+          Hub
+        </Typography>
+      </Link>
 
       <ProfileButton />
 
@@ -46,6 +48,77 @@ export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
     </Box>
   );
 };
+
+const authenticatedMenuItems = [
+  {
+    label: 'Home',
+    icon: <DashboardRoundedIcon />,
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/' });
+    },
+  },
+  {
+    label: 'Profile',
+    icon: <PersonRoundedIcon />,
+    onClick: () => {},
+    disabled: true,
+  },
+  {
+    label: 'Favorites',
+    icon: <StarRateRoundedIcon />,
+    onClick: () => {},
+    disabled: true,
+  },
+  {
+    label: 'Want to Make',
+    icon: <FavoriteRoundedIcon />,
+    onClick: () => {},
+    disabled: true,
+  },
+  {
+    label: 'Completed',
+    icon: <DoneRoundedIcon />,
+    onClick: () => {},
+    disabled: true,
+  },
+  {
+    label: 'Settings',
+    icon: <Settings />,
+    onClick: () => {},
+    disabled: true,
+  },
+  /*{
+    label: 'Admin Panel',
+    icon: <DisplaySettingsRoundedIcon />,
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/space-command' });
+    },
+  },*/
+  {
+    label: 'Logout',
+    icon: <Logout />,
+    onClick: () => {
+      authSignOut();
+    },
+  },
+];
+
+const unauthenticatedMenuItems = [
+  {
+    label: 'Log In',
+    icon: <PersonRoundedIcon />,
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/login' });
+    },
+  },
+  {
+    label: 'Register an Account',
+    icon: <HowToRegRoundedIcon />,
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/register' });
+    },
+  },
+];
 
 const ProfileButton = () => {
   const { authData } = useGlobalAuthData();
@@ -92,112 +165,21 @@ const ProfileButton = () => {
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         sx={{ '& .MuiPaper-root': { borderRadius: 6 }, '& .MuiList-root': { paddingTop: 0, paddingBottom: 0 } }}
       >
-        {authData ? (
-          <>
-            <MenuItem
-              onClick={() => {
-                navigateTo({ to: '/' });
-              }}
-              sx={menuItemStyles}
-            >
-              <ListItemIcon>
-                <DashboardRoundedIcon />
-              </ListItemIcon>
-              Home
+        {authData &&
+          authenticatedMenuItems.map((item) => (
+            <MenuItem key={item.label} onClick={() => item.onClick(navigateTo)} sx={menuItemStyles}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              {item.label}
             </MenuItem>
+          ))}
 
-            <MenuItem onClick={handleClose} sx={menuItemStyles} disabled>
-              <ListItemIcon>
-                <PersonRoundedIcon />
-              </ListItemIcon>
-              Profile
+        {!authData &&
+          unauthenticatedMenuItems.map((item) => (
+            <MenuItem key={item.label} onClick={() => item.onClick(navigateTo)} sx={menuItemStyles}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              {item.label}
             </MenuItem>
-
-            <MenuItem onClick={handleClose} sx={menuItemStyles} disabled>
-              <ListItemIcon>
-                <StarRateRoundedIcon />
-              </ListItemIcon>
-              Favorites
-            </MenuItem>
-
-            <MenuItem onClick={handleClose} sx={menuItemStyles} disabled>
-              <ListItemIcon>
-                <FavoriteRoundedIcon />
-              </ListItemIcon>{' '}
-              Want to Make
-            </MenuItem>
-
-            <MenuItem onClick={handleClose} sx={menuItemStyles} disabled>
-              <ListItemIcon>
-                <DoneRoundedIcon />
-              </ListItemIcon>
-              Completed
-            </MenuItem>
-
-            <Divider />
-
-            <MenuItem onClick={handleClose} sx={menuItemStyles} disabled>
-              <ListItemIcon>
-                <Settings />
-              </ListItemIcon>
-              Settings
-            </MenuItem>
-
-            <Divider />
-
-            <MenuItem
-              onClick={() => {
-                navigateTo({ to: '/space-command' });
-              }}
-              sx={menuItemStyles}
-            >
-              <ListItemIcon>
-                <DisplaySettingsRoundedIcon />
-              </ListItemIcon>
-              Admin Panel
-            </MenuItem>
-
-            <Divider />
-
-            <MenuItem
-              onClick={() => {
-                authSignOut();
-              }}
-              sx={menuItemStyles}
-            >
-              <ListItemIcon>
-                <Logout />
-              </ListItemIcon>
-              Logout
-            </MenuItem>
-          </>
-        ) : (
-          <>
-            <MenuItem
-              onClick={() => {
-                navigateTo({ to: '/login' });
-              }}
-              sx={menuItemStyles}
-            >
-              <ListItemIcon>
-                <PersonRoundedIcon />
-              </ListItemIcon>
-              Log In
-            </MenuItem>
-
-            <MenuItem
-              onClick={() => {
-                navigateTo({ to: '/register' });
-              }}
-              sx={menuItemStyles}
-            >
-              <ListItemIcon>
-                <HowToRegRoundedIcon />
-              </ListItemIcon>
-              Register an Account
-            </MenuItem>
-          </>
-        )}
+          ))}
       </Menu>
     </>
   );
