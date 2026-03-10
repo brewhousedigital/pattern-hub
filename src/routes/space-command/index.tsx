@@ -8,6 +8,7 @@ import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -520,27 +521,13 @@ const EditModal = (props: TypeEditModalProps) => {
               </Grid>
             </Grid>
 
-            <Autocomplete
-              multiple
-              fullWidth
-              id="tags-filled"
-              options={allTagsData?.map((option) => option.tag)}
-              freeSolo
+            <FancyAutocomplete
+              label="Tags"
+              data={allTagsData}
               value={tagValue}
-              onChange={(event: any, newValue: string[]) => {
-                setTagValue(newValue);
-              }}
+              onChange={setTagValue}
               inputValue={autoCompleteInputValue}
-              onInputChange={(event, newInputValue) => {
-                setAutoCompleteInputValue(newInputValue);
-              }}
-              renderValue={(value: readonly string[], getItemProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...itemProps } = getItemProps({ index });
-                  return <Chip variant="outlined" label={option} key={key} {...itemProps} />;
-                })
-              }
-              renderInput={(params) => <TextField {...params} variant="filled" label="Tags" />}
+              onInputChange={setAutoCompleteInputValue}
             />
 
             <Typography variant="body2">Total Tags Used: {allTagsData?.length}/500</Typography>
