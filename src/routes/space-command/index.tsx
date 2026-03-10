@@ -7,6 +7,7 @@ import { useGlobalAuthData, useRefreshAdminAuth } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -74,7 +75,7 @@ function RouteComponent() {
   const { authData } = useGlobalAuthData();
 
   if (isLoading) {
-    return <>Loading...</>;
+    return <FullScreenLoader />;
   }
 
   if (!authData) {
@@ -393,7 +394,7 @@ const EditModal = (props: TypeEditModalProps) => {
   };
 
   if (isPending) {
-    return <>Loading...</>;
+    return <FullScreenLoader />;
   }
 
   if (isError) {
