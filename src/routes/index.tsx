@@ -11,6 +11,8 @@ import { HomepageSearch } from '@/components/HomepageSearch';
 import { BORDER_CSS } from '@/data/constants';
 import type { TypeTagObject } from '@/functions/types/types';
 import { SidebarList, SidebarCategoryTitle } from '@/components/Sidebar';
+import { useGlobalIsViewOpen } from '@/data/view';
+import { ViewDrawer } from '@/components/ViewDrawer';
 
 import { Box, Grid, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
@@ -25,6 +27,8 @@ function RouteComponent() {
   const navigate = useNavigate();
 
   const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
+
+  const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   const [patternPageNumber, setPatternPageNumber] = React.useState(1);
   const handleChangePage = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -136,6 +140,21 @@ function RouteComponent() {
           </Stack>
         </Grid>
       </Grid>
+
+      <SwipeableDrawer
+        anchor="bottom"
+        open={isViewOpen}
+        onClose={handleCloseView}
+        onOpen={handleOpenView}
+        sx={{
+          '& > .MuiPaper-root': {
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          },
+        }}
+      >
+        <ViewDrawer />
+      </SwipeableDrawer>
     </Box>
   );
 }

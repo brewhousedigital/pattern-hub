@@ -17,6 +17,9 @@ export type TypePatternResponse = {
   design_width: number;
   design_height: number;
   line_width: number;
+  design_width_unit: string;
+  design_height_unit: string;
+  line_width_unit: string;
   created: string;
   updated: string;
 };
@@ -82,6 +85,9 @@ export type TypePatternCreatePayload = {
   design_width: string;
   design_height: string;
   line_width: string;
+  design_width_unit: string;
+  design_height_unit: string;
+  line_width_unit: string;
 };
 
 export const useMutationEditPattern = () => {
@@ -100,6 +106,9 @@ export const useMutationEditPattern = () => {
       formData.append('design_width', payload?.design_width || '');
       formData.append('design_height', payload?.design_height || '');
       formData.append('line_width', payload?.line_width || '');
+      formData.append('design_width_unit', payload?.design_width_unit || '');
+      formData.append('design_height_unit', payload?.design_height_unit || '');
+      formData.append('line_width_unit', payload?.line_width_unit || '');
 
       // This is a new entry
       if (payload?.id) {

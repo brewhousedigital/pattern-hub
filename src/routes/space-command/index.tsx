@@ -345,9 +345,13 @@ const EditModal = (props: TypeEditModalProps) => {
   const [description, setDescription] = React.useState(props?.description || '');
 
   const [pieces, setPieces] = React.useState(String(props?.pieces) || '1');
+
   const [lineWidth, setLineWidth] = React.useState(String(props?.line_width) || '0');
+  const [lineWidthUnit, setLineWidthUnit] = React.useState(String(props?.line_width_unit) || 'in');
   const [designWidth, setDesignWidth] = React.useState(String(props?.design_width) || '0');
+  const [designWidthUnit, setDesignWidthUnit] = React.useState(String(props?.design_width_unit) || 'in');
   const [designHeight, setDesignHeight] = React.useState(String(props?.design_height) || '0');
+  const [designHeightUnit, setDesignHeightUnit] = React.useState(String(props?.design_height_unit) || 'in');
 
   // Tags
   const [tagValue, setTagValue] = React.useState<string[] | undefined>(props?.tags?.split(',') || []);
@@ -423,6 +427,9 @@ const EditModal = (props: TypeEditModalProps) => {
         tags: tagValue?.join(',') || '',
         authors: authorValue?.join(',') || '',
         uploaded_by: uploadedByValue?.join(',') || '',
+        line_width_unit: lineWidthUnit,
+        design_width_unit: designWidthUnit,
+        design_height_unit: designHeightUnit,
       };
 
       if (props?.id) {
@@ -511,18 +518,16 @@ const EditModal = (props: TypeEditModalProps) => {
               onChange={(e) => setDescription(e.target.value)}
             />
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  label="Pieces"
-                  type="number"
-                  value={pieces}
-                  onChange={(e) => setPieces(e.target.value)}
-                />
-              </Grid>
+            <TextField
+              fullWidth
+              variant="filled"
+              label="Pieces"
+              type="number"
+              value={pieces}
+              onChange={(e) => setPieces(e.target.value)}
+            />
 
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
@@ -534,6 +539,10 @@ const EditModal = (props: TypeEditModalProps) => {
                 />
               </Grid>
 
+              <UnitOfMeasurementSelect value={lineWidthUnit} onChange={setLineWidthUnit} />
+            </Grid>
+
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
@@ -545,6 +554,10 @@ const EditModal = (props: TypeEditModalProps) => {
                 />
               </Grid>
 
+              <UnitOfMeasurementSelect value={designWidthUnit} onChange={setDesignWidthUnit} />
+            </Grid>
+
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
@@ -555,6 +568,8 @@ const EditModal = (props: TypeEditModalProps) => {
                   onChange={(e) => setDesignHeight(e.target.value)}
                 />
               </Grid>
+
+              <UnitOfMeasurementSelect value={designHeightUnit} onChange={setDesignHeightUnit} />
             </Grid>
 
             <Divider />
@@ -851,3 +866,32 @@ function CustomToolbar() {
     </Toolbar>
   );
 }
+
+const unitOfMeasurementOptions = ['in', 'cm', 'mm'];
+
+type TypeUnitOfMeasurementSelectProps = {
+  value: string;
+  onChange: (newValue: string) => void;
+};
+
+const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
+  return (
+    <Grid size={{ xs: 12, md: 6 }}>
+      <TextField
+        fullWidth
+        select
+        variant="filled"
+        label="Line Width"
+        type="number"
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+      >
+        {unitOfMeasurementOptions.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Grid>
+  );
+};
