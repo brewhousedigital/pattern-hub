@@ -293,7 +293,6 @@ export const ExportPatternToDownload = () => {
                   color: 'text.secondary',
                   px: 1.25,
                   fontSize: '0.72rem',
-                  fontFamily: "'Lato', sans-serif",
                   '&.Mui-selected': {
                     bgcolor: alpha('#C8A96E', 0.15),
                     color: 'primary.main',
@@ -325,13 +324,9 @@ export const ExportPatternToDownload = () => {
               </Tooltip>
             </Box>
             <FormControl size="small" variant="filled" fullWidth>
-              <Select
-                value={dpi}
-                onChange={(e) => setDpi(e.target.value as DpiOption)}
-                sx={{ fontFamily: "'Lato', sans-serif", fontSize: '0.875rem' }}
-              >
+              <Select value={dpi} onChange={(e) => setDpi(e.target.value as DpiOption)} sx={{ fontSize: '0.875rem' }}>
                 {DPI_OPTIONS.map((d) => (
-                  <MenuItem key={d} value={d} sx={{ fontFamily: "'Lato', sans-serif", fontSize: '0.875rem' }}>
+                  <MenuItem key={d} value={d} sx={{ fontSize: '0.875rem' }}>
                     {d} DPI{d === 300 ? ' — recommended' : d === 96 ? ' — screen' : ''}
                   </MenuItem>
                 ))}
@@ -355,7 +350,6 @@ export const ExportPatternToDownload = () => {
                   color: 'text.secondary',
                   px: 2,
                   fontSize: '0.8rem',
-                  fontFamily: "'Lato', sans-serif",
                   '&.Mui-selected': {
                     bgcolor: alpha('#C8A96E', 0.15),
                     color: 'primary.main',
@@ -398,12 +392,12 @@ export const ExportPatternToDownload = () => {
 
       {/* Feedback */}
       <Collapse in={!!error}>
-        <Alert severity="error" sx={{ mb: 1.5, fontFamily: "'Lato', sans-serif", fontSize: '0.82rem' }}>
+        <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
           {error}
         </Alert>
       </Collapse>
       <Collapse in={success}>
-        <Alert severity="success" sx={{ mb: 1.5, fontFamily: "'Lato', sans-serif", fontSize: '0.82rem' }}>
+        <Alert severity="success" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
           Download started!
         </Alert>
       </Collapse>
@@ -419,7 +413,6 @@ export const ExportPatternToDownload = () => {
           bgcolor: canExport && !loading ? 'primary.main' : undefined,
           color: canExport && !loading ? '#0F0D0B' : undefined,
           fontWeight: 700,
-          fontFamily: "'Lato', sans-serif",
           letterSpacing: '0.06em',
           py: 1.1,
           '&:hover': { bgcolor: '#DDB97E' },

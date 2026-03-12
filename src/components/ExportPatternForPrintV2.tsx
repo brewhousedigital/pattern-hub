@@ -156,8 +156,9 @@ async function buildSinglePdf(
   const offsetX = margin + (availW - drawW) / 2;
   const offsetY = margin + (availH - drawH) / 2;
 
-  // Rasterise at 300 DPI
-  const pngData = await svgToBase64Png(svgString, Math.round(drawW * 300), Math.round(drawH * 300));
+  // Rasterize at 300 DPI
+  const normalizedSvg = normalizeStrokeWidths(svgString, svgWIn);
+  const pngData = await svgToBase64Png(normalizedSvg, Math.round(drawW * 300), Math.round(drawH * 300));
   pdf.addImage(pngData, 'PNG', offsetX, offsetY, drawW, drawH);
 
   pdf.save(`${slugify(patternName)}-print.pdf`);
@@ -176,7 +177,8 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
   const fullPx = 150;
   const fullWPx = Math.round(svgWIn * fullPx);
   const fullHPx = Math.round(svgHIn * fullPx);
-  const fullPng = await svgToBase64Png(svgString, fullWPx, fullHPx);
+  const normalizedSvg = normalizeStrokeWidths(svgString, svgWIn);
+  const fullPng = await svgToBase64Png(normalizedSvg, fullWPx, fullHPx);
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: [TILE_SHEET_W_IN, TILE_SHEET_H_IN] });
 
@@ -345,7 +347,6 @@ export const ExportPatternForPrintV2 = () => {
               color: 'text.secondary',
               px: 2,
               gap: 0.75,
-              fontFamily: "'Lato', sans-serif",
               fontSize: '0.8rem',
               textTransform: 'none',
               '&.Mui-selected': {
@@ -519,7 +520,7 @@ export const ExportPatternForPrintV2 = () => {
 
       {/* ── Error ── */}
       <Collapse in={!!error}>
-        <Alert severity="error" sx={{ mb: 1.5, fontFamily: "'Lato', sans-serif", fontSize: '0.82rem' }}>
+        <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
           {error}
         </Alert>
       </Collapse>
@@ -535,7 +536,6 @@ export const ExportPatternForPrintV2 = () => {
           bgcolor: canExport && !loading ? 'primary.main' : undefined,
           color: canExport && !loading ? '#0F0D0B' : undefined,
           fontWeight: 700,
-          fontFamily: "'Lato', sans-serif",
           letterSpacing: '0.06em',
           py: 1.1,
           textTransform: 'none',
@@ -555,3 +555,28 @@ export const ExportPatternForPrintV2 = () => {
     </Box>
   );
 };
+
+/**
+ * Rewrites all stroke-width values in an SVG string so that strokes
+ * render at exactly `targetStrokeCm` centimetres at the given print size.
+ */
+function normalizeStrokeWidths(svgString: string, svgWIn: number, targetStrokeCm: number = 0.1): string {
+  const vbMatch = svgString.match(/viewBox=["']\s*([\d.-]+)\s+([\d.-]+)\s+([\d.]+)\s+([\d.]+)/);
+  if (!vbMatch) return svgString;
+
+  const viewBoxWidth = parseFloat(vbMatch[3]); // 107.724 user units
+
+  // User units per inch at the intended print size
+  // svgWIn is the print width in inches — viewBoxWidth spans that whole width
+  const userUnitsPerInch = viewBoxWidth / svgWIn;
+
+  const targetStrokeIn = targetStrokeCm / 2.54;
+  const strokeInUserUnits = targetStrokeIn * userUnitsPerInch;
+
+  //console.log({ viewBoxWidth, svgWIn, userUnitsPerInch, targetStrokeIn, strokeInUserUnits });
+
+  let result = svgString.replace(/stroke-width\s*:\s*[\d.]+/g, `stroke-width:${strokeInUserUnits.toFixed(4)}`);
+  result = result.replace(/stroke-width=["'][\d.]+["']/g, `stroke-width="${strokeInUserUnits.toFixed(4)}"`);
+
+  return result;
+}
