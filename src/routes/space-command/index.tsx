@@ -539,7 +539,7 @@ const EditModal = (props: TypeEditModalProps) => {
                 />
               </Grid>
 
-              <UnitOfMeasurementSelect value={lineWidthUnit} onChange={setLineWidthUnit} />
+              <UnitOfMeasurementSelect label="Line Width Unit" value={lineWidthUnit} onChange={setLineWidthUnit} />
             </Grid>
 
             <Grid container spacing={2}>
@@ -554,7 +554,11 @@ const EditModal = (props: TypeEditModalProps) => {
                 />
               </Grid>
 
-              <UnitOfMeasurementSelect value={designWidthUnit} onChange={setDesignWidthUnit} />
+              <UnitOfMeasurementSelect
+                label="Design Width Unit"
+                value={designWidthUnit}
+                onChange={setDesignWidthUnit}
+              />
             </Grid>
 
             <Grid container spacing={2}>
@@ -569,7 +573,11 @@ const EditModal = (props: TypeEditModalProps) => {
                 />
               </Grid>
 
-              <UnitOfMeasurementSelect value={designHeightUnit} onChange={setDesignHeightUnit} />
+              <UnitOfMeasurementSelect
+                label="Design Height Unit"
+                value={designHeightUnit}
+                onChange={setDesignHeightUnit}
+              />
             </Grid>
 
             <Divider />
@@ -872,6 +880,7 @@ const unitOfMeasurementOptions = ['in', 'cm', 'mm'];
 type TypeUnitOfMeasurementSelectProps = {
   value: string;
   onChange: (newValue: string) => void;
+  label: string;
 };
 
 const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
@@ -881,7 +890,7 @@ const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
         fullWidth
         select
         variant="filled"
-        label="Line Width"
+        label={props.label}
         type="number"
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}

@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
+import { DecorativeTitle } from '@/components/DecorativeTitle';
+import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
+
+import { alpha } from '@mui/material/styles';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import DownloadIcon from '@mui/icons-material/Download';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CropLandscapeIcon from '@mui/icons-material/CropLandscape';
+import CropPortraitIcon from '@mui/icons-material/CropPortrait';
 
 import {
   Box,
@@ -14,21 +28,8 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Paper,
-  Avatar,
   Stack,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
-import DownloadIcon from '@mui/icons-material/Download';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import CropLandscapeIcon from '@mui/icons-material/CropLandscape';
-import CropPortraitIcon from '@mui/icons-material/CropPortrait';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
 
 export const ViewDrawer = () => {
   const { viewData } = useGlobalViewData();
@@ -198,22 +199,7 @@ export const ViewDrawer = () => {
                 p: 3,
               }}
             >
-              {/* Decorative header line */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-                <Box sx={{ height: '1px', flex: 1, bgcolor: alpha('#C8A96E', 0.2) }} />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: 'primary.main',
-                    letterSpacing: '0.16em',
-                    textTransform: 'uppercase',
-                    fontSize: '0.7rem',
-                  }}
-                >
-                  Export Pattern
-                </Typography>
-                <Box sx={{ height: '1px', flex: 1, bgcolor: alpha('#C8A96E', 0.2) }} />
-              </Box>
+              <DecorativeTitle>Export Pattern for Print</DecorativeTitle>
 
               <Box
                 sx={{
@@ -225,6 +211,7 @@ export const ViewDrawer = () => {
               >
                 <Box>
                   <SectionLabel>Page Width</SectionLabel>
+
                   <TextField
                     size="small"
                     fullWidth
@@ -244,6 +231,7 @@ export const ViewDrawer = () => {
 
                 <Box>
                   <SectionLabel>Page Height</SectionLabel>
+
                   <TextField
                     size="small"
                     fullWidth
@@ -263,6 +251,7 @@ export const ViewDrawer = () => {
 
                 <Box>
                   <SectionLabel>Orientation</SectionLabel>
+
                   <ToggleButtonGroup
                     value={orientation}
                     exclusive
@@ -288,6 +277,7 @@ export const ViewDrawer = () => {
                         <CropPortraitIcon fontSize="small" />
                       </Tooltip>
                     </ToggleButton>
+
                     <ToggleButton value="landscape">
                       <Tooltip title="Landscape">
                         <CropLandscapeIcon fontSize="small" />
