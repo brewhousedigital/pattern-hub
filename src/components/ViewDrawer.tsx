@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGlobalViewData } from '@/data/view';
+import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 
 import {
   Box,
@@ -32,6 +32,8 @@ import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
 
 export const ViewDrawer = () => {
   const { viewData } = useGlobalViewData();
+
+  const { handleCloseView } = useGlobalIsViewOpen();
 
   const tags = viewData?.tags.split(',');
 
@@ -79,7 +81,6 @@ export const ViewDrawer = () => {
   return (
     <Box
       sx={{
-        minHeight: '95svh',
         bgcolor: 'background.default',
       }}
     >
@@ -114,12 +115,15 @@ export const ViewDrawer = () => {
           </Button>
 
           <Box sx={{ textAlign: 'center' }}>
-            <Typography
+            {/*<Typography
               variant="caption"
               sx={{ color: 'text.secondary', letterSpacing: '0.12em', textTransform: 'uppercase' }}
             >
               Pattern Browser
-            </Typography>
+            </Typography>*/}
+            <Button variant="outlined" onClick={handleCloseView}>
+              Close Window
+            </Button>
           </Box>
 
           <Button
@@ -513,12 +517,6 @@ export const ViewDrawer = () => {
                     sx={{
                       borderColor: alpha('#C8A96E', 0.25),
                       color: 'text.secondary',
-                      /*'&:hover': {
-                        bgcolor: alpha('#C8A96E', 0.08),
-                        borderColor: alpha('#C8A96E', 0.45),
-                        color: 'primary.main',
-                      },*/
-                      //cursor: 'pointer',
                     }}
                   />
                 ))}

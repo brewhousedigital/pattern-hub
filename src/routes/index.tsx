@@ -148,6 +148,7 @@ function RouteComponent() {
         onOpen={handleOpenView}
         sx={{
           '& > .MuiPaper-root': {
+            maxHeight: '95svh',
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
           },

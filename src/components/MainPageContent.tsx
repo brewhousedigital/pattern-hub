@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
@@ -15,6 +16,8 @@ export const MainPageContent = (props: MainContentProps) => {
   const { handleOpenView } = useGlobalIsViewOpen();
   const { setViewData } = useGlobalViewData();
 
+  const navigate = useNavigate();
+
   const handleClick = (e: React.MouseEvent, pattern: TypePatternResponse) => {
     e.preventDefault();
 
@@ -23,6 +26,11 @@ export const MainPageContent = (props: MainContentProps) => {
 
     // Open the modal
     handleOpenView();
+
+    navigate({
+      to: '/',
+      search: (prev) => ({ ...prev, view: pattern.id }),
+    }).then();
   };
 
   // props.isPending

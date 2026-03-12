@@ -16,3 +16,8 @@
             "GRAD" 0,
             "ROND" 0;
 }
+
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: #F97316 #222222;
+}
