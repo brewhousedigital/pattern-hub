@@ -391,7 +391,7 @@ export const ExportPatternForPrintV2 = () => {
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <TextField
-            label="Pattern Width"
+            label="Pattern Width (in/cm/mm)"
             size="small"
             variant="filled"
             fullWidth
@@ -400,7 +400,7 @@ export const ExportPatternForPrintV2 = () => {
             onChange={(e) => setSvgWidth(e.target.value)}
           />
           <TextField
-            label="Pattern Height"
+            label="Pattern Height (in/cm/mm)"
             size="small"
             variant="filled"
             fullWidth
@@ -424,7 +424,7 @@ export const ExportPatternForPrintV2 = () => {
             }}
           >
             <TextField
-              label="Paper Width"
+              label="Paper Width (in/cm/mm)"
               size="small"
               variant="filled"
               fullWidth
@@ -433,7 +433,7 @@ export const ExportPatternForPrintV2 = () => {
               onChange={(e) => setPageWidth(e.target.value)}
             />
             <TextField
-              label="Paper Height"
+              label="Paper Height (in/cm/mm)"
               size="small"
               variant="filled"
               fullWidth
@@ -443,6 +443,7 @@ export const ExportPatternForPrintV2 = () => {
             />
             <Box>
               <SectionLabel>Orientation</SectionLabel>
+
               <ToggleButtonGroup
                 value={orientation}
                 exclusive
@@ -468,6 +469,7 @@ export const ExportPatternForPrintV2 = () => {
                     <CropPortraitIcon fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
+
                 <ToggleButton value="landscape">
                   <Tooltip title="Landscape">
                     <CropLandscapeIcon fontSize="small" />
