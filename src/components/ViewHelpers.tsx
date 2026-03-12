@@ -19,14 +19,16 @@ export const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   </Typography>
 );
 
-export const MetaRow = ({ label, value, unit }: { label: string; value?: string | number; unit?: string }) => (
-  <Box sx={{ mb: 1.5 }}>
-    <SectionLabel>{label}</SectionLabel>
-    <Typography variant="body1" sx={{ color: 'text.primary', lineHeight: 1.4 }}>
-      {value} {unit}
-    </Typography>
-  </Box>
-);
+export const MetaRow = ({ label, value, unit }: { label: string; value?: string | number; unit?: string }) => {
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <SectionLabel>{label}</SectionLabel>
+      <Typography variant="body1" sx={{ color: 'text.primary', lineHeight: 1.4 }}>
+        {value} {unit}
+      </Typography>
+    </Box>
+  );
+};
 
 export const ThinDivider = () => (
   <Divider

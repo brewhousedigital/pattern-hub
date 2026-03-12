@@ -28,11 +28,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import {
-  Autocomplete,
   Box,
   Button,
-  Badge,
-  Chip,
   Container,
   Dialog,
   Divider,
@@ -57,8 +54,6 @@ import {
   type GridRenderCellParams,
   Toolbar,
   ToolbarButton,
-  ColumnsPanelTrigger,
-  FilterPanelTrigger,
   ExportCsv,
   ExportPrint,
   QuickFilter,
@@ -343,9 +338,7 @@ const EditModal = (props: TypeEditModalProps) => {
 
   const [name, setName] = React.useState(props?.name || '');
   const [description, setDescription] = React.useState(props?.description || '');
-
   const [pieces, setPieces] = React.useState(String(props?.pieces) || '1');
-
   const [lineWidth, setLineWidth] = React.useState(String(props?.line_width) || '0');
   const [lineWidthUnit, setLineWidthUnit] = React.useState(String(props?.line_width_unit) || 'in');
   const [designWidth, setDesignWidth] = React.useState(String(props?.design_width) || '0');
@@ -370,6 +363,25 @@ const EditModal = (props: TypeEditModalProps) => {
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFormReset = () => {
+    setName('');
+    setDescription('');
+    setPieces('1');
+    setLineWidth('0');
+    setLineWidthUnit('in');
+    setDesignWidth('0');
+    setDesignWidthUnit('in');
+    setDesignHeight('0');
+    setDesignHeightUnit('in');
+    setTagValue([]);
+    setAutoCompleteInputValue('');
+    setAuthorValue([]);
+    setAuthorAutoCompleteInputValue('');
+    setUploadedByValue([]);
+    setUploadedByAutoCompleteInputValue('');
+    handleFileDelete();
+  };
 
   // Clean up the URL when component unmounts or new file is selected
   React.useEffect(() => {
@@ -417,19 +429,23 @@ const EditModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
 
     try {
+      const filteredTags = tagValue?.filter((item) => item !== 'undefined') || [];
+      const filteredAuthors = authorValue?.filter((item) => item !== 'undefined') || [];
+      const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
+
       const payload: TypePatternCreatePayload = {
         name,
         description,
-        pieces,
-        line_width: lineWidth,
-        design_width: designWidth,
-        design_height: designHeight,
-        tags: tagValue?.join(',') || '',
-        authors: authorValue?.join(',') || '',
-        uploaded_by: uploadedByValue?.join(',') || '',
-        line_width_unit: lineWidthUnit,
-        design_width_unit: designWidthUnit,
-        design_height_unit: designHeightUnit,
+        pieces: pieces && pieces !== 'undefined' ? pieces : '0',
+        line_width: lineWidth && lineWidth !== 'undefined' ? lineWidth : '0',
+        design_width: designWidth && designWidth !== 'undefined' ? designWidth : '0',
+        design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
+        tags: filteredTags?.join(',') || '',
+        authors: filteredAuthors?.join(',') || '',
+        uploaded_by: filteredUploadedBy?.join(',') || '',
+        line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
+        design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
+        design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
       };
 
       if (props?.id) {
@@ -446,6 +462,11 @@ const EditModal = (props: TypeEditModalProps) => {
       await refetchAuthors();
       await refetchUploadedBy();
       handleClose();
+
+      // Make sure to clear out the modal on save
+      if (props.mode === 'add') {
+        handleFormReset();
+      }
     } catch (error: any) {
       console.warn('Error', error);
       enqueueSnackbar(`Unable to save... Refresh and try again. Error: ${error?.message}`, { variant: 'error' });
@@ -763,41 +784,6 @@ function CustomToolbar() {
       <Typography fontWeight="medium" sx={{ flex: 1, mx: 0.5 }}>
         List of Patterns
       </Typography>
-
-      {/*<Tooltip title="Columns">
-        <ColumnsPanelTrigger render={<ToolbarButton />}>
-          <ViewColumnIcon fontSize="small" />
-        </ColumnsPanelTrigger>
-      </Tooltip>*/}
-
-      {/*<Tooltip title="Filters">
-        <FilterPanelTrigger
-          render={(props, state) => (
-            <ToolbarButton {...props} color="default">
-              <Badge badgeContent={state.filterCount} color="primary" variant="dot">
-                <FilterListIcon fontSize="small" />
-              </Badge>
-            </ToolbarButton>
-          )}
-        />
-      </Tooltip>*/}
-
-      {/*<Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 0.5 }} />*/}
-
-      {/*<Tooltip title="Export">
-        <ToolbarButton
-          ref={exportMenuTriggerRef}
-          id="export-menu-trigger"
-          aria-controls="export-menu"
-          aria-haspopup="true"
-          aria-expanded={exportMenuOpen ? 'true' : undefined}
-          onClick={() => setExportMenuOpen(true)}
-        >
-          <FileDownloadIcon fontSize="small" />
-        </ToolbarButton>
-      </Tooltip>*/}
-
-      {/*<Button startIcon={<AddRoundedIcon />}>Add Pattern</Button>*/}
 
       <EditModal mode="add" />
 

@@ -102,13 +102,13 @@ export const useMutationEditPattern = () => {
       formData.append('authors', payload?.authors || '');
       formData.append('uploaded_by', payload?.uploaded_by || '');
       //formData.append('difficulty', "test");
-      formData.append('pieces', payload?.pieces || '');
-      formData.append('design_width', payload?.design_width || '');
-      formData.append('design_height', payload?.design_height || '');
-      formData.append('line_width', payload?.line_width || '');
-      formData.append('design_width_unit', payload?.design_width_unit || '');
-      formData.append('design_height_unit', payload?.design_height_unit || '');
-      formData.append('line_width_unit', payload?.line_width_unit || '');
+      formData.append('pieces', payload?.pieces || '1');
+      formData.append('design_width', payload?.design_width || '0');
+      formData.append('design_height', payload?.design_height || '0');
+      formData.append('line_width', payload?.line_width || '0');
+      formData.append('design_width_unit', payload?.design_width_unit || 'in');
+      formData.append('design_height_unit', payload?.design_height_unit || 'in');
+      formData.append('line_width_unit', payload?.line_width_unit || 'in');
 
       // This is a new entry
       if (payload?.id) {

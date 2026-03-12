@@ -252,6 +252,7 @@ export const ViewDrawer = () => {
               <MetaRow label="Width" value={viewData?.design_width} unit={viewData?.design_width_unit} />
               <MetaRow label="Height" value={viewData?.design_height} unit={viewData?.design_height_unit} />
               <MetaRow label="Line Width" value={viewData?.line_width} unit={viewData?.line_width_unit} />
+              <MetaRow label="Pieces" value={viewData?.pieces?.toLocaleString()} />
             </Box>
 
             <ThinDivider />
