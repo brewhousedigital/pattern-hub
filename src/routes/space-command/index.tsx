@@ -518,6 +518,76 @@ const EditModal = (props: TypeEditModalProps) => {
               onChange={(e) => setDescription(e.target.value)}
             />
 
+            <Divider />
+
+            {file && previewUrl ? (
+              <Grid container>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ p: 2 }}>
+                    <Typography>Old</Typography>
+
+                    {props.pattern_file ? (
+                      <img
+                        src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                        alt={`pattern template for ${props.name}`}
+                        style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                      />
+                    ) : (
+                      <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ p: 2, position: 'relative' }}>
+                    <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
+                      <IconButton size="small" onClick={handleFileDelete}>
+                        <DeleteRoundedIcon fontSize="inherit" />
+                      </IconButton>
+                    </Box>
+
+                    <Typography>New</Typography>
+
+                    <img
+                      src={previewUrl}
+                      alt={`New pattern template for ${props.name}`}
+                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            ) : (
+              <Box sx={{ p: 2 }}>
+                {props.pattern_file ? (
+                  <img
+                    src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                    alt={`pattern template for ${props.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                  />
+                ) : (
+                  <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
+                )}
+              </Box>
+            )}
+
+            <Button
+              component="label"
+              role={undefined}
+              variant="contained"
+              tabIndex={-1}
+              startIcon={<CloudUploadRoundedIcon />}
+            >
+              Upload SVG
+              <VisuallyHiddenInput
+                type="file"
+                ref={fileInputRef}
+                accept=".svg,image/svg+xml"
+                onChange={handleFileChange}
+              />
+            </Button>
+
+            <Divider />
+
             <TextField
               fullWidth
               variant="filled"
@@ -616,72 +686,6 @@ const EditModal = (props: TypeEditModalProps) => {
             <Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>
 
             <Divider />
-
-            {file && previewUrl ? (
-              <Grid container>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box sx={{ p: 2 }}>
-                    <Typography>Old</Typography>
-
-                    {props.pattern_file ? (
-                      <img
-                        src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
-                        alt={`pattern template for ${props.name}`}
-                        style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                      />
-                    ) : (
-                      <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
-                    )}
-                  </Box>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box sx={{ p: 2, position: 'relative' }}>
-                    <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
-                      <IconButton size="small" onClick={handleFileDelete}>
-                        <DeleteRoundedIcon fontSize="inherit" />
-                      </IconButton>
-                    </Box>
-
-                    <Typography>New</Typography>
-
-                    <img
-                      src={previewUrl}
-                      alt={`New pattern template for ${props.name}`}
-                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
-            ) : (
-              <Box sx={{ p: 2 }}>
-                {props.pattern_file ? (
-                  <img
-                    src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
-                    alt={`pattern template for ${props.name}`}
-                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                  />
-                ) : (
-                  <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
-                )}
-              </Box>
-            )}
-
-            <Button
-              component="label"
-              role={undefined}
-              variant="contained"
-              tabIndex={-1}
-              startIcon={<CloudUploadRoundedIcon />}
-            >
-              Upload SVG
-              <VisuallyHiddenInput
-                type="file"
-                ref={fileInputRef}
-                accept=".svg,image/svg+xml"
-                onChange={handleFileChange}
-              />
-            </Button>
           </Stack>
         </DialogContent>
 
@@ -892,7 +896,7 @@ const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
         variant="filled"
         label={props.label}
         type="number"
-        value={props.value}
+        value={props.value && props.value !== 'undefined' ? props.value : 'in'}
         onChange={(e) => props.onChange(e.target.value)}
       >
         {unitOfMeasurementOptions.map((option) => (

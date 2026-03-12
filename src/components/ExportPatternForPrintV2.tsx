@@ -382,6 +382,7 @@ export const ExportPatternForPrintV2 = () => {
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <SectionLabel>Pattern Size on Paper</SectionLabel>
+
           <Tooltip
             title="How large the pattern should be when printed. Defaults to the design's original size. You can override this — e.g. enter '24in' to print a 24-inch pattern."
             placement="top"
@@ -390,6 +391,7 @@ export const ExportPatternForPrintV2 = () => {
             <InfoOutlinedIcon sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: '2px', cursor: 'help' }} />
           </Tooltip>
         </Box>
+
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <TextField
             label="Pattern Width (in/cm/mm)"
@@ -400,6 +402,7 @@ export const ExportPatternForPrintV2 = () => {
             value={svgWidth}
             onChange={(e) => setSvgWidth(e.target.value)}
           />
+
           <TextField
             label="Pattern Height (in/cm/mm)"
             size="small"
