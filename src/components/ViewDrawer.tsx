@@ -94,6 +94,7 @@ export const ViewDrawer = () => {
             mb: 4,
             pb: 2.5,
             borderBottom: `1px solid ${alpha('#C8A96E', 0.2)}`,
+            gap: 1,
           }}
         >
           <Button
@@ -115,13 +116,7 @@ export const ViewDrawer = () => {
           </Button>
 
           <Box sx={{ textAlign: 'center' }}>
-            {/*<Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', letterSpacing: '0.12em', textTransform: 'uppercase' }}
-            >
-              Pattern Browser
-            </Typography>*/}
-            <Button variant="outlined" onClick={handleCloseView}>
+            <Button variant="outlined" size="small" onClick={handleCloseView}>
               Close Window
             </Button>
           </Box>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
@@ -11,20 +11,31 @@ import { HomepageSearch } from '@/components/HomepageSearch';
 import { BORDER_CSS } from '@/data/constants';
 import type { TypeTagObject } from '@/functions/types/types';
 import { SidebarList, SidebarCategoryTitle } from '@/components/Sidebar';
-import { useGlobalIsViewOpen } from '@/data/view';
+import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { ViewDrawer } from '@/components/ViewDrawer';
 
 import { Box, Grid, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
+type PatternSearch = {
+  q?: string;
+  view?: string;
+};
 export const Route = createFileRoute('/')({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): PatternSearch => {
+    return {};
+  },
 });
 
 function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
+  const { setViewData } = useGlobalViewData();
+
   const navigate = useNavigate();
+
+  const { view } = useSearch({ from: '/' });
 
   const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
 
@@ -43,14 +54,32 @@ function RouteComponent() {
     setReadyToSearchTerm(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
 
+  // When the search term is updated, push it to the URL
   React.useEffect(() => {
-    navigate({ to: '/', search: { q: readyToSearchTerm } }).then();
+    if (readyToSearchTerm) {
+      navigate({
+        to: '/',
+        search: (prev) => ({ ...prev, q: readyToSearchTerm }),
+      }).then();
+    }
   }, [readyToSearchTerm]);
 
   const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
     readyToSearchTerm,
     patternPageNumber,
   );
+
+  // On site load, check if the user already had a pattern in view
+  React.useEffect(() => {
+    if (view && data) {
+      const pattern = data.items.find((item) => item.id === view);
+
+      if (pattern) {
+        setViewData(pattern);
+        handleOpenView();
+      }
+    }
+  }, [data]);
 
   // Generate the list of tags based on the API Query
   const dataTags =
