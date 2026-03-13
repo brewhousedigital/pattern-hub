@@ -305,9 +305,13 @@ export const ExportPatternForPrintV2 = () => {
 
   const handleExport = useCallback(async () => {
     if (!canExport || !svgWIn || !svgHIn) return;
+
     setError(null);
     setLoading(true);
-    const name = viewData?.name ?? 'pattern';
+
+    const baseName = viewData?.name ?? 'pattern';
+    const name = `${baseName}-${svgWIn}x${svgHIn}`;
+
     try {
       if (mode === 'tiled') {
         await buildTiledPdf(svgString, name, svgWIn, svgHIn);

@@ -177,7 +177,8 @@ export const ExportPatternToDownload = () => {
       const response = await fetch(svgImageUrl);
       const svgString = await response.text();
 
-      const slug = slugify(viewData?.name || 'new pattern');
+      const baseSlug = slugify(viewData?.name || 'new pattern');
+      const slug = `${baseSlug}-${widthPx}x${heightPx}-${dpi}dpi`;
       const filename = `${slug}.${format}`;
 
       if (isSvgExport) {
