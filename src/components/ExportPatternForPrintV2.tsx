@@ -21,6 +21,9 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  FormControl,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import jsPDF from 'jspdf';
 
@@ -40,7 +43,7 @@ const PT_PER_IN = 72; // jsPDF uses points internally
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Normalise any common unit string to inches */
+/** Normalize any common unit string to inches */
 function toInches(value: number, unit: string): number {
   switch (unit.toLowerCase().trim()) {
     case 'in':
@@ -269,6 +272,19 @@ export const ExportPatternForPrintV2 = () => {
   const [error, setError] = useState<string | null>(null);
   const [svgString, setSvgString] = useState('');
 
+  const [paperSelectionSize, setPaperSelectionSize] = useState<TypePaperSize>();
+
+  React.useEffect(() => {
+    if (paperSelectionSize) {
+      const thisPaper = PAPER_OPTIONS.find((paper) => paper.name === paperSelectionSize);
+
+      if (thisPaper) {
+        setPageWidth(thisPaper.width);
+        setPageHeight(thisPaper.height);
+      }
+    }
+  }, [paperSelectionSize]);
+
   // Keep SVG defaults in sync if viewData loads after mount
   useEffect(() => {
     if (viewData) {
@@ -306,6 +322,16 @@ export const ExportPatternForPrintV2 = () => {
   const handleExport = useCallback(async () => {
     if (!canExport || !svgWIn || !svgHIn) return;
 
+    if (svgWIn && pageWIn && svgWIn > pageWIn) {
+      alert(`Your page width of ${pageWidth} is too small for your pattern size ${svgWidth}`);
+      return;
+    }
+
+    if (svgHIn && pageHIn && svgHIn > pageHIn) {
+      alert(`Your page height of ${pageHeight} is too small for your pattern size ${svgHeight}`);
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -337,9 +363,9 @@ export const ExportPatternForPrintV2 = () => {
     >
       <DecorativeTitle>Export Pattern for Print</DecorativeTitle>
 
-      {/* ── Mode toggle ── */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Print Mode</SectionLabel>
+
         <ToggleButtonGroup
           value={mode}
           exclusive
@@ -367,6 +393,7 @@ export const ExportPatternForPrintV2 = () => {
             <CropFreeIcon fontSize="small" />
             Single Page
           </ToggleButton>
+
           <ToggleButton value="tiled">
             <GridOnIcon fontSize="small" />
             Tiled (8.5 × 11)
@@ -382,7 +409,6 @@ export const ExportPatternForPrintV2 = () => {
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2.5 }} />
 
-      {/* ── SVG size (always shown) ── */}
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <SectionLabel>Pattern Size on Paper</SectionLabel>
@@ -419,18 +445,35 @@ export const ExportPatternForPrintV2 = () => {
         </Box>
       </Box>
 
-      {/* ── Single-page options ── */}
       <Collapse in={mode === 'single'}>
         <Box sx={{ mb: 2.5 }}>
           <SectionLabel>Paper Size</SectionLabel>
+
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr auto' },
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr auto' },
               gap: 2,
               alignItems: 'flex-end',
             }}
           >
+            <TextField
+              variant="filled"
+              label="Common Paper Sizes"
+              select
+              fullWidth
+              size="small"
+              value={paperSelectionSize}
+              onChange={(e) => setPaperSelectionSize(e.target.value as TypePaperSize)}
+              sx={{ fontSize: '0.875rem' }}
+            >
+              {PAPER_OPTIONS.map((size) => (
+                <MenuItem key={size.name} value={size.name} sx={{ fontSize: '0.875rem' }}>
+                  {`${size.name} - ${size.width} x ${size.height}`}
+                </MenuItem>
+              ))}
+            </TextField>
+
             <TextField
               label="Paper Width (in/cm/mm)"
               size="small"
@@ -449,6 +492,7 @@ export const ExportPatternForPrintV2 = () => {
               value={pageHeight}
               onChange={(e) => setPageHeight(e.target.value)}
             />
+
             <Box>
               <SectionLabel>Orientation</SectionLabel>
 
@@ -495,7 +539,6 @@ export const ExportPatternForPrintV2 = () => {
         </Box>
       </Collapse>
 
-      {/* ── Tiling preview ── */}
       <Collapse in={mode === 'tiled' && tileInfo !== null}>
         {tileInfo && (
           <Box
@@ -525,14 +568,12 @@ export const ExportPatternForPrintV2 = () => {
         ) : null}
       </Collapse>
 
-      {/* ── Error ── */}
       <Collapse in={!!error}>
         <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
           {error}
         </Alert>
       </Collapse>
 
-      {/* ── CTA ── */}
       <Button
         variant="contained"
         disabled={!canExport || loading}
@@ -562,6 +603,26 @@ export const ExportPatternForPrintV2 = () => {
     </Box>
   );
 };
+
+type TypePaperSize = 'Letter' | 'Legal' | 'Tabloid' | 'A4' | 'A5' | 'A3' | 'B5' | 'B4' | 'C4';
+
+type TypePaperSizeObject = {
+  name: TypePaperSize;
+  width: string;
+  height: string;
+};
+
+const PAPER_OPTIONS: TypePaperSizeObject[] = [
+  { name: 'Letter', width: '8.5in', height: '11in' },
+  { name: 'Legal', width: '8.5in', height: '14in' },
+  { name: 'Tabloid', width: '11in', height: '17in' },
+  { name: 'A5', width: '5.8in', height: '8.3in' },
+  { name: 'A4', width: '8.3in', height: '11.7in' },
+  { name: 'A3', width: '11.7in', height: '16.5in' },
+  { name: 'B5', width: '6.9in', height: '9.8in' },
+  { name: 'B4', width: '9.8in', height: '13.9in' },
+  { name: 'C4', width: '9in', height: '12.8in' },
+];
 
 /**
  * Rewrites all stroke-width values in an SVG string so that strokes
