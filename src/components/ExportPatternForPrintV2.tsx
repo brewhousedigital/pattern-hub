@@ -336,7 +336,7 @@ export const ExportPatternForPrintV2 = () => {
     setLoading(true);
 
     const baseName = viewData?.name ?? 'pattern';
-    const name = `${baseName}-${svgWIn}x${svgHIn}`;
+    const name = `${baseName}-${svgWidth}x${svgHeight}`;
 
     try {
       if (mode === 'tiled') {
