@@ -29,13 +29,11 @@ export const useGlobalIsViewOpen = () => {
 };
 
 const globalViewData = atom<TypePatternResponse>();
+const globalViewAllPatternData = atom<TypePatternResponse[]>();
 
 export const useGlobalViewData = () => {
   const [viewData, setViewData] = useAtom(globalViewData);
+  const [viewAllPatternData, setViewAllPatternData] = useAtom(globalViewAllPatternData);
 
-  /*const handleSetViewData = (data: TypePatternResponse) => {
-    setViewData(data);
-  };*/
-
-  return { viewData, setViewData };
+  return { viewData, setViewData, viewAllPatternData, setViewAllPatternData };
 };

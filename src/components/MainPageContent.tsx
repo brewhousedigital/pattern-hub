@@ -14,9 +14,15 @@ type MainContentProps = {
 
 export const MainPageContent = (props: MainContentProps) => {
   const { handleOpenView } = useGlobalIsViewOpen();
-  const { setViewData } = useGlobalViewData();
+  const { setViewData, setViewAllPatternData } = useGlobalViewData();
 
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (props.data) {
+      setViewAllPatternData(props.data);
+    }
+  }, [props.data]);
 
   const handleClick = (e: React.MouseEvent, pattern: TypePatternResponse) => {
     e.preventDefault();

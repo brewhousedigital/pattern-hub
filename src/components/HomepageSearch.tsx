@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -27,6 +28,8 @@ export const HomepageSearch = () => {
           startAdornment: <SearchRoundedIcon />,
           endAdornment: (
             <IconButton
+              component={Link}
+              to="/"
               type="button"
               onClick={handleClearSearch}
               sx={{ transition: 'opacity 300ms', opacity: searchTerm.length > 0 ? 1 : 0 }}

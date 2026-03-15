@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
@@ -14,19 +15,31 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CloseIcon from '@mui/icons-material/Close';
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 
 import { Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack } from '@mui/material';
+import type { TypePatternResponse } from '@/functions/database/patterns.ts';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
 };
 
 export const ViewDrawer = (props: ViewDrawerProps) => {
-  const { viewData } = useGlobalViewData();
+  const { viewData, viewAllPatternData, setViewData } = useGlobalViewData();
 
   const { handleCloseView } = useGlobalIsViewOpen();
 
   const tags = viewData?.tags.split(',');
+
+  // On modal load, see if this is index 0 or the last object so we can disable/enable prev and next
+  const patternListLength = viewAllPatternData?.length || 0;
+  const thisPatternIndex = viewAllPatternData?.findIndex((item) => item.id === viewData?.id);
+
+  const navigate = useNavigate();
+
+  const isFirstItem = thisPatternIndex === 0;
+  const isLastItem = thisPatternIndex === patternListLength - 1;
 
   const [favorited, setFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(142);
@@ -35,6 +48,26 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const [userRating, setUserRating] = useState<number | null>(null);
 
   const svgImageUrl = `${pocketbaseDomain}/api/files/${viewData?.collectionId}/${viewData?.id}/${viewData?.pattern_file}`;
+
+  const handlePrev = () => {
+    const prevIndex = Number(thisPatternIndex || 0) - 1;
+    modalNavigation(prevIndex);
+  };
+
+  const handleNext = () => {
+    const nextIndex = Number(thisPatternIndex || 0) + 1;
+    modalNavigation(nextIndex);
+  };
+
+  const modalNavigation = (index: number) => {
+    const newPattern = viewAllPatternData?.[index];
+    setViewData(newPattern);
+
+    navigate({
+      to: '/',
+      search: (prev) => ({ ...prev, view: newPattern?.id }),
+    }).then();
+  };
 
   const handleFavorite = () => {
     setFavorited((prev) => !prev);
@@ -49,41 +82,62 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
       <Box sx={{ maxWidth: 1500, mx: 'auto', px: { xs: 2, md: 4 }, py: 3, position: 'relative', zIndex: 1 }}>
-        <Box
-          sx={{
-            display: props.hideNavigation ? 'none' : 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 4,
-            pb: 2.5,
-            borderBottom: `1px solid ${alpha('#C8A96E', 0.2)}`,
-            gap: 1,
-          }}
-        >
-          <Button
-            startIcon={<ArrowBackIosNewIcon fontSize="inherit" />}
-            variant="outlined"
-            size="small"
-            onClick={() => {}}
+        {!props.hideNavigation && (
+          <Box
+            sx={{
+              display: { xs: 'grid', md: 'flex' },
+              gridTemplateColumns: '1fr 1fr',
+              gap: 2,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 4,
+              pb: 2.5,
+              borderBottom: `1px solid ${alpha('#C8A96E', 0.2)}`,
+            }}
           >
-            Previous
-          </Button>
+            <Box sx={{ order: { xs: 1, md: 1 } }}>
+              <Button
+                startIcon={<ArrowBackIosNewIcon fontSize="inherit" />}
+                variant="outlined"
+                disabled={isFirstItem}
+                size="small"
+                onClick={handlePrev}
+              >
+                Previous
+              </Button>
+            </Box>
 
-          <Box sx={{ textAlign: 'center' }}>
-            <Button variant="outlined" size="small" onClick={handleCloseView}>
-              Close Window
-            </Button>
+            <Box sx={{ order: { xs: 3, md: 2 } }}>
+              <Button
+                startIcon={<OpenInNewRoundedIcon />}
+                component={Link}
+                variant="outlined"
+                size="small"
+                to={`/pattern/${viewData?.id}`}
+              >
+                View Standalone
+              </Button>
+            </Box>
+
+            <Box sx={{ order: { xs: 4, md: 3 }, textAlign: 'right' }}>
+              <Button startIcon={<CloseIcon />} variant="outlined" size="small" onClick={handleCloseView}>
+                Close Window
+              </Button>
+            </Box>
+
+            <Box sx={{ order: { xs: 2, md: 4 }, textAlign: 'right' }}>
+              <Button
+                disabled={isLastItem}
+                endIcon={<ArrowForwardIosIcon fontSize="inherit" />}
+                variant="outlined"
+                size="small"
+                onClick={handleNext}
+              >
+                Next
+              </Button>
+            </Box>
           </Box>
-
-          <Button
-            endIcon={<ArrowForwardIosIcon fontSize="inherit" />}
-            variant="outlined"
-            size="small"
-            onClick={() => {}}
-          >
-            Next
-          </Button>
-        </Box>
+        )}
 
         <Box
           sx={{

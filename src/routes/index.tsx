@@ -13,7 +13,7 @@ import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { ViewDrawer } from '@/components/ViewDrawer';
 import { PRIMARY_COLOR } from '@/data/constants';
 
-import { Box, Grid, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
+import { Box, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
 type PatternSearch = {
   q?: string;

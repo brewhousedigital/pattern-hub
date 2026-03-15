@@ -41,7 +41,7 @@ export const ExportPatternForPrint = () => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr auto auto' },
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr auto auto' },
           gap: 2,
           alignItems: 'flex-end',
         }}
