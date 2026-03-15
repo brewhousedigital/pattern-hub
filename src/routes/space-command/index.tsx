@@ -294,6 +294,8 @@ type TypeEditModalProps = Partial<TypePatternResponse> & {
 };
 
 const EditModal = (props: TypeEditModalProps) => {
+  const { authData } = useGlobalAuthData();
+
   const {
     isPending: isPendingTags,
     isError: isErrorTags,
@@ -306,15 +308,15 @@ const EditModal = (props: TypeEditModalProps) => {
     data: allAuthorsData,
     refetch: refetchAuthors,
   } = useQueryGetAllAuthors();
-  const {
+  /*const {
     isPending: isPendingUploadedBy,
     isError: isErrorUploadedBy,
     data: allUploadedByData,
     refetch: refetchUploadedBy,
-  } = useQueryGetAllUploadedBy();
+  } = useQueryGetAllUploadedBy();*/
 
-  const isLoading = isPendingTags || isPendingAuthors || isPendingUploadedBy;
-  const isError = isErrorTags || isErrorAuthors || isErrorUploadedBy;
+  const isLoading = isPendingTags || isPendingAuthors;
+  const isError = isErrorTags || isErrorAuthors;
 
   const { searchResult } = useGlobalAdminFilter();
   const { paginationModel } = useGlobalAdminPagination();
@@ -355,10 +357,10 @@ const EditModal = (props: TypeEditModalProps) => {
   const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
 
   // Uploaded By
-  const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
+  /*const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
     props?.uploaded_by?.split(',') || [],
-  );
-  const [uploadedByAutoCompleteInputValue, setUploadedByAutoCompleteInputValue] = React.useState('');
+  );*/
+  //const [uploadedByAutoCompleteInputValue, setUploadedByAutoCompleteInputValue] = React.useState('');
 
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -378,8 +380,8 @@ const EditModal = (props: TypeEditModalProps) => {
     setAutoCompleteInputValue('');
     setAuthorValue([]);
     setAuthorAutoCompleteInputValue('');
-    setUploadedByValue([]);
-    setUploadedByAutoCompleteInputValue('');
+    //setUploadedByValue([]);
+    //setUploadedByAutoCompleteInputValue('');
     handleFileDelete();
   };
 
@@ -431,7 +433,7 @@ const EditModal = (props: TypeEditModalProps) => {
     try {
       const filteredTags = tagValue?.filter((item) => item !== 'undefined') || [];
       const filteredAuthors = authorValue?.filter((item) => item !== 'undefined') || [];
-      const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
+      //const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
 
       const payload: TypePatternCreatePayload = {
         name,
@@ -442,7 +444,8 @@ const EditModal = (props: TypeEditModalProps) => {
         design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
         tags: filteredTags?.join(',') || '',
         authors: filteredAuthors?.join(',') || '',
-        uploaded_by: filteredUploadedBy?.join(',') || '',
+        //uploaded_by: filteredUploadedBy?.join(',') || '',
+        uploaded_by: authData?.name || 'Missing Name',
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
@@ -460,7 +463,7 @@ const EditModal = (props: TypeEditModalProps) => {
       await refetchPatterns();
       await refetchTags();
       await refetchAuthors();
-      await refetchUploadedBy();
+      //await refetchUploadedBy();
       handleClose();
 
       // Make sure to clear out the modal on save
@@ -695,16 +698,16 @@ const EditModal = (props: TypeEditModalProps) => {
 
             <Typography variant="body2">Total Authors Used: {allAuthorsData?.length}/500</Typography>
 
-            <FancyAutocomplete
+            {/*<FancyAutocomplete
               label="Uploaded By"
               data={allUploadedByData}
               value={uploadedByValue}
               onChange={setUploadedByValue}
               inputValue={uploadedByAutoCompleteInputValue}
               onInputChange={setUploadedByAutoCompleteInputValue}
-            />
+            />*/}
 
-            <Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>
+            {/*<Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>*/}
 
             <Divider />
           </Stack>

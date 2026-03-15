@@ -6,6 +6,7 @@ export type TypeAuthData = {
   created: string;
   email: string;
   id: string;
+  name: string;
   level: number;
   admin?: boolean;
 };
