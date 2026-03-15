@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
-import { ExportPatternForPrint } from '@/components/ExportPatternForPrint';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';
+import { createPrettyDate } from '@/functions/utilities/dates';
 
 import { alpha } from '@mui/material/styles';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -272,6 +272,18 @@ export const ViewDrawer = () => {
                 </Box>
               </Box>
             </Stack>
+
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 0,
+                rowGap: 0,
+              }}
+            >
+              <MetaRow label="Created On" value={createPrettyDate(viewData?.created || '')} />
+              <MetaRow label="Last Update" value={createPrettyDate(viewData?.updated || '')} />
+            </Box>
 
             <ThinDivider />
 
