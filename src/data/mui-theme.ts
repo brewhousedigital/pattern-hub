@@ -1,13 +1,15 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { PRIMARY_COLOR } from '@/data/constants';
 
 const baseTheme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     background: {
-      default: '#0F1D21',
+      default: '#f4f7f5',
     },
     primary: {
-      main: '#F97316',
+      main: PRIMARY_COLOR,
+      contrastText: '#fff',
     },
   },
   typography: {
@@ -57,7 +59,7 @@ const baseTheme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          backgroundColor: '#15252B',
+          backgroundColor: '#fff',
 
           borderRadius: 36,
           '&::before': {
@@ -67,7 +69,7 @@ const baseTheme = createTheme({
             opacity: 0.6,
           },
           '& fieldset': {
-            borderColor: '#25424C',
+            borderColor: 'transparent',
           },
           '& input': {
             paddingLeft: '6px',
@@ -85,8 +87,7 @@ const baseTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: '#16262C',
-          border: '1px solid #25424C',
+          border: `0px solid ${PRIMARY_COLOR}`,
           borderRadius: 24,
         },
       },

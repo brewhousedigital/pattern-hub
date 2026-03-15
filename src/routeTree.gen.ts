@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
+import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -34,17 +35,24 @@ const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
   path: '/space-command/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
+  id: '/pattern/$patternId',
+  path: '/pattern/$patternId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/space-command': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/space-command/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/pattern/$patternId'
+    | '/space-command/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/space-command'
-  id: '__root__' | '/' | '/login' | '/register' | '/space-command/'
+  to: '/' | '/login' | '/register' | '/pattern/$patternId' | '/space-command'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/register'
+    | '/pattern/$patternId'
+    | '/space-command/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  PatternPatternIdRoute: typeof PatternPatternIdRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
 }
 
@@ -99,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pattern/$patternId': {
+      id: '/pattern/$patternId'
+      path: '/pattern/$patternId'
+      fullPath: '/pattern/$patternId'
+      preLoaderRoute: typeof PatternPatternIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +134,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  PatternPatternIdRoute: PatternPatternIdRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -7,12 +7,11 @@ import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { MainPageContent } from '@/components/MainPageContent';
 import { buildUpdatedTerm } from '@/functions/utilities/searchBuildUpdatedTerms';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
-import { HomepageSearch } from '@/components/HomepageSearch';
-import { BORDER_CSS } from '@/data/constants';
 import type { TypeTagObject } from '@/functions/types/types';
 import { SidebarList, SidebarCategoryTitle } from '@/components/Sidebar';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { ViewDrawer } from '@/components/ViewDrawer';
+import { PRIMARY_COLOR } from '@/data/constants';
 
 import { Box, Grid, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
@@ -113,7 +112,7 @@ function RouteComponent() {
 
   const SidebarBlock = () => {
     return (
-      <>
+      <Box>
         <SidebarCategoryTitle title="Current Page Tags" />
 
         <SidebarList
@@ -123,7 +122,7 @@ function RouteComponent() {
           handleClickAdd={handleTagClickAdd}
           handleClickRemove={handleTagClickRemove}
         />
-      </>
+      </Box>
     );
   };
 
@@ -135,8 +134,6 @@ function RouteComponent() {
         </Box>
       </Fade>
 
-      <HomepageSearch />
-
       <SwipeableDrawer
         anchor="right"
         open={isSidebarOpen}
@@ -146,18 +143,23 @@ function RouteComponent() {
         <SidebarBlock />
       </SwipeableDrawer>
 
-      <Grid container>
-        <Grid
-          size={{ xs: 12, md: 'auto' }}
-          sx={{ borderRight: BORDER_CSS, borderBottom: BORDER_CSS, minWidth: { xs: 0, md: 381 }, maxWidth: 381 }}
-        >
-          {isMediumSizeAndUp && <SidebarBlock />}
-        </Grid>
+      <Box sx={ContainerStyles}>
+        {isMediumSizeAndUp && <SidebarBlock />}
 
-        <Grid size={{ xs: 12, md: 'grow' }} sx={{ p: 3 }}>
+        <Box sx={{ p: 3, mr: 2, mb: 2, backgroundColor: PRIMARY_COLOR, borderRadius: 6 }}>
           <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
 
-          <Stack sx={{ alignItems: 'center', justifyContent: 'center', py: 4 }}>
+          <Stack
+            sx={{
+              backgroundColor: '#fff',
+              alignItems: 'center',
+              justifyContent: 'center',
+              px: 2,
+              py: 2,
+              mt: 4,
+              borderRadius: 6,
+            }}
+          >
             <Pagination
               count={data?.totalPages || 0}
               variant="outlined"
@@ -167,8 +169,8 @@ function RouteComponent() {
               onChange={handleChangePage}
             />
           </Stack>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       <SwipeableDrawer
         anchor="bottom"
@@ -188,3 +190,9 @@ function RouteComponent() {
     </Box>
   );
 }
+
+const ContainerStyles = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', md: '300px 1fr' },
+  gap: 0,
+};

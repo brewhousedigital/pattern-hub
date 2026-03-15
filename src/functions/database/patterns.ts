@@ -136,3 +136,12 @@ export const useMutationDeletePattern = () => {
     },
   });
 };
+
+export const useQueryGetPatternById = (patternId: string) => {
+  return useQuery({
+    queryKey: ['useQueryGetPatternById', patternId],
+    queryFn: async (): Promise<TypePatternResponse> => {
+      return await pocketbase.collection('patterns').getOne(patternId);
+    },
+  });
+};

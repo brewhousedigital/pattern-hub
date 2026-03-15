@@ -1,4 +1,3 @@
-import { BORDER_CSS } from '@/data/constants';
 import type { TypeTagObject } from '@/functions/types/types';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -36,10 +35,9 @@ export const SidebarList = (props: SidebarListProps) => {
       sx={{
         minWidth: 250,
         maxWidth: isMediumSizeAndUp ? '100%' : 250,
-        maxHeight: isMediumSizeAndUp ? '70svh' : 'calc(100svh - 50px)',
+        maxHeight: isMediumSizeAndUp ? 'calc(100svh - 88px)' : 'calc(100svh - 50px)',
         overflowY: 'auto',
-        scrollbarWidth: 'thin',
-        scrollbarColor: (theme) => `${theme.palette.primary.main} #222222`,
+        scrollbarWidth: 'none',
       }}
     >
       {props.isPending && <SkeletonLink />}
@@ -100,9 +98,7 @@ export const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
       sx={{
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#15252B',
         padding: '12px 16px',
-        borderBottom: BORDER_CSS,
       }}
     >
       <Typography color="primary" sx={{ fontWeight: 600 }}>

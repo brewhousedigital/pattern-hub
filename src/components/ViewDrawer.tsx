@@ -17,7 +17,11 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 import { Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack } from '@mui/material';
 
-export const ViewDrawer = () => {
+type ViewDrawerProps = {
+  hideNavigation?: boolean;
+};
+
+export const ViewDrawer = (props: ViewDrawerProps) => {
   const { viewData } = useGlobalViewData();
 
   const { handleCloseView } = useGlobalIsViewOpen();
@@ -43,11 +47,11 @@ export const ViewDrawer = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.default' }}>
+    <Box sx={{ backgroundColor: 'background.default' }}>
       <Box sx={{ maxWidth: 1500, mx: 'auto', px: { xs: 2, md: 4 }, py: 3, position: 'relative', zIndex: 1 }}>
         <Box
           sx={{
-            display: 'flex',
+            display: props.hideNavigation ? 'none' : 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             mb: 4,
@@ -92,9 +96,10 @@ export const ViewDrawer = () => {
           <Box>
             <Box
               sx={{
-                bgcolor: '#0C0A07',
-                border: `1px solid ${alpha('#C8A96E', 0.2)}`,
-                borderRadius: 1,
+                backgroundColor: '#fff',
+                //border: `1px solid ${alpha('#C8A96E', 0.2)}`,
+                border: (theme) => `2px solid ${theme.palette.primary.main}`,
+                borderRadius: 6,
                 mb: 3,
                 p: 2,
               }}
@@ -117,7 +122,7 @@ export const ViewDrawer = () => {
                 <Typography
                   variant="h3"
                   sx={{
-                    fontSize: { xs: '2rem', md: '2.4rem' },
+                    fontSize: { xs: '2rem', md: '3rem' },
                     lineHeight: 1.1,
                     color: 'text.primary',
                     mb: 0.5,

@@ -354,9 +354,9 @@ export const ExportPatternForPrintV2 = () => {
   return (
     <Box
       sx={{
-        bgcolor: 'background.paper',
-        border: `1px solid ${alpha('#C8A96E', 0.18)}`,
-        borderRadius: 1,
+        backgroundColor: '#fff',
+        border: (theme) => `2px solid ${theme.palette.primary.main}`,
+        borderRadius: 6,
         p: 3,
         mb: 3,
       }}
@@ -452,7 +452,7 @@ export const ExportPatternForPrintV2 = () => {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr auto' },
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
               gap: 2,
               alignItems: 'flex-end',
             }}
@@ -473,25 +473,6 @@ export const ExportPatternForPrintV2 = () => {
                 </MenuItem>
               ))}
             </TextField>
-
-            <TextField
-              label="Paper Width (in/cm/mm)"
-              size="small"
-              variant="filled"
-              fullWidth
-              placeholder="e.g. 24in or 61cm"
-              value={pageWidth}
-              onChange={(e) => setPageWidth(e.target.value)}
-            />
-            <TextField
-              label="Paper Height (in/cm/mm)"
-              size="small"
-              variant="filled"
-              fullWidth
-              placeholder="e.g. 36in or 91cm"
-              value={pageHeight}
-              onChange={(e) => setPageHeight(e.target.value)}
-            />
 
             <Box>
               <SectionLabel>Orientation</SectionLabel>
@@ -529,6 +510,25 @@ export const ExportPatternForPrintV2 = () => {
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
+
+            <TextField
+              label="Paper Width (in/cm/mm)"
+              size="small"
+              variant="filled"
+              fullWidth
+              placeholder="e.g. 24in or 61cm"
+              value={pageWidth}
+              onChange={(e) => setPageWidth(e.target.value)}
+            />
+            <TextField
+              label="Paper Height (in/cm/mm)"
+              size="small"
+              variant="filled"
+              fullWidth
+              placeholder="e.g. 36in or 91cm"
+              value={pageHeight}
+              onChange={(e) => setPageHeight(e.target.value)}
+            />
           </Box>
 
           <Collapse in={!pageWidth.trim() || !pageHeight.trim()}>
@@ -581,17 +581,10 @@ export const ExportPatternForPrintV2 = () => {
         onClick={handleExport}
         fullWidth
         sx={{
-          bgcolor: canExport && !loading ? 'primary.main' : undefined,
-          color: canExport && !loading ? '#0F0D0B' : undefined,
           fontWeight: 700,
           letterSpacing: '0.06em',
           py: 1.1,
           textTransform: 'none',
-          '&:hover': { bgcolor: '#DDB97E' },
-          '&.Mui-disabled': {
-            bgcolor: alpha('#C8A96E', 0.12),
-            color: alpha('#C8A96E', 0.3),
-          },
         }}
       >
         {loading

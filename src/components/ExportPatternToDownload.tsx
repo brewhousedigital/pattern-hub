@@ -204,9 +204,9 @@ export const ExportPatternToDownload = () => {
   return (
     <Box
       sx={{
-        bgcolor: 'background.paper',
-        border: `1px solid ${alpha('#C8A96E', 0.18)}`,
-        borderRadius: 1,
+        backgroundColor: '#fff',
+        border: (theme) => `2px solid ${theme.palette.primary.main}`,
+        borderRadius: 6,
         p: 3,
         mb: 3,
       }}
@@ -241,7 +241,7 @@ export const ExportPatternToDownload = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 146px 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
             gap: 2,
             alignItems: 'flex-end',
             mb: 2,
@@ -324,6 +324,7 @@ export const ExportPatternToDownload = () => {
                 <InfoOutlinedIcon sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: '2px', cursor: 'help' }} />
               </Tooltip>
             </Box>
+
             <FormControl size="small" variant="filled" fullWidth>
               <Select value={dpi} onChange={(e) => setDpi(e.target.value as DpiOption)} sx={{ fontSize: '0.875rem' }}>
                 {DPI_OPTIONS.map((d) => (
@@ -397,6 +398,7 @@ export const ExportPatternToDownload = () => {
           {error}
         </Alert>
       </Collapse>
+
       <Collapse in={success}>
         <Alert severity="success" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
           Download started!
@@ -411,16 +413,9 @@ export const ExportPatternToDownload = () => {
         onClick={handleExport}
         fullWidth
         sx={{
-          bgcolor: canExport && !loading ? 'primary.main' : undefined,
-          color: canExport && !loading ? '#0F0D0B' : undefined,
           fontWeight: 700,
           letterSpacing: '0.06em',
           py: 1.1,
-          '&:hover': { bgcolor: '#DDB97E' },
-          '&.Mui-disabled': {
-            bgcolor: alpha('#C8A96E', 0.12),
-            color: alpha('#C8A96E', 0.3),
-          },
         }}
       >
         {loading ? 'Exporting…' : `Download ${format.toUpperCase()}`}
