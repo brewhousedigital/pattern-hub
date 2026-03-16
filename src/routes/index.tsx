@@ -146,7 +146,20 @@ function RouteComponent() {
       <Box sx={ContainerStyles}>
         {isMediumSizeAndUp && <SidebarBlock />}
 
-        <Box sx={{ p: 3, mr: 2, mb: 2, ml: { xs: 2, md: 0 }, backgroundColor: PRIMARY_COLOR, borderRadius: 6 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            p: 3,
+            mr: 2,
+            mb: 2,
+            ml: { xs: 2, md: 0 },
+            backgroundColor: PRIMARY_COLOR,
+            borderRadius: 6,
+            minHeight: 'calc(100svh - 104px)',
+          }}
+        >
           <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
 
           <Stack
@@ -156,7 +169,7 @@ function RouteComponent() {
               justifyContent: 'center',
               px: 2,
               py: 2,
-              mt: 4,
+              mt: 'auto',
               borderRadius: 6,
             }}
           >

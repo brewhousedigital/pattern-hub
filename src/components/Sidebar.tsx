@@ -35,7 +35,7 @@ export const SidebarList = (props: SidebarListProps) => {
       sx={{
         minWidth: 250,
         maxWidth: isMediumSizeAndUp ? '100%' : 250,
-        maxHeight: isMediumSizeAndUp ? 'calc(100svh - 88px)' : 'calc(100svh - 50px)',
+        maxHeight: isMediumSizeAndUp ? 'calc(100svh - 136px)' : 'calc(100svh - 50px)',
         overflowY: 'auto',
         scrollbarWidth: 'none',
       }}
