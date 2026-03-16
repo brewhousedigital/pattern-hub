@@ -10,31 +10,16 @@ import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
 
 export const Header = () => {
-  const { resetSearchTerm } = useGlobalSearch();
-  const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
-  const { handleCloseView } = useGlobalIsViewOpen();
-
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
   const { handleOpenMobileSidebar } = useGlobalIsSidebarOpen();
-
-  const handleReturnHome = () => {
-    resetSearchTerm();
-    resetReadyToSearchTerm();
-    handleCloseView();
-  };
-
   // Mobile view
   if (!isMediumSizeAndUp) {
     return (
       <Box sx={mobileNavbarContainerStyles}>
         <Box sx={mobileNavbarStyles}>
-          <Link to="/" style={logoLinkStyles} onClick={handleReturnHome}>
-            <Typography component="h1" sx={logoStyles}>
-              Pattern Hub
-            </Typography>
-          </Link>
+          <Logo />
 
           <HeaderProfileMenu />
 
@@ -54,11 +39,7 @@ export const Header = () => {
 
   return (
     <Box sx={navbarStyles}>
-      <Link to="/" style={logoLinkStyles} onClick={handleReturnHome}>
-        <Typography component="h1" sx={logoStyles}>
-          Pattern Hub
-        </Typography>
-      </Link>
+      <Logo />
 
       <ExtraLinks />
 
@@ -69,6 +50,26 @@ export const Header = () => {
   );
 };
 
+export const Logo = () => {
+  const { resetSearchTerm } = useGlobalSearch();
+  const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
+  const { handleCloseView } = useGlobalIsViewOpen();
+
+  const handleReturnHome = () => {
+    resetSearchTerm();
+    resetReadyToSearchTerm();
+    handleCloseView();
+  };
+
+  return (
+    <Link to="/" style={logoLinkStyles} onClick={handleReturnHome}>
+      <Typography component="h1" sx={logoStyles}>
+        Pattern Hub
+      </Typography>
+    </Link>
+  );
+};
+
 const ExtraLinks = () => {
   return (
     <Stack direction="row" spacing={2}>
@@ -76,15 +77,15 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
-      <MuiLink component={Link} to="/" sx={subLinkStyles}>
+      <MuiLink component={Link} to="/collections" sx={subLinkStyles}>
         Collections
       </MuiLink>
 
-      <MuiLink component={Link} to="/" sx={subLinkStyles}>
+      <MuiLink component={Link} to="/guides" sx={subLinkStyles}>
         Guides
       </MuiLink>
 
-      <MuiLink component={Link} to="/" sx={subLinkStyles}>
+      <MuiLink component={Link} to="/help/faq" sx={subLinkStyles}>
         FAQ
       </MuiLink>
     </Stack>
@@ -123,7 +124,7 @@ const logoStyles = {
   textDecoration: 'none',
 };
 
-const subLinkStyles = {
+export const subLinkStyles = {
   color: '#222',
   textDecoration: 'none',
   fontWeight: 500,

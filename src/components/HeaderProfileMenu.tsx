@@ -53,7 +53,7 @@ export const HeaderProfileMenu = () => {
         onClick={handleClose}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        sx={{ '& .MuiPaper-root': { borderRadius: 6 }, '& .MuiList-root': { paddingTop: 0, paddingBottom: 0 } }}
+        sx={{ '& .MuiPaper-root': { borderRadius: 2 }, '& .MuiList-root': { paddingTop: 0, paddingBottom: 0 } }}
       >
         {authData &&
           authenticatedMenuItems.map((item) => (

@@ -13,7 +13,14 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
+import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
+import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
+import { Route as HelpFaqRouteImport } from './routes/help/faq'
+import { Route as HelpContactRouteImport } from './routes/help/contact'
+import { Route as HelpAboutRouteImport } from './routes/help/about'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -35,9 +42,44 @@ const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
   path: '/space-command/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
+  id: '/collections/',
+  path: '/collections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
   id: '/pattern/$patternId',
   path: '/pattern/$patternId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
+  id: '/help/terms-of-service',
+  path: '/help/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpPrivacyPolicyRoute = HelpPrivacyPolicyRouteImport.update({
+  id: '/help/privacy-policy',
+  path: '/help/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpFaqRoute = HelpFaqRouteImport.update({
+  id: '/help/faq',
+  path: '/help/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpContactRoute = HelpContactRouteImport.update({
+  id: '/help/contact',
+  path: '/help/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpAboutRoute = HelpAboutRouteImport.update({
+  id: '/help/about',
+  path: '/help/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -45,14 +87,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/help/about': typeof HelpAboutRoute
+  '/help/contact': typeof HelpContactRoute
+  '/help/faq': typeof HelpFaqRoute
+  '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
+  '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/collections/': typeof CollectionsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/help/about': typeof HelpAboutRoute
+  '/help/contact': typeof HelpContactRoute
+  '/help/faq': typeof HelpFaqRoute
+  '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
+  '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/collections': typeof CollectionsIndexRoute
+  '/guides': typeof GuidesIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesById {
@@ -60,7 +116,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/help/about': typeof HelpAboutRoute
+  '/help/contact': typeof HelpContactRoute
+  '/help/faq': typeof HelpFaqRoute
+  '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
+  '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/collections/': typeof CollectionsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRouteTypes {
@@ -69,16 +132,42 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/help/about'
+    | '/help/contact'
+    | '/help/faq'
+    | '/help/privacy-policy'
+    | '/help/terms-of-service'
     | '/pattern/$patternId'
+    | '/collections/'
+    | '/guides/'
     | '/space-command/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/pattern/$patternId' | '/space-command'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/help/about'
+    | '/help/contact'
+    | '/help/faq'
+    | '/help/privacy-policy'
+    | '/help/terms-of-service'
+    | '/pattern/$patternId'
+    | '/collections'
+    | '/guides'
+    | '/space-command'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/register'
+    | '/help/about'
+    | '/help/contact'
+    | '/help/faq'
+    | '/help/privacy-policy'
+    | '/help/terms-of-service'
     | '/pattern/$patternId'
+    | '/collections/'
+    | '/guides/'
     | '/space-command/'
   fileRoutesById: FileRoutesById
 }
@@ -86,7 +175,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  HelpAboutRoute: typeof HelpAboutRoute
+  HelpContactRoute: typeof HelpContactRoute
+  HelpFaqRoute: typeof HelpFaqRoute
+  HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
+  HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
+  CollectionsIndexRoute: typeof CollectionsIndexRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
 }
 
@@ -120,11 +216,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collections/': {
+      id: '/collections/'
+      path: '/collections'
+      fullPath: '/collections/'
+      preLoaderRoute: typeof CollectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pattern/$patternId': {
       id: '/pattern/$patternId'
       path: '/pattern/$patternId'
       fullPath: '/pattern/$patternId'
       preLoaderRoute: typeof PatternPatternIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/terms-of-service': {
+      id: '/help/terms-of-service'
+      path: '/help/terms-of-service'
+      fullPath: '/help/terms-of-service'
+      preLoaderRoute: typeof HelpTermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/privacy-policy': {
+      id: '/help/privacy-policy'
+      path: '/help/privacy-policy'
+      fullPath: '/help/privacy-policy'
+      preLoaderRoute: typeof HelpPrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/faq': {
+      id: '/help/faq'
+      path: '/help/faq'
+      fullPath: '/help/faq'
+      preLoaderRoute: typeof HelpFaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/contact': {
+      id: '/help/contact'
+      path: '/help/contact'
+      fullPath: '/help/contact'
+      preLoaderRoute: typeof HelpContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/about': {
+      id: '/help/about'
+      path: '/help/about'
+      fullPath: '/help/about'
+      preLoaderRoute: typeof HelpAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -134,7 +279,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  HelpAboutRoute: HelpAboutRoute,
+  HelpContactRoute: HelpContactRoute,
+  HelpFaqRoute: HelpFaqRoute,
+  HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
+  HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
+  CollectionsIndexRoute: CollectionsIndexRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
 }
 export const routeTree = rootRouteImport
