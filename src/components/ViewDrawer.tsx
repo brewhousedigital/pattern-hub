@@ -18,8 +18,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 
-import { Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack } from '@mui/material';
-import type { TypePatternResponse } from '@/functions/database/patterns.ts';
+import { Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack, Grid } from '@mui/material';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
@@ -197,82 +196,33 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            <Box sx={{ display: 'flex', gap: 1.5, mb: 2.5, flexWrap: 'wrap' }}>
-              {/* Favorite */}
-              <Paper
-                elevation={0}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  bgcolor: favorited ? alpha('#C8A96E', 0.12) : alpha('#ffffff', 0.04),
-                  border: `1px solid ${favorited ? alpha('#C8A96E', 0.4) : alpha('#ffffff', 0.1)}`,
-                  borderRadius: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    bgcolor: alpha('#C8A96E', 0.1),
-                    borderColor: alpha('#C8A96E', 0.35),
-                  },
-                }}
-                onClick={handleFavorite}
-              >
-                <IconButton size="small" disableRipple sx={{ p: 0 }}>
-                  {favorited ? (
-                    <FavoriteIcon sx={{ fontSize: '1.1rem', color: 'primary.main' }} />
-                  ) : (
-                    <FavoriteBorderIcon sx={{ fontSize: '1.1rem', color: 'text.secondary' }} />
-                  )}
-                </IconButton>
-                <Typography
-                  variant="body2"
-                  sx={{ color: favorited ? 'primary.main' : 'text.secondary', fontWeight: 700 }}
+            <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  onClick={handleFavorite}
+                  size="small"
+                  disableElevation
+                  variant={favorited ? 'contained' : 'outlined'}
+                  fullWidth
+                  startIcon={favorited ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 >
-                  {favoriteCount}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {favorited ? 'Saved' : 'Favorite'}
-                </Typography>
-              </Paper>
+                  Favorite
+                </Button>
+              </Grid>
 
-              {/* Done */}
-              <Paper
-                elevation={0}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  bgcolor: done ? alpha('#7B9E8F', 0.12) : alpha('#ffffff', 0.04),
-                  border: `1px solid ${done ? alpha('#7B9E8F', 0.4) : alpha('#ffffff', 0.1)}`,
-                  borderRadius: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    bgcolor: alpha('#7B9E8F', 0.1),
-                    borderColor: alpha('#7B9E8F', 0.35),
-                  },
-                }}
-                onClick={handleDone}
-              >
-                <IconButton size="small" disableRipple sx={{ p: 0 }}>
-                  {done ? (
-                    <CheckCircleIcon sx={{ fontSize: '1.1rem', color: 'secondary.main' }} />
-                  ) : (
-                    <CheckCircleOutlineIcon sx={{ fontSize: '1.1rem', color: 'text.secondary' }} />
-                  )}
-                </IconButton>
-                <Typography variant="body2" sx={{ color: done ? 'secondary.main' : 'text.secondary', fontWeight: 700 }}>
-                  {doneCount}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {done ? 'Completed' : 'Mark Done'}
-                </Typography>
-              </Paper>
-            </Box>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  onClick={handleDone}
+                  size="small"
+                  disableElevation
+                  variant={done ? 'contained' : 'outlined'}
+                  fullWidth
+                  startIcon={done ? <CheckCircleIcon /> : <CheckCircleOutlineIcon />}
+                >
+                  Mark as Done
+                </Button>
+              </Grid>
+            </Grid>
 
             <Box sx={{ mb: 2.5 }}>
               <SectionLabel>Community Rating</SectionLabel>

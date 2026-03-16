@@ -146,7 +146,7 @@ function RouteComponent() {
       <Box sx={ContainerStyles}>
         {isMediumSizeAndUp && <SidebarBlock />}
 
-        <Box sx={{ p: 3, mr: 2, mb: 2, backgroundColor: PRIMARY_COLOR, borderRadius: 6 }}>
+        <Box sx={{ p: 3, mr: 2, mb: 2, ml: { xs: 2, md: 0 }, backgroundColor: PRIMARY_COLOR, borderRadius: 6 }}>
           <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
 
           <Stack

@@ -51,7 +51,6 @@ const baseTheme = createTheme({
         root: {
           textTransform: 'none',
           borderRadius: 12,
-          padding: '6px 24px',
           letterSpacing: '1px',
         },
       },
