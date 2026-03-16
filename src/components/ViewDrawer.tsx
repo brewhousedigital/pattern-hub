@@ -226,6 +226,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <Box sx={{ mb: 2.5 }}>
               <SectionLabel>Community Rating</SectionLabel>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Rating
                   value={userRating ?? 3}
@@ -241,6 +242,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   3 · 50 ratings
                 </Typography>
               </Box>
+
               {userRating && (
                 <Typography variant="caption" sx={{ color: 'secondary.main', mt: 0.5, display: 'block' }}>
                   You rated this {userRating} stars

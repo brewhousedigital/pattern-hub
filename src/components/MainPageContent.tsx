@@ -1,10 +1,10 @@
 import React from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, Link } from '@tanstack/react-router';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 
-import { Box, Grid, Card, CardContent, Typography, Stack, Alert, Link } from '@mui/material';
+import { Box, Grid, Card, CardContent, Typography, Stack, Alert, Link as MuiLink } from '@mui/material';
 
 type MainContentProps = {
   data?: TypePatternResponse[];
@@ -62,7 +62,12 @@ export const MainPageContent = (props: MainContentProps) => {
 
           return (
             <Grid key={`pattern-${pattern.id}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
-              <Link href="#" onClick={(e) => handleClick(e, pattern)} style={{ textDecoration: 'none' }}>
+              <MuiLink
+                component={Link}
+                to={`/pattern/${pattern.id}`}
+                onClick={(e) => handleClick(e, pattern)}
+                style={{ textDecoration: 'none' }}
+              >
                 <Card elevation={0}>
                   <Box sx={{ p: 2 }}>
                     <img
@@ -94,7 +99,7 @@ export const MainPageContent = (props: MainContentProps) => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Link>
+              </MuiLink>
             </Grid>
           );
         })}

@@ -4,6 +4,7 @@ import { useGlobalReadyToSearch, useGlobalSearch } from '@/data/search';
 import { HomepageSearch } from '@/components/HomepageSearch';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
+import { useGlobalIsViewOpen } from '@/data/view';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
@@ -11,6 +12,7 @@ import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMedia
 export const Header = () => {
   const { resetSearchTerm } = useGlobalSearch();
   const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
+  const { handleCloseView } = useGlobalIsViewOpen();
 
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -20,6 +22,7 @@ export const Header = () => {
   const handleReturnHome = () => {
     resetSearchTerm();
     resetReadyToSearchTerm();
+    handleCloseView();
   };
 
   // Mobile view
