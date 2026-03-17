@@ -86,7 +86,9 @@ const authenticatedMenuItems = [
   {
     label: 'Profile',
     icon: <PersonRoundedIcon />,
-    onClick: () => {},
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/profile' });
+    },
     disabled: true,
   },
   {

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useMutationAuthSignIn, useMutationAuthGetUser } from '@/functions/database/authentication';
+import { enqueueSnackbar } from 'notistack';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -15,34 +17,49 @@ import {
   InputAdornment,
   IconButton,
   Link as MuiLink,
-  Alert,
   CircularProgress,
 } from '@mui/material';
+import { useGlobalAuthData } from '@/data/auth-data.ts';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const signIn = useMutationAuthSignIn();
+  const getUser = useMutationAuthGetUser();
+
+  const navigate = useNavigate();
+
+  const { setAuthData } = useGlobalAuthData();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+
     setLoading(true);
+
     try {
-      // Replace with your auth call
-      await new Promise((res) => setTimeout(res, 1200));
-      // e.g. await login({ email, password });
-    } catch {
-      setError('Invalid email or password. Please try again.');
-    } finally {
-      setLoading(false);
+      const signInData = await signIn.mutateAsync({ email, password });
+
+      // The sign in function doesn't automatically expand data points so we need to call it again to get the full record
+      const userData = await getUser.mutateAsync({ userId: signInData.record.id });
+
+      setAuthData(userData);
+
+      navigate({
+        to: '/profile',
+      }).then();
+    } catch (error: any) {
+      console.error('Error loading your user data:', error);
+      enqueueSnackbar('Invalid email or password. Please try again.', { variant: 'error' });
     }
+
+    setLoading(false);
   };
 
   const isValid = email.trim().length > 0 && password.length > 0;
@@ -59,12 +76,6 @@ function RouteComponent() {
             Sign in to your account to continue
           </Typography>
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
-        )}
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>

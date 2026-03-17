@@ -8,7 +8,10 @@ export type TypeAuthData = {
   id: string;
   name: string;
   level: number;
+  site_color?: string;
+  verified: boolean;
   admin?: boolean;
+  showAdminBanner?: boolean;
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;

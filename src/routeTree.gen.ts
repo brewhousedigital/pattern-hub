@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
   id: '/space-command/',
   path: '/space-command/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
+  '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/collections/'
     | '/guides/'
+    | '/profile/'
     | '/space-command/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/collections'
     | '/guides'
+    | '/profile'
     | '/space-command'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/collections/'
     | '/guides/'
+    | '/profile/'
     | '/space-command/'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
 }
 
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/space-command'
       fullPath: '/space-command/'
       preLoaderRoute: typeof SpaceCommandIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides/': {
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   PatternPatternIdRoute: PatternPatternIdRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
 }
 export const routeTree = rootRouteImport

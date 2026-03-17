@@ -64,7 +64,7 @@ function RouteComponent() {
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Just an email and a password. That's all we need.
+            Favorites, ratings, and tracking which patterns you've completed already.
           </Typography>
         </Box>
 
@@ -236,29 +236,6 @@ const Card = styled(Paper)(({ theme }) => ({
   borderRadius: 20,
   border: `1px solid ${theme.palette.divider}`,
   boxShadow: `0 8px 40px ${alpha(theme.palette.common.black, 0.08)}`,
-}));
-
-const FreeBadge = styled(Box)(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: theme.spacing(0.75),
-  backgroundColor: alpha(theme.palette.success.main, 0.1),
-  color: theme.palette.success.dark,
-  borderRadius: 20,
-  padding: theme.spacing(0.4, 1.5),
-  marginBottom: theme.spacing(2),
-  fontSize: '0.8rem',
-  fontWeight: 600,
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 10,
-    transition: 'box-shadow 0.2s ease',
-    '&.Mui-focused': {
-      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`,
-    },
-  },
 }));
 
 const SubmitButton = styled(Button)(({ theme }) => ({
