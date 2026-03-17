@@ -134,14 +134,14 @@ const unauthenticatedMenuItems = [
     label: 'Log In',
     icon: <PersonRoundedIcon />,
     onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-      navigateTo({ to: '/login' });
+      navigateTo({ to: '/auth/login' });
     },
   },
   {
     label: 'Register an Account',
     icon: <HowToRegRoundedIcon />,
     onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-      navigateTo({ to: '/register' });
+      navigateTo({ to: '/auth/register' });
     },
   },
 ];

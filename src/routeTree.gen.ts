@@ -9,8 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
@@ -21,17 +19,9 @@ import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-pol
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
 import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpAboutRouteImport } from './routes/help/about'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -82,11 +72,21 @@ const HelpAboutRoute = HelpAboutRouteImport.update({
   path: '/help/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -99,8 +99,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -114,8 +114,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -130,8 +130,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/register'
+    | '/auth/login'
+    | '/auth/register'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -144,8 +144,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
-    | '/register'
+    | '/auth/login'
+    | '/auth/register'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -158,8 +158,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/login'
-    | '/register'
+    | '/auth/login'
+    | '/auth/register'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -173,8 +173,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
   HelpAboutRoute: typeof HelpAboutRoute
   HelpContactRoute: typeof HelpContactRoute
   HelpFaqRoute: typeof HelpFaqRoute
@@ -188,20 +188,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -272,13 +258,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LoginRoute: LoginRoute,
-  RegisterRoute: RegisterRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
   HelpAboutRoute: HelpAboutRoute,
   HelpContactRoute: HelpContactRoute,
   HelpFaqRoute: HelpFaqRoute,
