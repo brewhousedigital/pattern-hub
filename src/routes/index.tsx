@@ -1,7 +1,6 @@
 import React from 'react';
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
+import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { MainPageContent } from '@/components/MainPageContent';
@@ -32,8 +31,6 @@ function RouteComponent() {
 
   const { setViewData } = useGlobalViewData();
 
-  const navigate = useNavigate();
-
   const { view } = useSearch({ from: '/' });
 
   const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
@@ -45,23 +42,8 @@ function RouteComponent() {
     setPatternPageNumber(value);
   };
 
-  const { searchTerm, setSearchTerm } = useGlobalSearch();
+  const { setSearchTerm } = useGlobalSearch();
   const { readyToSearchTerm, setReadyToSearchTerm } = useGlobalReadyToSearch();
-  const debouncedSearchTerm = useDebounce(searchTerm, 600);
-
-  React.useEffect(() => {
-    setReadyToSearchTerm(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
-
-  // When the search term is updated, push it to the URL
-  React.useEffect(() => {
-    if (readyToSearchTerm) {
-      navigate({
-        to: '/',
-        search: (prev) => ({ ...prev, q: readyToSearchTerm }),
-      }).then();
-    }
-  }, [readyToSearchTerm]);
 
   const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
     readyToSearchTerm,

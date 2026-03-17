@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -9,6 +9,21 @@ import { IconButton, TextField } from '@mui/material';
 export const HomepageSearch = () => {
   const { searchTerm, setSearchTerm, resetSearchTerm } = useGlobalSearch();
   const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
+
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (location) {
+      if (location.pathname !== '/') {
+        handleClearSearch();
+      } else {
+        console.log('>>>location', location);
+        if (location?.search && location?.search?.q) {
+          setSearchTerm(location?.search?.q);
+        }
+      }
+    }
+  }, [location]);
 
   const handleClearSearch = () => {
     resetSearchTerm();
