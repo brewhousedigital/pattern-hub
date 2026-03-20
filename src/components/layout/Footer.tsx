@@ -1,8 +1,9 @@
-import { Logo, subLinkStyles } from '@/components/Header';
+import { Logo } from '@/components/layout/Header/Header.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
-import { SectionLabel } from '@/components/ViewHelpers';
-import { DOMAIN_URL } from '@/data/constants';
+import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
+import { SectionLabel } from '@/components/ViewHelpers.tsx';
+import { DOMAIN_URL } from '@/data/constants.ts';
+import { subLinkStyles } from '@/components/layout/Header/sublink-styles.ts';
 
 import RedditIcon from '@mui/icons-material/Reddit';
 import ShareIcon from '@mui/icons-material/Share';

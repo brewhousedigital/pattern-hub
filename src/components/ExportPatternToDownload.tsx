@@ -21,7 +21,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
+import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 
 type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 type DpiOption = 72 | 96 | 150 | 300 | 600;

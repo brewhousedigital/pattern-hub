@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
+import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search.ts';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
@@ -11,6 +11,11 @@ export const HomepageSearch = () => {
   const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
 
   const location = useLocation();
+
+  const handleClearSearch = () => {
+    resetSearchTerm();
+    resetReadyToSearchTerm();
+  };
 
   React.useEffect(() => {
     if (location) {
@@ -24,11 +29,6 @@ export const HomepageSearch = () => {
       }
     }
   }, [location]);
-
-  const handleClearSearch = () => {
-    resetSearchTerm();
-    resetReadyToSearchTerm();
-  };
 
   return (
     <TextField

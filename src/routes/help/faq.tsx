@@ -3,7 +3,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useQueryGetAllFAQ } from '@/functions/database/faq';
-import { PRIMARY_COLOR } from '@/data/constants';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

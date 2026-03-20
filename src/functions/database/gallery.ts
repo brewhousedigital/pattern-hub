@@ -7,7 +7,7 @@ export const useMutationGetGalleryUploadAuth = () => {
 
   return useMutation({
     mutationFn: async () => {
-      let domain = `${pocketbaseDomain}/api/images/auth`;
+      const domain = `${pocketbaseDomain}/api/images/auth`;
 
       const response = await fetch(domain, fetchOptions);
 

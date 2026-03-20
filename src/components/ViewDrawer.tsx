@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup.ts';
+import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';

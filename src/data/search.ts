@@ -2,7 +2,7 @@ import React from 'react';
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { atom, useAtom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import { useDebounce } from '@/functions/hooks/useDebounce.ts';
+import { useDebounce } from '@/functions/hooks/useDebounce';
 
 const globalSearchAtom = atomWithStorage('globalSearchAtom', '');
 

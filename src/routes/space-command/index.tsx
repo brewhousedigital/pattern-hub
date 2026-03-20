@@ -9,7 +9,7 @@ import { useQueryGetAllAuthors } from '@/functions/database/authors';
 import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
-import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import {
   type TypePatternResponse,

@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { HeaderProfileMenu } from '@/components/HeaderProfileMenu';
 import { useGlobalReadyToSearch, useGlobalSearch } from '@/data/search';
-import { HomepageSearch } from '@/components/HomepageSearch';
+import { HomepageSearch } from '@/components/layout/HomepageSearch.tsx';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
+import { subLinkStyles } from '@/components/layout/Header/sublink-styles';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
@@ -122,18 +123,4 @@ const logoStyles = {
   fontSize: 28,
   fontWeight: 700,
   textDecoration: 'none',
-};
-
-export const subLinkStyles = {
-  color: '#222',
-  textDecoration: 'none',
-  fontWeight: 500,
-  '&:hover': {
-    color: PRIMARY_COLOR,
-    textDecoration: 'underline',
-  },
-  '&:focus': {
-    color: PRIMARY_COLOR,
-    textDecoration: 'underline',
-  },
 };

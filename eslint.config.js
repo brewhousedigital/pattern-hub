@@ -25,4 +25,11 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'off',
     },
   },
+  // Custom rule to ignore linting issues with Tanstack Router
+  {
+    files: ['src/routes/**/*'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ]);

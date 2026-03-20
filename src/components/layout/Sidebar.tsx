@@ -1,4 +1,4 @@
-import type { TypeTagObject } from '@/functions/types/types';
+import type { TypeTagObject } from '@/functions/types/types.ts';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';

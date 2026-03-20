@@ -1,8 +1,8 @@
 import React from 'react';
 import type { TypeComponentWithChildrenProps } from '../functions/types/types';
 import { useRefreshAuth } from '@/data/auth-data';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import { Header } from '@/components/layout/Header/Header';
+import { Footer } from '@/components/layout/Footer.tsx';
 
 import { Box } from '@mui/material';
 

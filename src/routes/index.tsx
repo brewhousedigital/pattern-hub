@@ -2,15 +2,17 @@ import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
-import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { MainPageContent } from '@/components/MainPageContent';
 import { buildUpdatedTerm } from '@/functions/utilities/searchBuildUpdatedTerms';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import type { TypeTagObject } from '@/functions/types/types';
-import { SidebarList, SidebarCategoryTitle } from '@/components/Sidebar';
+import { SidebarList, SidebarCategoryTitle } from '@/components/layout/Sidebar.tsx';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
 import { ViewDrawer } from '@/components/ViewDrawer';
 import { PRIMARY_COLOR } from '@/data/constants';
+import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
+import type { TypePatternResponse } from '@/functions/database/patterns';
 
 import { Box, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
@@ -18,6 +20,7 @@ type PatternSearch = {
   q?: string;
   view?: string;
 };
+
 export const Route = createFileRoute('/')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): PatternSearch => {
@@ -42,8 +45,7 @@ function RouteComponent() {
     setPatternPageNumber(value);
   };
 
-  const { setSearchTerm } = useGlobalSearch();
-  const { readyToSearchTerm, setReadyToSearchTerm } = useGlobalReadyToSearch();
+  const { readyToSearchTerm } = useGlobalReadyToSearch();
 
   const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
     readyToSearchTerm,
@@ -62,52 +64,6 @@ function RouteComponent() {
     }
   }, [data]);
 
-  // Generate the list of tags based on the API Query
-  const dataTags =
-    data?.items
-      ?.map((item) => {
-        const tags = item.tags.split(',');
-        return tags.map((tag) => tag.trim().toLowerCase());
-      })
-      .flat() || [];
-
-  const tagCounts = dataTags
-    .reduce<TypeTagObject[]>((acc, tag) => {
-      const existing = acc.find((item) => item.tag === tag);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ tag, count: 1 });
-      }
-      return acc;
-    }, [])
-    .sort((a, b) => a.tag.localeCompare(b.tag));
-
-  const syncTerms = (tag: string, prefix = '') => {
-    const updater = (prev: string) => buildUpdatedTerm(prev, tag, prefix);
-    setSearchTerm(updater);
-    setReadyToSearchTerm(updater);
-  };
-
-  const handleTagClickAdd = (tag: string) => syncTerms(tag);
-  const handleTagClickRemove = (tag: string) => syncTerms(tag, '-');
-
-  const SidebarBlock = () => {
-    return (
-      <Box>
-        <SidebarCategoryTitle title="Current Page Tags" />
-
-        <SidebarList
-          isPending={isPending}
-          isError={isError}
-          data={tagCounts}
-          handleClickAdd={handleTagClickAdd}
-          handleClickRemove={handleTagClickRemove}
-        />
-      </Box>
-    );
-  };
-
   return (
     <Box>
       <Fade in={isFetching}>
@@ -122,11 +78,11 @@ function RouteComponent() {
         onClose={handleCloseMobileSidebar}
         onOpen={handleOpenMobileSidebar}
       >
-        <SidebarBlock />
+        <SidebarBlock isPending={isPending} isError={isError} data={data} />
       </SwipeableDrawer>
 
       <Box sx={ContainerStyles}>
-        {isMediumSizeAndUp && <SidebarBlock />}
+        {isMediumSizeAndUp && <SidebarBlock isPending={isPending} isError={isError} data={data} />}
 
         <Box
           sx={{
@@ -185,6 +141,61 @@ function RouteComponent() {
     </Box>
   );
 }
+
+type SidebarBlockProps = {
+  isPending: boolean;
+  isError: boolean;
+  data: TypePaginationDatabaseResponse<TypePatternResponse> | undefined;
+};
+
+const SidebarBlock = (props: SidebarBlockProps) => {
+  const { setSearchTerm } = useGlobalSearch();
+  const { setReadyToSearchTerm } = useGlobalReadyToSearch();
+
+  // Generate the list of tags based on the API Query
+  const dataTags =
+    props.data?.items
+      ?.map((item) => {
+        const tags = item.tags.split(',');
+        return tags.map((tag) => tag.trim().toLowerCase());
+      })
+      .flat() || [];
+
+  const tagCounts = dataTags
+    .reduce<TypeTagObject[]>((acc, tag) => {
+      const existing = acc.find((item) => item.tag === tag);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ tag, count: 1 });
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.tag.localeCompare(b.tag));
+
+  const syncTerms = (tag: string, prefix = '') => {
+    const updater = (prev: string) => buildUpdatedTerm(prev, tag, prefix);
+    setSearchTerm(updater);
+    setReadyToSearchTerm(updater);
+  };
+
+  const handleTagClickAdd = (tag: string) => syncTerms(tag);
+  const handleTagClickRemove = (tag: string) => syncTerms(tag, '-');
+
+  return (
+    <Box>
+      <SidebarCategoryTitle title="Current Page Tags" />
+
+      <SidebarList
+        isPending={props.isPending}
+        isError={props.isError}
+        data={tagCounts}
+        handleClickAdd={handleTagClickAdd}
+        handleClickRemove={handleTagClickRemove}
+      />
+    </Box>
+  );
+};
 
 const ContainerStyles = {
   display: 'grid',

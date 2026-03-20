@@ -17,10 +17,11 @@ export default defineConfig({
       target: 'react',
       autoCodeSplitting: true,
     }),
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
+    // This stopped working with Vite 8
+    /*react({
+      // Add this preset to enable the React Compiler
+      reactCompilerPreset: true,
+    }),*/
+    react(),
   ],
 });

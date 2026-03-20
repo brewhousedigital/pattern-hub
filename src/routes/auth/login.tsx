@@ -19,7 +19,7 @@ import {
   Link as MuiLink,
   CircularProgress,
 } from '@mui/material';
-import { useGlobalAuthData } from '@/data/auth-data.ts';
+import { useGlobalAuthData } from '@/data/auth-data';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,

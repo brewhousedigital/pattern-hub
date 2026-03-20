@@ -1,4 +1,4 @@
-import { pocketbase } from './authentication-setup.ts';
+import { pocketbase } from './authentication-setup';
 
 type TypeMethods = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 

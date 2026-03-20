@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { ViewDrawer } from '@/components/ViewDrawer';
 import { useGlobalViewData } from '@/data/view';
 import { useQueryGetPatternById } from '@/functions/database/patterns';
-import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
