@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
+import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
+import { useQueryGetUserMarkedDoneByPagination } from '@/functions/database/marked-done';
+import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { PaginationBox } from '@/components/PaginationBox';
 
 import { styled, alpha } from '@mui/material/styles';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -14,6 +19,8 @@ import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
 import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
 
 import {
+  Alert,
+  CircularProgress,
   Box,
   Container,
   Typography,
@@ -57,17 +64,26 @@ function RouteComponent() {
 const ProfileContent = () => {
   const { authData } = useGlobalAuthData();
 
-  console.log('>>>authData', authData);
+  const [favoritePagination, setFavoritePagination] = React.useState(1);
+  const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
 
-  const [favorites, setFavorites] = useState<PatternCard[]>([]);
-  const [completed, setCompleted] = useState<PatternCard[]>([]);
-  const [rated, setRated] = useState<PatternCard[]>([]);
+  const {
+    isPending: isPendingFavorite,
+    isError: isErrorFavorite,
+    data: dataFavorite,
+    refetch: refetchFavorite,
+  } = useQueryGetUserFavoritesByPagination(favoritePagination);
+
+  const {
+    isPending: isPendingMarkedDone,
+    isError: isErrorMarkedDone,
+    data: dataMarkedDone,
+    refetch: refetchMarkedDone,
+  } = useQueryGetUserMarkedDoneByPagination(markedDonePagination);
+
   const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const [tab, setTab] = useState(0);
-
-  //if (loading) return <ProfileSkeleton />;
 
   if (!authData) return null;
 
@@ -109,26 +125,22 @@ const ProfileContent = () => {
               {[
                 {
                   icon: <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />,
-                  //value: authData.stats.favorites,
-                  value: 1,
+                  value: dataFavorite?.totalItems || 0,
                   label: 'Saved',
                 },
                 {
                   icon: <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />,
-                  //value: authData.stats.completed,
-                  value: 1,
+                  value: dataMarkedDone?.totalItems || 0,
                   label: 'Done',
                 },
                 {
                   icon: <StarOutlinedIcon sx={{ fontSize: 16, color: 'primary.main' }} />,
-                  //value: authData.stats.rated,
-                  value: 1,
+                  value: dataMarkedDone?.totalItems || 0,
                   label: 'Rated',
                 },
                 {
                   icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 16, color: 'secondary.main' }} />,
-                  //value: authData.stats.photos,
-                  value: 1,
+                  value: dataMarkedDone?.totalItems || 0,
                   label: 'Photos',
                 },
               ].map((stat) => (
@@ -212,48 +224,74 @@ const ProfileContent = () => {
 
           {/* Tab: Favorites */}
           {tab === 0 && (
-            <Box>
-              {/* ── DB CALL: getUserFavorites(userId) ─────────────────────── */}
-              {favorites.length === 0 ? (
-                <EmptyState icon={<FavoriteBorderOutlinedIcon />} message="No favorited patterns yet." />
-              ) : (
-                <PatternGrid patterns={favorites} />
+            <>
+              <PatternGrid
+                patterns={dataFavorite?.items}
+                isPending={isPendingFavorite}
+                isError={isErrorFavorite}
+                isEmptyMessage="No favorited patterns yet."
+                icon={<FavoriteBorderOutlinedIcon />}
+              />
+
+              {dataFavorite && dataFavorite?.totalItems > 0 && (
+                <PaginationBox data={dataFavorite} value={favoritePagination} setter={setFavoritePagination} />
               )}
-            </Box>
+            </>
           )}
 
           {/* Tab: Completed */}
           {tab === 1 && (
-            <Box>
-              {/* ── DB CALL: getUserCompletedPatterns(userId) ─────────────── */}
-              {completed.length === 0 ? (
-                <EmptyState icon={<TaskAltOutlinedIcon />} message="No completed patterns yet." />
-              ) : (
-                <PatternGrid patterns={completed} showCompleted />
+            <>
+              <PatternGrid
+                patterns={dataMarkedDone?.items}
+                isPending={isPendingMarkedDone}
+                isError={isErrorMarkedDone}
+                isEmptyMessage="No completed patterns yet."
+                icon={<TaskAltOutlinedIcon />}
+                showCompleted
+              />
+
+              {dataMarkedDone && dataMarkedDone?.totalItems > 0 && (
+                <PaginationBox data={dataMarkedDone} value={markedDonePagination} setter={setMarkedDonePagination} />
               )}
-            </Box>
+            </>
           )}
 
           {/* Tab: Rated */}
           {tab === 2 && (
-            <Box>
-              {/* ── DB CALL: getUserRatedPatterns(userId) ─────────────────── */}
-              {rated.length === 0 ? (
-                <EmptyState icon={<StarOutlinedIcon />} message="No rated patterns yet." />
-              ) : (
-                <PatternGrid patterns={rated} showRating />
+            <>
+              <PatternGrid
+                patterns={dataMarkedDone?.items}
+                isPending={isPendingMarkedDone}
+                isError={isErrorMarkedDone}
+                isEmptyMessage="No rated patterns yet."
+                icon={<StarOutlinedIcon />}
+                showRating
+              />
+
+              {dataMarkedDone && dataMarkedDone?.totalItems > 0 && (
+                <PaginationBox data={dataMarkedDone} value={markedDonePagination} setter={setMarkedDonePagination} />
               )}
-            </Box>
+            </>
           )}
 
           {/* Tab: Gallery */}
           {tab === 3 && (
             <Box>
-              {/* ── DB CALL: getUserGallery(userId) ───────────────────────── */}
               {gallery.length === 0 ? (
                 <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
               ) : (
-                <GalleryTab photos={gallery} />
+                <>
+                  <GalleryTab photos={gallery} />
+
+                  {dataMarkedDone && dataMarkedDone?.totalItems > 0 && (
+                    <PaginationBox
+                      data={dataMarkedDone}
+                      value={markedDonePagination}
+                      setter={setMarkedDonePagination}
+                    />
+                  )}
+                </>
               )}
             </Box>
           )}
@@ -263,15 +301,6 @@ const ProfileContent = () => {
   );
 };
 
-interface PatternCard {
-  id: string;
-  title: string;
-  thumbnailUrl: string;
-  difficulty: string;
-  userRating?: number; // 1–5, present only on rated tab
-  completedAt?: string; // ISO date, present only on completed tab
-}
-
 interface GalleryPhoto {
   id: string;
   imageUrl: string;
@@ -279,53 +308,6 @@ interface GalleryPhoto {
   patternTitle?: string;
   uploadedAt: string;
 }
-
-interface UserProfile {
-  username: string;
-  joinedAt: string; // ISO date
-  blurb: string;
-  interests: string[];
-  avatarUrl?: string;
-  stats: {
-    favorites: number;
-    completed: number;
-    rated: number;
-    photos: number;
-  };
-}
-
-const MOCK_PROFILE: UserProfile = {
-  username: 'glasscraft_mae',
-  joinedAt: '2023-06-12T00:00:00Z',
-  blurb:
-    'Amateur stained glass artist based in Vermont. I love geometric patterns and anything with deep jewel tones. Currently obsessed with Gothic cathedral windows.',
-  interests: ['Geometric', 'Art Nouveau', 'Gothic', 'Floral', 'Abstract', 'Mosaics', 'Bevels', 'Restoration'],
-  avatarUrl: undefined,
-  stats: { favorites: 24, completed: 11, rated: 18, photos: 7 },
-};
-
-const MOCK_FAVORITES: PatternCard[] = Array.from({ length: 6 }, (_, i) => ({
-  id: `fav-${i}`,
-  title: `Pattern ${i + 1}`,
-  thumbnailUrl: `https://picsum.photos/seed/fav${i}/300/300`,
-  difficulty: ['Beginner', 'Intermediate', 'Advanced'][i % 3],
-}));
-
-const MOCK_COMPLETED: PatternCard[] = Array.from({ length: 4 }, (_, i) => ({
-  id: `done-${i}`,
-  title: `Completed Pattern ${i + 1}`,
-  thumbnailUrl: `https://picsum.photos/seed/done${i}/300/300`,
-  difficulty: ['Beginner', 'Intermediate'][i % 2],
-  completedAt: new Date(Date.now() - i * 12096e5).toISOString(),
-}));
-
-const MOCK_RATED: PatternCard[] = Array.from({ length: 5 }, (_, i) => ({
-  id: `rated-${i}`,
-  title: `Rated Pattern ${i + 1}`,
-  thumbnailUrl: `https://picsum.photos/seed/rated${i}/300/300`,
-  difficulty: 'Intermediate',
-  userRating: 5 - (i % 3),
-}));
 
 const MOCK_GALLERY: GalleryPhoto[] = Array.from({ length: 7 }, (_, i) => ({
   id: `photo-${i}`,
@@ -379,7 +361,7 @@ const StatBox = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: theme.spacing(0.25),
+  gap: theme.spacing(0.5),
   padding: theme.spacing(1.5, 2),
   borderRadius: 12,
   backgroundColor: alpha(theme.palette.primary.main, 0.05),
@@ -417,66 +399,60 @@ const GalleryImage = styled('img')({
   display: 'block',
 });
 
-const PatternGrid: React.FC<{ patterns: PatternCard[]; showRating?: boolean; showCompleted?: boolean }> = ({
-  patterns,
-  showRating,
-  showCompleted,
-}) => (
-  <Grid container spacing={2}>
-    {patterns.map((p) => (
-      <Grid size={{ xs: 12, sm: 6, md: 4 }} key={p.id}>
-        <PatternTile elevation={0}>
-          <Box sx={{ position: 'relative' }}>
-            <Box
-              component="img"
-              src={p.thumbnailUrl}
-              alt={p.title}
-              sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
-            />
-            {showCompleted && (
-              <Tooltip title={`Completed ${createPrettyDate(p.completedAt!)}`}>
-                <CheckCircleIcon
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    color: 'success.main',
-                    backgroundColor: 'white',
-                    borderRadius: '50%',
-                    fontSize: 24,
-                  }}
-                />
-              </Tooltip>
-            )}
-          </Box>
-          <Box sx={{ p: 1.75 }}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>
-              {p.title}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.75 }}>
-              <Chip
-                label={p.difficulty}
-                size="small"
-                color={difficultyColor(p.difficulty)}
-                variant="outlined"
-                sx={{ height: 22, fontSize: '0.7rem' }}
+type PatternGridProps = {
+  patterns?: TypeFavoriteDoneRatingsResponse[];
+  isEmptyMessage: string;
+  icon: React.ReactNode;
+  isPending: boolean;
+  isError: boolean;
+  showRating?: boolean;
+  showCompleted?: boolean;
+};
+
+const PatternGrid = (props: PatternGridProps) => {
+  if (props.isPending) {
+    return <CircularProgress />;
+  }
+
+  if (props.isError) {
+    return <Alert severity="error">Unable to load your list 😔</Alert>;
+  }
+
+  if (props?.patterns?.length === 0) {
+    return <EmptyState icon={props.icon} message={props.isEmptyMessage} />;
+  }
+
+  return (
+    <Grid container spacing={2} sx={{ mb: 2.5 }}>
+      {props.patterns?.map((pattern) => (
+        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={pattern.id}>
+          <PatternTile elevation={0}>
+            <Box sx={{ position: 'relative' }}>
+              <Box
+                component="img"
+                src={generatePbImage(pattern.expand.pattern_id)}
+                alt={pattern.expand.pattern_id.name}
+                sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
               />
-              {showRating && p.userRating !== undefined && (
-                <Rating
-                  value={p.userRating}
-                  readOnly
-                  size="small"
-                  precision={1}
-                  sx={{ '& .MuiRating-iconFilled': { color: 'primary.main' } }}
-                />
+            </Box>
+
+            <Box sx={{ p: 1.75 }}>
+              <Typography variant="subtitle2" fontWeight={700} noWrap>
+                {pattern.expand.pattern_id.name}
+              </Typography>
+
+              {props.showCompleted && (
+                <Typography variant="body2" sx={{ opacity: 0.7, fontSize: 12 }}>
+                  Completed {createPrettyDate(pattern.created!)}
+                </Typography>
               )}
             </Box>
-          </Box>
-        </PatternTile>
-      </Grid>
-    ))}
-  </Grid>
-);
+          </PatternTile>
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
 
 const GalleryTab: React.FC<{ photos: GalleryPhoto[] }> = ({ photos }) => (
   <ImageList variant="masonry" cols={3} gap={12}>
@@ -523,30 +499,6 @@ const GalleryTab: React.FC<{ photos: GalleryPhoto[] }> = ({ photos }) => (
       </ImageListItem>
     ))}
   </ImageList>
-);
-
-const ProfileSkeleton: React.FC = () => (
-  <Box>
-    <Skeleton variant="rectangular" height={200} />
-    <Container maxWidth="lg">
-      <Paper sx={{ borderRadius: 3, p: 4, mt: '-60px', position: 'relative', zIndex: 1 }}>
-        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-end', mb: 3 }}>
-          <Skeleton variant="circular" width={96} height={96} />
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width={200} height={36} />
-            <Skeleton variant="text" width={140} height={24} />
-          </Box>
-        </Box>
-        <Skeleton variant="text" width="80%" />
-        <Skeleton variant="text" width="60%" />
-        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" width={72} height={28} />
-          ))}
-        </Box>
-      </Paper>
-    </Container>
-  </Box>
 );
 
 const EmptyState: React.FC<{ icon: React.ReactNode; message: string }> = ({ icon, message }) => (

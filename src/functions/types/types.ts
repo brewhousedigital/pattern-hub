@@ -1,4 +1,5 @@
 import React from 'react';
+import type { TypePatternResponse } from '@/functions/database/patterns';
 
 export type TypeComponentWithChildrenProps = {
   children?: React.ReactNode;
@@ -21,4 +22,18 @@ export type TypeReadOnlyDatabaseItem = {
 export type TypeTagObject = {
   tag: string;
   count: number;
+};
+
+// This is shared between Favorites | Marked Done | Ratings
+export type TypeFavoriteDoneRatingsResponse = {
+  collectionId: string;
+  collectionName: string;
+  id: string;
+  owner_id: string;
+  pattern_id: string;
+  created: Date;
+  updated: Date;
+  expand: {
+    pattern_id: TypePatternResponse;
+  };
 };

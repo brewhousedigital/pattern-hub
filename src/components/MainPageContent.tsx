@@ -3,6 +3,7 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 
 import { Box, Grid, Card, CardContent, Typography, Stack, Alert, Link as MuiLink } from '@mui/material';
 
@@ -71,7 +72,7 @@ export const MainPageContent = (props: MainContentProps) => {
                 <Card elevation={0}>
                   <Box sx={{ p: 2 }}>
                     <img
-                      src={`${pocketbaseDomain}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.pattern_file}`}
+                      src={generatePbImage(pattern)}
                       alt={`pattern template for ${pattern.name}`}
                       style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                     />

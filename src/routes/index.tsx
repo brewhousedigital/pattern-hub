@@ -13,6 +13,7 @@ import { ViewDrawer } from '@/components/ViewDrawer';
 import { PRIMARY_COLOR } from '@/data/constants';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
+import { PaginationBox } from '@/components/PaginationBox';
 
 import { Box, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
@@ -100,26 +101,7 @@ function RouteComponent() {
         >
           <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
 
-          <Stack
-            sx={{
-              backgroundColor: '#fff',
-              alignItems: 'center',
-              justifyContent: 'center',
-              px: 2,
-              py: 2,
-              mt: 'auto',
-              borderRadius: 6,
-            }}
-          >
-            <Pagination
-              count={data?.totalPages || 0}
-              variant="outlined"
-              color="primary"
-              sx={{ mx: 'auto' }}
-              page={patternPageNumber}
-              onChange={handleChangePage}
-            />
-          </Stack>
+          <PaginationBox data={data} value={patternPageNumber} setter={setPatternPageNumber} />
         </Box>
       </Box>
 

@@ -76,13 +76,13 @@ export const HeaderProfileMenu = () => {
 };
 
 const authenticatedMenuItems = [
-  {
+  /*{
     label: 'Home',
     icon: <DashboardRoundedIcon />,
     onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
       navigateTo({ to: '/' });
     },
-  },
+  },*/
   {
     label: 'Profile',
     icon: <PersonRoundedIcon />,
@@ -91,24 +91,24 @@ const authenticatedMenuItems = [
     },
     disabled: true,
   },
-  {
+  /*{
     label: 'Favorites',
     icon: <StarRateRoundedIcon />,
     onClick: () => {},
     disabled: true,
-  },
-  {
+  },*/
+  /*{
     label: 'Want to Make',
     icon: <FavoriteRoundedIcon />,
     onClick: () => {},
     disabled: true,
-  },
-  {
+  },*/
+  /*{
     label: 'Completed',
     icon: <DoneRoundedIcon />,
     onClick: () => {},
     disabled: true,
-  },
+  },*/
   {
     label: 'Settings',
     icon: <Settings />,

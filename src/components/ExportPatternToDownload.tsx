@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { useGlobalViewData } from '@/data/view';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -21,7 +22,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 
 type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 type DpiOption = 72 | 96 | 150 | 300 | 600;
@@ -134,7 +134,7 @@ function slugify(str: string): string {
 export const ExportPatternToDownload = () => {
   const { viewData } = useGlobalViewData();
 
-  const svgImageUrl = `${pocketbaseDomain}/api/files/${viewData?.collectionId}/${viewData?.id}/${viewData?.pattern_file}`;
+  const svgImageUrl = generatePbImage(viewData);
 
   const [format, setFormat] = useState<ExportFormat>('png');
   const [widthVal, setWidthVal] = useState('');

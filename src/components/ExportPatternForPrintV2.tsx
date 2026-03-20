@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { useGlobalViewData } from '@/data/view';
 import { alpha } from '@mui/material/styles';
@@ -9,6 +8,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import {
   Box,
   Button,
@@ -21,8 +21,6 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  FormControl,
-  Select,
   MenuItem,
 } from '@mui/material';
 import jsPDF from 'jspdf';
@@ -297,7 +295,7 @@ export const ExportPatternForPrintV2 = () => {
   useEffect(() => {
     if (!viewData) return;
 
-    const url = `${pocketbaseDomain}/api/files/${viewData.collectionId}/${viewData.id}/${viewData.pattern_file}`;
+    const url = generatePbImage(viewData);
 
     fetch(url)
       .then((r) => r.text())

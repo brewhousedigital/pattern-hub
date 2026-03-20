@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';
 import { createPrettyDate } from '@/functions/utilities/dates';
+import { useGlobalAuthData } from '@/data/auth-data';
+import { enqueueSnackbar } from 'notistack';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import {
+  useMutationFavoritePattern,
+  useMutationRemoveFavoritePattern,
+  useQueryGetPatternFavoriteStatus,
+} from '@/functions/database/favorites';
+import {
+  useMutationMarkDonePattern,
+  useMutationRemoveMarkDonePattern,
+  useQueryGetPatternDoneStatus,
+} from '@/functions/database/marked-done';
 
 import { alpha } from '@mui/material/styles';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -18,7 +30,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 
-import { Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack, Grid } from '@mui/material';
+import { Alert, Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack, Grid } from '@mui/material';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
@@ -40,13 +52,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const isFirstItem = thisPatternIndex === 0;
   const isLastItem = thisPatternIndex === patternListLength - 1;
 
-  const [favorited, setFavorited] = useState(false);
-  const [favoriteCount, setFavoriteCount] = useState(142);
-  const [done, setDone] = useState(false);
-  const [doneCount, setDoneCount] = useState(37);
   const [userRating, setUserRating] = useState<number | null>(null);
 
-  const svgImageUrl = `${pocketbaseDomain}/api/files/${viewData?.collectionId}/${viewData?.id}/${viewData?.pattern_file}`;
+  const svgImageUrl = generatePbImage(viewData);
 
   const handlePrev = () => {
     const prevIndex = Number(thisPatternIndex || 0) - 1;
@@ -66,16 +74,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
       to: '/',
       search: (prev) => ({ ...prev, view: newPattern?.id }),
     }).then();
-  };
-
-  const handleFavorite = () => {
-    setFavorited((prev) => !prev);
-    setFavoriteCount((prev) => (favorited ? prev - 1 : prev + 1));
-  };
-
-  const handleDone = () => {
-    setDone((prev) => !prev);
-    setDoneCount((prev) => (done ? prev - 1 : prev + 1));
   };
 
   return (
@@ -196,33 +194,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
-              <Grid size={{ xs: 6 }}>
-                <Button
-                  onClick={handleFavorite}
-                  size="small"
-                  disableElevation
-                  variant={favorited ? 'contained' : 'outlined'}
-                  fullWidth
-                  startIcon={favorited ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                >
-                  Favorite
-                </Button>
-              </Grid>
-
-              <Grid size={{ xs: 6 }}>
-                <Button
-                  onClick={handleDone}
-                  size="small"
-                  disableElevation
-                  variant={done ? 'contained' : 'outlined'}
-                  fullWidth
-                  startIcon={done ? <CheckCircleIcon /> : <CheckCircleOutlineIcon />}
-                >
-                  Mark as Done
-                </Button>
-              </Grid>
-            </Grid>
+            <FavoriteAndDone />
 
             <Box sx={{ mb: 2.5 }}>
               <SectionLabel>Community Rating</SectionLabel>
@@ -331,5 +303,146 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
         </Box>
       </Box>
     </Box>
+  );
+};
+
+const FavoriteAndDone = () => {
+  const { viewData } = useGlobalViewData();
+
+  const { authData } = useGlobalAuthData();
+
+  const { isPending, isFetching, isError, data } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
+
+  console.log('>>>data', data);
+
+  const favoritePattern = useMutationFavoritePattern();
+  const removeFavorite = useMutationRemoveFavoritePattern();
+
+  const isLoading = isPending || isFetching || favoritePattern.isPending || removeFavorite.isPending;
+
+  const [done, setDone] = useState(false);
+  const [doneCount, setDoneCount] = useState(37);
+
+  const handleDone = () => {
+    setDone((prev) => !prev);
+    setDoneCount((prev) => (done ? prev - 1 : prev + 1));
+  };
+
+  if (!authData) {
+    return (
+      <Box sx={{ mb: 2.5 }}>
+        <Alert severity="info">Log in to favorite the patterns you like</Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
+      <Grid size={{ xs: 6 }}>
+        <FavoriteButton />
+      </Grid>
+
+      <Grid size={{ xs: 6 }}>
+        <MarkAsDoneButton />
+      </Grid>
+    </Grid>
+  );
+};
+
+const FavoriteButton = () => {
+  const { viewData } = useGlobalViewData();
+
+  const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
+
+  const favoritePattern = useMutationFavoritePattern();
+  const removeFavorite = useMutationRemoveFavoritePattern();
+
+  const isLoading = isPending || isFetching || favoritePattern.isPending || removeFavorite.isPending;
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  React.useEffect(() => {
+    setIsFavorite(!!data?.id);
+  }, [data]);
+
+  const handleFavorite = async () => {
+    try {
+      if (isFavorite) {
+        await removeFavorite.mutateAsync(data?.id || '');
+      } else {
+        await favoritePattern.mutateAsync(viewData?.id || '');
+      }
+
+      await refetch();
+
+      setIsFavorite((prev) => !prev);
+    } catch (error: any) {
+      enqueueSnackbar('Something went wrong trying to favorite this pattern. Try again in a few minutes', {
+        variant: 'error',
+      });
+    }
+  };
+
+  return (
+    <Button
+      loading={isLoading}
+      onClick={handleFavorite}
+      size="small"
+      disableElevation
+      variant={isFavorite ? 'contained' : 'outlined'}
+      fullWidth
+      startIcon={isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+    >
+      Favorite
+    </Button>
+  );
+};
+
+const MarkAsDoneButton = () => {
+  const { viewData } = useGlobalViewData();
+
+  const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternDoneStatus(viewData?.id || '');
+
+  const favoritePattern = useMutationMarkDonePattern();
+  const removeFavorite = useMutationRemoveMarkDonePattern();
+
+  const isLoading = isPending || isFetching || favoritePattern.isPending || removeFavorite.isPending;
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  React.useEffect(() => {
+    setIsFavorite(!!data?.id);
+  }, [data]);
+
+  const handleFavorite = async () => {
+    try {
+      if (isFavorite) {
+        await removeFavorite.mutateAsync(data?.id || '');
+      } else {
+        await favoritePattern.mutateAsync(viewData?.id || '');
+      }
+
+      await refetch();
+
+      setIsFavorite((prev) => !prev);
+    } catch (error: any) {
+      enqueueSnackbar('Something went wrong trying to favorite this pattern. Try again in a few minutes', {
+        variant: 'error',
+      });
+    }
+  };
+
+  return (
+    <Button
+      loading={isLoading}
+      onClick={handleFavorite}
+      size="small"
+      disableElevation
+      variant={isFavorite ? 'contained' : 'outlined'}
+      fullWidth
+      startIcon={isFavorite ? <CheckCircleIcon /> : <CheckCircleOutlineIcon />}
+    >
+      Mark as Done
+    </Button>
   );
 };

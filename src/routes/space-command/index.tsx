@@ -1,8 +1,8 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { enqueueSnackbar } from 'notistack';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData, useRefreshAdminAuth } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useQueryGetAllAuthors } from '@/functions/database/authors';
@@ -200,7 +200,7 @@ const AdminPageContent = () => {
       headerName: 'Pattern',
       width: 100,
       renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
-        const filePath = `${pocketbaseDomain}/api/files/${params.row.collectionId}/${params.row.id}/${params.row.pattern_file}`;
+        const filePath = generatePbImage(params.row);
 
         return (
           <Box sx={{ p: 2 }}>
@@ -289,8 +289,8 @@ const AdminPageContent = () => {
 
 type TypeModalMode = 'edit' | 'add';
 
-type TypeEditModalProps = Partial<TypePatternResponse> & {
-  mode: TypeModalMode;
+type TypeEditModalProps = TypePatternResponse & {
+  mode?: TypeModalMode;
 };
 
 const EditModal = (props: TypeEditModalProps) => {
@@ -552,7 +552,7 @@ const EditModal = (props: TypeEditModalProps) => {
 
                     {props.pattern_file ? (
                       <img
-                        src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                        src={generatePbImage(props)}
                         alt={`pattern template for ${props.name}`}
                         style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                       />
@@ -584,7 +584,7 @@ const EditModal = (props: TypeEditModalProps) => {
               <Box sx={{ p: 2 }}>
                 {props.pattern_file ? (
                   <img
-                    src={`${pocketbaseDomain}/api/files/${props.collectionId}/${props.id}/${props.pattern_file}`}
+                    src={generatePbImage(props)}
                     alt={`pattern template for ${props.name}`}
                     style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                   />
@@ -788,7 +788,28 @@ function CustomToolbar() {
         List of Patterns
       </Typography>
 
-      <EditModal mode="add" />
+      <EditModal
+        mode="add"
+        collectionId={''}
+        collectionName={''}
+        id={''}
+        name={''}
+        description={''}
+        difficulty={''}
+        authors={''}
+        uploaded_by={''}
+        tags={''}
+        pattern_file={''}
+        pieces={0}
+        design_width={0}
+        design_height={0}
+        line_width={0}
+        design_width_unit={''}
+        design_height_unit={''}
+        line_width_unit={''}
+        created={''}
+        updated={''}
+      />
 
       <Menu
         id="export-menu"
