@@ -14,6 +14,7 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
+import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
 import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
@@ -46,6 +47,11 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/edit': typeof ProfileEditRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/pattern/$patternId'
+    | '/profile/edit'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/pattern/$patternId'
+    | '/profile/edit'
     | '/collections'
     | '/guides'
     | '/profile'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/pattern/$patternId'
+    | '/profile/edit'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
+  ProfileEditRoute: typeof ProfileEditRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/collections'
       fullPath: '/collections/'
       preLoaderRoute: typeof CollectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pattern/$patternId': {
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
+  ProfileEditRoute: ProfileEditRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,

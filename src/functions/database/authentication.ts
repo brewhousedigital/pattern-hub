@@ -7,8 +7,11 @@ export type TypeAuthData = {
   email: string;
   id: string;
   name: string;
+  about: string;
+  interests: string;
   level: number;
   site_color?: string;
+  site_color_secondary?: string;
   verified: boolean;
   admin?: boolean;
   showAdminBanner?: boolean;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute, useSearch } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
@@ -31,7 +31,7 @@ function RouteComponent() {
 
   const { setViewData } = useGlobalViewData();
 
-  const { view } = useSearch({ from: '/' });
+  const { view } = Route.useSearch();
 
   const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
 
