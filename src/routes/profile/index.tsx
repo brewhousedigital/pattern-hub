@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
@@ -9,6 +9,7 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
 
 import { styled, alpha } from '@mui/material/styles';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -107,15 +108,23 @@ const ProfileContent = () => {
             {/*<StyledAvatar src={authData.avatarUrl}>{authData.username[0].toUpperCase()}</StyledAvatar>*/}
 
             <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
-              <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
-                {authData.name || 'New User'}
+              <Typography
+                variant="h5"
+                fontWeight={500}
+                sx={{ letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 2 }}
+              >
+                <>{authData.name || 'New User'}</>
+
+                <IconButton component={Link} to="/profile/edit">
+                  <EditRoundedIcon fontSize="inherit" />
+                </IconButton>
               </Typography>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.5 }}>
                 <CalendarTodayOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
 
                 <Typography variant="caption" color="text.disabled">
-                  Member since {createPrettyDate(authData.created)}
+                  Member since {createPrettyDate(authData?.created || '')}
                 </Typography>
               </Box>
             </Box>
@@ -174,7 +183,7 @@ const ProfileContent = () => {
           )}
 
           {/* Interests */}
-          {authData.interests.length > 0 && (
+          {authData?.interests && authData?.interests?.length > 0 && (
             <Box>
               <Typography variant="overline" color="text.disabled" fontWeight={700} letterSpacing={1}>
                 Interests
@@ -330,8 +339,7 @@ const PageWrapper = styled(Box)(({ theme }) => ({
 
 const HeroBanner = styled(Box)(({ theme }) => ({
   background: `linear-gradient(135deg,
-    ${alpha(theme.palette.primary.dark, 0.9)} 0%,
-    ${alpha(theme.palette.primary.main, 0.7)} 50%,
+    ${theme.palette.primary.main} 0%,
     ${alpha(theme.palette.secondary.main, 0.5)} 100%)`,
   height: 200,
   position: 'relative',

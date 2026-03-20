@@ -3,16 +3,16 @@ import type { AuthRecord, RecordAuthResponse } from 'pocketbase';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 export type TypeAuthData = {
-  created: string;
-  email: string;
+  created?: string;
+  email?: string;
   id: string;
-  name: string;
-  about: string;
-  interests: string;
-  level: number;
+  name?: string;
+  about?: string;
+  interests?: string;
+  level?: number;
   site_color?: string;
   site_color_secondary?: string;
-  verified: boolean;
+  verified?: boolean;
   admin?: boolean;
   showAdminBanner?: boolean;
 };
@@ -42,6 +42,14 @@ export const useMutationAuthGetUser = () => {
   return useMutation({
     mutationFn: (payload: { userId: string }): AuthUserDataType => {
       return pocketbase.collection('users').getOne(payload.userId);
+    },
+  });
+};
+
+export const useMutationAuthUpdateUser = () => {
+  return useMutation({
+    mutationFn: (payload: TypeAuthData): AuthUserDataType => {
+      return pocketbase.collection('users').update(payload.id, payload);
     },
   });
 };

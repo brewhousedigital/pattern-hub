@@ -1,5 +1,5 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-import { PRIMARY_COLOR } from '@/data/constants';
+import { PRIMARY_COLOR, SECONDARY_COLOR } from '@/data/constants';
 
 const baseTheme = createTheme({
   palette: {
@@ -10,6 +10,9 @@ const baseTheme = createTheme({
     primary: {
       main: PRIMARY_COLOR,
       contrastText: '#fff',
+    },
+    secondary: {
+      main: SECONDARY_COLOR,
     },
   },
   typography: {
