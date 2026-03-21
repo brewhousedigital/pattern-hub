@@ -12,7 +12,7 @@
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
-    "@imagekit/react": "^5.0.2",
+    "@imagekit/react": "5.0.2",
     "@mui/icons-material": "7.3.9",
     "@mui/lab": "7.0.1-beta.23",
     "@mui/material": "7.3.9",
@@ -29,12 +29,12 @@
     "prettier": "3.8.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "@types/node": "24.10.9"
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",
-    "@types/node": "24.10.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",

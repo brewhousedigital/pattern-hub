@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useGlobalAuthData } from '@/data/auth-data';
-import { authSignOut } from '@/functions/database/authentication';
+import { useGlobalAuthData } from '@/data/auth-data.ts';
+import { authSignOut } from '@/functions/database/authentication.ts';
 
 import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';

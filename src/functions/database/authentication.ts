@@ -94,3 +94,11 @@ export const useMutationAuthAdminSignIn = () => {
     },
   });
 };
+
+export const useMutationResendVerificationCode = () => {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      return await pocketbase.collection('users').requestVerification(email);
+    },
+  });
+};

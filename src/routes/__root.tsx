@@ -5,7 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { muiTheme } from '../data/mui-theme';
 import { SnackbarProvider } from 'notistack';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-import { GeneralLayout } from '../components/GeneralLayout';
+import { GeneralLayout } from '../components/layout/GeneralLayout.tsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {

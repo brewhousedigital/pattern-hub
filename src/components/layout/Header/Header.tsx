@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { HeaderProfileMenu } from '@/components/HeaderProfileMenu';
+import { HeaderProfileMenu } from '@/components/layout/HeaderProfileMenu.tsx';
 import { useGlobalReadyToSearch, useGlobalSearch } from '@/data/search';
 import { HomepageSearch } from '@/components/layout/HomepageSearch.tsx';
 import { PRIMARY_COLOR } from '@/data/constants';
