@@ -3,7 +3,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
 
-import { Button, Container, TextField, Stack, Typography } from '@mui/material';
+import { Box, Button, TextField, Stack, Typography } from '@mui/material';
 
 export const AdminLoginView = () => {
   const signIn = useMutationAuthAdminSignIn();
@@ -16,7 +16,9 @@ export const AdminLoginView = () => {
 
   const { setAuthData } = useGlobalAuthData();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+
     setIsLoading(true);
 
     try {
@@ -26,6 +28,8 @@ export const AdminLoginView = () => {
       const userData = await getUser.mutateAsync({ userId: signInData.record.id });
 
       setAuthData(userData);
+
+      window.location.reload();
     } catch (error: any) {
       console.error('Error loading your user data:', error);
       enqueueSnackbar(`Error: ${error.message}`, { variant: 'error' });
@@ -34,28 +38,60 @@ export const AdminLoginView = () => {
     setIsLoading(false);
   };
 
+  const bgStyles = {
+    backgroundImage: "url('/space-command-bg.gif')",
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+    minHeight: '100svh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  const boxStyles = {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    paddingX: 6,
+    paddingY: 8,
+    width: '100%',
+    maxWidth: 460,
+    borderRadius: 6,
+    backdropFilter: 'blur(12px)',
+  };
+
   return (
-    <Container>
-      <Typography sx={{ textAlign: 'center', mb: 2 }}>Space Command</Typography>
+    <Box sx={bgStyles}>
+      <Box sx={boxStyles} component="form" onSubmit={handleLogin}>
+        <Typography variant="h3" sx={{ textAlign: 'center', mb: 2, color: '#fff' }}>
+          Space Command
+        </Typography>
 
-      <Stack
-        spacing={1}
-        sx={{ alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', maxWidth: 345, mx: 'auto' }}
-      >
-        <TextField label="Email" fullWidth type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Stack
+          spacing={3}
+          sx={{ alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', maxWidth: 345, mx: 'auto' }}
+        >
+          <TextField
+            variant="filled"
+            label="Email"
+            fullWidth
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        <TextField
-          label="Password"
-          fullWidth
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <TextField
+            variant="filled"
+            label="Password"
+            fullWidth
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-        <Button variant="outlined" fullWidth onClick={handleLogin} loading={isLoading}>
-          Login
-        </Button>
-      </Stack>
-    </Container>
+          <Button variant="contained" type="submit" disableElevation fullWidth loading={isLoading}>
+            Login
+          </Button>
+        </Stack>
+      </Box>
+    </Box>
   );
 };

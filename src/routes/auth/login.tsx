@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMutationAuthSignIn, useMutationAuthGetUser } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -65,91 +66,93 @@ function RouteComponent() {
   const isValid = email.trim().length > 0 && password.length > 0;
 
   return (
-    <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-      <Card elevation={0}>
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
-            Welcome back
-          </Typography>
+    <GeneralLayout>
+      <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+        <Card elevation={0}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+              Welcome back
+            </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Sign in to your account to continue
-          </Typography>
-        </Box>
-
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Email address"
-              type="email"
-              variant="filled"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-              autoComplete="email"
-              autoFocus
-              required
-            />
-
-            <TextField
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              variant="filled"
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              autoComplete="current-password"
-              required
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? (
-                          <VisibilityOffOutlinedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Sign in to your account to continue
+            </Typography>
           </Box>
 
-          <Box sx={{ textAlign: 'right', mt: 1 }}>
-            <MuiLink
-              component={Link}
-              to="/auth/forgot-password"
-              variant="body2"
-              underline="hover"
-              sx={{ color: 'text.secondary' }}
-            >
-              Forgot password?
-            </MuiLink>
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <TextField
+                label="Email address"
+                type="email"
+                variant="filled"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                fullWidth
+                autoComplete="email"
+                autoFocus
+                required
+              />
+
+              <TextField
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                variant="filled"
+                onChange={(e) => setPassword(e.target.value)}
+                fullWidth
+                autoComplete="current-password"
+                required
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((v) => !v)}
+                          edge="end"
+                          size="small"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? (
+                            <VisibilityOffOutlinedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ textAlign: 'right', mt: 1 }}>
+              <MuiLink
+                component={Link}
+                to="/auth/forgot-password"
+                variant="body2"
+                underline="hover"
+                sx={{ color: 'text.secondary' }}
+              >
+                Forgot password?
+              </MuiLink>
+            </Box>
+
+            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || loading} sx={{ mt: 3 }}>
+              {loading ? <CircularProgress size={20} color="inherit" /> : 'Sign in'}
+            </SubmitButton>
           </Box>
 
-          <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || loading} sx={{ mt: 3 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'Sign in'}
-          </SubmitButton>
-        </Box>
-
-        <Box sx={{ textAlign: 'center', mt: 3.5 }}>
-          <Typography variant="body2" color="text.secondary">
-            Don't have an account?{' '}
-            <MuiLink component={Link} to="/auth/register" underline="hover" fontWeight={600}>
-              Create one
-            </MuiLink>
-          </Typography>
-        </Box>
-      </Card>
-    </Container>
+          <Box sx={{ textAlign: 'center', mt: 3.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <MuiLink component={Link} to="/auth/register" underline="hover" fontWeight={600}>
+                Create one
+              </MuiLink>
+            </Typography>
+          </Box>
+        </Card>
+      </Container>
+    </GeneralLayout>
   );
 }
 

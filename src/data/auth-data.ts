@@ -52,16 +52,22 @@ export const useRefreshAdminAuth = () => {
   // Show a loading screen while we refresh the auth data
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const { setAuthData } = useGlobalAuthData();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  const { authData, setAuthData } = useGlobalAuthData();
   const getUser = useMutationAuthGetAdmin();
 
   const handleRefresh = async () => {
     try {
       const refreshUserData = await authRefreshAdminSession();
       const userData = await getUser.mutateAsync({ userId: refreshUserData.record.id });
+      console.log('>>>refreshUserData', refreshUserData);
+      console.log('>>>userData', userData);
 
+      setIsAdmin(true);
       setAuthData(userData);
     } catch (error) {
+      setIsAdmin(false);
       setAuthData(null);
     } finally {
       // Add a small delay to prevent flickering
@@ -71,9 +77,5 @@ export const useRefreshAdminAuth = () => {
     }
   };
 
-  React.useEffect(() => {
-    handleRefresh().then();
-  }, []);
-
-  return { isLoading, handleRefresh };
+  return { isLoading, handleRefresh, isAdmin };
 };

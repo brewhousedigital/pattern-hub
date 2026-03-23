@@ -14,6 +14,7 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
+import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
@@ -47,6 +48,11 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpaceCommandTestRoute = SpaceCommandTestRouteImport.update({
+  id: '/space-command/test',
+  path: '/space-command/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/test': typeof SpaceCommandTestRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/test': typeof SpaceCommandTestRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/test': typeof SpaceCommandTestRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/test'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/test'
     | '/collections'
     | '/guides'
     | '/profile'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/test'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
+  SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/collections'
       fullPath: '/collections/'
       preLoaderRoute: typeof CollectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/space-command/test': {
+      id: '/space-command/test'
+      path: '/space-command/test'
+      fullPath: '/space-command/test'
+      preLoaderRoute: typeof SpaceCommandTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/edit': {
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileEditRoute: ProfileEditRoute,
+  SpaceCommandTestRoute: SpaceCommandTestRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,

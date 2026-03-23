@@ -1,5 +1,6 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -18,114 +19,116 @@ export const Route = createFileRoute('/help/privacy-policy')({
 
 function RouteComponent() {
   return (
-    <PageWrapper>
-      <Container maxWidth="md">
-        <HeroSection>
-          <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
-            Privacy Policy
-          </Typography>
+    <GeneralLayout>
+      <PageWrapper>
+        <Container maxWidth="md">
+          <HeroSection>
+            <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
+              Privacy Policy
+            </Typography>
 
-          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', lineHeight: 1.8 }}>
-            We built Pattern Hub with privacy as a default, not an afterthought. Here's exactly what we do, and don't
-            do, with your data.
-          </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', lineHeight: 1.8 }}>
+              We built Pattern Hub with privacy as a default, not an afterthought. Here's exactly what we do, and don't
+              do, with your data.
+            </Typography>
 
-          <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
-            Last updated: {LAST_UPDATED}
-          </Typography>
-        </HeroSection>
+            <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
+              Last updated: {LAST_UPDATED}
+            </Typography>
+          </HeroSection>
 
-        <Divider sx={{ mb: 6 }} />
+          <Divider sx={{ mb: 6 }} />
 
-        <SummaryBanner elevation={0}>
-          <ShieldOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
+          <SummaryBanner elevation={0}>
+            <ShieldOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
 
-          <Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                The short version
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+                Anonymous users: zero data collected. Registered users: email only, for account management. We don't
+                sell data. We don't use third-party analytics. That's it.
+              </Typography>
+            </Box>
+          </SummaryBanner>
+
+          <Stack spacing={2}>
+            {sections.map((section) => (
+              <SectionCard key={section.title} elevation={0}>
+                <IconCircle>{section.icon}</IconCircle>
+
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
+                    {section.title}
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
+                    {section.body}
+                  </Typography>
+                </Box>
+              </SectionCard>
+            ))}
+          </Stack>
+
+          <Box
+            sx={{
+              mt: 5,
+              p: 3,
+              borderRadius: 3,
+              backgroundColor: 'action.hover',
+              borderLeft: '3px solid',
+              borderColor: 'primary.main',
+            }}
+          >
             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-              The short version
+              Account Deletion & Data Retention
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              Anonymous users: zero data collected. Registered users: email only, for account management. We don't sell
-              data. We don't use third-party analytics. That's it.
+              When you delete your account, your email address is permanently removed from our systems. We do not retain
+              any residual data after account deletion.
             </Typography>
           </Box>
-        </SummaryBanner>
 
-        <Stack spacing={2}>
-          {sections.map((section) => (
-            <SectionCard key={section.title} elevation={0}>
-              <IconCircle>{section.icon}</IconCircle>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
-                  {section.title}
-                </Typography>
-
-                <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
-                  {section.body}
-                </Typography>
-              </Box>
-            </SectionCard>
-          ))}
-        </Stack>
-
-        <Box
-          sx={{
-            mt: 5,
-            p: 3,
-            borderRadius: 3,
-            backgroundColor: 'action.hover',
-            borderLeft: '3px solid',
-            borderColor: 'primary.main',
-          }}
-        >
-          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Account Deletion & Data Retention
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-            When you delete your account, your email address is permanently removed from our systems. We do not retain
-            any residual data after account deletion.
-          </Typography>
-        </Box>
-
-        <Box sx={{ mt: 4, p: 3, borderRadius: 3, backgroundColor: 'action.hover' }}>
-          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Changes to This Policy
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-            If we ever change this policy in a meaningful way, we will notify registered users by email before the
-            change takes effect. We will never retroactively weaken the privacy protections described here without
-            explicit consent.
-          </Typography>
-        </Box>
-
-        <ContactBox elevation={0}>
-          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-            Questions about your privacy?
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.8 }}>
-            If you have any questions or concerns about this policy or how your data is handled, reach out to us at{' '}
-            <Typography
-              component="a"
-              href="mailto:team@yagubang.com"
-              variant="body2"
-              sx={{
-                color: 'primary.main',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              team@yagubang.com
+          <Box sx={{ mt: 4, p: 3, borderRadius: 3, backgroundColor: 'action.hover' }}>
+            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+              Changes to This Policy
             </Typography>
-            . We'll respond promptly.
-          </Typography>
-        </ContactBox>
-      </Container>
-    </PageWrapper>
+
+            <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+              If we ever change this policy in a meaningful way, we will notify registered users by email before the
+              change takes effect. We will never retroactively weaken the privacy protections described here without
+              explicit consent.
+            </Typography>
+          </Box>
+
+          <ContactBox elevation={0}>
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+              Questions about your privacy?
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.8 }}>
+              If you have any questions or concerns about this policy or how your data is handled, reach out to us at{' '}
+              <Typography
+                component="a"
+                href="mailto:team@yagubang.com"
+                variant="body2"
+                sx={{
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                team@yagubang.com
+              </Typography>
+              . We'll respond promptly.
+            </Typography>
+          </ContactBox>
+        </Container>
+      </PageWrapper>
+    </GeneralLayout>
   );
 }
 

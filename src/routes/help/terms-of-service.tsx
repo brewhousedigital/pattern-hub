@@ -1,5 +1,6 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
@@ -19,102 +20,104 @@ export const Route = createFileRoute('/help/terms-of-service')({
 
 function RouteComponent() {
   return (
-    <PageWrapper>
-      <Container maxWidth="md">
-        <HeroSection>
-          <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
-            Terms of Service
-          </Typography>
+    <GeneralLayout>
+      <PageWrapper>
+        <Container maxWidth="md">
+          <HeroSection>
+            <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
+              Terms of Service
+            </Typography>
 
-          <Typography variant="body1" color="text.secondary" sx={{ mx: 'auto', lineHeight: 1.8 }}>
-            Plain-language terms for using our service. Please read them before you get started.
-          </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mx: 'auto', lineHeight: 1.8 }}>
+              Plain-language terms for using our service. Please read them before you get started.
+            </Typography>
 
-          <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
-            Last updated: {LAST_UPDATED}
-          </Typography>
-        </HeroSection>
+            <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
+              Last updated: {LAST_UPDATED}
+            </Typography>
+          </HeroSection>
 
-        <Divider sx={{ mb: 6 }} />
+          <Divider sx={{ mb: 6 }} />
 
-        <SummaryBanner elevation={0}>
-          <GavelOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
+          <SummaryBanner elevation={0}>
+            <GavelOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
 
-          <Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                The short version
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+                The service is free. You're responsible for what you do with it. We provide no warranties and accept no
+                liability for any harm arising from your use. Use it wisely.
+              </Typography>
+            </Box>
+          </SummaryBanner>
+
+          <Stack spacing={2}>
+            {sections.map((section) => (
+              <SectionCard key={section.title} highlight={section.highlight} elevation={0}>
+                <IconCircle highlight={section.highlight}>{section.icon}</IconCircle>
+
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
+                    {section.title}
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
+                    {section.body}
+                  </Typography>
+                </Box>
+              </SectionCard>
+            ))}
+          </Stack>
+
+          <Box
+            sx={{
+              mt: 5,
+              p: 3,
+              borderRadius: 3,
+              backgroundColor: 'action.hover',
+              borderLeft: '3px solid',
+              borderColor: 'primary.main',
+            }}
+          >
             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-              The short version
+              Governing Law
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              The service is free. You're responsible for what you do with it. We provide no warranties and accept no
-              liability for any harm arising from your use. Use it wisely.
+              These terms are governed by the laws of the jurisdiction in which we operate, without regard to
+              conflict-of-law principles. Any disputes arising from these terms or your use of the service will be
+              subject to the exclusive jurisdiction of the courts in that jurisdiction.
             </Typography>
           </Box>
-        </SummaryBanner>
 
-        <Stack spacing={2}>
-          {sections.map((section) => (
-            <SectionCard key={section.title} highlight={section.highlight} elevation={0}>
-              <IconCircle highlight={section.highlight}>{section.icon}</IconCircle>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
-                  {section.title}
-                </Typography>
-
-                <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
-                  {section.body}
-                </Typography>
-              </Box>
-            </SectionCard>
-          ))}
-        </Stack>
-
-        <Box
-          sx={{
-            mt: 5,
-            p: 3,
-            borderRadius: 3,
-            backgroundColor: 'action.hover',
-            borderLeft: '3px solid',
-            borderColor: 'primary.main',
-          }}
-        >
-          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Governing Law
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-            These terms are governed by the laws of the jurisdiction in which we operate, without regard to
-            conflict-of-law principles. Any disputes arising from these terms or your use of the service will be subject
-            to the exclusive jurisdiction of the courts in that jurisdiction.
-          </Typography>
-        </Box>
-
-        <ContactBox elevation={0}>
-          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-            Questions about these terms?
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.8 }}>
-            If anything here is unclear or you'd like to get in touch, reach us at{' '}
-            <Typography
-              component="a"
-              href="mailto:legal@yourcompany.com"
-              variant="body2"
-              sx={{
-                color: 'primary.main',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              legal@yourcompany.com
+          <ContactBox elevation={0}>
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+              Questions about these terms?
             </Typography>
-            .
-          </Typography>
-        </ContactBox>
-      </Container>
-    </PageWrapper>
+
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.8 }}>
+              If anything here is unclear or you'd like to get in touch, reach us at{' '}
+              <Typography
+                component="a"
+                href="mailto:legal@yourcompany.com"
+                variant="body2"
+                sx={{
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                legal@yourcompany.com
+              </Typography>
+              .
+            </Typography>
+          </ContactBox>
+        </Container>
+      </PageWrapper>
+    </GeneralLayout>
   );
 }
 

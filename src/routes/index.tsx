@@ -14,8 +14,9 @@ import { PRIMARY_COLOR } from '@/data/constants';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { PaginationBox } from '@/components/PaginationBox';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
-import { Box, Pagination, Stack, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
+import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
 type PatternSearch = {
   q?: string;
@@ -42,9 +43,6 @@ function RouteComponent() {
   const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   const [patternPageNumber, setPatternPageNumber] = React.useState(1);
-  const handleChangePage = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPatternPageNumber(value);
-  };
 
   const { readyToSearchTerm } = useGlobalReadyToSearch();
 
@@ -66,61 +64,63 @@ function RouteComponent() {
   }, [data]);
 
   return (
-    <Box>
-      <Fade in={isFetching}>
-        <Box>
-          <FullScreenLoader />
+    <GeneralLayout>
+      <Box>
+        <Fade in={isFetching}>
+          <Box>
+            <FullScreenLoader />
+          </Box>
+        </Fade>
+
+        <SwipeableDrawer
+          anchor="right"
+          open={isSidebarOpen}
+          onClose={handleCloseMobileSidebar}
+          onOpen={handleOpenMobileSidebar}
+        >
+          <SidebarBlock isPending={isPending} isError={isError} data={data} />
+        </SwipeableDrawer>
+
+        <Box sx={ContainerStyles}>
+          {isMediumSizeAndUp && <SidebarBlock isPending={isPending} isError={isError} data={data} />}
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              p: 3,
+              mr: 2,
+              mb: 2,
+              ml: { xs: 2, md: 0 },
+              backgroundColor: PRIMARY_COLOR,
+              borderRadius: 6,
+              minHeight: 'calc(100svh - 104px)',
+            }}
+          >
+            <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
+
+            <PaginationBox data={data} value={patternPageNumber} setter={setPatternPageNumber} />
+          </Box>
         </Box>
-      </Fade>
 
-      <SwipeableDrawer
-        anchor="right"
-        open={isSidebarOpen}
-        onClose={handleCloseMobileSidebar}
-        onOpen={handleOpenMobileSidebar}
-      >
-        <SidebarBlock isPending={isPending} isError={isError} data={data} />
-      </SwipeableDrawer>
-
-      <Box sx={ContainerStyles}>
-        {isMediumSizeAndUp && <SidebarBlock isPending={isPending} isError={isError} data={data} />}
-
-        <Box
+        <SwipeableDrawer
+          anchor="bottom"
+          open={isViewOpen}
+          onClose={handleCloseView}
+          onOpen={handleOpenView}
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            p: 3,
-            mr: 2,
-            mb: 2,
-            ml: { xs: 2, md: 0 },
-            backgroundColor: PRIMARY_COLOR,
-            borderRadius: 6,
-            minHeight: 'calc(100svh - 104px)',
+            '& > .MuiPaper-root': {
+              maxHeight: '95svh',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+            },
           }}
         >
-          <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
-
-          <PaginationBox data={data} value={patternPageNumber} setter={setPatternPageNumber} />
-        </Box>
+          <ViewDrawer />
+        </SwipeableDrawer>
       </Box>
-
-      <SwipeableDrawer
-        anchor="bottom"
-        open={isViewOpen}
-        onClose={handleCloseView}
-        onOpen={handleOpenView}
-        sx={{
-          '& > .MuiPaper-root': {
-            maxHeight: '95svh',
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-          },
-        }}
-      >
-        <ViewDrawer />
-      </SwipeableDrawer>
-    </Box>
+    </GeneralLayout>
   );
 }
 

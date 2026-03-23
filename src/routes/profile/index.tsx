@@ -8,6 +8,7 @@ import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
 import { useMutationGetGalleryUploadAuth } from '@/functions/database/gallery';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -61,7 +62,11 @@ function RouteComponent() {
     return <>👋</>;
   }
 
-  return <ProfileContent />;
+  return (
+    <GeneralLayout>
+      <ProfileContent />
+    </GeneralLayout>
+  );
 }
 
 const ProfileContent = () => {

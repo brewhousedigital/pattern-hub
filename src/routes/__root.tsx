@@ -5,7 +5,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import { muiTheme } from '../data/mui-theme';
 import { SnackbarProvider } from 'notistack';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-import { GeneralLayout } from '../components/layout/GeneralLayout.tsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,9 +25,7 @@ const RootLayout = () => {
 
       <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
         <QueryClientProvider client={queryClient}>
-          <GeneralLayout>
-            <Outlet />
-          </GeneralLayout>
+          <Outlet />
         </QueryClientProvider>
       </SnackbarProvider>
     </ThemeProvider>

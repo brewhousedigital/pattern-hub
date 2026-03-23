@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
+
 import {
   Box,
   Container,
@@ -56,157 +58,159 @@ function RouteComponent() {
   };
 
   return (
-    <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-      <Card elevation={0}>
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
-            Create an account
-          </Typography>
+    <GeneralLayout>
+      <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+        <Card elevation={0}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+              Create an account
+            </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Favorites, ratings, and tracking which patterns you've completed already.
-          </Typography>
-        </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Favorites, ratings, and tracking which patterns you've completed already.
+            </Typography>
+          </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Email address"
-              type="email"
-              variant="filled"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-              autoComplete="email"
-              autoFocus
-              required
-            />
-
-            <Box>
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <TextField
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
+                label="Email address"
+                type="email"
                 variant="filled"
-                onChange={(e) => setPassword(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                fullWidth
+                autoComplete="email"
+                autoFocus
+                required
+              />
+
+              <Box>
+                <TextField
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  variant="filled"
+                  onChange={(e) => setPassword(e.target.value)}
+                  fullWidth
+                  autoComplete="new-password"
+                  required
+                  helperText="Minimum 8 characters"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((v) => !v)}
+                          edge="end"
+                          size="small"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? (
+                            <VisibilityOffOutlinedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {password.length > 0 && (
+                  <Box sx={{ mt: 1, px: 0.5 }}>
+                    <Tooltip title={strength.label} placement="right">
+                      <StrengthBar
+                        variant="determinate"
+                        value={(strength.score / 4) * 100}
+                        strengthcolor={strength.color}
+                      />
+                    </Tooltip>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: strength.color, fontWeight: 600, mt: 0.5, display: 'block' }}
+                    >
+                      {strength.label}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              <TextField
+                label="Confirm password"
+                type={showConfirm ? 'text' : 'password'}
+                variant="filled"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
                 fullWidth
                 autoComplete="new-password"
                 required
-                helperText="Minimum 8 characters"
+                error={passwordMismatch}
+                helperText={passwordMismatch ? 'Passwords do not match' : ''}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? (
-                          <VisibilityOffOutlinedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        )}
-                      </IconButton>
+                      {passwordsMatch ? (
+                        <CheckCircleOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />
+                      ) : (
+                        <IconButton
+                          onClick={() => setShowConfirm((v) => !v)}
+                          edge="end"
+                          size="small"
+                          aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                        >
+                          {showConfirm ? (
+                            <VisibilityOffOutlinedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      )}
                     </InputAdornment>
                   ),
                 }}
               />
-
-              {password.length > 0 && (
-                <Box sx={{ mt: 1, px: 0.5 }}>
-                  <Tooltip title={strength.label} placement="right">
-                    <StrengthBar
-                      variant="determinate"
-                      value={(strength.score / 4) * 100}
-                      strengthcolor={strength.color}
-                    />
-                  </Tooltip>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: strength.color, fontWeight: 600, mt: 0.5, display: 'block' }}
-                  >
-                    {strength.label}
-                  </Typography>
-                </Box>
-              )}
             </Box>
 
-            <TextField
-              label="Confirm password"
-              type={showConfirm ? 'text' : 'password'}
-              variant="filled"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              fullWidth
-              autoComplete="new-password"
-              required
-              error={passwordMismatch}
-              helperText={passwordMismatch ? 'Passwords do not match' : ''}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {passwordsMatch ? (
-                      <CheckCircleOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />
-                    ) : (
-                      <IconButton
-                        onClick={() => setShowConfirm((v) => !v)}
-                        edge="end"
-                        size="small"
-                        aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                      >
-                        {showConfirm ? (
-                          <VisibilityOffOutlinedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                    )}
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || loading} sx={{ mt: 3.5 }}>
+              {loading ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
+            </SubmitButton>
+
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              display="block"
+              textAlign="center"
+              sx={{ mt: 2, lineHeight: 1.6 }}
+            >
+              By creating an account you agree to our{' '}
+              <MuiLink component={Link} to="/help/terms-of-service" underline="hover" color="text.secondary">
+                Terms of Service
+              </MuiLink>{' '}
+              and{' '}
+              <MuiLink component={Link} to="/help/privacy-policy" underline="hover" color="text.secondary">
+                Privacy Policy
+              </MuiLink>
+              .
+            </Typography>
           </Box>
 
-          <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || loading} sx={{ mt: 3.5 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
-          </SubmitButton>
-
-          <Typography
-            variant="caption"
-            color="text.disabled"
-            display="block"
-            textAlign="center"
-            sx={{ mt: 2, lineHeight: 1.6 }}
-          >
-            By creating an account you agree to our{' '}
-            <MuiLink component={Link} to="/help/terms-of-service" underline="hover" color="text.secondary">
-              Terms of Service
-            </MuiLink>{' '}
-            and{' '}
-            <MuiLink component={Link} to="/help/privacy-policy" underline="hover" color="text.secondary">
-              Privacy Policy
-            </MuiLink>
-            .
-          </Typography>
-        </Box>
-
-        <Box sx={{ textAlign: 'center', mt: 3.5 }}>
-          <Typography variant="body2" color="text.secondary">
-            Already have an account?{' '}
-            <MuiLink component={Link} to="/auth/login" underline="hover" fontWeight={600}>
-              Sign in
-            </MuiLink>
-          </Typography>
-        </Box>
-      </Card>
-    </Container>
+          <Box sx={{ textAlign: 'center', mt: 3.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              Already have an account?{' '}
+              <MuiLink component={Link} to="/auth/login" underline="hover" fontWeight={600}>
+                Sign in
+              </MuiLink>
+            </Typography>
+          </Box>
+        </Card>
+      </Container>
+    </GeneralLayout>
   );
 }
 

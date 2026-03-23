@@ -4,6 +4,7 @@ import { ViewDrawer } from '@/components/ViewDrawer';
 import { useGlobalViewData } from '@/data/view';
 import { useQueryGetPatternById } from '@/functions/database/patterns';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
@@ -29,5 +30,9 @@ function RouteComponent() {
     return <>Error</>;
   }
 
-  return <ViewDrawer hideNavigation />;
+  return (
+    <GeneralLayout>
+      <ViewDrawer hideNavigation />
+    </GeneralLayout>
+  );
 }

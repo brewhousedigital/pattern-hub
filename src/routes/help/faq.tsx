@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useQueryGetAllFAQ } from '@/functions/database/faq';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,78 +33,80 @@ function RouteComponent() {
   };
 
   return (
-    <PageWrapper>
-      <Container maxWidth="md">
-        {/* Hero */}
-        <HeroSection>
-          <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
-            Frequently Asked Questions
+    <GeneralLayout>
+      <PageWrapper>
+        <Container maxWidth="md">
+          {/* Hero */}
+          <HeroSection>
+            <Typography variant="h1" sx={{ fontSize: '46px!important' }}>
+              Frequently Asked Questions
+            </Typography>
+          </HeroSection>
+
+          {/*<Divider sx={{ mb: 6 }} />*/}
+
+          {/* Content */}
+          {isPending && <FaqSkeleton />}
+
+          {isError && (
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 8,
+                color: 'error.main',
+                border: '1px solid',
+                borderColor: 'error.light',
+                borderRadius: 3,
+                backgroundColor: 'error.50',
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Failed to load FAQs
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                Unable to load the FAQ items... Sorry about that. Try again in a few minutes.
+              </Typography>
+            </Box>
+          )}
+
+          {data && data.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h6" color="text.secondary">
+                No FAQs available at the moment.
+              </Typography>
+            </Box>
+          )}
+
+          {data &&
+            data.map((faq, index) => (
+              <StyledAccordion key={index} expanded={expanded === index} onChange={handleChange(index)} disableGutters>
+                <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={expanded === index ? 700 : 500}
+                    sx={{ transition: 'font-weight 0.2s' }}
+                  >
+                    {faq.title}
+                  </Typography>
+                </StyledAccordionSummary>
+
+                <StyledAccordionDetails>
+                  <Divider sx={{ mb: 2.5 }} />
+
+                  <MarkdownWrapper>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{faq.content}</ReactMarkdown>
+                  </MarkdownWrapper>
+                </StyledAccordionDetails>
+              </StyledAccordion>
+            ))}
+
+          <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+            Can't find what you're looking for? Contact us and we'll get back to you shortly.
           </Typography>
-        </HeroSection>
-
-        {/*<Divider sx={{ mb: 6 }} />*/}
-
-        {/* Content */}
-        {isPending && <FaqSkeleton />}
-
-        {isError && (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 8,
-              color: 'error.main',
-              border: '1px solid',
-              borderColor: 'error.light',
-              borderRadius: 3,
-              backgroundColor: 'error.50',
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Failed to load FAQs
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary">
-              Unable to load the FAQ items... Sorry about that. Try again in a few minutes.
-            </Typography>
-          </Box>
-        )}
-
-        {data && data.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography variant="h6" color="text.secondary">
-              No FAQs available at the moment.
-            </Typography>
-          </Box>
-        )}
-
-        {data &&
-          data.map((faq, index) => (
-            <StyledAccordion key={index} expanded={expanded === index} onChange={handleChange(index)} disableGutters>
-              <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={expanded === index ? 700 : 500}
-                  sx={{ transition: 'font-weight 0.2s' }}
-                >
-                  {faq.title}
-                </Typography>
-              </StyledAccordionSummary>
-
-              <StyledAccordionDetails>
-                <Divider sx={{ mb: 2.5 }} />
-
-                <MarkdownWrapper>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{faq.content}</ReactMarkdown>
-                </MarkdownWrapper>
-              </StyledAccordionDetails>
-            </StyledAccordion>
-          ))}
-
-        <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-          Can't find what you're looking for? Contact us and we'll get back to you shortly.
-        </Typography>
-      </Container>
-    </PageWrapper>
+        </Container>
+      </PageWrapper>
+    </GeneralLayout>
   );
 }
 

@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 export const Route = createFileRoute('/collections/')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  return <div>Coming soon</div>;
+  return <GeneralLayout>Coming soon</GeneralLayout>;
 }

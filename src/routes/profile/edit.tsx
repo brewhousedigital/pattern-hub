@@ -4,6 +4,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { PRIMARY_COLOR, SECONDARY_COLOR } from '@/data/constants';
 import { useMutationAuthGetUser, useMutationAuthUpdateUser } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
+import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 import { styled, alpha } from '@mui/material/styles';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
@@ -124,128 +125,129 @@ function RouteComponent() {
   const secondaryValid = isValidHex(form.site_color_secondary);
 
   return (
-    <PageWrapper>
-      <Container maxWidth="sm">
-        {/* Header */}
-        <Box sx={{ mb: 5 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
-            Edit Profile
-          </Typography>
-        </Box>
+    <GeneralLayout>
+      <PageWrapper>
+        <Container maxWidth="sm">
+          {/* Header */}
+          <Box sx={{ mb: 5 }}>
+            <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
+              Edit Profile
+            </Typography>
+          </Box>
 
-        {loading ? (
-          <EditProfileSkeleton />
-        ) : (
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            {/* ── Username ── */}
-            <SectionCard elevation={0}>
-              <SectionLabel>
-                <PersonOutlinedIcon />
-                <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                  Username
-                </Typography>
-              </SectionLabel>
+          {loading ? (
+            <EditProfileSkeleton />
+          ) : (
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              {/* ── Username ── */}
+              <SectionCard elevation={0}>
+                <SectionLabel>
+                  <PersonOutlinedIcon />
+                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
+                    Username
+                  </Typography>
+                </SectionLabel>
 
-              <StyledTextField
-                fullWidth
-                value={form.username}
-                onChange={handleChange('username')}
-                error={!!errors.username}
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Typography variant="caption" color="text.disabled">
-                          {form.username.length}/32
-                        </Typography>
-                      </InputAdornment>
-                    ),
-                  },
-                  htmlInput: {
-                    maxLength: 32,
-                  },
-                }}
-              />
-            </SectionCard>
+                <StyledTextField
+                  fullWidth
+                  value={form.username}
+                  onChange={handleChange('username')}
+                  error={!!errors.username}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Typography variant="caption" color="text.disabled">
+                            {form.username.length}/32
+                          </Typography>
+                        </InputAdornment>
+                      ),
+                    },
+                    htmlInput: {
+                      maxLength: 32,
+                    },
+                  }}
+                />
+              </SectionCard>
 
-            {/* ── About ── */}
-            <SectionCard elevation={0}>
-              <SectionLabel>
-                <NotesOutlinedIcon />
-                <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                  About
-                </Typography>
-              </SectionLabel>
+              {/* ── About ── */}
+              <SectionCard elevation={0}>
+                <SectionLabel>
+                  <NotesOutlinedIcon />
+                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
+                    About
+                  </Typography>
+                </SectionLabel>
 
-              <StyledTextField
-                fullWidth
-                multiline
-                minRows={4}
-                maxRows={8}
-                placeholder="Tell the community a little about yourself and your stained glass journey..."
-                value={form.about}
-                onChange={handleChange('about')}
-                error={!!errors.about}
-                helperText={
-                  errors.about ?? (
-                    <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Optional. Shown on your public profile.</span>
-                      <span style={{ color: form.about.length > 999 ? 'orange' : 'inherit' }}>
-                        {form.about.length}/1000
-                      </span>
-                    </Box>
-                  )
-                }
-                slotProps={{
-                  htmlInput: {
-                    maxLength: 1000,
-                  },
-                }}
-              />
-            </SectionCard>
+                <StyledTextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  maxRows={8}
+                  placeholder="Tell the community a little about yourself and your stained glass journey..."
+                  value={form.about}
+                  onChange={handleChange('about')}
+                  error={!!errors.about}
+                  helperText={
+                    errors.about ?? (
+                      <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Optional. Shown on your public profile.</span>
+                        <span style={{ color: form.about.length > 999 ? 'orange' : 'inherit' }}>
+                          {form.about.length}/1000
+                        </span>
+                      </Box>
+                    )
+                  }
+                  slotProps={{
+                    htmlInput: {
+                      maxLength: 1000,
+                    },
+                  }}
+                />
+              </SectionCard>
 
-            {/* ── Interests ── */}
-            <SectionCard elevation={0}>
-              <SectionLabel>
-                <TagOutlinedIcon />
+              {/* ── Interests ── */}
+              <SectionCard elevation={0}>
+                <SectionLabel>
+                  <TagOutlinedIcon />
 
-                <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                  Interests
-                </Typography>
-              </SectionLabel>
+                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
+                    Interests
+                  </Typography>
+                </SectionLabel>
 
-              <StyledTextField
-                fullWidth
-                placeholder="Geometric, Floral, Art Nouveau, Mosaics..."
-                value={form.interests}
-                onChange={handleChange('interests')}
-                error={!!errors.interests}
-                helperText={errors.interests ?? 'Comma-separated list. Each entry becomes a chip on your profile.'}
-                slotProps={{
-                  htmlInput: {
-                    maxLength: 1000,
-                  },
-                }}
-              />
+                <StyledTextField
+                  fullWidth
+                  placeholder="Geometric, Floral, Art Nouveau, Mosaics..."
+                  value={form.interests}
+                  onChange={handleChange('interests')}
+                  error={!!errors.interests}
+                  helperText={errors.interests ?? 'Comma-separated list. Each entry becomes a chip on your profile.'}
+                  slotProps={{
+                    htmlInput: {
+                      maxLength: 1000,
+                    },
+                  }}
+                />
 
-              {interestChips.length > 0 && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                  {interestChips.map((chip, index) => (
-                    <Chip
-                      key={chip + index}
-                      label={chip}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      sx={{ borderRadius: '8px', fontWeight: 500 }}
-                    />
-                  ))}
-                </Box>
-              )}
-            </SectionCard>
+                {interestChips.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                    {interestChips.map((chip, index) => (
+                      <Chip
+                        key={chip + index}
+                        label={chip}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        sx={{ borderRadius: '8px', fontWeight: 500 }}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </SectionCard>
 
-            {/* ── Colors ── */}
-            {/*<SectionCard elevation={0}>
+              {/* ── Colors ── */}
+              {/*<SectionCard elevation={0}>
               <SectionLabel>
                 <PaletteOutlinedIcon />
                 <Typography variant="overline" fontWeight={700} letterSpacing={1}>
@@ -366,31 +368,32 @@ function RouteComponent() {
               </Box>
             </SectionCard>*/}
 
-            {/* ── Feedback & Actions ── */}
-            {saveError && (
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                {saveError}
-              </Alert>
-            )}
+              {/* ── Feedback & Actions ── */}
+              {saveError && (
+                <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+                  {saveError}
+                </Alert>
+              )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button
-                component={Link}
-                variant="outlined"
-                to="/profile"
-                sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
-              >
-                Cancel
-              </Button>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button
+                  component={Link}
+                  variant="outlined"
+                  to="/profile"
+                  sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
+                >
+                  Cancel
+                </Button>
 
-              <Button disableElevation type="submit" variant="contained" loading={saving}>
-                {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
-              </Button>
+                <Button disableElevation type="submit" variant="contained" loading={saving}>
+                  {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
+                </Button>
+              </Box>
             </Box>
-          </Box>
-        )}
-      </Container>
-    </PageWrapper>
+          )}
+        </Container>
+      </PageWrapper>
+    </GeneralLayout>
   );
 }
 
