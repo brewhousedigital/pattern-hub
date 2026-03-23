@@ -7,6 +7,7 @@ import { useQueryGetUserMarkedDoneByPagination } from '@/functions/database/mark
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
+import { useMutationGetGalleryUploadAuth } from '@/functions/database/gallery';
 
 import { styled, alpha } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -39,6 +40,7 @@ import {
   Tooltip,
   Divider,
   IconButton,
+  Button,
 } from '@mui/material';
 
 type UserSearch = {
@@ -67,6 +69,8 @@ const ProfileContent = () => {
 
   const [favoritePagination, setFavoritePagination] = React.useState(1);
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
+
+  const getGalleryAuth = useMutationGetGalleryUploadAuth();
 
   const {
     isPending: isPendingFavorite,
@@ -434,28 +438,35 @@ const PatternGrid = (props: PatternGridProps) => {
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns?.map((pattern) => (
         <Grid size={{ xs: 12, sm: 6, md: 3 }} key={pattern.id}>
-          <PatternTile elevation={0}>
-            <Box sx={{ position: 'relative' }}>
-              <Box
-                component="img"
-                src={generatePbImage(pattern.expand.pattern_id)}
-                alt={pattern.expand.pattern_id.name}
-                sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
-              />
-            </Box>
+          <Link
+            to={`/pattern/$patternId`}
+            params={{
+              patternId: pattern?.expand?.pattern_id?.id,
+            }}
+          >
+            <PatternTile elevation={0}>
+              <Box sx={{ position: 'relative' }}>
+                <Box
+                  component="img"
+                  src={generatePbImage(pattern.expand.pattern_id)}
+                  alt={pattern.expand.pattern_id.name}
+                  sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
+                />
+              </Box>
 
-            <Box sx={{ p: 1.75 }}>
-              <Typography variant="subtitle2" fontWeight={700} noWrap>
-                {pattern.expand.pattern_id.name}
-              </Typography>
-
-              {props.showCompleted && (
-                <Typography variant="body2" sx={{ opacity: 0.7, fontSize: 12 }}>
-                  Completed {createPrettyDate(pattern.created!)}
+              <Box sx={{ p: 1.75 }}>
+                <Typography variant="subtitle2" fontWeight={700} noWrap>
+                  {pattern.expand.pattern_id.name}
                 </Typography>
-              )}
-            </Box>
-          </PatternTile>
+
+                {props.showCompleted && (
+                  <Typography variant="body2" sx={{ opacity: 0.7, fontSize: 12 }}>
+                    Completed {createPrettyDate(pattern.created!)}
+                  </Typography>
+                )}
+              </Box>
+            </PatternTile>
+          </Link>
         </Grid>
       ))}
     </Grid>
