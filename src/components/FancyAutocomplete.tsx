@@ -22,6 +22,19 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       onChange={(event: any, newValue: string[]) => {
         props.onChange(newValue);
       }}
+      slotProps={{
+        popper: {
+          placement: 'top',
+          popperOptions: {
+            modifiers: [
+              {
+                name: 'flip',
+                enabled: false, // 👈 Fully disables the flip behavior
+              },
+            ],
+          },
+        },
+      }}
       inputValue={props.inputValue}
       onInputChange={(event, newInputValue) => {
         props.onInputChange(newInputValue);
