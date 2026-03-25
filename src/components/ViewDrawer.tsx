@@ -332,6 +332,7 @@ const FavoriteAndDone = () => {
 
 const FavoriteButton = () => {
   const { viewData } = useGlobalViewData();
+  const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
 
@@ -347,6 +348,11 @@ const FavoriteButton = () => {
   }, [data]);
 
   const handleFavorite = async () => {
+    if (!authData?.verified) {
+      enqueueSnackbar('You need to verify your email before you can favorite this pattern', { variant: 'error' });
+      return;
+    }
+
     try {
       if (isFavorite) {
         await removeFavorite.mutateAsync(data?.id || '');
@@ -381,6 +387,7 @@ const FavoriteButton = () => {
 
 const MarkAsDoneButton = () => {
   const { viewData } = useGlobalViewData();
+  const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternDoneStatus(viewData?.id || '');
 
@@ -396,6 +403,11 @@ const MarkAsDoneButton = () => {
   }, [data]);
 
   const handleFavorite = async () => {
+    if (!authData?.verified) {
+      enqueueSnackbar('You need to verify your email before you can mark this pattern as done', { variant: 'error' });
+      return;
+    }
+
     try {
       if (isFavorite) {
         await removeFavorite.mutateAsync(data?.id || '');
@@ -446,6 +458,11 @@ const Ratings = () => {
   }, [data]);
 
   const handleChange = async (_e: any, val: number | null) => {
+    if (!authData?.verified) {
+      enqueueSnackbar('You need to verify your email before you can rate patterns', { variant: 'error' });
+      return;
+    }
+
     try {
       const payload: TypeRatingPayload = {
         pattern_id: viewData?.id || '',

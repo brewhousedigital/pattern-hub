@@ -10,7 +10,7 @@ export const AccountVerificationBox = () => {
 
   if (authData?.id && !authData?.verified) {
     return (
-      <Box sx={{ p: 2, position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+      <Box sx={{ p: 2, position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 1300 }}>
         <Alert
           severity="warning"
           variant="filled"
