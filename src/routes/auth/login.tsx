@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMutationAuthSignIn, useMutationAuthGetUser } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { useGlobalAuthData } from '@/data/auth-data';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -20,7 +21,6 @@ import {
   Link as MuiLink,
   CircularProgress,
 } from '@mui/material';
-import { useGlobalAuthData } from '@/data/auth-data';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,

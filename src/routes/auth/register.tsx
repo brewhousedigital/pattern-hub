@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import {
+  useMutationAuthCreateUser,
+  useMutationAuthGetUser,
+  useMutationAuthSignIn,
+} from '@/functions/database/authentication';
+import { useGlobalAuthData } from '@/data/auth-data';
+
+import { styled, alpha } from '@mui/material/styles';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 
 import {
   Box,
@@ -17,10 +28,7 @@ import {
   LinearProgress,
   Tooltip,
 } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
@@ -32,8 +40,12 @@ function RouteComponent() {
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { setAuthData } = useGlobalAuthData();
+
+  const navigate = useNavigate();
 
   const strength = getPasswordStrength(password);
   const passwordsMatch = confirm.length > 0 && password === confirm;
@@ -41,20 +53,36 @@ function RouteComponent() {
 
   const isValid = email.trim().length > 0 && password.length >= 8 && password === confirm;
 
+  const createUser = useMutationAuthCreateUser();
+  const signIn = useMutationAuthSignIn();
+  const getUser = useMutationAuthGetUser();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!isValid) return;
-    setError(null);
-    setLoading(true);
+    setIsLoading(true);
+
     try {
-      // Replace with your registration call
-      await new Promise((res) => setTimeout(res, 1200));
-      // e.g. await register({ email, password });
+      // Create the user object and get the ID out so we can create the private user data next
+      await createUser.mutateAsync({ email, password });
+
+      // Sign in the newly created user so we have a valid token
+      const signInData = await signIn.mutateAsync({ email, password });
+
+      // The sign in function doesn't automatically expand data points so we need to call it again to get the full record
+      const userData = await getUser.mutateAsync({ userId: signInData.record.id });
+
+      setAuthData(userData);
+
+      navigate({
+        to: '/profile',
+      }).then();
     } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+      enqueueSnackbar('Something went wrong registering an account. Try again in a few minutes.');
     }
+
+    setIsLoading(false);
   };
 
   return (
@@ -70,12 +98,6 @@ function RouteComponent() {
               Favorites, ratings, and tracking which patterns you've completed already.
             </Typography>
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-              {error}
-            </Alert>
-          )}
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -177,8 +199,8 @@ function RouteComponent() {
               />
             </Box>
 
-            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || loading} sx={{ mt: 3.5 }}>
-              {loading ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
+            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || isLoading} sx={{ mt: 3.5 }}>
+              {isLoading ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
             </SubmitButton>
 
             <Typography
