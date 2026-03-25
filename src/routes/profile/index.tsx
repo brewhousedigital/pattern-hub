@@ -33,15 +33,11 @@ import {
   Grid,
   Tab,
   Tabs,
-  Rating,
-  Skeleton,
   ImageList,
   ImageListItem,
   ImageListItemBar,
-  Tooltip,
   Divider,
   IconButton,
-  Button,
 } from '@mui/material';
 
 type UserSearch = {
