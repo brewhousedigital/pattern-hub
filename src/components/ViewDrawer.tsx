@@ -18,6 +18,13 @@ import {
   useMutationRemoveMarkDonePattern,
   useQueryGetPatternDoneStatus,
 } from '@/functions/database/marked-done';
+import {
+  useQueryGetPatternRating,
+  useMutationCreatePatternRating,
+  useMutationUpdatePatternRating,
+  useMutationRemovePatternRating,
+  type TypeRatingPayload,
+} from '@/functions/database/ratings';
 
 import { alpha } from '@mui/material/styles';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -51,8 +58,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
   const isFirstItem = thisPatternIndex === 0;
   const isLastItem = thisPatternIndex === patternListLength - 1;
-
-  const [userRating, setUserRating] = useState<number | null>(null);
 
   const svgImageUrl = generatePbImage(viewData);
 
@@ -196,31 +201,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <FavoriteAndDone />
 
-            <Box sx={{ mb: 2.5 }}>
-              <SectionLabel>Community Rating</SectionLabel>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Rating
-                  value={userRating ?? 3}
-                  precision={0.5}
-                  onChange={(_, val) => setUserRating(val)}
-                  sx={{
-                    '& .MuiRating-iconFilled': { color: 'primary.main' },
-                    '& .MuiRating-iconHover': { color: '#DDB97E' },
-                    '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.25) },
-                  }}
-                />
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  3 · 50 ratings
-                </Typography>
-              </Box>
-
-              {userRating && (
-                <Typography variant="caption" sx={{ color: 'secondary.main', mt: 0.5, display: 'block' }}>
-                  You rated this {userRating} stars
-                </Typography>
-              )}
-            </Box>
+            <Ratings />
 
             <ThinDivider />
 
@@ -444,5 +425,82 @@ const MarkAsDoneButton = () => {
     >
       Mark as Done
     </Button>
+  );
+};
+
+const Ratings = () => {
+  const { viewData } = useGlobalViewData();
+  const { authData } = useGlobalAuthData();
+
+  const [userRating, setUserRating] = useState<number | null>(3);
+
+  const { isPending, isError, data, refetch } = useQueryGetPatternRating(viewData?.id || '');
+
+  const createRating = useMutationCreatePatternRating();
+  const updateRating = useMutationUpdatePatternRating();
+
+  React.useEffect(() => {
+    if (data) {
+      setUserRating(data.rating);
+    }
+  }, [data]);
+
+  const handleChange = async (_e: any, val: number | null) => {
+    try {
+      const payload: TypeRatingPayload = {
+        pattern_id: viewData?.id || '',
+        owner_id: authData?.id || '',
+        rating: val || 3,
+        rating_notes: '',
+      };
+
+      // If there's already a rating, we need to update instead of create, and we need to include the record ID for the update
+      if (data) {
+        payload.id = data.id;
+        await updateRating.mutateAsync(payload);
+      } else {
+        await createRating.mutateAsync(payload);
+      }
+
+      await refetch();
+
+      setUserRating(val);
+    } catch (error) {
+      enqueueSnackbar("Oops... couldn't rate this pattern right now. Try again in a few minutes.", {
+        variant: 'error',
+      });
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <SectionLabel>Community Rating</SectionLabel>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+        <Rating
+          value={userRating}
+          precision={1}
+          onChange={handleChange}
+          sx={{
+            '& .MuiRating-iconFilled': { color: 'primary.main' },
+            '& .MuiRating-iconHover': { color: '#DDB97E' },
+            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.25) },
+          }}
+        />
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          3 · 50 ratings
+        </Typography>
+      </Box>
+
+      {data && (
+        <>
+          <SectionLabel>Your Rating</SectionLabel>
+
+          <Typography variant="caption" sx={{ display: 'block' }}>
+            You gave this {userRating} stars
+          </Typography>
+        </>
+      )}
+    </Box>
   );
 };

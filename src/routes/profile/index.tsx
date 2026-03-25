@@ -101,7 +101,8 @@ const ProfileContent = () => {
     { label: 'Favorites', icon: <FavoriteBorderOutlinedIcon fontSize="small" /> },
     { label: 'Completed', icon: <TaskAltOutlinedIcon fontSize="small" /> },
     { label: 'Rated', icon: <StarOutlinedIcon fontSize="small" /> },
-    { label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
+    // TODO: Coming Soon
+    //{ label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
   ];
 
   return (

@@ -31,6 +31,8 @@ export type TypeFavoriteDoneRatingsResponse = {
   id: string;
   owner_id: string;
   pattern_id: string;
+  rating: number;
+  rating_notes: string;
   created: Date;
   updated: Date;
   expand: {
