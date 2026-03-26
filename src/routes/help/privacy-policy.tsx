@@ -28,8 +28,8 @@ function RouteComponent() {
             </Typography>
 
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', lineHeight: 1.8 }}>
-              We built Pattern Hub with privacy as a default, not an afterthought. Here's exactly what we do, and don't
-              do, with your data.
+              We built Pattern Archive with privacy as a default, not an afterthought. Here's exactly what we do, and
+              don't do, with your data.
             </Typography>
 
             <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>

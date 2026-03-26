@@ -65,7 +65,7 @@ export const Logo = () => {
   return (
     <Link to="/" style={logoLinkStyles} onClick={handleReturnHome}>
       <Typography component="h1" sx={logoStyles}>
-        Pattern Hub
+        Pattern Archive
       </Typography>
     </Link>
   );

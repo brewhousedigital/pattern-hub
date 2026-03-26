@@ -1,4 +1,4 @@
-# Pattern Hub
+# Pattern Archive
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/93f34818-b89e-45e7-b4d6-39cf94017d94/deploy-status)](https://app.netlify.com/projects/pattern-hub/deploys)
 
