@@ -1,50 +1,24 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useGlobalAuthData, useRefreshAdminAuth } from '@/data/auth-data';
-import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
-import { AdminPatternTable } from '@/components/admin/AdminPatternTable';
-import { AdminLoginView } from '@/components/admin/AdminLoginView';
-import { AdminLayout } from '@/components/layout/AdminLayout';
+import { AdminTagsTable } from '@/components/admin/AdminTagsTable';
+import { AdminAuthorsTable } from '@/components/admin/AdminAuthorsTable';
 
-import { Container } from '@mui/material';
+import { Grid } from '@mui/material';
 
 export const Route = createFileRoute('/space-command/')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { isLoading, isAdmin, handleRefresh } = useRefreshAdminAuth();
-  console.log('>>>isLoading', isLoading);
-
-  React.useEffect(() => {
-    handleRefresh().then();
-  }, []);
-
-  const { authData } = useGlobalAuthData();
-
-  if (isLoading) {
-    return <FullScreenLoader />;
-  }
-
-  if (!isAdmin) {
-    return <AdminLoginView />;
-  }
-
-  if (!authData) {
-    return <AdminLoginView />;
-  }
-
   return (
-    <AdminLayout>
-      <AdminPageContent />
-    </AdminLayout>
+    <Grid container spacing={2}>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <AdminTagsTable />
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 6 }}>
+        <AdminAuthorsTable />
+      </Grid>
+    </Grid>
   );
 }
-
-const AdminPageContent = () => {
-  return (
-    <Container>
-      <AdminPatternTable />
-    </Container>
-  );
-};

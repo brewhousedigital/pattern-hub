@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
+import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
+import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
+import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
+import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
@@ -25,15 +30,20 @@ import { Route as HelpAboutRouteImport } from './routes/help/about'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
+const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
+  id: '/space-command',
+  path: '/space-command',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
-  id: '/space-command/',
-  path: '/space-command/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/profile/',
@@ -50,10 +60,30 @@ const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   path: '/collections/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
 const SpaceCommandTestRoute = SpaceCommandTestRouteImport.update({
-  id: '/space-command/test',
-  path: '/space-command/test',
-  getParentRoute: () => rootRouteImport,
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const SpaceCommandPatternsRoute = SpaceCommandPatternsRouteImport.update({
+  id: '/patterns',
+  path: '/patterns',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const SpaceCommandMapRoute = SpaceCommandMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
   id: '/profile/edit',
@@ -103,6 +133,7 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/space-command': typeof SpaceCommandRouteRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/help/about': typeof HelpAboutRoute
@@ -112,7 +143,11 @@ export interface FileRoutesByFullPath {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/map': typeof SpaceCommandMapRoute
+  '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
+  '/space-command/users': typeof SpaceCommandUsersRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -129,7 +164,11 @@ export interface FileRoutesByTo {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/map': typeof SpaceCommandMapRoute
+  '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
+  '/space-command/users': typeof SpaceCommandUsersRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -138,6 +177,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/space-command': typeof SpaceCommandRouteRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/help/about': typeof HelpAboutRoute
@@ -147,7 +187,11 @@ export interface FileRoutesById {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/map': typeof SpaceCommandMapRoute
+  '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
+  '/space-command/users': typeof SpaceCommandUsersRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -157,6 +201,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/space-command'
     | '/auth/login'
     | '/auth/register'
     | '/help/about'
@@ -166,7 +211,11 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/faq'
+    | '/space-command/map'
+    | '/space-command/patterns'
     | '/space-command/test'
+    | '/space-command/users'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -183,7 +232,11 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/faq'
+    | '/space-command/map'
+    | '/space-command/patterns'
     | '/space-command/test'
+    | '/space-command/users'
     | '/collections'
     | '/guides'
     | '/profile'
@@ -191,6 +244,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/space-command'
     | '/auth/login'
     | '/auth/register'
     | '/help/about'
@@ -200,7 +254,11 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/pattern/$patternId'
     | '/profile/edit'
+    | '/space-command/faq'
+    | '/space-command/map'
+    | '/space-command/patterns'
     | '/space-command/test'
+    | '/space-command/users'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -209,6 +267,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SpaceCommandRouteRoute: typeof SpaceCommandRouteRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   HelpAboutRoute: typeof HelpAboutRoute
@@ -218,15 +277,20 @@ export interface RootRouteChildren {
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
-  SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
-  SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/space-command': {
+      id: '/space-command'
+      path: '/space-command'
+      fullPath: '/space-command'
+      preLoaderRoute: typeof SpaceCommandRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -236,10 +300,10 @@ declare module '@tanstack/react-router' {
     }
     '/space-command/': {
       id: '/space-command/'
-      path: '/space-command'
+      path: '/'
       fullPath: '/space-command/'
       preLoaderRoute: typeof SpaceCommandIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
     }
     '/profile/': {
       id: '/profile/'
@@ -262,12 +326,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/space-command/users': {
+      id: '/space-command/users'
+      path: '/users'
+      fullPath: '/space-command/users'
+      preLoaderRoute: typeof SpaceCommandUsersRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/test': {
       id: '/space-command/test'
-      path: '/space-command/test'
+      path: '/test'
       fullPath: '/space-command/test'
       preLoaderRoute: typeof SpaceCommandTestRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/patterns': {
+      id: '/space-command/patterns'
+      path: '/patterns'
+      fullPath: '/space-command/patterns'
+      preLoaderRoute: typeof SpaceCommandPatternsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/map': {
+      id: '/space-command/map'
+      path: '/map'
+      fullPath: '/space-command/map'
+      preLoaderRoute: typeof SpaceCommandMapRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/faq': {
+      id: '/space-command/faq'
+      path: '/faq'
+      fullPath: '/space-command/faq'
+      preLoaderRoute: typeof SpaceCommandFaqRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
     }
     '/profile/edit': {
       id: '/profile/edit'
@@ -335,8 +427,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SpaceCommandRouteRouteChildren {
+  SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
+  SpaceCommandMapRoute: typeof SpaceCommandMapRoute
+  SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
+  SpaceCommandTestRoute: typeof SpaceCommandTestRoute
+  SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
+  SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
+}
+
+const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
+  SpaceCommandFaqRoute: SpaceCommandFaqRoute,
+  SpaceCommandMapRoute: SpaceCommandMapRoute,
+  SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
+  SpaceCommandTestRoute: SpaceCommandTestRoute,
+  SpaceCommandUsersRoute: SpaceCommandUsersRoute,
+  SpaceCommandIndexRoute: SpaceCommandIndexRoute,
+}
+
+const SpaceCommandRouteRouteWithChildren =
+  SpaceCommandRouteRoute._addFileChildren(SpaceCommandRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SpaceCommandRouteRoute: SpaceCommandRouteRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   HelpAboutRoute: HelpAboutRoute,
@@ -346,11 +460,9 @@ const rootRouteChildren: RootRouteChildren = {
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileEditRoute: ProfileEditRoute,
-  SpaceCommandTestRoute: SpaceCommandTestRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
-  SpaceCommandIndexRoute: SpaceCommandIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
