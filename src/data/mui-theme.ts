@@ -50,6 +50,9 @@ const baseTheme = createTheme({
   },
   components: {
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',

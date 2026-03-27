@@ -6,7 +6,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
@@ -36,7 +36,7 @@ const SidebarLinks = [
   { label: 'Patterns', href: '/space-command/patterns', icon: <ExtensionRoundedIcon /> },
   { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon /> },
   { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon /> },
-  { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferIcon /> },
+  { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon /> },
   { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon /> },
 ];
 
