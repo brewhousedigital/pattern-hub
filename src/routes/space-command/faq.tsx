@@ -69,6 +69,14 @@ function RouteComponent() {
         </Button>
       </Box>
 
+      <Typography sx={{ mb: 2 }}>
+        Need help with Markdown?{' '}
+        <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+          Use this cheatsheet
+        </a>
+        .
+      </Typography>
+
       {isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Failed to load FAQ items.
