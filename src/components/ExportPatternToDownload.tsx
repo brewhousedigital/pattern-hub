@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { useGlobalViewData } from '@/data/view';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -40,7 +41,9 @@ type Unit = (typeof UNIT_OPTIONS)[number];
 
 function parseToInches(value: string, unit: Unit): number | null {
   const n = parseFloat(value);
+
   if (isNaN(n) || n <= 0) return null;
+
   switch (unit) {
     case 'in':
       return n;
@@ -57,7 +60,7 @@ function toPx(inches: number, dpi: DpiOption): number {
   return Math.round(inches * dpi);
 }
 
-function sanitizeSvg(raw: string): string {
+function validateSvg(raw: string): string {
   // Ensure the SVG has an XML namespace so canvas can render it
   if (!raw.includes('xmlns=')) {
     return raw.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
@@ -72,7 +75,8 @@ async function svgToBitmap(
   format: ExportFormat,
   bgColor: string | null,
 ): Promise<Blob> {
-  const clean = sanitizeSvg(svgString);
+  const validSvg = validateSvg(svgString);
+  const clean = sanitizeSvg(validSvg);
   const svgBlob = new Blob([clean], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
 
@@ -182,7 +186,8 @@ export const ExportPatternToDownload = () => {
       const filename = `${slug}.${format}`;
 
       if (isSvgExport) {
-        const clean = sanitizeSvg(svgString);
+        const validSvg = validateSvg(svgString);
+        const clean = sanitizeSvg(validSvg);
         const blob = new Blob([clean], { type: 'image/svg+xml;charset=utf-8' });
         downloadBlob(blob, filename);
       } else {

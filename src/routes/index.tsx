@@ -4,7 +4,7 @@ import { useQueryGetAllPatternsByPagination } from '@/functions/database/pattern
 import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { MainPageContent } from '@/components/MainPageContent';
-import { buildUpdatedTerm } from '@/functions/utilities/searchBuildUpdatedTerms';
+import { buildUpdatedTerm } from '@/functions/utilities/search-build-updated-terms';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import type { TypeTagObject } from '@/functions/types/types';
 import { SidebarList, SidebarCategoryTitle } from '@/components/layout/Sidebar.tsx';

@@ -15,6 +15,7 @@ import {
   useMutationEditPattern,
   useMutationDeletePattern,
 } from '@/functions/database/patterns';
+import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
@@ -207,7 +208,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       }
 
       if (file && previewUrl) {
-        payload.pattern_file = file;
+        payload.pattern_file = await sanitizeSvgFile(file);
       }
 
       await savePattern.mutateAsync(payload);
