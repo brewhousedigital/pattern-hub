@@ -43,8 +43,8 @@ function RouteComponent() {
     setDialogOpen(true);
   }
 
-  function handleDelete(id: string) {
-    if (confirm('Delete this FAQ item?')) {
+  function handleDelete(id: string, title: string) {
+    if (confirm(`Delete '${title}'?`)) {
       deleteFaq.mutate(id);
     }
   }
@@ -108,7 +108,7 @@ function RouteComponent() {
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDelete(faq.id)}
+                        onClick={() => handleDelete(faq.id, faq.title)}
                         disabled={deleteFaq.isPending}
                       >
                         <DeleteIcon fontSize="small" />
