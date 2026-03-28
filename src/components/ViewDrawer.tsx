@@ -294,8 +294,6 @@ const FavoriteAndDone = () => {
 
   const { isPending, isFetching, isError, data } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
 
-  console.log('>>>data', data);
-
   const favoritePattern = useMutationFavoritePattern();
   const removeFavorite = useMutationRemoveFavoritePattern();
 

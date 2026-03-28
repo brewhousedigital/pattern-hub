@@ -461,7 +461,7 @@ export const ExportPatternForPrintV2 = () => {
               select
               fullWidth
               size="small"
-              value={paperSelectionSize}
+              value={paperSelectionSize || ''}
               onChange={(e) => setPaperSelectionSize(e.target.value as TypePaperSize)}
               sx={{ fontSize: '0.875rem' }}
             >

@@ -4,6 +4,8 @@
 
 This app is built in Vite, React, Typescript, and the new React Compiler. It uses MUI for the component library, Tanstack Router for routing, Tanstack Query for API caching, and Pocketbase for the backend.
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I2I51RLS9K)
+
 Links:
 
 - [https://vite.dev/](https://vite.dev/)

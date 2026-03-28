@@ -1,3 +1,4 @@
+import React from 'react';
 import { Logo } from '@/components/layout/Header/Header.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
@@ -20,6 +21,24 @@ export const Footer = () => {
         <Grid container>
           <Grid size={{ xs: 12, md: 3 }} sx={{ mb: { xs: 4, md: 0 } }}>
             <Logo />
+
+            <Button
+              variant="contained"
+              component="a"
+              href="https://ko-fi.com/I2I51RLS9K"
+              target="_blank"
+              startIcon={
+                <img
+                  width="88"
+                  height="71"
+                  style={{ border: 0, maxWidth: 24, width: '100%', height: 'auto' }}
+                  src="/kofi-logo.png"
+                  alt="Support the project on ko-fi.com"
+                />
+              }
+            >
+              Support the project on Ko-fi
+            </Button>
           </Grid>
 
           <Grid size={{ xs: 12, md: 3 }}>

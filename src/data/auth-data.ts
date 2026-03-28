@@ -61,8 +61,6 @@ export const useRefreshAdminAuth = () => {
     try {
       const refreshUserData = await authRefreshAdminSession();
       const userData = await getUser.mutateAsync({ userId: refreshUserData.record.id });
-      console.log('>>>refreshUserData', refreshUserData);
-      console.log('>>>userData', userData);
 
       setIsAdmin(true);
       setAuthData(userData);

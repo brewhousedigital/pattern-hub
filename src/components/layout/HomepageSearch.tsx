@@ -22,7 +22,6 @@ export const HomepageSearch = () => {
       if (location.pathname !== '/') {
         handleClearSearch();
       } else {
-        console.log('>>>location', location);
         if (location?.search && location?.search?.q) {
           setSearchTerm(location?.search?.q);
         }

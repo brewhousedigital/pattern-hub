@@ -11,7 +11,6 @@ export const Route = createFileRoute('/space-command')({
 
 function RouteComponent() {
   const { isLoading, isAdmin, handleRefresh } = useRefreshAdminAuth();
-  console.log('>>>isLoading', isLoading);
 
   React.useEffect(() => {
     handleRefresh().then();
