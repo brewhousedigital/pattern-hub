@@ -193,6 +193,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 <Typography
                   variant="h3"
                   sx={{
+                    wordBreak: 'break-word',
                     fontSize: { xs: '2rem', md: '3rem' },
                     lineHeight: 1.1,
                     color: 'text.primary',
@@ -208,7 +209,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               </Typography>
             </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.7, mb: 2.5 }}>
+            <Typography
+              variant="body1"
+              sx={{ color: 'text.secondary', lineHeight: 1.7, mb: 2.5, wordBreak: 'break-word' }}
+            >
               {viewData?.description}
             </Typography>
 
