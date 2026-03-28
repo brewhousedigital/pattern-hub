@@ -26,6 +26,7 @@ import {
   type TypeRatingPayload,
   useQueryGetCommunityRatingByPatternId,
 } from '@/functions/database/ratings';
+import { useMutationCreateComplaint } from '@/functions/database/complaints';
 
 import { alpha } from '@mui/material/styles';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -38,7 +39,20 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 
-import { Alert, Box, Typography, Chip, Rating, Button, IconButton, Paper, Stack, Grid } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Typography,
+  Chip,
+  Rating,
+  Button,
+  IconButton,
+  Paper,
+  Stack,
+  Grid,
+  Collapse,
+  TextField,
+} from '@mui/material';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
@@ -273,14 +287,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            <Button
-              startIcon={<ReportProblemOutlinedIcon fontSize="small" />}
-              size="small"
-              onClick={() => {}}
-              color="warning"
-            >
-              Report an issue
-            </Button>
+            <ReportAnIssue />
           </Box>
         </Box>
       </Box>
@@ -288,9 +295,85 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   );
 };
 
+const ReportAnIssue = () => {
+  const { viewData } = useGlobalViewData();
+  const { authData } = useGlobalAuthData();
+
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isDone, setIsDone] = React.useState(false);
+  const [reason, setReason] = React.useState('');
+
+  const createComplaint = useMutationCreateComplaint();
+
+  const handleSubmit = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+
+    if (reason.length < 25) {
+      enqueueSnackbar('Please make your complaint more descriptive.', { variant: 'warning' });
+      return;
+    }
+
+    try {
+      await createComplaint.mutateAsync({
+        pattern_id: viewData?.id || '',
+        owner_id: authData?.id || '',
+        reason: reason,
+      });
+
+      setIsOpen(false);
+      setIsDone(true);
+
+      setTimeout(() => {
+        setReason('');
+      }, 1000);
+    } catch (error: any) {
+      enqueueSnackbar("Couldn't submit your complaint right now. Try again in a few minutes.", { variant: 'error' });
+    }
+  };
+
+  return (
+    <>
+      <Box sx={{ mb: 2 }}>
+        <Button
+          startIcon={<ReportProblemOutlinedIcon fontSize="small" />}
+          size="small"
+          onClick={() => {
+            setIsOpen(true);
+          }}
+          color="warning"
+        >
+          Report an issue
+        </Button>
+      </Box>
+
+      <Collapse in={isOpen}>
+        <Stack onSubmit={handleSubmit} gap={2} component="form">
+          <TextField
+            multiline
+            variant="filled"
+            label="Reason"
+            rows={4}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+
+          <Box>
+            <Button variant="outlined" type="submit">
+              Submit
+            </Button>
+          </Box>
+        </Stack>
+      </Collapse>
+
+      <Collapse in={isDone}>
+        <Alert severity="success">Your complaint has been logged. We will review it as quickly as possible.</Alert>
+      </Collapse>
+    </>
+  );
+};
+
 const FavoriteAndDone = () => {
   const { viewData } = useGlobalViewData();
-
   const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
