@@ -24,6 +24,7 @@ import {
   useMutationUpdatePatternRating,
   useMutationRemovePatternRating,
   type TypeRatingPayload,
+  useQueryGetCommunityRatingByPatternId,
 } from '@/functions/database/ratings';
 
 import { alpha } from '@mui/material/styles';
@@ -442,16 +443,26 @@ const Ratings = () => {
   const { viewData } = useGlobalViewData();
   const { authData } = useGlobalAuthData();
 
-  const [userRating, setUserRating] = useState<number | null>(3);
+  const [userRating, setUserRating] = useState<number | null>(0);
 
   const { isPending, isError, data, refetch } = useQueryGetPatternRating(viewData?.id || '');
 
   const createRating = useMutationCreatePatternRating();
   const updateRating = useMutationUpdatePatternRating();
 
+  const {
+    isPending: isPendingCommunityRating,
+    isError: isErrorCommunityRating,
+    data: communityRating,
+    refetch: refetchCommunityRating,
+  } = useQueryGetCommunityRatingByPatternId(viewData?.id || '');
+  console.log('>>>communityRating', communityRating);
+
   React.useEffect(() => {
     if (data) {
       setUserRating(data.rating);
+    } else {
+      setUserRating(0);
     }
   }, [data]);
 
@@ -478,6 +489,7 @@ const Ratings = () => {
       }
 
       await refetch();
+      await refetchCommunityRating();
 
       setUserRating(val);
     } catch (error) {
@@ -493,29 +505,41 @@ const Ratings = () => {
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
         <Rating
-          value={userRating}
+          disabled
+          precision={0.1}
+          value={communityRating?.average_rating || 0}
+          sx={{
+            '& .MuiRating-iconFilled': { color: 'primary.main' },
+            '& .MuiRating-iconHover': { color: '#DDB97E' },
+            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
+          }}
+        />
+        {communityRating?.total_ratings || 0 > 0 ? (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {communityRating?.average_rating} star{(communityRating?.average_rating || 0) > 1 ? 's' : ''} ·{' '}
+            {communityRating?.total_ratings} ratings
+          </Typography>
+        ) : (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            This pattern hasn't been rated yet
+          </Typography>
+        )}
+      </Box>
+
+      <SectionLabel>Your Rating</SectionLabel>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+        <Rating
           precision={1}
+          value={userRating}
           onChange={handleChange}
           sx={{
             '& .MuiRating-iconFilled': { color: 'primary.main' },
             '& .MuiRating-iconHover': { color: '#DDB97E' },
-            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.25) },
+            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
           }}
         />
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          3 · 50 ratings
-        </Typography>
       </Box>
-
-      {data && (
-        <>
-          <SectionLabel>Your Rating</SectionLabel>
-
-          <Typography variant="caption" sx={{ display: 'block' }}>
-            You gave this {userRating} stars
-          </Typography>
-        </>
-      )}
     </Box>
   );
 };

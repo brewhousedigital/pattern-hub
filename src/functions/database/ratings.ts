@@ -69,3 +69,23 @@ export const useMutationRemovePatternRating = () => {
     },
   });
 };
+
+type TypeCommunityRatingItem = {
+  collectionId: string;
+  collectionName: string;
+  id: string;
+  pattern_id: string;
+  average_rating: number;
+  total_ratings: number;
+};
+
+export const useQueryGetCommunityRatingByPatternId = (patternId: string) => {
+  return useQuery({
+    queryKey: ['useQueryGetUserRatingsByPagination', patternId],
+    queryFn: async (): Promise<TypeCommunityRatingItem> => {
+      return await pocketbase.collection('community_ratings').getFirstListItem(`pattern_id="${patternId}"`);
+    },
+    enabled: !!patternId,
+    refetchOnMount: 'always',
+  });
+};
