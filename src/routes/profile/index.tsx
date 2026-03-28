@@ -324,14 +324,6 @@ interface GalleryPhoto {
   uploadedAt: string;
 }
 
-const MOCK_GALLERY: GalleryPhoto[] = Array.from({ length: 7 }, (_, i) => ({
-  id: `photo-${i}`,
-  imageUrl: `https://picsum.photos/seed/gallery${i}/600/500`,
-  caption: i % 2 === 0 ? `My finished piece #${i + 1}` : undefined,
-  patternTitle: `Pattern ${i + 1}`,
-  uploadedAt: new Date(Date.now() - i * 8640e6).toISOString(),
-}));
-
 const difficultyColor = (d: string): 'success' | 'warning' | 'error' | 'default' => {
   if (d === 'Beginner') return 'success';
   if (d === 'Intermediate') return 'warning';
