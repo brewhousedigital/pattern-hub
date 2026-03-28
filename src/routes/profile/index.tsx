@@ -4,6 +4,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
 import { useQueryGetUserMarkedDoneByPagination } from '@/functions/database/marked-done';
+import { useQueryGetUserRatingsByPagination } from '@/functions/database/ratings';
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
@@ -70,6 +71,7 @@ const ProfileContent = () => {
 
   const [favoritePagination, setFavoritePagination] = React.useState(1);
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
+  const [ratingsPagination, setRatingsPagination] = React.useState(1);
 
   const getGalleryAuth = useMutationGetGalleryUploadAuth();
 
@@ -87,6 +89,12 @@ const ProfileContent = () => {
     refetch: refetchMarkedDone,
   } = useQueryGetUserMarkedDoneByPagination(markedDonePagination);
 
+  const {
+    isPending: isPendingRatings,
+    isError: isErrorRatings,
+    data: dataRatings,
+    refetch: refetchRatings,
+  } = useQueryGetUserRatingsByPagination(ratingsPagination);
   const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
 
   const [tab, setTab] = useState(0);
@@ -276,16 +284,16 @@ const ProfileContent = () => {
           {tab === 2 && (
             <>
               <PatternGrid
-                patterns={dataMarkedDone?.items}
-                isPending={isPendingMarkedDone}
-                isError={isErrorMarkedDone}
+                patterns={dataRatings?.items}
+                isPending={isPendingRatings}
+                isError={isErrorRatings}
                 isEmptyMessage="No rated patterns yet."
                 icon={<StarOutlinedIcon />}
                 showRating
               />
 
-              {dataMarkedDone && dataMarkedDone?.totalItems > 0 && (
-                <PaginationBox data={dataMarkedDone} value={markedDonePagination} setter={setMarkedDonePagination} />
+              {dataRatings && dataRatings?.totalItems > 0 && (
+                <PaginationBox data={dataRatings} value={markedDonePagination} setter={setRatingsPagination} />
               )}
             </>
           )}

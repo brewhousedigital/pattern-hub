@@ -14,6 +14,7 @@ export const useQueryGetUserRatingsByPagination = (pageNumber: number) => {
       });
     },
     enabled: !!pageNumber,
+    refetchOnMount: 'always',
   });
 };
 
