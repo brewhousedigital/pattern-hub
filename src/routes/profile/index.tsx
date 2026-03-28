@@ -153,11 +153,11 @@ const ProfileContent = () => {
                   value: dataMarkedDone?.totalItems || 0,
                   label: 'Rated',
                 },
-                {
+                /*{
                   icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 16, color: 'secondary.main' }} />,
                   value: dataMarkedDone?.totalItems || 0,
                   label: 'Photos',
-                },
+                },*/
               ].map((stat) => (
                 <StatBox key={stat.label}>
                   {stat.icon}
@@ -452,7 +452,7 @@ const PatternGrid = (props: PatternGridProps) => {
                   component="img"
                   src={generatePbImage(pattern.expand.pattern_id)}
                   alt={pattern.expand.pattern_id.name}
-                  sx={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                 />
               </Box>
 
