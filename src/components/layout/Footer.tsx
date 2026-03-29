@@ -1,6 +1,6 @@
 import React from 'react';
 import { Logo } from '@/components/layout/Header/Header.tsx';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
 import { SectionLabel } from '@/components/ViewHelpers.tsx';
 import { DOMAIN_URL } from '@/data/constants.ts';
@@ -11,8 +11,10 @@ import ShareIcon from '@mui/icons-material/Share';
 import { Box, Button, Grid, Stack, Link as MuiLink } from '@mui/material';
 
 export const Footer = () => {
+  const location = useLocation();
+
   const shareSite = async () => {
-    await copyToClipboard(DOMAIN_URL);
+    await copyToClipboard(DOMAIN_URL + location.publicHref);
   };
 
   return (

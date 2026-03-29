@@ -42,7 +42,7 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
   };
 
   // /patterns/:id
-  const patternMatch = pathname.match(/^\/patterns\/([^/]+)$/);
+  const patternMatch = pathname.match(/^\/pattern\/([^/]+)$/);
 
   if (patternMatch) {
     try {
@@ -78,7 +78,29 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
       description: 'Frequently asked questions about Pattern Hub.',
       'og:title': `FAQ — ${SITE_NAME}`,
       'og:description': 'Frequently asked questions about Pattern Hub.',
-      'og:url': `${SITE_URL}/faq`,
+      'og:url': `${SITE_URL}/help/faq`,
+    };
+  }
+
+  if (pathname === '/collections') {
+    return {
+      ...base,
+      title: `Collections — ${SITE_NAME}`,
+      description: 'Unique collections to help with your stained glass journey.',
+      'og:title': `Collections — ${SITE_NAME}`,
+      'og:description': 'Unique collections to help with your stained glass journey.',
+      'og:url': `${SITE_URL}/collections`,
+    };
+  }
+
+  if (pathname === '/guides') {
+    return {
+      ...base,
+      title: `Guides — ${SITE_NAME}`,
+      description: 'Guides and tutorials to help you through projects.',
+      'og:title': `Guides — ${SITE_NAME}`,
+      'og:description': 'Guides and tutorials to help you through projects.',
+      'og:url': `${SITE_URL}/guides`,
     };
   }
 
