@@ -15,3 +15,7 @@
 
 [prerendering]
   enabled = true
+
+[[edge_functions]]
+  path = "/*"
+  function = "og-meta"
