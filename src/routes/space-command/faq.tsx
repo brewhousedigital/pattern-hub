@@ -3,24 +3,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllFAQ, useMutationDeleteFAQ, type TypeFAQItem } from '@/functions/database/faq';
 import { AdminFAQEditorModal } from '@/components/admin/AdminFAQEditorModal';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
+import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import {
-  Box,
-  Button,
-  Typography,
-  Card,
-  CardContent,
-  CardActions,
-  IconButton,
-  Tooltip,
-  Skeleton,
-  Alert,
-  Stack,
-} from '@mui/material';
+import { Box, Typography, Card, CardContent, IconButton, Tooltip, Skeleton, Alert, Stack } from '@mui/material';
 
 export const Route = createFileRoute('/space-command/faq')({
   component: RouteComponent,
@@ -51,23 +40,17 @@ function RouteComponent() {
 
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={500}>
-            FAQ Editor
-          </Typography>
-
-          {faqs && (
-            <Typography variant="body2" color="text.secondary">
-              {faqs.length} item{faqs.length !== 1 ? 's' : ''}
-            </Typography>
-          )}
-        </Box>
-
-        <Button variant="contained" color="success" startIcon={<AddIcon />} onClick={openCreate}>
-          Add FAQ
-        </Button>
-      </Box>
+      <AdminHeaderContainer
+        title="FAQ Editor"
+        subtitle={
+          <>
+            {faqs?.length} item{faqs?.length !== 1 ? 's' : ''}
+          </>
+        }
+        action={openCreate}
+        actionText="Add FAQ"
+        actionIcon={<AddIcon />}
+      />
 
       <Typography sx={{ mb: 2 }}>
         Need help with Markdown?{' '}

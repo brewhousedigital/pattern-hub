@@ -6,6 +6,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
@@ -34,6 +35,8 @@ import {
 const SidebarLinks = [
   { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
   { label: 'Patterns', href: '/space-command/patterns', icon: <ExtensionRoundedIcon /> },
+  { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
+  { label: 'Complaints', href: '/space-command/complaints', icon: <FeedbackIcon /> },
   { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon /> },
   { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon /> },
   { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon /> },
@@ -99,14 +102,23 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
         <Divider />
 
         <List>
-          {SidebarLinks.map((link, index) => (
-            <ListItem key={`sidebar-link` + index} disablePadding>
-              <ListItemButton component={Link} to={link.href}>
-                <ListItemIcon>{link.icon}</ListItemIcon>
-                <ListItemText primary={link.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
+          {SidebarLinks.map((link, index) => {
+            if (link.label === 'divider') {
+              return (
+                <ListItem key={`sidebar-link` + index}>
+                  <Box sx={{ height: '1px', width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.12)' }} />
+                </ListItem>
+              );
+            }
+            return (
+              <ListItem key={`sidebar-link` + index} disablePadding>
+                <ListItemButton component={Link} to={link.href}>
+                  <ListItemIcon>{link.icon}</ListItemIcon>
+                  <ListItemText primary={link.label} />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
       </Drawer>
 

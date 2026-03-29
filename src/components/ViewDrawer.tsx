@@ -306,6 +306,20 @@ const ReportAnIssue = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isDone, setIsDone] = React.useState(false);
   const [reason, setReason] = React.useState('');
+  const [email, setEmail] = React.useState('');
+
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (authData && authData?.email) {
+      setEmail(authData?.email);
+    }
+  }, [authData]);
+
+  React.useEffect(() => {
+    setIsOpen(false);
+    setIsDone(false);
+  }, [viewData]);
 
   const createComplaint = useMutationCreateComplaint();
 
@@ -317,10 +331,13 @@ const ReportAnIssue = () => {
       return;
     }
 
+    setIsLoading(true);
+
     try {
       await createComplaint.mutateAsync({
         pattern_id: viewData?.id || '',
         owner_id: authData?.id || '',
+        email: email,
         reason: reason,
       });
 
@@ -333,25 +350,31 @@ const ReportAnIssue = () => {
     } catch (error: any) {
       enqueueSnackbar("Couldn't submit your complaint right now. Try again in a few minutes.", { variant: 'error' });
     }
+
+    setIsLoading(false);
   };
 
   return (
     <>
-      <Box sx={{ mb: 2 }}>
-        <Button
-          startIcon={<ReportProblemOutlinedIcon fontSize="small" />}
-          size="small"
-          onClick={() => {
-            setIsOpen(true);
-          }}
-          color="warning"
-        >
-          Report an issue
-        </Button>
-      </Box>
+      <Collapse in={!isDone}>
+        <Box sx={{ mb: 2 }}>
+          <Button
+            startIcon={<ReportProblemOutlinedIcon fontSize="small" />}
+            size="small"
+            onClick={() => {
+              setIsOpen(true);
+            }}
+            color="warning"
+          >
+            Report an issue
+          </Button>
+        </Box>
+      </Collapse>
 
       <Collapse in={isOpen}>
         <Stack onSubmit={handleSubmit} gap={2} component="form">
+          <TextField variant="filled" label="Contact Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
           <TextField
             multiline
             variant="filled"
@@ -362,7 +385,7 @@ const ReportAnIssue = () => {
           />
 
           <Box>
-            <Button variant="outlined" type="submit">
+            <Button variant="outlined" type="submit" loading={isLoading}>
               Submit
             </Button>
           </Box>
@@ -370,7 +393,10 @@ const ReportAnIssue = () => {
       </Collapse>
 
       <Collapse in={isDone}>
-        <Alert severity="success">Your complaint has been logged. We will review it as quickly as possible.</Alert>
+        <Alert severity="info">
+          Your issue has been logged. <br />
+          We will review it as quickly as possible.
+        </Alert>
       </Collapse>
     </>
   );

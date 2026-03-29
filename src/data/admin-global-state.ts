@@ -31,3 +31,23 @@ export const useGlobalAdminPagination = () => {
   const [paginationModel, setPaginationModel] = useAtom(globalAdminPagination);
   return { paginationModel, setPaginationModel };
 };
+
+const globalAdminFilterComplaints = atom<GridFilterModel>();
+
+export const useGlobalAdminFilterComplaints = () => {
+  const [filterModel, setFilterModel] = useAtom(globalAdminFilterComplaints);
+
+  const searchResult = filterModel?.quickFilterValues?.join(' ') || '';
+
+  return { filterModel, setFilterModel, searchResult };
+};
+
+const globalAdminPaginationComplaints = atom({
+  page: 1,
+  pageSize: 25,
+});
+
+export const useGlobalAdminPaginationComplaints = () => {
+  const [paginationModel, setPaginationModel] = useAtom(globalAdminPaginationComplaints);
+  return { paginationModel, setPaginationModel };
+};
