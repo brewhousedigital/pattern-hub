@@ -34,7 +34,7 @@ function injectMeta(html: string, meta: Record<string, string>): string {
   return html.replace('</head>', `  ${tags}\n  </head>`);
 }
 
-async function resolvePageMeta(pathname: string): Promise<Record<string, string>> {
+async function resolvePageMeta(request: Request, pathname: string): Promise<Record<string, string>> {
   const defaultPosterImage = `https://patternarchive.net/poster.png`;
 
   const base = {
@@ -163,7 +163,7 @@ export default async function handler(request: Request, context: Context): Promi
   }
 
   try {
-    const [response, meta] = await Promise.all([context.next(), resolvePageMeta(pathname)]);
+    const [response, meta] = await Promise.all([context.next(), resolvePageMeta(request, pathname)]);
 
     const html = await response.text();
     const injected = injectMeta(html, meta);
