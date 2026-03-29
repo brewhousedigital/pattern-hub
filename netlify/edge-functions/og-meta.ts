@@ -35,10 +35,14 @@ function injectMeta(html: string, meta: Record<string, string>): string {
 }
 
 async function resolvePageMeta(pathname: string): Promise<Record<string, string>> {
+  const defaultPosterImage = `https://patternarchive.net/poster.png`;
+
   const base = {
     'og:site_name': SITE_NAME,
     'og:type': 'website',
     'twitter:card': 'summary_large_image',
+    'og:image': defaultPosterImage,
+    'twitter:image': defaultPosterImage,
   };
 
   // /patterns/:id
@@ -52,8 +56,8 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
         const pattern = await res.json();
         /*const imageUrl = pattern.image
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
-          : `https://patternarchive.net/poster.png`;*/
-        const imageUrl = `https://patternarchive.net/poster.png`;
+          : defaultPosterImage;*/
+        const imageUrl = defaultPosterImage;
 
         return {
           ...base,
@@ -74,14 +78,14 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
 
   if (homepagePatternMatch) {
     try {
-      const res = await fetch(`${POCKETBASE_URL}/api/collections/patterns/records/${patternMatch[1]}`);
+      const res = await fetch(`${POCKETBASE_URL}/api/collections/patterns/records/${homepagePatternMatch}`);
 
       if (res.ok) {
         const pattern = await res.json();
         /*const imageUrl = pattern.image
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
-          : `https://patternarchive.net/poster.png`;*/
-        const imageUrl = `https://patternarchive.net/poster.png`;
+          : defaultPosterImage;*/
+        const imageUrl = defaultPosterImage;
 
         return {
           ...base,
