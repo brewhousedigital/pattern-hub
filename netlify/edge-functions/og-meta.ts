@@ -59,8 +59,8 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
     'og:site_name': SITE_NAME,
     'og:type': 'website',
     'twitter:card': 'summary_large_image',
-    //'og:image': defaultPosterImage,
-    //'twitter:image': defaultPosterImage,
+    'og:image': defaultPosterImage,
+    'twitter:image': defaultPosterImage,
   };
 
   // /patterns/:id

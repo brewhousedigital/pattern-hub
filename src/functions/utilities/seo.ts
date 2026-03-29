@@ -30,6 +30,7 @@ export const generateSEO = (title?: string, description?: string, url?: string) 
     ...seoDescription(description),
     ...seoUrl(url),
     { property: 'og:image', content: `https://patternarchive.net/poster.png` },
+    { property: 'twitter:image', content: `https://patternarchive.net/poster.png` },
     { property: 'og:site_name', content: `Pattern Archive` },
   ];
 };
