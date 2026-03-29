@@ -13,6 +13,9 @@ import { Box, Typography, Card, CardContent, IconButton, Tooltip, Skeleton, Aler
 
 export const Route = createFileRoute('/space-command/faq')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'FAQ - Admin - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

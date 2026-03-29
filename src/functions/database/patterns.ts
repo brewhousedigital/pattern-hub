@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData, useMutation } from '@tanstack/react-query';
+import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 
@@ -145,3 +145,10 @@ export const useQueryGetPatternById = (patternId: string) => {
     },
   });
 };
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getPatternByIdOptions = (patternId: string) =>
+  queryOptions({
+    queryKey: ['getPatternByIdOptions', patternId],
+    queryFn: () => pocketbase.collection('patterns').getOne(patternId),
+  });

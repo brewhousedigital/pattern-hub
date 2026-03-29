@@ -30,6 +30,9 @@ import {
 
 export const Route = createFileRoute('/profile/edit')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Edit Profile - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

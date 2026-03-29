@@ -3,6 +3,9 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 
 export const Route = createFileRoute('/guides/')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Guides - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

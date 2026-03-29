@@ -7,6 +7,9 @@ import { Grid } from '@mui/material';
 
 export const Route = createFileRoute('/space-command/')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Admin - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

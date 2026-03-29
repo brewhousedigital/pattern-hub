@@ -51,6 +51,9 @@ export const Route = createFileRoute('/profile/')({
   validateSearch: (search: Record<string, unknown>): UserSearch => {
     return {};
   },
+  head: () => ({
+    meta: [{ title: 'Profile - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

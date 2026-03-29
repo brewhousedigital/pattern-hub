@@ -22,6 +22,9 @@ import {
 
 export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'FAQ - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

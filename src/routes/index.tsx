@@ -28,6 +28,9 @@ export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): PatternSearch => {
     return {};
   },
+  head: () => ({
+    meta: [{ title: 'Home - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

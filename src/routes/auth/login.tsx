@@ -24,6 +24,9 @@ import {
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Login - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

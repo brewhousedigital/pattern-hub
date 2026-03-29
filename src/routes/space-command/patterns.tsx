@@ -4,6 +4,9 @@ import React from 'react';
 
 export const Route = createFileRoute('/space-command/patterns')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Patterns - Admin - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

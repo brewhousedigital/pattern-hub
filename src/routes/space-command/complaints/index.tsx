@@ -23,6 +23,9 @@ import {
 
 export const Route = createFileRoute('/space-command/complaints/')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Complaints - Admin - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

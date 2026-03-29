@@ -15,6 +15,9 @@ const LAST_UPDATED = 'March 16, 2026';
 
 export const Route = createFileRoute('/help/privacy-policy')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Privacy Policy - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

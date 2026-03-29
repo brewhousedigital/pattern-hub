@@ -16,6 +16,9 @@ const LAST_UPDATED = 'March 16, 2026';
 
 export const Route = createFileRoute('/help/terms-of-service')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Terms of Service - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

@@ -32,6 +32,9 @@ import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: 'Register - Pattern Archive' }],
+  }),
 });
 
 function RouteComponent() {

@@ -1,34 +1,27 @@
 import React from 'react';
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { HeadContent, createRootRoute, Outlet } from '@tanstack/react-router';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import { muiTheme } from '../data/mui-theme';
 import { SnackbarProvider } from 'notistack';
-import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 0,
-      staleTime: 1000 * 60 * 60, // 1 hour
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    },
-  },
-});
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/functions/database/authentication-setup';
 
 const RootLayout = () => {
   return (
-    <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
+    <>
+      <HeadContent />
 
-      <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
-        <QueryClientProvider client={queryClient}>
-          <Outlet />
-        </QueryClientProvider>
-      </SnackbarProvider>
-    </ThemeProvider>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+
+        <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
+          <QueryClientProvider client={queryClient}>
+            <Outlet />
+          </QueryClientProvider>
+        </SnackbarProvider>
+      </ThemeProvider>
+    </>
   );
 };
 
