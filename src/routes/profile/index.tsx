@@ -159,7 +159,7 @@ const ProfileContent = () => {
                 },
                 {
                   icon: <StarOutlinedIcon sx={{ fontSize: 16, color: 'primary.main' }} />,
-                  value: dataMarkedDone?.totalItems || 0,
+                  value: dataRatings?.totalItems || 0,
                   label: 'Rated',
                 },
                 /*{
