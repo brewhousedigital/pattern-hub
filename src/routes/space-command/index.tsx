@@ -4,11 +4,12 @@ import { AdminTagsTable } from '@/components/admin/AdminTagsTable';
 import { AdminAuthorsTable } from '@/components/admin/AdminAuthorsTable';
 
 import { Grid } from '@mui/material';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Admin', '', match.pathname),
   }),
 });
 

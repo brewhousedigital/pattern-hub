@@ -28,8 +28,8 @@ export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): PatternSearch => {
     return {};
   },
-  head: () => ({
-    meta: [{ title: 'Home - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: [{ title: 'Pattern Archive' }, { 'og:title': 'Pattern Archive' }],
   }),
 });
 

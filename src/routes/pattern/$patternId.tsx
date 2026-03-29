@@ -6,18 +6,13 @@ import { useQueryGetPatternById, getPatternByIdOptions } from '@/functions/datab
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { queryClient } from '@/functions/database/authentication-setup';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
   loader: ({ params }) => queryClient.ensureQueryData(getPatternByIdOptions(params.patternId)),
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.name ? loaderData?.name : 'Pattern'} - Pattern Archive` },
-      {
-        name: 'description',
-        content: loaderData?.description ? loaderData?.description : 'Find a pattern for your stained glass project.',
-      },
-    ],
+  head: ({ loaderData, match }) => ({
+    meta: generateSEO(loaderData?.name, loaderData?.description, match.pathname),
   }),
 });
 

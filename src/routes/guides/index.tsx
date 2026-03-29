@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 export const Route = createFileRoute('/guides/')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Guides - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Guides', '', match.pathname),
   }),
 });
 

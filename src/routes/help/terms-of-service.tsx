@@ -1,6 +1,7 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { styled, alpha } from '@mui/material/styles';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
@@ -16,8 +17,8 @@ const LAST_UPDATED = 'March 16, 2026';
 
 export const Route = createFileRoute('/help/terms-of-service')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Terms of Service - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Terms of Service', '', match.pathname),
   }),
 });
 

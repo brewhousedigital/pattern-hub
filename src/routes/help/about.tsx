@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 export const Route = createFileRoute('/help/about')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'About - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('About', '', match.pathname),
   }),
 });
 

@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/users')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Users - Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Users - Admin', '', match.pathname),
   }),
 });
 

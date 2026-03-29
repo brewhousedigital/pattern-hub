@@ -41,6 +41,7 @@ import {
   Divider,
   IconButton,
 } from '@mui/material';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 type UserSearch = {
   id?: string;
@@ -51,8 +52,8 @@ export const Route = createFileRoute('/profile/')({
   validateSearch: (search: Record<string, unknown>): UserSearch => {
     return {};
   },
-  head: () => ({
-    meta: [{ title: 'Profile - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Profile', '', match.pathname),
   }),
 });
 

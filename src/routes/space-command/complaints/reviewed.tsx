@@ -15,11 +15,12 @@ import { Box, Button, Typography } from '@mui/material';
 
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { enqueueSnackbar } from 'notistack';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/complaints/reviewed')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Reviewed Complaints - Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Reviewed Complaints - Admin', '', match.pathname),
   }),
 });
 

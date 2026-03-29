@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 export const Route = createFileRoute('/collections/')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Collections - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Collections', '', match.pathname),
   }),
 });
 

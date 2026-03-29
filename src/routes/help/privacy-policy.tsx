@@ -1,6 +1,7 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { styled, alpha } from '@mui/material/styles';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -15,8 +16,8 @@ const LAST_UPDATED = 'March 16, 2026';
 
 export const Route = createFileRoute('/help/privacy-policy')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Privacy Policy - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Privacy Policy', '', match.pathname),
   }),
 });
 

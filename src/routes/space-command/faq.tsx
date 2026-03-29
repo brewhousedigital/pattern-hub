@@ -10,11 +10,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Box, Typography, Card, CardContent, IconButton, Tooltip, Skeleton, Alert, Stack } from '@mui/material';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/faq')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'FAQ - Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('FAQ - Admin', '', match.pathname),
   }),
 });
 

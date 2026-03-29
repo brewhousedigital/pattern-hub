@@ -20,11 +20,12 @@ import {
   Button,
   Skeleton,
 } from '@mui/material';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/complaints/')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Complaints - Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Complaints - Admin', '', match.pathname),
   }),
 });
 

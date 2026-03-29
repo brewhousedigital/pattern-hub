@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/map')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Map - Admin - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Map - Admin', '', match.pathname),
   }),
 });
 

@@ -4,6 +4,7 @@ import { useMutationAuthSignIn, useMutationAuthGetUser } from '@/functions/datab
 import { enqueueSnackbar } from 'notistack';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -24,8 +25,8 @@ import {
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Login - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Login', '', match.pathname),
   }),
 });
 

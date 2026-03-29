@@ -4,6 +4,7 @@ import { useQueryGetAllFAQ } from '@/functions/database/faq';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useFuzzySearch } from '@/functions/hooks/useFuzzySearch';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -22,8 +23,8 @@ import {
 
 export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'FAQ - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('FAQ', '', match.pathname),
   }),
 });
 

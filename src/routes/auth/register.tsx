@@ -7,6 +7,7 @@ import {
   useMutationAuthSignIn,
 } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -32,8 +33,8 @@ import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Register - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Register', '', match.pathname),
   }),
 });
 

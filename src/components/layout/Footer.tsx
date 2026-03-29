@@ -18,7 +18,7 @@ export const Footer = () => {
   return (
     <Box component="footer" sx={{ p: 2 }}>
       <Box sx={{ backgroundColor: '#fff', borderRadius: 6, p: 4, textAlign: { xs: 'center', md: 'inherit' } }}>
-        <Grid container>
+        <Grid container spacing={4}>
           <Grid size={{ xs: 12, md: 3 }} sx={{ mb: { xs: 4, md: 0 } }}>
             <Logo />
 

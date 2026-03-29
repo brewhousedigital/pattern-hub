@@ -27,11 +27,12 @@ import {
   InputAdornment,
   Skeleton,
 } from '@mui/material';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/profile/edit')({
   component: RouteComponent,
-  head: () => ({
-    meta: [{ title: 'Edit Profile - Pattern Archive' }],
+  head: ({ match }) => ({
+    meta: generateSEO('Edit Profile', '', match.pathname),
   }),
 });
 
