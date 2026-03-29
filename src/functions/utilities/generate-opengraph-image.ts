@@ -45,11 +45,18 @@ export const generateOpengraphImage = async (
   ctx.roundRect(svgX - 24, svgY - 24, previewSize + 48, previewSize + 48, 16);
   ctx.fill();
 
-  ctx.drawImage(svgBitmap, svgX, svgY, previewSize, previewSize);
+  //ctx.drawImage(svgBitmap, svgX, svgY, previewSize, previewSize);
+  const scale = Math.min(previewSize / svgBitmap.naturalWidth, previewSize / svgBitmap.naturalHeight);
+  const scaledWidth = svgBitmap.naturalWidth * scale;
+  const scaledHeight = svgBitmap.naturalHeight * scale;
+  const centeredX = svgX + (previewSize - scaledWidth) / 2;
+  const centeredY = svgY + (previewSize - scaledHeight) / 2;
+
+  ctx.drawImage(svgBitmap, centeredX, centeredY, scaledWidth, scaledHeight);
 
   // Site name
   ctx.fillStyle = '#2e7d32';
-  ctx.font = '500 22px system-ui, sans-serif';
+  ctx.font = '500 32px system-ui, sans-serif';
   ctx.fillText(siteName, 60, 80);
 
   // Pattern name — wrap if long
@@ -60,7 +67,7 @@ export const generateOpengraphImage = async (
 
   // Bottom label
   ctx.fillStyle = '#888';
-  ctx.font = '400 20px system-ui, sans-serif';
+  ctx.font = '400 30px system-ui, sans-serif';
   ctx.fillText('View pattern →', 60, HEIGHT - 60);
 
   return new Promise((resolve, reject) => {

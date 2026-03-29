@@ -17,6 +17,7 @@ import {
   useMutationDeletePattern,
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
+import { pocketbase } from '@/functions/database/authentication-setup.ts';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
@@ -39,7 +40,6 @@ import {
   styled,
   Grid,
 } from '@mui/material';
-import { pocketbase } from '@/functions/database/authentication-setup.ts';
 
 type TypeModalMode = 'edit' | 'add';
 
@@ -146,7 +146,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         URL.revokeObjectURL(previewUrl);
       }
     };
-  }, [previewUrl]);
+  }, [previewUrl, isOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,6 +239,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       // Make sure to clear out the modal on save
       if (props.mode === 'add') {
         handleFormReset();
+      } else {
+        handleFileDelete();
       }
     } catch (error: any) {
       console.warn('Error', error);
