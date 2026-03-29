@@ -6,3 +6,12 @@
 [build]
   publish = "dist"
   command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+
+[dev]
+  framework = "vite"
+
+[prerendering]
+  enabled = true
