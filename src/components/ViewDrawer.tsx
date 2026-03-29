@@ -373,7 +373,13 @@ const ReportAnIssue = () => {
 
       <Collapse in={isOpen}>
         <Stack onSubmit={handleSubmit} gap={2} component="form">
-          <TextField variant="filled" label="Contact Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <TextField
+            variant="filled"
+            type="email"
+            label="Contact Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
           <TextField
             multiline
@@ -569,7 +575,6 @@ const Ratings = () => {
     data: communityRating,
     refetch: refetchCommunityRating,
   } = useQueryGetCommunityRatingByPatternId(viewData?.id || '');
-  console.log('>>>communityRating', communityRating);
 
   React.useEffect(() => {
     if (data) {

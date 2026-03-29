@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import {
@@ -11,9 +11,10 @@ import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer.ts
 import { useGlobalAdminFilterComplaints, useGlobalAdminPaginationComplaints } from '@/data/admin-global-state';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 
-import { Box, Avatar, Button, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/complaints/reviewed')({
   component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
   const { setFilterModel, searchResult } = useGlobalAdminFilterComplaints();
   const debouncedSearchTerm = useDebounce(searchResult, 600);
 
-  const { isPending, isFetching, isError, data } = useQueryGetReviewedComplaintsByPagination(
+  const { isPending, isFetching, isError, data, refetch } = useQueryGetReviewedComplaintsByPagination(
     debouncedSearchTerm,
     paginationModel.page,
   );
@@ -170,6 +171,17 @@ function RouteComponent() {
     setDialogOpen(true);
   }
 
+  const handleModalClose = async () => {
+    try {
+      setDialogOpen(false);
+      await refetch();
+    } catch (error) {
+      enqueueSnackbar('Something went wrong updating this complaint... Try again in a few minutes', {
+        variant: 'error',
+      });
+    }
+  };
+
   return (
     <Box>
       <AdminHeaderContainer title="Reviewed Complaints" />
@@ -199,7 +211,6 @@ function RouteComponent() {
           // fetch data from server
           setFilterModel(newFilterModel);
         }}
-        //getRowHeight={() => 'auto'}
         initialState={{
           pagination: {
             paginationModel: {
@@ -216,7 +227,7 @@ function RouteComponent() {
 
       <AdminComplaintsModal
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={handleModalClose}
         complaint={selected}
         key={selected?.id || ''}
       />
