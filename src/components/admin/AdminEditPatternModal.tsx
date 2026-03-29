@@ -8,6 +8,7 @@ import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
+import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -38,6 +39,7 @@ import {
   styled,
   Grid,
 } from '@mui/material';
+import { pocketbase } from '@/functions/database/authentication-setup.ts';
 
 type TypeModalMode = 'edit' | 'add';
 
@@ -211,7 +213,23 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         payload.pattern_file = await sanitizeSvgFile(file);
       }
 
-      await savePattern.mutateAsync(payload);
+      const savedPattern = await savePattern.mutateAsync(payload);
+
+      // Generate the opengraph image and save it back to pocketbase
+      if (file && previewUrl) {
+        try {
+          const svgUrl = generatePbImage(savedPattern);
+          const ogImage = await generateOpengraphImage(svgUrl, name);
+
+          await pocketbase.collection('patterns').update(savedPattern.id, {
+            opengraph_image: ogImage,
+          });
+        } catch (err) {
+          // Non-fatal — pattern is saved, OG image just won't exist yet
+          console.warn('OG image generation failed', err);
+        }
+      }
+
       await refetchPatterns();
       await refetchTags();
       await refetchAuthors();

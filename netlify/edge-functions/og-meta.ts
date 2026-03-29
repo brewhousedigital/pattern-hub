@@ -7,6 +7,7 @@ const SITE_URL = Deno.env.get('URL') ?? '';
 const SITE_NAME = 'Pattern Hub';
 
 const BOT_AGENTS = [
+  // Social platforms
   'discordbot',
   'twitterbot',
   'facebookexternalhit',
@@ -14,12 +15,29 @@ const BOT_AGENTS = [
   'slackbot',
   'telegrambot',
   'whatsapp',
+  'redditbot',
+  'blueskypreviewbot',
+  // Search engines
   'googlebot',
+  'bingpreview',
+  'yandex',
+  // iMessage / Apple
+  'applebot',
+  // Microsoft Teams
+  'skypeuripreview',
 ];
 
 function isBot(userAgent: string): boolean {
   const ua = userAgent.toLowerCase();
-  return BOT_AGENTS.some((bot) => ua.includes(bot));
+
+  // Catch anything explicitly in our list
+  if (BOT_AGENTS.some((bot) => ua.includes(bot))) return true;
+
+  // Generic fallback — most crawlers self-identify with "bot" in their UA
+  // Excludes common false positives like "robot" in product names
+  if (ua.includes('bot') && !ua.includes('chrome') && !ua.includes('firefox')) return true;
+
+  return false;
 }
 
 function injectMeta(html: string, meta: Record<string, string>): string {
@@ -54,10 +72,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 
       if (res.ok) {
         const pattern = await res.json();
-        /*const imageUrl = pattern.image
-          ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
-          : defaultPosterImage;*/
-        const imageUrl = defaultPosterImage;
+        const imageUrl = pattern.image
+          ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
+          : defaultPosterImage;
 
         return {
           ...base,
@@ -82,10 +99,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 
       if (res.ok) {
         const pattern = await res.json();
-        /*const imageUrl = pattern.image
-          ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
-          : defaultPosterImage;*/
-        const imageUrl = defaultPosterImage;
+        const imageUrl = pattern.image
+          ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
+          : defaultPosterImage;
 
         return {
           ...base,

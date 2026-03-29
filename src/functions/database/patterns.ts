@@ -92,7 +92,7 @@ export type TypePatternCreatePayload = {
 
 export const useMutationEditPattern = () => {
   return useMutation({
-    mutationFn: async (payload: TypePatternCreatePayload) => {
+    mutationFn: async (payload: TypePatternCreatePayload): Promise<TypePatternResponse> => {
       const formData = new FormData();
 
       // Insert the base data first
@@ -121,9 +121,9 @@ export const useMutationEditPattern = () => {
       }
 
       if (payload?.id) {
-        await pocketbase.collection('patterns').update(payload?.id, formData);
+        return await pocketbase.collection('patterns').update(payload?.id, formData);
       } else {
-        await pocketbase.collection('patterns').create(formData);
+        return await pocketbase.collection('patterns').create(formData);
       }
     },
   });
