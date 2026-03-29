@@ -12,6 +12,7 @@ import { Box, Button, Grid, Stack, Link as MuiLink } from '@mui/material';
 
 export const Footer = () => {
   const location = useLocation();
+  //console.log('>>>location', location);
 
   const shareSite = async () => {
     await copyToClipboard(DOMAIN_URL + location.publicHref);

@@ -70,6 +70,34 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
     }
   }
 
+  const homepagePatternMatch = new URL(request.url).searchParams.get('view');
+
+  if (homepagePatternMatch) {
+    try {
+      const res = await fetch(`${POCKETBASE_URL}/api/collections/patterns/records/${patternMatch[1]}`);
+
+      if (res.ok) {
+        const pattern = await res.json();
+        /*const imageUrl = pattern.image
+          ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
+          : `https://patternarchive.net/poster.png`;*/
+        const imageUrl = `https://patternarchive.net/poster.png`;
+
+        return {
+          ...base,
+          title: `${pattern.name} — ${SITE_NAME}`,
+          description: pattern.description ?? 'View this pattern on Pattern Hub.',
+          'og:title': `${pattern.name} — ${SITE_NAME}`,
+          'og:description': pattern.description ?? 'View this pattern on Pattern Hub.',
+          'og:url': `${SITE_URL}${pathname}`,
+          ...(imageUrl ? { 'og:image': imageUrl, 'twitter:image': imageUrl } : {}),
+        };
+      }
+    } catch {
+      // fall through to defaults
+    }
+  }
+
   // /faq
   if (pathname === '/help/faq') {
     return {
