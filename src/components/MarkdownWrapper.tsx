@@ -12,7 +12,18 @@ type MarkdownWrapperProps = {
 export const MarkdownWrapper = (props: MarkdownWrapperProps) => {
   return (
     <StyledMarkdownWrapper>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{props.children}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {props.children}
+      </ReactMarkdown>
     </StyledMarkdownWrapper>
   );
 };

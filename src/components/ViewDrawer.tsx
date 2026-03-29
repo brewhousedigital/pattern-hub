@@ -8,6 +8,7 @@ import { createPrettyDate } from '@/functions/utilities/dates';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import {
   useMutationFavoritePattern,
   useMutationRemoveFavoritePattern,
@@ -209,12 +210,11 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               </Typography>
             </Box>
 
-            <Typography
-              variant="body1"
-              sx={{ color: 'text.secondary', lineHeight: 1.7, mb: 2.5, wordBreak: 'break-word' }}
-            >
-              {viewData?.description}
-            </Typography>
+            {viewData?.description && (
+              <Box sx={{ mb: 2.5 }}>
+                <MarkdownWrapper>{viewData.description}</MarkdownWrapper>
+              </Box>
+            )}
 
             <ThinDivider />
 

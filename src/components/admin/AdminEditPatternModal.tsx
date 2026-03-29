@@ -282,7 +282,15 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
         <DialogContent>
           <Stack spacing={3} sx={{ py: 2 }}>
-            <TextField fullWidth variant="filled" label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <TextField
+              fullWidth
+              variant="filled"
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              helperText={name?.length > 100 ? `Name is too long: ${name?.length}/100` : `${name?.length}/100`}
+              error={name?.length > 100}
+            />
 
             <TextField
               multiline
@@ -292,7 +300,20 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               label="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              helperText={
+                description?.length > 1000
+                  ? `Description is too long: ${description?.length}/1000`
+                  : `${description?.length}/1000`
+              }
+              error={description?.length > 1000}
             />
+
+            <Typography>
+              Description supports{' '}
+              <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+                Markdown
+              </a>
+            </Typography>
 
             <Divider />
 
