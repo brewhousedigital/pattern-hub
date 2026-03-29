@@ -198,17 +198,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
         tags: filteredTags?.join(',')?.toLowerCase() || '',
         authors: filteredAuthors?.join(',')?.toLowerCase() || '',
-        //uploaded_by: filteredUploadedBy?.join(',')?.toLowerCase() || '',
-        uploaded_by: authData?.name || 'Missing Name',
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
       };
 
+      // If a pattern has already been uploaded, don't reset the `uploaded_by` property
+      if (!props?.uploaded_by) {
+        payload.uploaded_by = authData?.name || 'Missing Name';
+      }
+
+      // This will determine if it's a POST or a PUT
       if (props?.id) {
         payload.id = props.id;
       }
 
+      // Will attach a file if a new one exists
       if (file && previewUrl) {
         payload.pattern_file = await sanitizeSvgFile(file);
       }

@@ -100,7 +100,6 @@ export const useMutationEditPattern = () => {
       formData.append('description', payload?.description || '');
       formData.append('tags', payload?.tags || '');
       formData.append('authors', payload?.authors || '');
-      formData.append('uploaded_by', payload?.uploaded_by || '');
       //formData.append('difficulty', "test");
       formData.append('pieces', payload?.pieces || '1');
       formData.append('design_width', payload?.design_width || '0');
@@ -109,6 +108,10 @@ export const useMutationEditPattern = () => {
       formData.append('design_width_unit', payload?.design_width_unit || 'in');
       formData.append('design_height_unit', payload?.design_height_unit || 'in');
       formData.append('line_width_unit', payload?.line_width_unit || 'in');
+
+      if (payload?.uploaded_by) {
+        formData.append('uploaded_by', payload?.uploaded_by || '');
+      }
 
       // This is a new entry
       if (payload?.id) {
