@@ -33,7 +33,7 @@ type AdminComplaintsModalProps = {
 };
 
 export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
-  const [notes, setNotes] = React.useState('');
+  const [notes, setNotes] = React.useState(props?.complaint?.review_notes || '');
   const [isSpam, setIsSpam] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -80,7 +80,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
   return (
     <Dialog open={props.open} onClose={props.onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-        <Typography variant="h6" fontWeight={500}>
+        <Typography variant="h6" component="span" fontWeight={500}>
           Review complaint
         </Typography>
 
@@ -114,13 +114,25 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
               {pattern?.name ?? props.complaint?.pattern_id}
             </Typography>
 
-            <Typography variant="caption" color="text.secondary" display="block" mt={0.25}>
+            <Typography variant="body2" color="text.secondary" display="block">
               Reporter: {props.complaint?.email}
             </Typography>
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               Submitted: {props.complaint ? new Date(props.complaint.created).toLocaleDateString() : '—'}
             </Typography>
+
+            {props.complaint?.expand?.owner_id?.id && (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Authenticated User ID: {props.complaint?.expand?.owner_id?.id}
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  Authenticated Username: {props.complaint?.expand?.owner_id?.name}
+                </Typography>
+              </>
+            )}
           </Box>
         </Box>
 

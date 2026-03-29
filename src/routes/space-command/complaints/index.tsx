@@ -51,21 +51,11 @@ function RouteComponent() {
         <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: 'grey.50' }}>
-              <TableCell sx={{ fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Pattern
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Reason
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Reporter
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Submitted
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Status
-              </TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Pattern</TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Reason</TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Reporter</TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Submitted</TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Status</TableCell>
 
               <TableCell />
             </TableRow>

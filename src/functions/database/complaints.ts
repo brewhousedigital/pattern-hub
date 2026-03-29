@@ -36,6 +36,7 @@ export type TypeComplaintsResponse = {
   expand: {
     pattern_id: TypePatternResponse;
     owner_id: TypeAuthData;
+    reviewed_by: TypeAuthData;
   };
 };
 
@@ -66,7 +67,7 @@ export const useQueryGetReviewedComplaintsByPagination = (searchTerm: string, pa
 
       return await pocketbase.collection('complaints').getList(pageNumber, 25, {
         sort: '-updated',
-        expand: 'pattern_id,owner_id',
+        expand: 'owner_id,pattern_id,reviewed_by',
         filter: filter,
       });
     },

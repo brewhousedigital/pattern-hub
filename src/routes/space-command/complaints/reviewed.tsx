@@ -100,9 +100,21 @@ function RouteComponent() {
         return (
           <>
             <Typography sx={{ fontWeight: 500 }}>{params.value}</Typography>
-            <Typography variant="body2">User: {user?.email}</Typography>
+            <Typography variant="body2">User: {user?.id ? user?.id : 'No Auth'}</Typography>
           </>
         );
+      },
+    },
+    {
+      field: 'reviewedBy',
+      headerName: 'Reviewed By',
+      disableColumnMenu: true,
+      width: 200,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        const admin = params.row.expand?.reviewed_by;
+        return admin?.name;
       },
     },
     {
