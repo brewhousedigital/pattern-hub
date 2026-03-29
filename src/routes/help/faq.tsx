@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllFAQ } from '@/functions/database/faq';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
+import { useFuzzySearch } from '@/functions/hooks/useFuzzySearch';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -16,6 +17,7 @@ import {
   AccordionDetails,
   Skeleton,
   Divider,
+  TextField,
 } from '@mui/material';
 
 export const Route = createFileRoute('/help/faq')({
@@ -26,6 +28,8 @@ function RouteComponent() {
   const [expanded, setExpanded] = useState<number | false>(false);
 
   const { isPending, isError, data } = useQueryGetAllFAQ();
+
+  const { query, search, results } = useFuzzySearch(data, ['title', 'content']);
 
   const handleChange = (index: number) => (_: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? index : false);
@@ -41,6 +45,16 @@ function RouteComponent() {
               Frequently Asked Questions
             </Typography>
           </HeroSection>
+
+          <Box sx={{ mb: 2, maxWidth: 400, mx: 'auto' }}>
+            <TextField
+              fullWidth
+              label="Search FAQ"
+              variant="filled"
+              value={query}
+              onChange={(e) => search(e.target.value)}
+            />
+          </Box>
 
           {/*<Divider sx={{ mb: 6 }} />*/}
 
@@ -69,7 +83,7 @@ function RouteComponent() {
             </Box>
           )}
 
-          {data && data.length === 0 && (
+          {results && results.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <Typography variant="h6" color="text.secondary">
                 No FAQs available at the moment.
@@ -77,8 +91,8 @@ function RouteComponent() {
             </Box>
           )}
 
-          {data &&
-            data.map((faq, index) => (
+          {results &&
+            results.map((faq, index) => (
               <StyledAccordion key={index} expanded={expanded === index} onChange={handleChange(index)} disableGutters>
                 <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography
