@@ -15,6 +15,7 @@ import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { generateSEO } from '@/functions/utilities/seo';
 
 import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
 
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/')({
     return {};
   },
   head: ({ match }) => ({
-    meta: [{ title: 'Pattern Archive' }, { 'og:title': 'Pattern Archive' }],
+    meta: generateSEO(),
   }),
 });
 
