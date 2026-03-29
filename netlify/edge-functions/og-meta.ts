@@ -43,14 +43,17 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
 
   // /patterns/:id
   const patternMatch = pathname.match(/^\/patterns\/([^/]+)$/);
+
   if (patternMatch) {
     try {
       const res = await fetch(`${POCKETBASE_URL}/api/collections/patterns/records/${patternMatch[1]}`);
+
       if (res.ok) {
         const pattern = await res.json();
-        const imageUrl = pattern.image
+        /*const imageUrl = pattern.image
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.image}?thumb=1200x630`
-          : null;
+          : `https://patternarchive.net/poster.png`;*/
+        const imageUrl = `https://patternarchive.net/poster.png`;
 
         return {
           ...base,
@@ -68,7 +71,7 @@ async function resolvePageMeta(pathname: string): Promise<Record<string, string>
   }
 
   // /faq
-  if (pathname === '/faq') {
+  if (pathname === '/help/faq') {
     return {
       ...base,
       title: `FAQ — ${SITE_NAME}`,
