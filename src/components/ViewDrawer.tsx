@@ -639,20 +639,24 @@ const Ratings = () => {
         )}
       </Box>
 
-      <SectionLabel>Your Rating</SectionLabel>
+      {authData && (
+        <>
+          <SectionLabel>Your Rating</SectionLabel>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-        <Rating
-          precision={1}
-          value={userRating}
-          onChange={handleChange}
-          sx={{
-            '& .MuiRating-iconFilled': { color: 'primary.main' },
-            '& .MuiRating-iconHover': { color: '#DDB97E' },
-            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
-          }}
-        />
-      </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+            <Rating
+              precision={1}
+              value={userRating}
+              onChange={handleChange}
+              sx={{
+                '& .MuiRating-iconFilled': { color: 'primary.main' },
+                '& .MuiRating-iconHover': { color: '#DDB97E' },
+                '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
+              }}
+            />
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
