@@ -71,7 +71,9 @@ function RouteComponent() {
       }
     };
 
-    loadProfile().then();
+    if (authData) {
+      loadProfile().then();
+    }
   }, [authData]);
 
   const handleChange =
@@ -128,7 +130,6 @@ function RouteComponent() {
     <GeneralLayout>
       <PageWrapper>
         <Container maxWidth="sm">
-          {/* Header */}
           <Box sx={{ mb: 5 }}>
             <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
               Edit Profile
@@ -139,17 +140,11 @@ function RouteComponent() {
             <EditProfileSkeleton />
           ) : (
             <Box component="form" onSubmit={handleSubmit} noValidate>
-              {/* ── Username ── */}
               <SectionCard elevation={0}>
-                <SectionLabel>
-                  <PersonOutlinedIcon />
-                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                    Username
-                  </Typography>
-                </SectionLabel>
-
-                <StyledTextField
+                <TextField
                   fullWidth
+                  variant="filled"
+                  label="Username"
                   value={form.username}
                   onChange={handleChange('username')}
                   error={!!errors.username}
@@ -170,16 +165,10 @@ function RouteComponent() {
                 />
               </SectionCard>
 
-              {/* ── About ── */}
               <SectionCard elevation={0}>
-                <SectionLabel>
-                  <NotesOutlinedIcon />
-                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                    About
-                  </Typography>
-                </SectionLabel>
-
-                <StyledTextField
+                <TextField
+                  label="About"
+                  variant="filled"
                   fullWidth
                   multiline
                   minRows={4}
@@ -191,32 +180,33 @@ function RouteComponent() {
                   helperText={
                     errors.about ?? (
                       <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Optional. Shown on your public profile.</span>
-                        <span style={{ color: form.about.length > 999 ? 'orange' : 'inherit' }}>
-                          {form.about.length}/1000
+                        <span>
+                          Optional. This field supports{' '}
+                          <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+                            Markdown
+                          </a>
+                          .
+                        </span>
+                        <span style={{ color: form.about.length > 2980 ? 'orange' : 'inherit' }}>
+                          {form.about.length}/3000
                         </span>
                       </Box>
                     )
                   }
                   slotProps={{
                     htmlInput: {
-                      maxLength: 1000,
+                      maxLength: 3000,
                     },
                   }}
                 />
+
+                <Typography></Typography>
               </SectionCard>
 
-              {/* ── Interests ── */}
               <SectionCard elevation={0}>
-                <SectionLabel>
-                  <TagOutlinedIcon />
-
-                  <Typography variant="overline" fontWeight={700} letterSpacing={1}>
-                    Interests
-                  </Typography>
-                </SectionLabel>
-
-                <StyledTextField
+                <TextField
+                  label="Interests"
+                  variant="filled"
                   fullWidth
                   placeholder="Geometric, Floral, Art Nouveau, Mosaics..."
                   value={form.interests}
@@ -246,7 +236,6 @@ function RouteComponent() {
                 )}
               </SectionCard>
 
-              {/* ── Colors ── */}
               {/*<SectionCard elevation={0}>
               <SectionLabel>
                 <PaletteOutlinedIcon />
@@ -448,17 +437,6 @@ const SectionLabel = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2.5),
   color: theme.palette.text.secondary,
   '& svg': { fontSize: 18 },
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 10,
-    border: '1px solid #eee',
-    transition: 'box-shadow 0.2s ease',
-    '&.Mui-focused': {
-      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`,
-    },
-  },
 }));
 
 const ColorPreviewSwatch = styled(Box)<{ hexcolor: string; valid: boolean }>(({ theme, hexcolor, valid }) => ({

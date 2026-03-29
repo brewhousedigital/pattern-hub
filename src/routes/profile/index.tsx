@@ -10,6 +10,7 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
 import { useMutationGetGalleryUploadAuth } from '@/functions/database/gallery';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 
 import { styled, alpha } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -190,9 +191,7 @@ const ProfileContent = () => {
                 About
               </Typography>
 
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.8, maxWidth: 640 }}>
-                {authData.about}
-              </Typography>
+              <MarkdownWrapper>{authData.about}</MarkdownWrapper>
             </Box>
           )}
 
