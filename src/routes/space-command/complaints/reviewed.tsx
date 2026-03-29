@@ -46,7 +46,7 @@ function RouteComponent() {
     { field: 'id', headerName: 'ID', width: 90, sortable: false, filterable: false },
     {
       field: 'pattern',
-      headerName: 'Pattern',
+      headerName: 'Image',
       sortable: false,
       filterable: false,
       disableColumnMenu: true,
@@ -79,7 +79,9 @@ function RouteComponent() {
         const pattern = params.row.expand?.pattern_id;
         return (
           <>
-            <Typography sx={{ fontWeight: 500 }}>{pattern?.name}</Typography>
+            <a href={`/pattern/${pattern?.id}`} target="_blank">
+              <Typography sx={{ fontWeight: 500 }}>{pattern?.name}</Typography>
+            </a>
             <Typography variant="body2">{pattern?.id}</Typography>
           </>
         );

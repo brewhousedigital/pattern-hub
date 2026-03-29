@@ -103,11 +103,14 @@ function RouteComponent() {
                           />
 
                           <Box>
-                            <Typography fontSize={13} fontWeight={500} lineHeight={1.3}>
-                              {pattern?.name ?? '—'}
-                            </Typography>
+                            <a href={`/pattern/${pattern?.id}`} target="_blank">
+                              <Typography fontSize={13} fontWeight={500} lineHeight={1.3}>
+                                {pattern?.name ?? '—'}
+                              </Typography>
+                            </a>
+
                             <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
-                              {complaint.pattern_id.slice(0, 10)}…
+                              {complaint?.pattern_id}
                             </Typography>
                           </Box>
                         </Box>
