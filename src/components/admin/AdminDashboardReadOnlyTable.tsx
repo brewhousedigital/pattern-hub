@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQueryGetAllTags } from '@/functions/database/tags';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
+import { AdminDashboardCardTitle } from '@/components/admin/AdminDashboardCardTitle';
 
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 
@@ -41,9 +42,8 @@ export const AdminDashboardReadOnlyTable = (props: AdminDashboardReadOnlyTablePr
 
   return (
     <>
-      <Typography variant="h2" sx={{ fontSize: '32px!important', fontWeight: 600, mb: 2 }}>
-        {props.title}
-      </Typography>
+      <AdminDashboardCardTitle>{props.title}</AdminDashboardCardTitle>
+
       <Box sx={{ height: 500, width: '100%' }}>
         <DataGrid
           loading={props.isPending || props.isFetching}
