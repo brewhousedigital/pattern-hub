@@ -42,11 +42,17 @@ function isBot(userAgent: string): boolean {
 
 function injectMeta(html: string, meta: Record<string, string>): string {
   const tags = Object.entries(meta)
-    .map(([property, content]) =>
-      property.startsWith('og:') || property.startsWith('twitter:')
-        ? `<meta property="${property}" content="${content}">`
-        : `<meta name="${property}" content="${content}">`,
-    )
+    .map(([property, content]) => {
+      if (property === 'title') {
+        return `<title>${content}</title>`;
+      }
+
+      if (property.startsWith('og:') || property.startsWith('twitter:')) {
+        return `<meta property="${property}" content="${content}">`;
+      }
+
+      return `<meta name="${property}" content="${content}">`;
+    })
     .join('\n    ');
 
   return html.replace('</head>', `  ${tags}\n  </head>`);
@@ -81,7 +87,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
         return {
           ...base,
           title: `${pattern.name} — ${SITE_NAME}`,
-          description: pattern.description ?? 'View this pattern on Pattern Hub.',
+          description: pattern.description
+            ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
+            : 'View this pattern on Pattern Hub.',
           'og:title': `${pattern.name} — ${SITE_NAME}`,
           'og:description': pattern.description ?? 'View this pattern on Pattern Hub.',
           'og:url': `${SITE_URL}${pathname}`,
@@ -101,6 +109,7 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 
       if (res.ok) {
         const pattern = await res.json();
+
         const imageUrl = pattern?.opengraph_image
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
           : defaultPosterImage;
@@ -110,7 +119,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
         return {
           ...base,
           title: `${pattern.name} — ${SITE_NAME}`,
-          description: pattern.description ?? 'View this pattern on Pattern Hub.',
+          description: pattern.description
+            ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
+            : 'View this pattern on Pattern Hub.',
           'og:title': `${pattern.name} — ${SITE_NAME}`,
           'og:description': pattern.description ?? 'View this pattern on Pattern Hub.',
           'og:url': `${SITE_URL}${pathname}`,
