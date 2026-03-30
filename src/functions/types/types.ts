@@ -39,3 +39,7 @@ export type TypeFavoriteDoneRatingsResponse = {
     pattern_id: TypePatternResponse;
   };
 };
+
+export type TypeViewData = {
+  viewData: TypePatternResponse | undefined;
+};

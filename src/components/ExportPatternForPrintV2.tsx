@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
+import type { TypeViewData } from '@/functions/types/types.ts';
 
 import { alpha } from '@mui/material/styles';
 import CropPortraitIcon from '@mui/icons-material/CropPortrait';
@@ -245,8 +245,8 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
   pdf.save(`${slugify(patternName)}-tiled.pdf`);
 }
 
-export const ExportPatternForPrintV2 = () => {
-  const { viewData } = usePatternViewData();
+export const ExportPatternForPrintV2 = (props: TypeViewData) => {
+  const viewData = props.viewData;
 
   // Derive default SVG size from viewData
   const defaultSvgW = viewData ? `${viewData.design_width}${viewData.design_width_unit}` : '';

@@ -85,9 +85,9 @@ const ViewDrawerContainer = () => {
   // Pattern View Drawer
   const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
-  const { setPatternId } = usePatternSearch();
+  const { setPatternId, patternId } = usePatternSearch();
 
-  const { viewData } = usePatternViewData();
+  const { viewData } = usePatternViewData(patternId);
 
   const handleClose = () => {
     handleCloseView();

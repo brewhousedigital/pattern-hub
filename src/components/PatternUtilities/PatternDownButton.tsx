@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
+import type { TypeViewData } from '@/functions/types/types';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import {
@@ -13,8 +13,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 import { Button } from '@mui/material';
 
-export const PatternDownButton = () => {
-  const { viewData } = usePatternViewData();
+export const PatternDownButton = (props: TypeViewData) => {
+  const viewData = props.viewData;
   const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternDoneStatus(viewData?.id || '');

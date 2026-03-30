@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
 import { useGlobalAuthData } from '@/data/auth-data.ts';
+import type { TypeViewData } from '@/functions/types/types';
 import {
   useMutationFavoritePattern,
   useMutationRemoveFavoritePattern,
@@ -13,8 +13,8 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
 import { Button } from '@mui/material';
 
-export const PatternFavoriteButton = () => {
-  const { viewData } = usePatternViewData();
+export const PatternFavoriteButton = (props: TypeViewData) => {
+  const viewData = props.viewData;
   const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternFavoriteStatus(viewData?.id || '');

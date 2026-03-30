@@ -58,9 +58,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               />
             </Box>
 
-            <ExportPatternToDownload />
+            <ExportPatternToDownload viewData={viewData} />
 
-            <ExportPatternForPrintV2 />
+            <ExportPatternForPrintV2 viewData={viewData} />
           </Box>
 
           <Box>
@@ -93,9 +93,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            <PatternSaveContainer />
+            <PatternSaveContainer viewData={viewData} />
 
-            <PatternRatings />
+            <PatternRatings viewData={viewData} />
 
             <ThinDivider />
 
@@ -168,7 +168,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            <PatternReportIssue />
+            <PatternReportIssue viewData={viewData} />
           </Box>
         </Box>
       </Box>

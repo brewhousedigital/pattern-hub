@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
-import { usePatternViewData } from '@/functions/hooks/usePatternView';
+import type { TypeViewData } from '@/functions/types/types';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -226,8 +226,8 @@ function slugify(str: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternToDownload = () => {
-  const { viewData } = usePatternViewData();
+export const ExportPatternToDownload = (props: TypeViewData) => {
+  const viewData = props.viewData;
 
   const svgImageUrl = generatePbImage(viewData);
 

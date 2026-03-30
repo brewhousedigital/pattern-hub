@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
+import type { TypeViewData } from '@/functions/types/types';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useMutationCreateComplaint } from '@/functions/database/complaints';
 import { enqueueSnackbar } from 'notistack';
@@ -8,8 +8,8 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 
 import { Alert, Box, Button, Collapse, Stack, TextField } from '@mui/material';
 
-export const PatternReportIssue = () => {
-  const { viewData } = usePatternViewData();
+export const PatternReportIssue = (props: TypeViewData) => {
+  const viewData = props.viewData;
   const { authData } = useGlobalAuthData();
 
   const [isOpen, setIsOpen] = React.useState(false);
