@@ -1,6 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { HeaderProfileMenu } from '@/components/layout/HeaderProfileMenu.tsx';
-import { useGlobalReadyToSearch, useGlobalSearch } from '@/data/search';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -58,13 +57,9 @@ export const Header = () => {
 };
 
 export const Logo = () => {
-  const { resetSearchTerm } = useGlobalSearch();
-  const { resetReadyToSearchTerm } = useGlobalReadyToSearch();
   const { handleCloseView } = useGlobalIsViewOpen();
 
   const handleReturnHome = () => {
-    resetSearchTerm();
-    resetReadyToSearchTerm();
     handleCloseView();
   };
 
