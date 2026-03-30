@@ -264,7 +264,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 rowGap: 0,
               }}
             >
-              <MetaRow label="Created On" value={createPrettyDate(viewData?.created || '')} />
+              <MetaRow label="Uploaded On" value={createPrettyDate(viewData?.created || '')} />
               <MetaRow label="Last Update" value={createPrettyDate(viewData?.updated || '')} />
             </Box>
 
