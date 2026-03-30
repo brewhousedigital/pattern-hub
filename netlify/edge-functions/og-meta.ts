@@ -4,7 +4,7 @@ import type { Context } from 'https://edge.netlify.com';
 
 const POCKETBASE_URL = Deno.env.get('POCKETBASE_URL') ?? '';
 const SITE_URL = Deno.env.get('URL') ?? '';
-const SITE_NAME = 'Pattern Hub';
+const SITE_NAME = 'Pattern Archive';
 
 const BOT_AGENTS = [
   // Social platforms
@@ -89,9 +89,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
           title: `${pattern.name} — ${SITE_NAME}`,
           description: pattern.description
             ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
-            : 'View this pattern on Pattern Hub.',
+            : 'View this pattern on Pattern Archive.',
           'og:title': `${pattern.name} — ${SITE_NAME}`,
-          'og:description': pattern.description ?? 'View this pattern on Pattern Hub.',
+          'og:description': pattern.description ?? 'View this pattern on Pattern Archive.',
           'og:url': `${SITE_URL}${pathname}`,
           ...(imageUrl ? { 'og:image': imageUrl, 'twitter:image': imageUrl } : {}),
         };
@@ -121,9 +121,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
           title: `${pattern.name} — ${SITE_NAME}`,
           description: pattern.description
             ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
-            : 'View this pattern on Pattern Hub.',
+            : 'View this pattern on Pattern Archive.',
           'og:title': `${pattern.name} — ${SITE_NAME}`,
-          'og:description': pattern.description ?? 'View this pattern on Pattern Hub.',
+          'og:description': pattern.description ?? 'View this pattern on Pattern Archive.',
           'og:url': `${SITE_URL}${pathname}`,
           ...(imageUrl ? { 'og:image': imageUrl, 'twitter:image': imageUrl } : {}),
         };
@@ -138,9 +138,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
     return {
       ...base,
       title: `FAQ — ${SITE_NAME}`,
-      description: 'Frequently asked questions about Pattern Hub.',
+      description: 'Frequently asked questions about Pattern Archive.',
       'og:title': `FAQ — ${SITE_NAME}`,
-      'og:description': 'Frequently asked questions about Pattern Hub.',
+      'og:description': 'Frequently asked questions about Pattern Archive.',
       'og:url': `${SITE_URL}/help/faq`,
     };
   }
