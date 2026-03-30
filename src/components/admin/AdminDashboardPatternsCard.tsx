@@ -6,7 +6,7 @@ import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { Card, CardContent, Typography, CircularProgress } from '@mui/material';
 
 export const AdminDashboardPatternsCard = () => {
-  const { isPending, isError, error, data } = useQueryGetAllPatternsByPagination('', 1);
+  const { isPending, isError, error, data } = useQueryGetAllPatternsByPagination();
 
   const firstItem = data?.items?.[0];
 

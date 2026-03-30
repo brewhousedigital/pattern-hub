@@ -12,7 +12,7 @@ import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
-  useQueryGetAllPatternsByPagination,
+  useQueryGetAllPatternsByPaginationAdmin,
   useMutationEditPattern,
   useMutationDeletePattern,
 } from '@/functions/database/patterns';
@@ -78,7 +78,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const savePattern = useMutationEditPattern();
   const deletePattern = useMutationDeletePattern();
 
-  const { refetch: refetchPatterns } = useQueryGetAllPatternsByPagination(searchResult, paginationModel.page);
+  const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
 
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -103,11 +103,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [designHeightUnit, setDesignHeightUnit] = React.useState(String(props?.design_height_unit) || 'in');
 
   // Tags
-  const [tagValue, setTagValue] = React.useState<string[] | undefined>(props?.tags?.split(',') || []);
+  const [tagValue, setTagValue] = React.useState<string[] | undefined>(props?.tags || []);
   const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
 
   // Authors
-  const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors?.split(',') || []);
+  const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
   const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
 
   // Uploaded By

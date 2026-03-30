@@ -3,7 +3,7 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 
-import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { type TypePatternResponse, useQueryGetAllPatternsByPaginationAdmin } from '@/functions/database/patterns';
 import { AdminEditPatternModal } from '@/components/admin/AdminEditPatternModal';
 
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -35,7 +35,10 @@ export const AdminPatternTable = () => {
   const { setFilterModel, searchResult } = useGlobalAdminFilter();
   const debouncedSearchTerm = useDebounce(searchResult, 600);
 
-  const { isPending, isFetching, data } = useQueryGetAllPatternsByPagination(debouncedSearchTerm, paginationModel.page);
+  const { isPending, isFetching, data } = useQueryGetAllPatternsByPaginationAdmin(
+    debouncedSearchTerm,
+    paginationModel.page,
+  );
 
   React.useEffect(() => {
     if (data) {
@@ -189,9 +192,9 @@ function CustomToolbar() {
         name={''}
         description={''}
         difficulty={''}
-        authors={''}
+        authors={['']}
         uploaded_by={''}
-        tags={''}
+        tags={['']}
         pattern_file={''}
         pieces={0}
         design_width={0}

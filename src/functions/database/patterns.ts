@@ -25,7 +25,7 @@ export type TypePatternResponse = {
   line_width_unit: string;
   created: string;
   updated: string;
-  expand: {
+  expand?: {
     authors: TypeAuthData[];
   };
 };
@@ -36,6 +36,21 @@ export const useQueryGetAllPatternsByPagination = () => {
 
   return useQuery({
     queryKey: ['useQueryGetAllPatternsByPagination', filter, page],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
+      return await pocketbase.collection('patterns').getList(page, 25, {
+        filter,
+        expand: 'authors',
+        sort: '-created',
+      });
+    },
+    enabled: !!page,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: number) => {
+  return useQuery({
+    queryKey: ['useQueryGetAllPatternsByPaginationAdmin', filter, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(page, 25, {
         filter,
