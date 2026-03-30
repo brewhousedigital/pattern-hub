@@ -30,7 +30,7 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
-      <ViewDrawer hideNavigation />
+      <ViewDrawer hideNavigation viewData={data} />
     </GeneralLayout>
   );
 }

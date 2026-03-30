@@ -9,25 +9,29 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
-import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
 
 import { alpha } from '@mui/material/styles';
 
 import { Box, Typography, Chip, Stack } from '@mui/material';
+import type { TypePatternResponse } from '@/functions/database/patterns.ts';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
+  viewData: TypePatternResponse | undefined;
+  handleClose?: () => void;
 };
 
 export const ViewDrawer = (props: ViewDrawerProps) => {
-  const { viewData } = usePatternViewData();
+  const viewData = props.viewData;
 
   const svgImageUrl = generatePbImage(viewData);
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
       <Box sx={{ maxWidth: 1500, mx: 'auto', px: { xs: 2, md: 4 }, py: 3, position: 'relative', zIndex: 1 }}>
-        <PatternDrawerTopNavigation hide={props.hideNavigation} />
+        {!props?.hideNavigation && (
+          <PatternDrawerTopNavigation hide={props.hideNavigation} handleClose={props.handleClose} />
+        )}
 
         <Box
           sx={{

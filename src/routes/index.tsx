@@ -12,8 +12,11 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { patternSearchSchema } from '@/functions/utilities/search-v2';
 import { HomepageSearchV2 } from '@/components/layout/HomepageSearchV2';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
+import { usePatternViewData } from '@/functions/hooks/usePatternView';
 
 import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image.ts';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
@@ -82,11 +85,23 @@ const ViewDrawerContainer = () => {
   // Pattern View Drawer
   const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
+  const { setPatternId } = usePatternSearch();
+
+  const { viewData } = usePatternViewData();
+
+  const handleClose = () => {
+    handleCloseView();
+
+    setTimeout(() => {
+      setPatternId(undefined);
+    }, 600);
+  };
+
   return (
     <SwipeableDrawer
       anchor="bottom"
       open={isViewOpen}
-      onClose={handleCloseView}
+      onClose={handleClose}
       onOpen={handleOpenView}
       sx={{
         '& > .MuiPaper-root': {
@@ -96,7 +111,7 @@ const ViewDrawerContainer = () => {
         },
       }}
     >
-      <ViewDrawer />
+      <ViewDrawer viewData={viewData} handleClose={handleClose} />
     </SwipeableDrawer>
   );
 };

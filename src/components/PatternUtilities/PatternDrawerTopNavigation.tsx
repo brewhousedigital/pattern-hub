@@ -14,14 +14,13 @@ import { Box, Button } from '@mui/material';
 
 type TopNavigationProps = {
   hide?: boolean;
+  handleClose?: () => void;
 };
 
 export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
   const { data } = useQueryGetAllPatternsByPagination();
 
-  const { handleCloseView } = useGlobalIsViewOpen();
-
-  const { nextPattern, prevPattern, hasNext, hasPrev, patternId, setPatternId } = usePatternSearch();
+  const { nextPattern, prevPattern, hasNext, hasPrev, patternId } = usePatternSearch();
   const resultIds = data?.items.map((item) => item.id) || [];
 
   if (props?.hide) return <></>;
@@ -66,7 +65,7 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
       </Box>
 
       <Box sx={{ order: { xs: 4, md: 3 }, textAlign: 'right' }}>
-        <Button startIcon={<CloseIcon />} variant="outlined" size="small" onClick={handleCloseView}>
+        <Button startIcon={<CloseIcon />} variant="outlined" size="small" onClick={props.handleClose}>
           Close Window
         </Button>
       </Box>
