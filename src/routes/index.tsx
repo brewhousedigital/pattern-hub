@@ -1,35 +1,24 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { useGlobalSearch, useGlobalReadyToSearch } from '@/data/search';
+import { useGlobalSearchPagination } from '@/data/search';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { MainPageContent } from '@/components/MainPageContent';
-import { buildUpdatedTerm } from '@/functions/utilities/search-build-updated-terms';
-import { useGlobalIsSidebarOpen } from '@/data/sidebar';
-import type { TypeTagObject } from '@/functions/types/types';
-import { SidebarList, SidebarCategoryTitle } from '@/components/layout/Sidebar.tsx';
-import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
+import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
+import { useGlobalIsViewOpen } from '@/data/view';
 import { ViewDrawer } from '@/components/ViewDrawer';
 import { PRIMARY_COLOR } from '@/data/constants';
-import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
-import type { TypePatternResponse } from '@/functions/database/patterns';
 import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { patternSearchSchema } from '@/functions/utilities/search-v2';
 
-import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer } from '@mui/material';
-
-type PatternSearch = {
-  q?: string;
-  view?: string;
-};
+import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
-  validateSearch: (search: Record<string, unknown>): PatternSearch => {
-    return {};
-  },
-  head: ({ match }) => ({
+  validateSearch: patternSearchSchema,
+  head: () => ({
     meta: generateSEO(),
   }),
 });
@@ -38,148 +27,79 @@ function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
-  const { setViewData } = useGlobalViewData();
+  // Pagination
+  const { page, setPage } = useGlobalSearchPagination();
 
-  const { view } = Route.useSearch();
-
-  const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
-
-  const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
-
-  const [patternPageNumber, setPatternPageNumber] = React.useState(1);
-
-  const { readyToSearchTerm } = useGlobalReadyToSearch();
-
-  const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination(
-    readyToSearchTerm,
-    patternPageNumber,
-  );
-
-  // On site load, check if the user already had a pattern in view
-  React.useEffect(() => {
-    if (view && data) {
-      const pattern = data.items.find((item) => item.id === view);
-
-      if (pattern) {
-        setViewData(pattern);
-        handleOpenView();
-      }
-    }
-  }, [data]);
+  // Get the pattern data
+  const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination();
 
   return (
     <GeneralLayout>
-      <Box>
+      <Box sx={{ position: 'relative' }}>
         <Fade in={isFetching}>
+          <Box sx={{ position: 'absolute', top: -9, left: 0, zIndex: 100, width: '100%' }}>
+            <LinearProgress variant="indeterminate" />
+          </Box>
+        </Fade>
+
+        <Fade in={isPending}>
           <Box>
             <FullScreenLoader />
           </Box>
         </Fade>
 
-        <SwipeableDrawer
-          anchor="right"
-          open={isSidebarOpen}
-          onClose={handleCloseMobileSidebar}
-          onOpen={handleOpenMobileSidebar}
-        >
-          <SidebarBlock isPending={isPending} isError={isError} data={data} />
-        </SwipeableDrawer>
+        <MobileSidebarBlock />
 
         <Box sx={ContainerStyles}>
-          {isMediumSizeAndUp && <SidebarBlock isPending={isPending} isError={isError} data={data} />}
+          {isMediumSizeAndUp && <SidebarBlock />}
 
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-              p: 3,
-              mr: 2,
-              mb: 2,
-              ml: { xs: 2, md: 0 },
-              backgroundColor: PRIMARY_COLOR,
-              borderRadius: 6,
-              minHeight: 'calc(100svh - 104px)',
-            }}
-          >
-            <MainPageContent isPending={isPending} isError={isError} data={data?.items} />
+          <Box sx={mainContentStyles}>
+            <MainPageContent />
 
-            <PaginationBox data={data} value={patternPageNumber} setter={setPatternPageNumber} />
+            <PaginationBox data={data} value={page} setter={setPage} />
           </Box>
         </Box>
 
-        <SwipeableDrawer
-          anchor="bottom"
-          open={isViewOpen}
-          onClose={handleCloseView}
-          onOpen={handleOpenView}
-          sx={{
-            '& > .MuiPaper-root': {
-              maxHeight: '95svh',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-            },
-          }}
-        >
-          <ViewDrawer />
-        </SwipeableDrawer>
+        <ViewDrawerContainer />
       </Box>
     </GeneralLayout>
   );
 }
 
-type SidebarBlockProps = {
-  isPending: boolean;
-  isError: boolean;
-  data: TypePaginationDatabaseResponse<TypePatternResponse> | undefined;
+const mainContentStyles = {
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  p: 3,
+  mr: 2,
+  mb: 2,
+  ml: { xs: 2, md: 0 },
+  backgroundColor: PRIMARY_COLOR,
+  borderRadius: 6,
+  minHeight: 'calc(100svh - 104px)',
 };
 
-const SidebarBlock = (props: SidebarBlockProps) => {
-  const { setSearchTerm } = useGlobalSearch();
-  const { setReadyToSearchTerm } = useGlobalReadyToSearch();
-
-  // Generate the list of tags based on the API Query
-  const dataTags =
-    props.data?.items
-      ?.map((item) => {
-        const tags = item.tags.split(',');
-        return tags.map((tag) => tag.trim().toLowerCase());
-      })
-      .flat() || [];
-
-  const tagCounts = dataTags
-    .reduce<TypeTagObject[]>((acc, tag) => {
-      const existing = acc.find((item) => item.tag === tag);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ tag, count: 1 });
-      }
-      return acc;
-    }, [])
-    .sort((a, b) => a.tag.localeCompare(b.tag));
-
-  const syncTerms = (tag: string, prefix = '') => {
-    const updater = (prev: string) => buildUpdatedTerm(prev, tag, prefix);
-    setSearchTerm(updater);
-    setReadyToSearchTerm(updater);
-  };
-
-  const handleTagClickAdd = (tag: string) => syncTerms(tag);
-  const handleTagClickRemove = (tag: string) => syncTerms(tag, '-');
+const ViewDrawerContainer = () => {
+  // Pattern View Drawer
+  const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   return (
-    <Box>
-      <SidebarCategoryTitle title="Current Page Tags" />
-
-      <SidebarList
-        isPending={props.isPending}
-        isError={props.isError}
-        data={tagCounts}
-        handleClickAdd={handleTagClickAdd}
-        handleClickRemove={handleTagClickRemove}
-      />
-    </Box>
+    <SwipeableDrawer
+      anchor="bottom"
+      open={isViewOpen}
+      onClose={handleCloseView}
+      onOpen={handleOpenView}
+      sx={{
+        '& > .MuiPaper-root': {
+          maxHeight: '95svh',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        },
+      }}
+    >
+      <ViewDrawer />
+    </SwipeableDrawer>
   );
 };
 

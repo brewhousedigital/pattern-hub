@@ -1,66 +1,48 @@
 import React from 'react';
-import { useNavigate, Link } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import type { TypePatternResponse } from '@/functions/database/patterns';
-import { pocketbaseDomain } from '@/functions/database/authentication-setup';
-import { useGlobalIsViewOpen, useGlobalViewData } from '@/data/view';
+import { useGlobalIsViewOpen } from '@/data/view';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
-import { Box, Grid, Card, CardContent, Typography, Stack, Alert, Link as MuiLink } from '@mui/material';
+import { Box, Grid, Card, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
 
-type MainContentProps = {
-  data?: TypePatternResponse[];
-  isPending: boolean;
-  isError: boolean;
-};
-
-export const MainPageContent = (props: MainContentProps) => {
+export const MainPageContent = () => {
   const { handleOpenView } = useGlobalIsViewOpen();
-  const { setViewData, setViewAllPatternData } = useGlobalViewData();
 
-  const navigate = useNavigate();
+  // Get the pattern data
+  const { isPending, data } = useQueryGetAllPatternsByPagination();
+  const resultIds = data?.items.map((p) => p.id) || [];
 
-  React.useEffect(() => {
-    if (props.data) {
-      setViewAllPatternData(props.data);
-    }
-  }, [props.data]);
+  const { navigateToPattern } = usePatternSearch();
 
   const handleClick = (e: React.MouseEvent, pattern: TypePatternResponse) => {
     e.preventDefault();
 
     // Set the global view
-    setViewData(pattern);
+    navigateToPattern(pattern?.id, resultIds);
 
     // Open the modal
     handleOpenView();
-
-    navigate({
-      to: '/',
-      search: (prev) => ({ ...prev, view: pattern.id }),
-    }).then();
   };
 
-  // props.isPending
-  if (props.data && props.data.length > 0) {
+  if (isPending) {
     return (
       <Grid container spacing={2}>
-        {props.data.map((pattern) => {
-          const tags = pattern.tags.split(',');
-          const cleanedTags = tags.map((tag) => tag.trim()).map((tag) => tag.toLowerCase());
-          const joinedTags = cleanedTags.join(', ');
+        {Array.from(Array(25)).map((item, index) => (
+          <Grid key={`pattern-${index}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
+            <Skeleton height={330} variant="rounded" />
+          </Grid>
+        ))}
+      </Grid>
+    );
+  }
 
-          const authors = pattern.authors.split(',');
-          const cleanedAuthors = authors
-            .map((tag) => tag.trim())
-            .map((tag) => tag.toLowerCase())
-            .join(', ');
-
-          const difficulties = pattern.difficulty.split(',');
-          const cleanedDifficulty = difficulties
-            .map((tag) => tag.trim())
-            .map((tag) => tag.toLowerCase())
-            .join(', ');
-
+  if (data && data?.items?.length > 0) {
+    return (
+      <Grid container spacing={2}>
+        {data?.items?.map((pattern) => {
           return (
             <Grid key={`pattern-${pattern.id}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
               <MuiLink
@@ -77,28 +59,6 @@ export const MainPageContent = (props: MainContentProps) => {
                       style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                     />
                   </Box>
-
-                  <CardContent sx={{ display: 'none' }}>
-                    <Typography sx={{ mb: 2 }}>{pattern.name}</Typography>
-
-                    {pattern.description && (
-                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-                        {pattern.description}
-                      </Typography>
-                    )}
-
-                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                      Tags: {joinedTags}
-                    </Typography>
-
-                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                      Difficulty: {cleanedDifficulty}
-                    </Typography>
-
-                    <Typography sx={{ opacity: 0.7, textTransform: 'capitalize', fontSize: 11 }}>
-                      Authors: {cleanedAuthors}
-                    </Typography>
-                  </CardContent>
                 </Card>
               </MuiLink>
             </Grid>
@@ -108,7 +68,7 @@ export const MainPageContent = (props: MainContentProps) => {
     );
   }
 
-  if (props.data && props.data.length === 0) {
+  if (data && data?.items?.length === 0) {
     return (
       <Stack sx={{ alignItems: 'center', justifyContent: 'center', minHeight: '50svh' }}>
         <Alert severity="info">No results found for your search</Alert>

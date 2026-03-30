@@ -39,3 +39,10 @@ export const useGlobalReadyToSearch = () => {
 
   return { readyToSearchTerm, setReadyToSearchTerm, resetReadyToSearchTerm: () => setReadyToSearchTerm('') };
 };
+
+const globalSearchPaginationNumber = atom(1);
+
+export const useGlobalSearchPagination = () => {
+  const [page, setPage] = useAtom(globalSearchPaginationNumber);
+  return { page, setPage };
+};

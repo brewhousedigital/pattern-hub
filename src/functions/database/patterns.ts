@@ -1,6 +1,9 @@
 import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
+import { useGlobalSearchPagination } from '@/data/search';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
+import type { TypeAuthData } from '@/functions/database/authentication.ts';
 
 export type TypePatternResponse = {
   collectionId: string;
@@ -9,9 +12,9 @@ export type TypePatternResponse = {
   name: string;
   description: string;
   difficulty: string;
-  authors: string;
+  authors: string[];
   uploaded_by: string;
-  tags: string;
+  tags: string[];
   pattern_file: string;
   pieces: number;
   design_width: number;
@@ -22,52 +25,25 @@ export type TypePatternResponse = {
   line_width_unit: string;
   created: string;
   updated: string;
+  expand: {
+    authors: TypeAuthData[];
+  };
 };
 
-export const useQueryGetAllPatternsByPagination = (searchTerm: string, pageNumber: number) => {
+export const useQueryGetAllPatternsByPagination = () => {
+  const { page } = useGlobalSearchPagination();
+  const { filter } = usePatternSearch();
+
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', searchTerm, pageNumber],
+    queryKey: ['useQueryGetAllPatternsByPagination', filter, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      let filter = '';
-
-      if (searchTerm) {
-        const terms = searchTerm.trim().split(/\s+/); // Split by whitespace
-        const includeTags: string[] = [];
-        const excludeTags: string[] = [];
-
-        terms.forEach((term) => {
-          if (term.startsWith('-')) {
-            // Exclude tag (remove the - prefix)
-            excludeTags.push(term.slice(1));
-          } else {
-            // Include tag
-            includeTags.push(term);
-          }
-        });
-
-        const filterParts: string[] = [];
-
-        // Add include filters
-        if (includeTags.length > 0) {
-          const includeFilters = includeTags.map((tag) => `tags ~ "${tag}"`);
-          filterParts.push(`(${includeFilters.join(' && ')})`);
-        }
-
-        // Add exclude filters
-        if (excludeTags.length > 0) {
-          const excludeFilters = excludeTags.map((tag) => `tags !~ "${tag}"`);
-          filterParts.push(`(${excludeFilters.join(' && ')})`);
-        }
-
-        filter = filterParts.join(' && ');
-      }
-
-      return await pocketbase.collection('patterns').getList(pageNumber, 25, {
+      return await pocketbase.collection('patterns').getList(page, 25, {
+        filter,
+        expand: 'authors',
         sort: '-created',
-        filter: filter,
       });
     },
-    enabled: !!pageNumber,
+    enabled: !!page,
     placeholderData: keepPreviousData,
   });
 };

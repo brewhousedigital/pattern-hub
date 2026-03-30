@@ -1,4 +1,7 @@
-import type { TypeTagObject } from '@/functions/types/types.ts';
+import React from 'react';
+import type { TypeTagObject } from '@/functions/types/types';
+import { useGlobalIsSidebarOpen } from '@/data/sidebar';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
@@ -15,19 +18,47 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  SwipeableDrawer,
 } from '@mui/material';
+import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 
-type SidebarListProps = {
-  isPending: boolean;
-  isError: boolean;
-  data?: TypeTagObject[];
-  handleClickAdd: (value: string) => void;
-  handleClickRemove: (value: string) => void;
-};
-
-export const SidebarList = (props: SidebarListProps) => {
+const SidebarList = () => {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
+
+  const { isPending, isError, data } = useQueryGetAllPatternsByPagination();
+
+  const { isTagActive, addTag } = usePatternSearch();
+
+  // Generate the list of tags based on the API Query
+  const dataTags =
+    data?.items
+      ?.map((item) => {
+        const tags = item.tags;
+        return tags.map((tag) => tag.trim().toLowerCase());
+      })
+      .flat()
+      .filter((tag) => !isTagActive(tag)) || [];
+
+  const tagCounts = dataTags
+    .reduce<TypeTagObject[]>((acc, tag) => {
+      const existing = acc.find((item) => item.tag === tag);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ tag, count: 1 });
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.tag.localeCompare(b.tag));
+
+  const handleAddTag = (tag: string) => {
+    addTag(tag);
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    addTag(tag, true);
+  };
 
   return (
     <List
@@ -40,11 +71,12 @@ export const SidebarList = (props: SidebarListProps) => {
         scrollbarWidth: 'none',
       }}
     >
-      {props.isPending && <SkeletonLink />}
-      {props.isError && <Alert severity="error">Unable to load this category</Alert>}
-      {props.data &&
-        props.data.map((thisTag) => {
-          // Removing secondaryAction={thisTag.count}
+      {isPending && <SkeletonLink />}
+
+      {isError && <Alert severity="error">Unable to load this category</Alert>}
+
+      {tagCounts &&
+        tagCounts?.map((thisTag) => {
           return (
             <ListItem
               key={`sidebar-link-${thisTag.tag}`}
@@ -52,12 +84,12 @@ export const SidebarList = (props: SidebarListProps) => {
               secondaryAction={
                 <Stack direction="row" sx={{ alignItems: 'center' }}>
                   <Box>
-                    <IconButton size="small" onClick={() => props.handleClickAdd(thisTag.tag)}>
+                    <IconButton size="small" onClick={() => handleAddTag(thisTag.tag)}>
                       <AddRoundedIcon />
                     </IconButton>
                   </Box>
                   <Box>
-                    <IconButton size="small" onClick={() => props.handleClickRemove(thisTag.tag)}>
+                    <IconButton size="small" onClick={() => handleRemoveTag(thisTag.tag)}>
                       <RemoveRoundedIcon />
                     </IconButton>
                   </Box>
@@ -105,5 +137,31 @@ export const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
         {props.title}
       </Typography>
     </Stack>
+  );
+};
+
+export const SidebarBlock = () => {
+  return (
+    <Box>
+      <SidebarCategoryTitle title="Current Page Tags" />
+
+      <SidebarList />
+    </Box>
+  );
+};
+
+export const MobileSidebarBlock = () => {
+  // Sidebar
+  const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
+
+  return (
+    <SwipeableDrawer
+      anchor="right"
+      open={isSidebarOpen}
+      onClose={handleCloseMobileSidebar}
+      onOpen={handleOpenMobileSidebar}
+    >
+      <SidebarBlock />
+    </SwipeableDrawer>
   );
 };

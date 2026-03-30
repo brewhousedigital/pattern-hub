@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { HeaderProfileMenu } from '@/components/layout/HeaderProfileMenu.tsx';
 import { useGlobalReadyToSearch, useGlobalSearch } from '@/data/search';
-import { HomepageSearch } from '@/components/layout/HomepageSearch.tsx';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
 import { subLinkStyles } from '@/components/layout/Header/sublink-styles';
+import { HomepageSearchV2 } from '@/components/layout/HomepageSearchV2';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
@@ -33,21 +33,27 @@ export const Header = () => {
           <ExtraLinks />
         </Box>
 
-        <HomepageSearch />
+        <HomepageSearchV2 />
       </Box>
     );
   }
 
   return (
-    <Box sx={navbarStyles}>
-      <Logo />
+    <>
+      <Box sx={navbarStyles}>
+        <Logo />
 
-      <ExtraLinks />
+        <ExtraLinks />
 
-      <HomepageSearch />
+        <Box sx={{ textAlign: 'right' }}>
+          <HeaderProfileMenu />
+        </Box>
+      </Box>
 
-      <HeaderProfileMenu />
-    </Box>
+      <Box sx={{ px: 2, mb: 2 }}>
+        <HomepageSearchV2 />
+      </Box>
+    </>
   );
 };
 
@@ -95,11 +101,11 @@ const ExtraLinks = () => {
 
 const navbarStyles = {
   display: 'grid',
-  gridTemplateColumns: 'auto 1fr 1fr auto',
+  gridTemplateColumns: 'auto 1fr auto',
   gap: 4,
   alignItems: 'center',
   paddingX: 2,
-  paddingY: 2,
+  paddingY: 0,
 };
 
 const mobileNavbarContainerStyles = {
