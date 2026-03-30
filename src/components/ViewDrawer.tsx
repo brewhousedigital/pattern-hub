@@ -9,8 +9,7 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
-import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
-import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
+import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
 
 import { alpha } from '@mui/material/styles';
 
@@ -21,10 +20,7 @@ type ViewDrawerProps = {
 };
 
 export const ViewDrawer = (props: ViewDrawerProps) => {
-  const { patternId } = usePatternSearch();
-
-  const { data } = useQueryGetAllPatternsByPagination();
-  const viewData = data?.items?.find((item) => item.id === patternId);
+  const { viewData } = usePatternViewData();
 
   const svgImageUrl = generatePbImage(viewData);
 

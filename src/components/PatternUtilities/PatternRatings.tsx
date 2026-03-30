@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGlobalViewData } from '@/data/view';
+import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
@@ -16,7 +16,7 @@ import { alpha } from '@mui/material/styles';
 import { Box, Typography, Rating } from '@mui/material';
 
 export const PatternRatings = () => {
-  const { viewData } = useGlobalViewData();
+  const { viewData } = usePatternViewData();
   const { authData } = useGlobalAuthData();
 
   const [userRating, setUserRating] = useState<number | null>(0);

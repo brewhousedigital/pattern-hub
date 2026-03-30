@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
-import { useGlobalViewData } from '@/data/view';
+import jsPDF from 'jspdf';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
+
 import { alpha } from '@mui/material/styles';
 import CropPortraitIcon from '@mui/icons-material/CropPortrait';
 import CropLandscapeIcon from '@mui/icons-material/CropLandscape';
@@ -8,7 +11,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+
 import {
   Box,
   Button,
@@ -23,12 +26,9 @@ import {
   Divider,
   MenuItem,
 } from '@mui/material';
-import jsPDF from 'jspdf';
 
 type PrintMode = 'single' | 'tiled';
 type Orientation = 'portrait' | 'landscape';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 // Standard tiling sheet: 8.5 × 11 in with 0.5 in margins on each side
 const TILE_SHEET_W_IN = 8.5;
@@ -38,8 +38,6 @@ const TILE_PRINTABLE_W = TILE_SHEET_W_IN - TILE_MARGIN_IN * 2; // 7.5 in
 const TILE_PRINTABLE_H = TILE_SHEET_H_IN - TILE_MARGIN_IN * 2; // 10 in
 
 const PT_PER_IN = 72; // jsPDF uses points internally
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Normalize any common unit string to inches */
 function toInches(value: number, unit: string): number {
@@ -77,7 +75,7 @@ function slugify(str: string) {
     .replace(/[^a-z0-9-]/g, '');
 }
 
-/** Rasterise an SVG string to a base64 PNG via an offscreen canvas */
+/** Rasterize an SVG string to a base64 PNG via an offscreen canvas */
 async function svgToBase64Png(svgString: string, widthPx: number, heightPx: number): Promise<string> {
   // Ensure namespace present
   const cleaned = svgString.includes('xmlns=')
@@ -106,8 +104,6 @@ async function svgToBase64Png(svgString: string, widthPx: number, heightPx: numb
   });
 }
 
-// ─── Tiling preview helper ────────────────────────────────────────────────────
-
 interface TileInfo {
   cols: number;
   rows: number;
@@ -119,8 +115,6 @@ function calcTileInfo(svgWIn: number, svgHIn: number): TileInfo {
   const rows = Math.ceil(svgHIn / TILE_PRINTABLE_H);
   return { cols, rows, pages: cols * rows };
 }
-
-// ─── PDF builders ─────────────────────────────────────────────────────────────
 
 /**
  * Single-page PDF: the SVG is scaled to fit (or fill) the user-defined page,
@@ -174,7 +168,7 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
   const OVERLAP = 0.25; // in — bleed/overlap for alignment
   const { cols, rows } = calcTileInfo(svgWIn, svgHIn);
 
-  // Rasterise the full SVG at 150 DPI (enough for tiled assembly guides)
+  // Rasterize the full SVG at 150 DPI (enough for tiled assembly guides)
   const fullPx = 150;
   const fullWPx = Math.round(svgWIn * fullPx);
   const fullHPx = Math.round(svgHIn * fullPx);
@@ -251,10 +245,8 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
   pdf.save(`${slugify(patternName)}-tiled.pdf`);
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export const ExportPatternForPrintV2 = () => {
-  const { viewData } = useGlobalViewData();
+  const { viewData } = usePatternViewData();
 
   // Derive default SVG size from viewData
   const defaultSvgW = viewData ? `${viewData.design_width}${viewData.design_width_unit}` : '';

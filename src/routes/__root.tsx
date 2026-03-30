@@ -15,7 +15,7 @@ const RootLayout = () => {
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
 
-        <SnackbarProvider autoHideDuration={10000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
+        <SnackbarProvider autoHideDuration={6000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
           <QueryClientProvider client={queryClient}>
             <Outlet />
           </QueryClientProvider>

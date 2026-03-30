@@ -32,7 +32,7 @@ export const MainPageContent = () => {
       <Grid container spacing={2}>
         {Array.from(Array(25)).map((item, index) => (
           <Grid key={`pattern-${index}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
-            <Skeleton height={330} variant="rounded" />
+            <Skeleton width="100%" variant="rounded" sx={{ borderRadius: 6, aspectRatio: '1 / 1', height: 'auto' }} />
           </Grid>
         ))}
       </Grid>

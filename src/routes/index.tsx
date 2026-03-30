@@ -2,7 +2,6 @@ import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { useGlobalSearchPagination } from '@/data/search';
-import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { MainPageContent } from '@/components/MainPageContent';
 import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -12,6 +11,7 @@ import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { patternSearchSchema } from '@/functions/utilities/search-v2';
+import { HomepageSearchV2 } from '@/components/layout/HomepageSearchV2';
 
 import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
 
@@ -31,20 +31,18 @@ function RouteComponent() {
   const { page, setPage } = useGlobalSearchPagination();
 
   // Get the pattern data
-  const { isPending, isFetching, isError, data } = useQueryGetAllPatternsByPagination();
+  const { isFetching, isError, data } = useQueryGetAllPatternsByPagination();
 
   return (
     <GeneralLayout>
+      <Box sx={{ px: 2, mb: 2 }}>
+        <HomepageSearchV2 />
+      </Box>
+
       <Box sx={{ position: 'relative' }}>
         <Fade in={isFetching}>
           <Box sx={{ position: 'absolute', top: -9, left: 0, zIndex: 100, width: '100%' }}>
             <LinearProgress variant="indeterminate" />
-          </Box>
-        </Fade>
-
-        <Fade in={isPending}>
-          <Box>
-            <FullScreenLoader />
           </Box>
         </Fade>
 

@@ -1,18 +1,20 @@
-import { useGlobalViewData } from '@/data/view.ts';
+import React, { useState } from 'react';
+import { usePatternViewData } from '@/functions/hooks/usePatternView.ts';
 import { useGlobalAuthData } from '@/data/auth-data.ts';
 import {
   useMutationFavoritePattern,
   useMutationRemoveFavoritePattern,
   useQueryGetPatternFavoriteStatus,
 } from '@/functions/database/favorites.ts';
-import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { Button } from '@mui/material';
+
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
+import { Button } from '@mui/material';
+
 export const PatternFavoriteButton = () => {
-  const { viewData } = useGlobalViewData();
+  const { viewData } = usePatternViewData();
   const { authData } = useGlobalAuthData();
 
   const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternFavoriteStatus(viewData?.id || '');

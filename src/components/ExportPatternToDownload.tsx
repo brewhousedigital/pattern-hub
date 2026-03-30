@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
-import { useGlobalViewData } from '@/data/view';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
+import { usePatternViewData } from '@/functions/hooks/usePatternView';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -227,7 +227,7 @@ function slugify(str: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const ExportPatternToDownload = () => {
-  const { viewData } = useGlobalViewData();
+  const { viewData } = usePatternViewData();
 
   const svgImageUrl = generatePbImage(viewData);
 

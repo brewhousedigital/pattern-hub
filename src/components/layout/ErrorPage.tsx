@@ -223,8 +223,6 @@ const StainedGlassPanel = () => (
   </Box>
 );
 
-// ── Main ErrorPage component ─────────────────────────────────────────────────
-
 interface ErrorPageProps {
   error?: Error | null;
   /** Call this to attempt recovery (e.g. reset an error boundary) */
@@ -241,9 +239,10 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
   }, []);
 
   const handleGoHome = () => navigate({ to: '/' });
+
   const handleGoBack = () => {
     if (canGoBack.current) window.history.back();
-    else navigate({ to: '/' });
+    else navigate({ to: '/' }).then();
   };
 
   return (
@@ -296,7 +295,6 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
           <StainedGlassPanel />
         </Box>
 
-        {/* ── Right: text + actions ─────────────────────────────────── */}
         <Stack
           spacing={3}
           sx={{
@@ -304,32 +302,14 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
             textAlign: { xs: 'center', md: 'left' },
           }}
         >
-          {/* Eyebrow */}
-          <Typography
-            component="span"
-            sx={{
-              fontFamily: "'Cinzel', Georgia, serif",
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: '#16a34a',
-            }}
-          >
-            Something broke
-          </Typography>
-
-          {/* Headline */}
           <Typography
             variant="h1"
             sx={{
-              fontFamily: "'Cinzel Decorative', Georgia, serif",
               fontSize: { xs: '3.5rem', md: '5rem' },
               fontWeight: 900,
               lineHeight: 1,
               color: '#14532d',
               letterSpacing: '-0.02em',
-              // Subtle stained-glass-colour text gradient
               background: 'linear-gradient(135deg, #14532d 0%, #166534 40%, #15803d 70%, #22c55e 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -339,10 +319,8 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
             Shattered.
           </Typography>
 
-          {/* Sub-headline */}
           <Typography
             sx={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
               fontSize: { xs: '1.3rem', md: '1.55rem' },
               fontStyle: 'italic',
               color: '#166534',
@@ -350,8 +328,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
               maxWidth: 420,
             }}
           >
-            The page you were looking for broke into a thousand glittering pieces. Don't worry — every mosaic starts
-            somewhere.
+            The page you were looking for broke into a thousand glittering pieces.
           </Typography>
 
           {/* Optional error message */}
@@ -367,7 +344,18 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
             >
               <Typography
                 sx={{
-                  fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+                  fontFamily: 'monospace',
+                  fontSize: '0.8rem',
+                  color: '#15803d',
+                  wordBreak: 'break-word',
+                }}
+              >
+                Code Error:
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontFamily: 'monospace',
                   fontSize: '0.8rem',
                   color: '#15803d',
                   wordBreak: 'break-word',
@@ -390,7 +378,6 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                 size="large"
                 onClick={onReset}
                 sx={{
-                  fontFamily: "'Cinzel', Georgia, serif",
                   fontWeight: 700,
                   letterSpacing: '0.06em',
                   textTransform: 'none',
@@ -412,7 +399,6 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
               size="large"
               onClick={handleGoHome}
               sx={{
-                fontFamily: "'Cinzel', Georgia, serif",
                 fontWeight: 600,
                 letterSpacing: '0.06em',
                 textTransform: 'none',
@@ -432,7 +418,6 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
               size="large"
               onClick={handleGoBack}
               sx={{
-                fontFamily: "'Cinzel', Georgia, serif",
                 fontWeight: 500,
                 letterSpacing: '0.06em',
                 textTransform: 'none',
@@ -447,15 +432,6 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
           </Stack>
         </Stack>
       </Box>
-
-      {/* Google Fonts (Cinzel Decorative + Cormorant Garamond) */}
-      <Box
-        component="link"
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cinzel+Decorative:wght@900&family=Cormorant+Garamond:ital,wght@1,400;1,600&family=JetBrains+Mono&display=swap"
-        // @ts-ignore – MUI Box with 'link' tag
-        as="style"
-      />
     </Box>
   );
 }
