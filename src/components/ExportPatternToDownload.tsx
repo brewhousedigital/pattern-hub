@@ -31,7 +31,7 @@ const FORMAT_OPTIONS: { value: ExportFormat; label: string; mime: string }[] = [
   { value: 'png', label: 'PNG  — best for Cricut / vinyl cutters', mime: 'image/png' },
   { value: 'jpg', label: 'JPG  — smaller file, no transparency', mime: 'image/jpeg' },
   { value: 'webp', label: 'WebP — modern web format', mime: 'image/webp' },
-  { value: 'svg', label: 'SVG  — vector, resolution-independent', mime: 'image/svg+xml' },
+  { value: 'svg', label: 'SVG  — vector', mime: 'image/svg+xml' },
 ];
 
 const DPI_OPTIONS: DpiOption[] = [72, 96, 150, 300, 600];
@@ -66,6 +66,97 @@ function validateSvg(raw: string): string {
     return raw.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   }
   return raw;
+}
+
+/**
+ * Scales an SVG to the target pixel dimensions while keeping all stroke widths
+ * visually identical to the original (i.e. strokes do NOT scale with the canvas).
+ *
+ * Strategy: adjust-stroke-values
+ *   1. Parse the SVG's current viewBox to determine the original coordinate size.
+ *   2. Set new width/height attributes on the root <svg>.
+ *   3. Walk every element with a stroke-width attribute and divide its value by
+ *      the scale factor so the rendered thickness stays the same.
+ *   4. Also handle stroke-width inside style="" attributes.
+ */
+function scaleSvgWithFixedStrokes(svgString: string, targetWidthPx: number, targetHeightPx: number): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  const svgEl = doc.documentElement;
+
+  // ── 1. Determine original coordinate dimensions ──────────────────────────
+  let originW: number | null = null;
+  let originH: number | null = null;
+
+  const viewBox = svgEl.getAttribute('viewBox');
+  if (viewBox) {
+    const parts = viewBox
+      .trim()
+      .split(/[\s,]+/)
+      .map(Number);
+    if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
+      originW = parts[2]; // width in user units
+      originH = parts[3]; // height in user units
+    }
+  }
+
+  // Fall back to width/height attributes if no viewBox
+  if (originW === null) {
+    const wAttr = svgEl.getAttribute('width');
+    const hAttr = svgEl.getAttribute('height');
+    originW = wAttr ? parseFloat(wAttr) : null;
+    originH = hAttr ? parseFloat(hAttr) : null;
+  }
+
+  if (!originW || !originH) {
+    // Can't determine scale — return SVG unchanged with new dimensions set
+    svgEl.setAttribute('width', String(targetWidthPx));
+    svgEl.setAttribute('height', String(targetHeightPx));
+    return new XMLSerializer().serializeToString(doc);
+  }
+
+  // ── 2. Compute scale factor (use width axis; assume uniform scaling) ──────
+  const scaleX = targetWidthPx / originW;
+  const scaleY = targetHeightPx / originH;
+  // Use the smaller axis so strokes are never thinner than intended
+  const scale = Math.min(scaleX, scaleY);
+
+  // ── 3. Update root dimensions and preserve viewBox ───────────────────────
+  svgEl.setAttribute('width', String(targetWidthPx));
+  svgEl.setAttribute('height', String(targetHeightPx));
+
+  // If there was no viewBox, add one so the coordinate system is preserved
+  if (!viewBox) {
+    svgEl.setAttribute('viewBox', `0 0 ${originW} ${originH}`);
+  }
+
+  // ── 4. Rescale all stroke-width attributes ────────────────────────────────
+  const allElements = doc.querySelectorAll('*');
+
+  allElements.forEach((el) => {
+    // Handle stroke-width as a direct attribute
+    const strokeWidthAttr = el.getAttribute('stroke-width');
+    if (strokeWidthAttr !== null) {
+      const original = parseFloat(strokeWidthAttr);
+      if (!isNaN(original)) {
+        el.setAttribute('stroke-width', String(original / scale));
+      }
+    }
+
+    // Handle stroke-width inside a style="" attribute
+    const styleAttr = el.getAttribute('style');
+    if (styleAttr && styleAttr.includes('stroke-width')) {
+      const updated = styleAttr.replace(/stroke-width\s*:\s*([0-9.]+)(px|pt|em|rem|%)?/g, (_match, val, unit) => {
+        const original = parseFloat(val);
+        if (isNaN(original)) return _match;
+        const scaled = original / scale;
+        return `stroke-width:${scaled}${unit ?? ''}`;
+      });
+      el.setAttribute('style', updated);
+    }
+  });
+
+  return new XMLSerializer().serializeToString(doc);
 }
 
 async function svgToBitmap(
@@ -157,16 +248,21 @@ export const ExportPatternToDownload = () => {
   const widthInches = parseToInches(widthVal, unit);
   const heightInches = parseToInches(heightVal, unit);
 
-  const widthPx = widthInches ? toPx(widthInches, dpi) : null;
-  const heightPx = heightInches ? toPx(heightInches, dpi) : null;
+  // For SVG, use 96 DPI (screen resolution) to convert to px for coordinate math.
+  // The output file is vector so DPI doesn't affect quality — 96px/in is just used
+  // to derive the coordinate-space dimensions from the user's chosen physical size.
+  const SVG_EXPORT_DPI = 96 as DpiOption;
 
-  const canExport = isSvgExport
-    ? true // SVG doesn't need dimensions
-    : widthPx !== null && heightPx !== null;
+  const widthPx = widthInches ? toPx(widthInches, isSvgExport ? SVG_EXPORT_DPI : dpi) : null;
+  const heightPx = heightInches ? toPx(heightInches, isSvgExport ? SVG_EXPORT_DPI : dpi) : null;
+
+  const canExport = widthPx !== null && heightPx !== null;
 
   const outputSummary = (() => {
-    if (isSvgExport) return 'Vector — scales to any size losslessly.';
     if (!widthPx || !heightPx) return null;
+    if (isSvgExport) {
+      return `Output: ${widthVal} × ${heightVal} ${unit} — vector file with original line thickness preserved.`;
+    }
     const mp = ((widthPx * heightPx) / 1_000_000).toFixed(1);
     return `Output: ${widthPx} × ${heightPx} px  (${mp} MP) — ready for Cricut / vinyl cutters at ${dpi} DPI.`;
   })();
@@ -182,16 +278,21 @@ export const ExportPatternToDownload = () => {
       const svgString = await response.text();
 
       const baseSlug = slugify(viewData?.name || 'new pattern');
-      const slug = `${baseSlug}-${widthPx}x${heightPx}-${dpi}dpi`;
-      const filename = `${slug}.${format}`;
 
       if (isSvgExport) {
+        if (!widthPx || !heightPx) throw new Error('Invalid dimensions.');
+        const slug = `${baseSlug}-${widthVal}${unit}`;
+        const filename = `${slug}.svg`;
+
         const validSvg = validateSvg(svgString);
         const clean = sanitizeSvg(validSvg);
-        const blob = new Blob([clean], { type: 'image/svg+xml;charset=utf-8' });
+        const scaled = scaleSvgWithFixedStrokes(clean, widthPx, heightPx);
+        const blob = new Blob([scaled], { type: 'image/svg+xml;charset=utf-8' });
         downloadBlob(blob, filename);
       } else {
         if (!widthPx || !heightPx) throw new Error('Invalid dimensions.');
+        const slug = `${baseSlug}-${widthPx}x${heightPx}-${dpi}dpi`;
+        const filename = `${slug}.${format}`;
         const bg = isJpg ? (jpgBg === 'white' ? '#FFFFFF' : '#000000') : null;
         const blob = await svgToBitmap(svgString, widthPx, heightPx, format, bg);
         downloadBlob(blob, filename);
@@ -241,83 +342,87 @@ export const ExportPatternToDownload = () => {
         </FormControl>
       </Box>
 
-      {/* ── Raster options (hidden for SVG) ── */}
-      <Collapse in={isBitmapRasterExport}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-            gap: 2,
-            alignItems: 'flex-end',
-            mb: 2,
-          }}
-        >
-          {/* Width */}
-          <Box>
-            <TextField
-              label={`Width (${unit})`}
-              size="small"
-              variant="filled"
-              fullWidth
-              placeholder={
-                unit === 'in' ? 'e.g. 12' : unit === 'cm' ? 'e.g. 30' : unit === 'mm' ? 'e.g. 300' : 'e.g. 1200'
-              }
-              value={widthVal}
-              onChange={(e) => setWidthVal(e.target.value)}
-              slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-            />
-          </Box>
+      {/* ── Dimensions (shown for all formats) ── */}
+      <Collapse in={isSvgExport}>
+        <SectionLabel>Custom SVG Sizing</SectionLabel>
+      </Collapse>
 
-          {/* Height */}
-          <Box>
-            <TextField
-              label={`Height (${unit})`}
-              size="small"
-              variant="filled"
-              fullWidth
-              placeholder={
-                unit === 'in' ? 'e.g. 12' : unit === 'cm' ? 'e.g. 30' : unit === 'mm' ? 'e.g. 300' : 'e.g. 1200'
-              }
-              value={heightVal}
-              onChange={(e) => setHeightVal(e.target.value)}
-              slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-            />
-          </Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gap: 2,
+          alignItems: 'flex-end',
+          mb: 2,
+        }}
+      >
+        {/* Width */}
+        <Box>
+          <TextField
+            label={`Width (${unit})`}
+            size="small"
+            variant="filled"
+            fullWidth
+            placeholder={
+              unit === 'in' ? 'e.g. 12' : unit === 'cm' ? 'e.g. 30' : unit === 'mm' ? 'e.g. 300' : 'e.g. 1200'
+            }
+            value={widthVal}
+            onChange={(e) => setWidthVal(e.target.value)}
+            slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+          />
+        </Box>
 
-          {/* Unit */}
-          <Box>
-            <SectionLabel>Unit</SectionLabel>
+        {/* Height */}
+        <Box>
+          <TextField
+            label={`Height (${unit})`}
+            size="small"
+            variant="filled"
+            fullWidth
+            placeholder={
+              unit === 'in' ? 'e.g. 12' : unit === 'cm' ? 'e.g. 30' : unit === 'mm' ? 'e.g. 300' : 'e.g. 1200'
+            }
+            value={heightVal}
+            onChange={(e) => setHeightVal(e.target.value)}
+            slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+          />
+        </Box>
 
-            <ToggleButtonGroup
-              value={unit}
-              exclusive
-              size="small"
-              onChange={(_, v) => v && setUnit(v as Unit)}
-              sx={{
-                '& .MuiToggleButton-root': {
-                  borderColor: alpha('#C8A96E', 0.3),
-                  color: 'text.secondary',
-                  px: 1.25,
-                  fontSize: '0.72rem',
-                  '&.Mui-selected': {
-                    bgcolor: alpha('#C8A96E', 0.15),
-                    color: 'primary.main',
-                    borderColor: alpha('#C8A96E', 0.5),
-                    '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
-                  },
-                  '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+        {/* Unit */}
+        <Box>
+          <SectionLabel>Unit</SectionLabel>
+
+          <ToggleButtonGroup
+            value={unit}
+            exclusive
+            size="small"
+            onChange={(_, v) => v && setUnit(v as Unit)}
+            sx={{
+              '& .MuiToggleButton-root': {
+                borderColor: alpha('#C8A96E', 0.3),
+                color: 'text.secondary',
+                px: 1.25,
+                fontSize: '0.72rem',
+                '&.Mui-selected': {
+                  bgcolor: alpha('#C8A96E', 0.15),
+                  color: 'primary.main',
+                  borderColor: alpha('#C8A96E', 0.5),
+                  '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
                 },
-              }}
-            >
-              {UNIT_OPTIONS.map((u) => (
-                <ToggleButton key={u} value={u}>
-                  {u}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
+                '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+              },
+            }}
+          >
+            {UNIT_OPTIONS.map((u) => (
+              <ToggleButton key={u} value={u}>
+                {u}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </Box>
 
-          {/* DPI */}
+        {/* DPI — only relevant for raster formats */}
+        <Collapse in={isBitmapRasterExport}>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
               <SectionLabel>DPI / PPI</SectionLabel>
@@ -340,60 +445,58 @@ export const ExportPatternToDownload = () => {
               </Select>
             </FormControl>
           </Box>
-        </Box>
+        </Collapse>
+      </Box>
 
-        {/* JPG background color */}
-        <Collapse in={isJpg}>
-          <Box sx={{ mb: 2 }}>
-            <SectionLabel>Background Color</SectionLabel>
-            <ToggleButtonGroup
-              value={jpgBg}
-              exclusive
-              size="small"
-              onChange={(_, v) => v && setJpgBg(v)}
-              sx={{
-                '& .MuiToggleButton-root': {
-                  borderColor: alpha('#C8A96E', 0.3),
-                  color: 'text.secondary',
-                  px: 2,
-                  fontSize: '0.8rem',
-                  '&.Mui-selected': {
-                    bgcolor: alpha('#C8A96E', 0.15),
-                    color: 'primary.main',
-                    borderColor: alpha('#C8A96E', 0.5),
-                  },
-                  '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+      {/* JPG background color */}
+      <Collapse in={isJpg}>
+        <Box sx={{ mb: 2 }}>
+          <SectionLabel>Background Color</SectionLabel>
+          <ToggleButtonGroup
+            value={jpgBg}
+            exclusive
+            size="small"
+            onChange={(_, v) => v && setJpgBg(v)}
+            sx={{
+              '& .MuiToggleButton-root': {
+                borderColor: alpha('#C8A96E', 0.3),
+                color: 'text.secondary',
+                px: 2,
+                fontSize: '0.8rem',
+                '&.Mui-selected': {
+                  bgcolor: alpha('#C8A96E', 0.15),
+                  color: 'primary.main',
+                  borderColor: alpha('#C8A96E', 0.5),
                 },
-              }}
-            >
-              <ToggleButton value="white">White</ToggleButton>
-              <ToggleButton value="black">Black</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-        </Collapse>
-
-        {/* Output summary */}
-        <Collapse in={!!outputSummary}>
-          <Typography
-            variant="caption"
-            sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}
+                '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+              },
+            }}
           >
-            {outputSummary}
-          </Typography>
-        </Collapse>
-
-        {/* Prompt to fill in dimensions */}
-        <Collapse in={!canExport}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
-            Enter dimensions above to enable export.
-          </Typography>
-        </Collapse>
+            <ToggleButton value="white">White</ToggleButton>
+            <ToggleButton value="black">Black</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Collapse>
 
       {/* SVG note */}
       <Collapse in={isSvgExport}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 2, fontStyle: 'italic' }}>
-          SVG exports the original vector file — no size needed. Scale it to any dimension in your software.
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
+          SVG export scales the canvas to your chosen size while keeping all line thicknesses visually identical to the
+          original.
+        </Typography>
+      </Collapse>
+
+      {/* Output summary */}
+      <Collapse in={!!outputSummary}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
+          {outputSummary}
+        </Typography>
+      </Collapse>
+
+      {/* Prompt to fill in dimensions */}
+      <Collapse in={!canExport}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+          Enter dimensions above to enable export.
         </Typography>
       </Collapse>
 
@@ -411,20 +514,40 @@ export const ExportPatternToDownload = () => {
       </Collapse>
 
       {/* CTA */}
-      <Button
-        variant="contained"
-        disabled={!canExport || loading}
-        startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
-        onClick={handleExport}
-        fullWidth
-        sx={{
-          fontWeight: 700,
-          letterSpacing: '0.06em',
-          py: 1.1,
-        }}
-      >
-        {loading ? 'Exporting…' : `Download ${format.toUpperCase()}`}
-      </Button>
+      <Box sx={{ mb: 2 }}>
+        <Button
+          variant="contained"
+          disabled={!canExport || loading}
+          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
+          onClick={handleExport}
+          fullWidth
+          sx={{
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            py: 1.1,
+          }}
+        >
+          {loading ? 'Exporting…' : `Download Custom ${format.toUpperCase()}`}
+        </Button>
+      </Box>
+
+      <Collapse in={isSvgExport}>
+        <Button
+          component="a"
+          download
+          href={svgImageUrl}
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          fullWidth
+          sx={{
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            py: 1.1,
+          }}
+        >
+          Download Original SVG
+        </Button>
+      </Collapse>
     </Box>
   );
 };
