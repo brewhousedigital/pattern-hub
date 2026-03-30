@@ -38,7 +38,7 @@ export type PatternSearch = z.infer<typeof patternSearchSchema>;
 export function tokensFromSearch(search: PatternSearch): Token[] {
   const textTokens: Token[] = search.q
     .trim()
-    .split(/\s+/)
+    .split(',')
     .filter(Boolean)
     .map((t) =>
       t.startsWith('-')
@@ -68,7 +68,7 @@ export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternI
   const q = tokens
     .filter((t): t is TextToken => t.type === 'text')
     .map((t) => (t.exclude ? `-${t.value}` : t.value))
-    .join(' ');
+    .join(',');
 
   const tags = tokens.filter((t): t is TagToken => t.type === 'tag').map((t) => (t.exclude ? `-${t.value}` : t.value));
 

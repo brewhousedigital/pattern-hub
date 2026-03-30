@@ -35,7 +35,7 @@ type TokenizedSearchBarProps = {
 };
 
 export const HomepageSearchV2 = ({
-  placeholder = 'Search by tags like "animal", and "dog", or try clicking on a tag in the sidebar',
+  placeholder = 'Search by tags like "animal", and "dog" and press enter, or try clicking on a tag in the sidebar',
   sx,
 }: TokenizedSearchBarProps) => {
   const { tokens, addRawInput, removeToken, removeLastToken, clearTokens } = usePatternSearch();
@@ -61,10 +61,8 @@ export const HomepageSearchV2 = ({
           break;
         }
 
-        case ' ': {
+        /*case ' ': {
           // Commit on space UNLESS the input starts with "author:" since
-          // author names could theoretically have spaces in the future.
-          // For now, we commit on space for all types.
           const trimmed = inputValue.trim();
           if (!trimmed) break;
           // Don't commit mid-prefix — let the user finish typing "author:"
@@ -72,7 +70,7 @@ export const HomepageSearchV2 = ({
           e.preventDefault();
           commitInput();
           break;
-        }
+        }*/
 
         case 'Backspace': {
           // Only remove last token if the input field is already empty
