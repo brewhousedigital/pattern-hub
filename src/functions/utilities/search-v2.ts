@@ -18,13 +18,27 @@ export type AuthorToken = {
   exclude: boolean;
 };
 
-export type Token = TextToken | TagToken | AuthorToken;
+export type TitleToken = {
+  type: 'title';
+  value: string;
+  exclude: boolean;
+};
+
+export type DescriptionToken = {
+  type: 'description';
+  value: string;
+  exclude: boolean;
+};
+
+export type Token = TextToken | TagToken | AuthorToken | TitleToken | DescriptionToken;
 
 // URL Search Params Schema
 export const patternSearchSchema = z.object({
   q: z.string().default(''),
   tags: z.array(z.string()).default([]),
   authors: z.array(z.string()).default([]),
+  title: z.array(z.string()).default([]),
+  description: z.array(z.string()).default([]),
   patternId: z.string().optional(),
 });
 
@@ -58,7 +72,19 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: author.startsWith('-'),
   }));
 
-  return [...textTokens, ...tagTokens, ...authorTokens];
+  const titleTokens: Token[] = search.title.map((title) => ({
+    type: 'title',
+    value: title.startsWith('-') ? title.slice(1) : title,
+    exclude: title.startsWith('-'),
+  }));
+
+  const descriptionTokens: Token[] = search.description.map((description) => ({
+    type: 'author',
+    value: description.startsWith('-') ? description.slice(1) : description,
+    exclude: description.startsWith('-'),
+  }));
+
+  return [...textTokens, ...tagTokens, ...authorTokens, ...titleTokens, ...descriptionTokens];
 }
 
 /**
@@ -76,7 +102,15 @@ export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternI
     .filter((t): t is AuthorToken => t.type === 'author')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
-  return { q, tags, authors };
+  const title = tokens
+    .filter((t): t is TitleToken => t.type === 'title')
+    .map((t) => (t.exclude ? `-${t.value}` : t.value));
+
+  const description = tokens
+    .filter((t): t is DescriptionToken => t.type === 'description')
+    .map((t) => (t.exclude ? `-${t.value}` : t.value));
+
+  return { q, tags, authors, title, description };
 }
 
 /**
@@ -89,6 +123,18 @@ export function parseRawInput(raw: string): Token {
     const exclude = stripped.startsWith('-');
     const value = stripped.replace(/^-?author:/i, '');
     return { type: 'author', value, exclude };
+  }
+
+  if (/^-?title:/i.test(stripped)) {
+    const exclude = stripped.startsWith('-');
+    const value = stripped.replace(/^-?title:/i, '');
+    return { type: 'title', value, exclude };
+  }
+
+  if (/^-?description:/i.test(stripped)) {
+    const exclude = stripped.startsWith('-');
+    const value = stripped.replace(/^-?description:/i, '');
+    return { type: 'description', value, exclude };
   }
 
   return {
@@ -109,9 +155,11 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
   for (const token of tokens) {
     if (token.type === 'text') {
       if (token.exclude) {
-        parts.push(`(name !~ "${token.value}" && description !~ "${token.value}")`);
+        //parts.push(`(name !~ "${token.value}" && description !~ "${token.value}")`);
+        parts.push(`(tags !~ "${token.value}")`);
       } else {
-        parts.push(`(name ~ "${token.value}" || description ~ "${token.value}")`);
+        //parts.push(`(name ~ "${token.value}" || description ~ "${token.value}")`);
+        parts.push(`(tags ~ "${token.value}")`);
       }
     }
 
@@ -128,6 +176,22 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
         parts.push(`(authors.name != "${token.value}")`);
       } else {
         parts.push(`(authors.name = "${token.value}")`);
+      }
+    }
+
+    if (token.type === 'title') {
+      if (token.exclude) {
+        parts.push(`(name !~ "${token.value}")`);
+      } else {
+        parts.push(`(name ~ "${token.value}")`);
+      }
+    }
+
+    if (token.type === 'description') {
+      if (token.exclude) {
+        parts.push(`(description !~ "${token.value}")`);
+      } else {
+        parts.push(`(description ~ "${token.value}")`);
       }
     }
   }

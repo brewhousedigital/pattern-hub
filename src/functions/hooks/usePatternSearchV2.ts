@@ -21,6 +21,8 @@ export type UsePatternSearchReturn = {
   addRawInput: (raw: string) => void;
   addTag: (tag: string, exclude?: boolean) => void;
   addAuthor: (author: string, exclude?: boolean) => void;
+  addTitle: (title: string, exclude?: boolean) => void;
+  addDescription: (description: string, exclude?: boolean) => void;
   removeToken: (index: number) => void;
   removeLastToken: () => void;
   clearTokens: () => void;
@@ -59,8 +61,8 @@ export function usePatternSearch(): UsePatternSearchReturn {
   }
 
   function updateTokens(nextTokens: Token[]) {
-    const { q, tags, authors } = searchFromTokens(nextTokens);
-    updateSearch({ q, tags, authors });
+    const { q, tags, authors, title, description } = searchFromTokens(nextTokens);
+    updateSearch({ q, tags, authors, title, description });
   }
 
   /**
@@ -95,6 +97,20 @@ export function usePatternSearch(): UsePatternSearchReturn {
     updateTokens([...tokens, { type: 'author', value: author, exclude }]);
   }
 
+  function addTitle(title: string, exclude = false) {
+    const alreadyExists = tokens.some((t) => t.type === 'title' && t.value === title && t.exclude === exclude);
+    if (alreadyExists) return;
+    updateTokens([...tokens, { type: 'title', value: title, exclude }]);
+  }
+
+  function addDescription(description: string, exclude = false) {
+    const alreadyExists = tokens.some(
+      (t) => t.type === 'description' && t.value === description && t.exclude === exclude,
+    );
+    if (alreadyExists) return;
+    updateTokens([...tokens, { type: 'description', value: description, exclude }]);
+  }
+
   /** Remove a single token by its index in the token list. */
   function removeToken(index: number) {
     updateTokens(tokens.filter((_, i) => i !== index));
@@ -108,7 +124,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   /** Wipe all tokens, leaving patternId and other params intact. */
   function clearTokens() {
-    updateSearch({ q: '', tags: [], authors: [] });
+    updateSearch({ q: '', tags: [], authors: [], title: [], description: [] });
   }
 
   // Tag toggle (sidebar)
@@ -183,6 +199,8 @@ export function usePatternSearch(): UsePatternSearchReturn {
     addRawInput,
     addTag,
     addAuthor,
+    addTitle,
+    addDescription,
     removeToken,
     removeLastToken,
     clearTokens,

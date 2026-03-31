@@ -13,6 +13,8 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   text: { color: 'default', icon: <SearchIcon fontSize="small" /> },
   tag: { color: 'success', icon: <LabelIcon fontSize="small" /> },
   author: { color: 'info', icon: <PersonIcon fontSize="small" /> },
+  title: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
+  description: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
 };
 
 function getTokenStyle(token: Token) {
@@ -23,6 +25,8 @@ function getTokenStyle(token: Token) {
 
 function getTokenLabel(token: Token): string {
   if (token.type === 'author') return `author:${token.value}`;
+  if (token.type === 'title') return `title:${token.value}`;
+  if (token.type === 'description') return `description:${token.value}`;
   if (token.exclude) return `-${token.value}`;
   return token.value;
 }
@@ -142,7 +146,7 @@ export const HomepageSearchV2 = ({
               size="small"
               label={getTokenLabel(token)}
               color={color}
-              icon={icon}
+              //icon={icon}
               onDelete={() => removeToken(index)}
               // Prevent the chip delete click from bubbling to the bar
               onClick={(e) => e.stopPropagation()}
