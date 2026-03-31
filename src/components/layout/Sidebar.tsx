@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 
-const SidebarList = () => {
+export const SidebarList = () => {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 

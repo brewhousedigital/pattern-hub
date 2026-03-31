@@ -9,6 +9,7 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
+import { SidebarList } from '@/components/layout/Sidebar';
 
 import { alpha } from '@mui/material/styles';
 
@@ -147,10 +148,15 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
+            <PatternReportIssue viewData={viewData} />
+
+            <ThinDivider />
+
             <Box>
               <SectionLabel>Tags</SectionLabel>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
+              {!props?.hideNavigation && <SidebarList />}
+              {/*<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
                 {viewData?.tags?.map((tag) => (
                   <Chip
                     key={tag}
@@ -163,12 +169,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                     }}
                   />
                 ))}
-              </Box>
+              </Box>*/}
             </Box>
 
             <ThinDivider />
-
-            <PatternReportIssue viewData={viewData} />
           </Box>
         </Box>
       </Box>
