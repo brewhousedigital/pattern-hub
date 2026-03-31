@@ -79,7 +79,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
   }));
 
   const descriptionTokens: Token[] = search.description.map((description) => ({
-    type: 'author',
+    type: 'description',
     value: description.startsWith('-') ? description.slice(1) : description,
     exclude: description.startsWith('-'),
   }));

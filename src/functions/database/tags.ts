@@ -6,7 +6,9 @@ export const useQueryGetAllTags = () => {
   return useQuery({
     queryKey: ['useQueryGetAllTags'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
-      return await pocketbase.collection('tags').getFullList();
+      return await pocketbase.collection('tags').getFullList({
+        sort: '-count',
+      });
     },
   });
 };
