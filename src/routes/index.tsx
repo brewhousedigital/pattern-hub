@@ -16,7 +16,7 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
 
 import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image.ts';
+import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
@@ -39,7 +39,8 @@ function RouteComponent() {
   return (
     <GeneralLayout>
       <Box sx={{ px: 2, mb: 2 }}>
-        <HomepageSearchV2 />
+        {/*<HomepageSearchV2 />*/}
+        <HomepageSearchV3 />
       </Box>
 
       <Box sx={{ position: 'relative' }}>
