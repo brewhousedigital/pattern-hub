@@ -10,11 +10,12 @@ import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportI
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
 import { SidebarList } from '@/components/layout/Sidebar';
+import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
 
 import { alpha } from '@mui/material/styles';
 
-import { Box, Typography, Chip, Stack } from '@mui/material';
-import type { TypePatternResponse } from '@/functions/database/patterns.ts';
+import { Box, Typography, Chip, Stack, Container } from '@mui/material';
 
 type ViewDrawerProps = {
   hideNavigation?: boolean;
@@ -25,11 +26,22 @@ type ViewDrawerProps = {
 export const ViewDrawer = (props: ViewDrawerProps) => {
   const viewData = props.viewData;
 
+  const { data } = useQueryGetAllPatternsByPagination();
+  const resultIds = data?.items.map((p) => p.id) || [];
+
+  const { navigateToPattern } = usePatternSearch();
+
   const svgImageUrl = generatePbImage(viewData);
+
+  React.useEffect(() => {
+    if (!viewData && resultIds?.[0]) {
+      navigateToPattern(resultIds?.[0], resultIds);
+    }
+  }, [viewData]);
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
-      <Box sx={{ maxWidth: 1500, mx: 'auto', px: { xs: 2, md: 4 }, py: 3, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth={false} sx={{ py: 3, position: 'relative', zIndex: 1 }}>
         {!props?.hideNavigation && (
           <PatternDrawerTopNavigation hide={props.hideNavigation} handleClose={props.handleClose} />
         )}
@@ -37,12 +49,15 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 500px' },
+            gridTemplateColumns: { xs: '1fr', lg: '250px 1fr 500px', xl: '250px 750px 500px' },
             gap: 4,
             alignItems: 'start',
+            justifyContent: 'center',
           }}
         >
-          <Box>
+          <Box sx={{ order: { xs: 3, lg: 1 } }}>{!props?.hideNavigation && <SidebarList />}</Box>
+
+          <Box sx={{ order: { xs: 1, lg: 2 } }}>
             <Box
               sx={{
                 backgroundColor: '#fff',
@@ -64,7 +79,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <ExportPatternForPrintV2 viewData={viewData} />
           </Box>
 
-          <Box>
+          <Box sx={{ order: { xs: 2, lg: 3 } }}>
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
                 <Typography
@@ -153,10 +168,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <ThinDivider />
 
             <Box>
-              <SectionLabel>Tags</SectionLabel>
+              <SectionLabel>Tags for this Pattern</SectionLabel>
 
-              {!props?.hideNavigation && <SidebarList />}
-              {/*<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
+              {/*{!props?.hideNavigation && <SidebarList />}*/}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
                 {viewData?.tags?.map((tag) => (
                   <Chip
                     key={tag}
@@ -169,13 +184,13 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                     }}
                   />
                 ))}
-              </Box>*/}
+              </Box>
             </Box>
 
             <ThinDivider />
           </Box>
         </Box>
-      </Box>
+      </Container>
     </Box>
   );
 };
