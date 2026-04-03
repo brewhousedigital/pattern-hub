@@ -173,9 +173,9 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
 
     if (token.type === 'author') {
       if (token.exclude) {
-        parts.push(`(authors.name != "${token.value}")`);
+        parts.push(`(authors.name !~ "${token.value}" && author_manual != "${token.value}")`);
       } else {
-        parts.push(`(authors.name = "${token.value}")`);
+        parts.push(`(authors.name ?~ "${token.value}" || author_manual = "${token.value}")`);
       }
     }
 
