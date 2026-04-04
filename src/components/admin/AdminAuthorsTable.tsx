@@ -12,6 +12,7 @@ export const AdminAuthorsTable = () => {
       isError={isError}
       data={data || []}
       title="Authors"
+      customProp="authors"
     />
   );
 };

@@ -13,6 +13,7 @@ type AdminDashboardReadOnlyTableProps = {
   isError: boolean;
   data: TypeReadOnlyDatabaseItem[];
   title: string;
+  customProp?: 'authors';
 };
 
 export const AdminDashboardReadOnlyTable = (props: AdminDashboardReadOnlyTableProps) => {
@@ -25,6 +26,17 @@ export const AdminDashboardReadOnlyTable = (props: AdminDashboardReadOnlyTablePr
       filterable: false,
       disableColumnMenu: true,
       flex: 1,
+      renderCell: (params) => {
+        if (props.customProp === 'authors') {
+          return (
+            <a href={`/profile/${params.row.id}`} target="_blank">
+              {params.value}
+            </a>
+          );
+        } else {
+          return params.value;
+        }
+      },
     },
     {
       field: 'count',
