@@ -3,12 +3,13 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
 
-export const useQueryUsersByPagination = (pageNumber: number) => {
+export const useQueryUsersByPagination = (pageNumber: number, filter?: string) => {
   return useQuery({
     queryKey: ['useQueryUsersByPagination'],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeAuthData>> => {
-      return await pocketbase.collection('users').getList(1, 25, {
+      return await pocketbase.collection('users').getList(pageNumber, 25, {
         sort: '-created',
+        filter: filter,
       });
     },
   });

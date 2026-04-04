@@ -17,6 +17,8 @@ export type TypeReadOnlyDatabaseItem = {
   id: string;
   tag: string;
   count: number;
+  manual?: number;
+  user_id?: string;
 };
 
 export type TypeTagObject = {

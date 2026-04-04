@@ -3,12 +3,14 @@ import { enqueueSnackbar } from 'notistack';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
-import { useQueryGetAllAuthors } from '@/functions/database/authors';
+import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
+import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
-import { FancyAutocomplete } from '@/components/FancyAutocomplete';
+import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
+import { useDebounce } from '@/functions/hooks/useDebounce';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -57,20 +59,17 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     refetch: refetchTags,
   } = useQueryGetAllTags();
   const {
-    isPending: isPendingAuthors,
-    isError: isErrorAuthors,
-    data: allAuthorsData,
-    refetch: refetchAuthors,
-  } = useQueryGetAllAuthors();
+    isPending: isPendingManualAuthors,
+    isError: isErrorManualAuthors,
+    data: allManualAuthorsData,
+    refetch: refetchManualAuthors,
+  } = useQueryGetAllManualAuthors();
   /*const {
     isPending: isPendingUploadedBy,
     isError: isErrorUploadedBy,
     data: allUploadedByData,
     refetch: refetchUploadedBy,
   } = useQueryGetAllUploadedBy();*/
-
-  const isLoading = isPendingTags || isPendingAuthors;
-  const isError = isErrorTags || isErrorAuthors;
 
   const { searchResult } = useGlobalAdminFilter();
   const { paginationModel } = useGlobalAdminPagination();
@@ -110,11 +109,30 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
   const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
 
+  // Debounce the author search for the API
+  const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 750);
+
+  // Manual Authors
+  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.manual_author || []);
+  const [manualAuthorAutoCompleteInputValue, setManualAuthorAutoCompleteInputValue] = React.useState('');
+
+  // Query the authors table with the debounced value
+  const {
+    isPending: isPendingAuthorData,
+    isError: isErrorAuthorData,
+    data: authorData,
+  } = useQueryUsersByPagination(1, debouncedAuthorSearch);
+
+  console.log('>>>authorData', authorData);
+
   // Uploaded By
   /*const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
     props?.uploaded_by?.split(',') || [],
   );*/
   //const [uploadedByAutoCompleteInputValue, setUploadedByAutoCompleteInputValue] = React.useState('');
+
+  const isLoading = isPendingTags || isPendingManualAuthors || isPendingAuthorData;
+  const isError = isErrorTags || isErrorManualAuthors || isErrorAuthorData;
 
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -134,6 +152,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setAutoCompleteInputValue('');
     setAuthorValue([]);
     setAuthorAutoCompleteInputValue('');
+    setManualAuthorValue([]);
+    setManualAuthorAutoCompleteInputValue('');
     //setUploadedByValue([]);
     //setUploadedByAutoCompleteInputValue('');
     handleFileDelete();
@@ -185,8 +205,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
 
     try {
-      const filteredTags = tagValue?.filter((item) => item !== 'undefined') || [];
-      const filteredAuthors = authorValue?.filter((item) => item !== 'undefined') || [];
+      const filteredTags = tagValue?.filter((item) => item !== 'undefined')?.map((item) => item.toLowerCase()) || [];
+
+      const filteredAuthors = authorValue || [];
+
+      const filteredManualAuthors =
+        manualAuthorValue?.filter((item) => item !== 'undefined')?.map((item) => item.toLowerCase()) || [];
+
       //const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
 
       const payload: TypePatternCreatePayload = {
@@ -196,8 +221,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         line_width: lineWidth && lineWidth !== 'undefined' ? lineWidth : '0',
         design_width: designWidth && designWidth !== 'undefined' ? designWidth : '0',
         design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
-        tags: filteredTags?.join(',')?.toLowerCase() || '',
-        authors: filteredAuthors?.join(',')?.toLowerCase() || '',
+        tags: filteredTags || [],
+        authors: filteredAuthors || [],
+        manual_author: filteredManualAuthors || [],
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
@@ -237,7 +263,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
       await refetchPatterns();
       await refetchTags();
-      await refetchAuthors();
+      await refetchManualAuthors();
       //await refetchUploadedBy();
       handleClose();
 
@@ -485,16 +511,24 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
             <Typography variant="body2">Total Tags Used: {allTagsData?.length}/500</Typography>
 
-            <FancyAutocomplete
+            <FancyAutocompleteAuthors
               label="Author"
-              data={allAuthorsData}
+              data={authorData?.items || []}
               value={authorValue}
               onChange={setAuthorValue}
               inputValue={authorAutoCompleteInputValue}
               onInputChange={setAuthorAutoCompleteInputValue}
             />
 
-            <Typography variant="body2">Total Authors Used: {allAuthorsData?.length}/500</Typography>
+            <FancyAutocomplete
+              label="Manual Author"
+              data={allManualAuthorsData}
+              value={manualAuthorValue}
+              freeSolo
+              onChange={setManualAuthorValue}
+              inputValue={manualAuthorAutoCompleteInputValue}
+              onInputChange={setManualAuthorAutoCompleteInputValue}
+            />
 
             {/*<FancyAutocomplete
               label="Uploaded By"

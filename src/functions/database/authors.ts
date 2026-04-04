@@ -10,3 +10,14 @@ export const useQueryGetAllAuthors = () => {
     },
   });
 };
+
+export const useQueryGetAllManualAuthors = () => {
+  return useQuery({
+    queryKey: ['useQueryGetAllManualAuthors'],
+    queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
+      return await pocketbase.collection('authors').getFullList({
+        filter: 'manual > 0',
+      });
+    },
+  });
+};
