@@ -156,10 +156,10 @@ const sections: TosSection[] = [
     body: (
       <>
         This service is provided <strong>"as is"</strong> and <strong>"as available"</strong> without warranty of any
-        kind — express or implied. We make no guarantees regarding accuracy, reliability, uptime, or fitness for any
+        kind - express or implied. We make no guarantees regarding accuracy, reliability, uptime, or fitness for any
         particular purpose. To the fullest extent permitted by law, we disclaim all liability for any direct, indirect,
-        incidental, consequential, or other damages arising from your use of — or inability to use — this service, even
-        if we have been advised of the possibility of such damages.
+        incidental, consequential, or other damages arising from your use of, or inability to use, this service, even if
+        we have been advised of the possibility of such damages.
       </>
     ),
   },

@@ -12,7 +12,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 
 import { Box, Container, Typography, Divider, Paper, Stack } from '@mui/material';
 
-const LAST_UPDATED = 'March 16, 2026';
+const LAST_UPDATED = 'April 4, 2026';
 
 export const Route = createFileRoute('/help/privacy-policy')({
   component: RouteComponent,
@@ -52,8 +52,8 @@ function RouteComponent() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-                Anonymous users: zero data collected. Registered users: email only, for account management. We don't
-                sell data. We don't use third-party analytics. That's it.
+                Anonymous users: very little data collected. Registered users: email only, for account management. We
+                don't sell data. We don't use third-party analytics. That's it.
               </Typography>
             </Box>
           </SummaryBanner>
@@ -92,7 +92,7 @@ function RouteComponent() {
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
               When you delete your account, your email address is permanently removed from our systems. We do not retain
-              any residual data after account deletion.
+              any residual account data after account deletion.
             </Typography>
           </Box>
 
@@ -117,7 +117,7 @@ function RouteComponent() {
               If you have any questions or concerns about this policy or how your data is handled, reach out to us at{' '}
               <Typography
                 component="a"
-                href="mailto:team@yagubang.com"
+                href="mailto:team@celestial.dev"
                 variant="body2"
                 sx={{
                   color: 'primary.main',
@@ -125,7 +125,7 @@ function RouteComponent() {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                team@yagubang.com
+                team@celestial.dev
               </Typography>
               . We'll respond promptly.
             </Typography>
@@ -148,8 +148,13 @@ const sections: PolicySection[] = [
     title: 'Anonymous Users',
     body: (
       <>
-        If you use our service without creating an account, we collect <strong>absolutely nothing</strong> about you. No
-        cookies for tracking, no fingerprinting, no IP logging. Your session is entirely stateless and private.
+        If you use our service without creating an account, we collect{' '}
+        <strong>as little information as possible</strong> about you. We don't collect cookies for tracking, and don't
+        perform device fingerprinting. We do collect your IP address when you make an API request to our backend. This
+        is used for rate limiting and security. We don't tie it to any profile unless you are logged in to an account.
+        We also collect your "User Agent" information which is brief information about what browser you are on, and
+        sometimes what operating system you use. This can be easily obfuscated and some browsers like Brave Browser do
+        this automatically.
       </>
     ),
   },
