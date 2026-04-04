@@ -1,9 +1,9 @@
 import React from 'react';
-import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
+import { useQueryGetAllAuthors } from '@/functions/database/authors';
 import { AdminDashboardReadOnlyTable } from '@/components/admin/AdminDashboardReadOnlyTable';
 
 export const AdminAuthorsTable = () => {
-  const { isPending, isFetching, isError, data } = useQueryGetAllManualAuthors();
+  const { isPending, isFetching, isError, data } = useQueryGetAllAuthors();
 
   return (
     <AdminDashboardReadOnlyTable

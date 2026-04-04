@@ -113,7 +113,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 750);
 
   // Manual Authors
-  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.manual_author || []);
+  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.author_manual || []);
   const [manualAuthorAutoCompleteInputValue, setManualAuthorAutoCompleteInputValue] = React.useState('');
 
   // Query the authors table with the debounced value
@@ -122,8 +122,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     isError: isErrorAuthorData,
     data: authorData,
   } = useQueryUsersByPagination(1, debouncedAuthorSearch);
-
-  console.log('>>>authorData', authorData);
 
   // Uploaded By
   /*const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
@@ -223,7 +221,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
         tags: filteredTags || [],
         authors: filteredAuthors || [],
-        manual_author: filteredManualAuthors || [],
+        author_manual: filteredManualAuthors || [],
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',

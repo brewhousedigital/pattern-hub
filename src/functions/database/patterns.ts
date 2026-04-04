@@ -13,7 +13,7 @@ export type TypePatternResponse = {
   description: string;
   difficulty: string;
   authors: string[];
-  manual_author: string[];
+  author_manual: string[];
   uploaded_by: string;
   tags: string[];
   pattern_file: string;
@@ -85,7 +85,7 @@ export type TypePatternCreatePayload = {
   description: string;
   difficulty?: string;
   authors?: string[];
-  manual_author?: string[];
+  author_manual?: string[];
   uploaded_by?: string;
   tags: string[];
   pattern_file?: File;
@@ -108,7 +108,7 @@ export const useMutationEditPattern = () => {
       formData.append('description', payload?.description || '');
       formData.append('tags', JSON.stringify(payload?.tags));
       formData.append('authors', JSON.stringify(payload?.authors));
-      formData.append('manual_author', JSON.stringify(payload?.manual_author));
+      formData.append('author_manual', JSON.stringify(payload?.author_manual));
       //formData.append('difficulty', "test");
       formData.append('pieces', payload?.pieces || '1');
       formData.append('design_width', payload?.design_width || '0');

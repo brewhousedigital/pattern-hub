@@ -139,10 +139,16 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <Stack spacing={2} sx={{ mb: 2.5 }}>
               <Box>
                 <SectionLabel>Designed by</SectionLabel>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
                   {viewData?.expand?.authors?.map((author, index) => (
                     <Typography variant="body1" key={`author-name-${index}`}>
                       {author?.name || 'Not Listed'}
+                    </Typography>
+                  ))}
+
+                  {viewData?.author_manual?.map((author, index) => (
+                    <Typography variant="body1" key={`author-name-${index}`}>
+                      {author || 'Not Listed'}
                     </Typography>
                   ))}
                 </Box>
