@@ -14,3 +14,13 @@ export const useQueryUsersByPagination = (pageNumber: number, filter?: string) =
     },
   });
 };
+
+export const useQueryGetUserById = (id?: string) => {
+  return useQuery({
+    queryKey: ['useQueryGetUserById', id],
+    queryFn: async (): Promise<TypeAuthData> => {
+      return await pocketbase.collection('users').getOne(id || '');
+    },
+    enabled: !!id,
+  });
+};

@@ -4,16 +4,17 @@ import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import { useGlobalAuthData } from '@/data/auth-data';
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 
-export const useQueryGetUserRatingsByPagination = (pageNumber: number) => {
+export const useQueryGetUserRatingsByPagination = (userId: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetUserRatingsByPagination', pageNumber],
+    queryKey: ['useQueryGetUserRatingsByPagination', userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeFavoriteDoneRatingsResponse>> => {
       return await pocketbase.collection('user_ratings').getList(pageNumber, 25, {
         sort: '-created',
         expand: 'pattern_id',
+        filter: `owner_id = "${userId}"`,
       });
     },
-    enabled: !!pageNumber,
+    enabled: !!pageNumber && !!userId,
     refetchOnMount: 'always',
   });
 };

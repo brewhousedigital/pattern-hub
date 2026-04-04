@@ -11,8 +11,11 @@ import { PaginationBox } from '@/components/PaginationBox';
 import { useMutationGetGalleryUploadAuth } from '@/functions/database/gallery';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
+import { useQueryGetUserById } from '@/functions/database/users';
+import type { TypeAuthData } from '@/functions/database/authentication';
 
 import { styled, alpha } from '@mui/material/styles';
+import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -25,6 +28,7 @@ import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
 
 import {
   Alert,
+  Button,
   CircularProgress,
   Box,
   Container,
@@ -40,6 +44,7 @@ import {
   ImageListItemBar,
   Divider,
   IconButton,
+  Skeleton,
 } from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 
@@ -50,7 +55,9 @@ type UserSearch = {
 export const Route = createFileRoute('/profile/')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): UserSearch => {
-    return {};
+    return {
+      id: search.id as string | undefined,
+    };
   },
   head: ({ match }) => ({
     meta: generateSEO('Profile', '', match.pathname),
@@ -59,9 +66,25 @@ export const Route = createFileRoute('/profile/')({
 
 function RouteComponent() {
   const { id } = Route.useSearch();
+  const { authData } = useGlobalAuthData();
 
-  if (id) {
-    return <>👋</>;
+  const { isPending, isError, data, refetch } = useQueryGetUserById(id);
+
+  if (id && id !== authData?.id) {
+    if (isPending)
+      return (
+        <GeneralLayout>
+          <ProfileSkeleton />
+        </GeneralLayout>
+      );
+
+    if (isError) return <ProfileError onRetry={refetch} />;
+
+    return (
+      <GeneralLayout>
+        <ProfileContent userData={data} />
+      </GeneralLayout>
+    );
   }
 
   return (
@@ -71,8 +94,16 @@ function RouteComponent() {
   );
 }
 
-const ProfileContent = () => {
+type ProfileContentProps = {
+  userData?: TypeAuthData;
+};
+
+const ProfileContent = (props: ProfileContentProps) => {
   const { authData } = useGlobalAuthData();
+
+  const thisAuthData = props.userData ? props.userData : authData;
+
+  const isPublicView = !!props.userData;
 
   const [favoritePagination, setFavoritePagination] = React.useState(1);
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
@@ -85,26 +116,25 @@ const ProfileContent = () => {
     isError: isErrorFavorite,
     data: dataFavorite,
     refetch: refetchFavorite,
-  } = useQueryGetUserFavoritesByPagination(favoritePagination);
+  } = useQueryGetUserFavoritesByPagination(thisAuthData?.id || '', favoritePagination);
 
   const {
     isPending: isPendingMarkedDone,
     isError: isErrorMarkedDone,
     data: dataMarkedDone,
     refetch: refetchMarkedDone,
-  } = useQueryGetUserMarkedDoneByPagination(markedDonePagination);
+  } = useQueryGetUserMarkedDoneByPagination(thisAuthData?.id || '', markedDonePagination);
 
   const {
     isPending: isPendingRatings,
     isError: isErrorRatings,
     data: dataRatings,
     refetch: refetchRatings,
-  } = useQueryGetUserRatingsByPagination(ratingsPagination);
+  } = useQueryGetUserRatingsByPagination(thisAuthData?.id || '', ratingsPagination);
+
   const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
 
   const [tab, setTab] = useState(0);
-
-  if (!authData) return null;
 
   const tabConfig = [
     { label: 'Favorites', icon: <FavoriteBorderOutlinedIcon fontSize="small" /> },
@@ -113,6 +143,8 @@ const ProfileContent = () => {
     // TODO: Coming Soon
     //{ label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
   ];
+
+  if (!thisAuthData) return <ProfileSkeleton />;
 
   return (
     <PageWrapper>
@@ -124,7 +156,7 @@ const ProfileContent = () => {
         <ProfileCard elevation={0}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'center' }}>
             {/* Avatar */}
-            {/*<StyledAvatar src={authData.avatarUrl}>{authData.username[0].toUpperCase()}</StyledAvatar>*/}
+            {/*<StyledAvatar src={thisAuthData?.avatarUrl}>{thisAuthData?.username[0].toUpperCase()}</StyledAvatar>*/}
 
             <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
               <Typography
@@ -132,18 +164,20 @@ const ProfileContent = () => {
                 fontWeight={500}
                 sx={{ letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 2 }}
               >
-                <>{authData.name || 'New User'}</>
+                <>{thisAuthData?.name || 'New User'}</>
 
-                <IconButton component={Link} to="/profile/edit">
-                  <EditRoundedIcon fontSize="inherit" />
-                </IconButton>
+                {!isPublicView && (
+                  <IconButton component={Link} to="/profile/edit">
+                    <EditRoundedIcon fontSize="inherit" />
+                  </IconButton>
+                )}
               </Typography>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.5 }}>
                 <CalendarTodayOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
 
                 <Typography variant="caption" color="text.disabled">
-                  Member since {createPrettyDate(authData?.created || '')}
+                  Member since {createPrettyDate(thisAuthData?.created || '')}
                 </Typography>
               </Box>
             </Box>
@@ -189,25 +223,25 @@ const ProfileContent = () => {
           <Divider sx={{ my: 3 }} />
 
           {/* Blurb */}
-          {authData.about && (
+          {thisAuthData?.about && (
             <Box sx={{ mb: 2.5 }}>
               <Typography variant="overline" color="text.disabled" fontWeight={700} letterSpacing={1}>
                 About
               </Typography>
 
-              <MarkdownWrapper>{authData.about}</MarkdownWrapper>
+              <MarkdownWrapper>{thisAuthData?.about}</MarkdownWrapper>
             </Box>
           )}
 
           {/* Interests */}
-          {authData?.interests && authData?.interests?.length > 0 && (
+          {thisAuthData?.interests && thisAuthData?.interests?.length > 0 && (
             <Box>
               <Typography variant="overline" color="text.disabled" fontWeight={700} letterSpacing={1}>
                 Interests
               </Typography>
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                {authData.interests.split(',')?.map((interest, index) => {
+                {thisAuthData?.interests.split(',')?.map((interest, index) => {
                   const cleaned = interest.trim();
 
                   return (
@@ -540,4 +574,69 @@ const EmptyState: React.FC<{ icon: React.ReactNode; message: string }> = ({ icon
     <Box sx={{ fontSize: 48, lineHeight: 1, opacity: 0.4 }}>{icon}</Box>
     <Typography variant="body2">{message}</Typography>
   </Box>
+);
+
+const ProfileSkeleton = () => (
+  <PageWrapper>
+    <HeroBanner />
+    <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
+      <ProfileCard elevation={0}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'center' }}>
+          <Box sx={{ flex: 1 }}>
+            <Skeleton variant="text" width={200} height={36} />
+            <Skeleton variant="text" width={140} height={20} sx={{ mt: 0.5 }} />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} variant="rounded" width={72} height={72} sx={{ borderRadius: '12px' }} />
+            ))}
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Skeleton variant="text" width={60} height={20} />
+        <Skeleton variant="text" width="80%" height={20} sx={{ mt: 1 }} />
+        <Skeleton variant="text" width="60%" height={20} />
+      </ProfileCard>
+
+      <Box sx={{ mt: 4 }}>
+        <Skeleton variant="rounded" width="100%" height={48} sx={{ mb: 3 }} />
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
+              <Skeleton variant="rounded" width="100%" sx={{ aspectRatio: '1/1', borderRadius: '14px' }} />
+              <Skeleton variant="text" width="70%" sx={{ mt: 1 }} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    </Container>
+  </PageWrapper>
+);
+
+const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
+  <GeneralLayout>
+    <PageWrapper>
+      <HeroBanner />
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
+        <ProfileCard elevation={0}>
+          <Box
+            sx={{ textAlign: 'center', py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+          >
+            <PersonOffOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', opacity: 0.4 }} />
+            <Typography variant="h6" fontWeight={600}>
+              Profile not found
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              This user doesn't exist or their profile is unavailable.
+            </Typography>
+            <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>
+              Try again
+            </Button>
+          </Box>
+        </ProfileCard>
+      </Container>
+    </PageWrapper>
+  </GeneralLayout>
 );
