@@ -28,11 +28,15 @@ export const AdminDashboardReadOnlyTable = (props: AdminDashboardReadOnlyTablePr
       flex: 1,
       renderCell: (params) => {
         if (props.customProp === 'authors') {
-          return (
-            <a href={`/profile/${params.row.id}`} target="_blank">
-              {params.value}
-            </a>
-          );
+          if (params.row.user_id) {
+            return (
+              <a href={`/profile?id=${params.row.user_id}`} target="_blank">
+                {params.value}
+              </a>
+            );
+          } else {
+            return params.value + ' (Manual)';
+          }
         } else {
           return params.value;
         }

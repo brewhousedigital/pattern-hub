@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';
@@ -141,9 +142,16 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 <SectionLabel>Designed by</SectionLabel>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
                   {viewData?.expand?.authors?.map((author, index) => (
-                    <Typography variant="body1" key={`author-name-${index}`}>
-                      {author?.name || 'Not Listed'}
-                    </Typography>
+                    <Link
+                      to={`/profile`}
+                      search={{
+                        id: author?.id,
+                      }}
+                    >
+                      <Typography variant="body1" key={`author-name-${index}`}>
+                        {author?.name || 'Not Listed'}
+                      </Typography>
+                    </Link>
                   ))}
 
                   {viewData?.author_manual?.map((author, index) => (
