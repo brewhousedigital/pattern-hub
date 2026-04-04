@@ -106,7 +106,7 @@ function RouteComponent() {
               If anything here is unclear or you'd like to get in touch, reach us at{' '}
               <Typography
                 component="a"
-                href="mailto:legal@yourcompany.com"
+                href="mailto:team@celestial.dev"
                 variant="body2"
                 sx={{
                   color: 'primary.main',
@@ -114,7 +114,7 @@ function RouteComponent() {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                legal@yourcompany.com
+                team@celestial.dev
               </Typography>
               .
             </Typography>

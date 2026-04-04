@@ -5,6 +5,7 @@ import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
 import { SectionLabel } from '@/components/ViewHelpers.tsx';
 import { DOMAIN_URL } from '@/data/constants.ts';
 import { subLinkStyles } from '@/components/layout/Header/sublink-styles.ts';
+import { DiscordIcon } from '@/assets/DiscordIcon.tsx';
 
 import RedditIcon from '@mui/icons-material/Reddit';
 import ShareIcon from '@mui/icons-material/Share';
@@ -47,13 +48,13 @@ export const Footer = () => {
             <Stack spacing={1} sx={{ mb: { xs: 4, md: 0 } }}>
               <SectionLabel>Explore</SectionLabel>
 
-              <MuiLink component={Link} to="/collections" sx={subLinkStyles}>
+              {/*<MuiLink component={Link} to="/collections" sx={subLinkStyles}>
                 Collections
-              </MuiLink>
+              </MuiLink>*/}
 
-              <MuiLink component={Link} to="/guides" sx={subLinkStyles}>
+              {/*<MuiLink component={Link} to="/guides" sx={subLinkStyles}>
                 Guides
-              </MuiLink>
+              </MuiLink>*/}
 
               <MuiLink component={Link} to="/help/faq" sx={subLinkStyles}>
                 FAQ
@@ -65,9 +66,9 @@ export const Footer = () => {
             <Stack spacing={1} sx={{ mb: { xs: 4, md: 0 } }}>
               <SectionLabel>Helpful Links</SectionLabel>
 
-              <MuiLink component={Link} to="/help/about" sx={subLinkStyles}>
+              {/*<MuiLink component={Link} to="/help/about" sx={subLinkStyles}>
                 About
-              </MuiLink>
+              </MuiLink>*/}
 
               <MuiLink component={Link} to="/help/privacy-policy" sx={subLinkStyles}>
                 Privacy Policy
@@ -89,8 +90,17 @@ export const Footer = () => {
                 Share
               </Button>
 
-              <Button component="a" startIcon={<RedditIcon />} href="https://www.reddit.com/" target="_blank">
+              <Button
+                component="a"
+                startIcon={<RedditIcon />}
+                href="https://www.reddit.com/r/StainedGlass"
+                target="_blank"
+              >
                 Reddit
+              </Button>
+
+              <Button component="a" startIcon={<DiscordIcon />} href="https://discord.gg/vFHvrhY5K8" target="_blank">
+                Discord
               </Button>
             </Stack>
           </Grid>

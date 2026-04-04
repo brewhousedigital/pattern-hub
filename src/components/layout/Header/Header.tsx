@@ -79,13 +79,13 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
-      <MuiLink component={Link} to="/collections" sx={subLinkStyles}>
+      {/*<MuiLink component={Link} to="/collections" sx={subLinkStyles}>
         Collections
-      </MuiLink>
+      </MuiLink>*/}
 
-      <MuiLink component={Link} to="/guides" sx={subLinkStyles}>
+      {/*<MuiLink component={Link} to="/guides" sx={subLinkStyles}>
         Guides
-      </MuiLink>
+      </MuiLink>*/}
 
       <MuiLink component={Link} to="/help/faq" sx={subLinkStyles}>
         FAQ
