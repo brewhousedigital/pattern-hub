@@ -101,7 +101,7 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
     }
   }
 
-  const homepagePatternMatch = new URL(request.url).searchParams.get('view');
+  const homepagePatternMatch = new URL(request.url).searchParams.get('patternId');
 
   if (homepagePatternMatch) {
     try {

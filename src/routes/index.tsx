@@ -11,12 +11,11 @@ import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { patternSearchSchema } from '@/functions/utilities/search-v2';
-import { HomepageSearchV2 } from '@/components/layout/HomepageSearchV2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
+import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
 import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
-import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
@@ -30,16 +29,29 @@ function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
+  const { patternId } = usePatternSearch();
+  const { handleOpenView, isViewOpen } = useGlobalIsViewOpen();
+
   // Pagination
   const { page, setPage } = useGlobalSearchPagination();
 
   // Get the pattern data
   const { isFetching, isError, data } = useQueryGetAllPatternsByPagination();
 
+  React.useEffect(() => {
+    if (data) {
+      if (patternId) {
+        if (!isViewOpen) {
+          // Open the modal
+          handleOpenView();
+        }
+      }
+    }
+  }, [data]);
+
   return (
     <GeneralLayout>
       <Box sx={{ px: 2, mb: 2 }}>
-        {/*<HomepageSearchV2 />*/}
         <HomepageSearchV3 />
       </Box>
 

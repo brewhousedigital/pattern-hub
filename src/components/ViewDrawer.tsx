@@ -12,6 +12,7 @@ import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
 import { SidebarList } from '@/components/layout/Sidebar';
 import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
+import { useGlobalIsViewOpen } from '@/data/view';
 
 import { alpha } from '@mui/material/styles';
 
@@ -26,6 +27,8 @@ type ViewDrawerProps = {
 export const ViewDrawer = (props: ViewDrawerProps) => {
   const viewData = props.viewData;
 
+  const { isViewOpen } = useGlobalIsViewOpen();
+
   const { data } = useQueryGetAllPatternsByPagination();
   const resultIds = data?.items.map((p) => p.id) || [];
 
@@ -35,7 +38,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
   React.useEffect(() => {
     if (!viewData && resultIds?.[0]) {
-      navigateToPattern(resultIds?.[0], resultIds);
+      if (isViewOpen) {
+        navigateToPattern(resultIds?.[0], resultIds);
+      }
     }
   }, [viewData]);
 
@@ -135,8 +140,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <Box>
                 <SectionLabel>Designed by</SectionLabel>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {viewData?.expand?.authors?.map((author) => (
-                    <Typography variant="body1">{author?.name || 'Not Listed'}</Typography>
+                  {viewData?.expand?.authors?.map((author, index) => (
+                    <Typography variant="body1" key={`author-name-${index}`}>
+                      {author?.name || 'Not Listed'}
+                    </Typography>
                   ))}
                 </Box>
               </Box>
