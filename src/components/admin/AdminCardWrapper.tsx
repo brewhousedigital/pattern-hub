@@ -9,12 +9,12 @@ type AdminCardWrapperProps = {
 };
 
 export const AdminCardWrapper = (props: AdminCardWrapperProps) => {
-  if (props.isPending) {
+  if (props?.isPending) {
     return <CircularProgress />;
   }
 
-  if (props.isError) {
-    return <Alert severity="error">Error: {props.error?.message}</Alert>;
+  if (props?.isError) {
+    return <Alert severity="error">Error: {props?.error?.message}</Alert>;
   }
 
   return props.children;
