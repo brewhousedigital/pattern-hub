@@ -22,7 +22,6 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       freeSolo={props.freeSolo}
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
-        console.log('>>>newValue', newValue);
         props.onChange(newValue);
       }}
       slotProps={{

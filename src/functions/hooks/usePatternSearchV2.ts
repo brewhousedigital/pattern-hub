@@ -47,6 +47,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
   const tokens = useMemo(() => tokensFromSearch(search), [search]);
 
   const filter = useMemo(() => buildPocketBaseFilter(tokens), [tokens]);
+  console.log('>>>filter', filter);
 
   const { patternId } = search;
 
@@ -83,7 +84,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
   function addTag(tag: string, exclude = false) {
     const alreadyExists = tokens.some((t) => t.type === 'tag' && t.value === tag && t.exclude === exclude);
     if (alreadyExists) return;
-    console.log(">>>{ type: 'tag', value: tag, exclude }", { type: 'tag', value: tag, exclude });
+
     updateTokens([...tokens, { type: 'tag', value: tag, exclude }]);
   }
 

@@ -144,21 +144,17 @@ export function parseRawInput(raw: string): Token {
   };
 }
 
-/**
- * PocketBase Filter Builder
- * Convert tokens into a PocketBase filter string.
- * Adjust field names (name, description, tags, author) to match your schema.
- */
+// Convert tokens into a PocketBase filter string.
+// Use decodeURIComponent("") to read the output to test directly in Pocketbase
 export function buildPocketBaseFilter(tokens: Token[]): string {
   const parts: string[] = [];
+  const authorParts: string[] = [];
 
   for (const token of tokens) {
     if (token.type === 'text') {
       if (token.exclude) {
-        //parts.push(`(name !~ "${token.value}" && description !~ "${token.value}")`);
         parts.push(`(tags !~ "${token.value}")`);
       } else {
-        //parts.push(`(name ~ "${token.value}" || description ~ "${token.value}")`);
         parts.push(`(tags ~ "${token.value}")`);
       }
     }
@@ -173,9 +169,9 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
 
     if (token.type === 'author') {
       if (token.exclude) {
-        parts.push(`(authors.name !~ "${token.value}" && author_manual != "${token.value}")`);
+        authorParts.push(`(authors.name !~ "${token.value}" && author_manual !~ "${token.value}")`);
       } else {
-        parts.push(`(authors.name ?~ "${token.value}" || author_manual = "${token.value}")`);
+        authorParts.push(`(authors.name ?~ "${token.value}" || author_manual ~ "${token.value}")`);
       }
     }
 
@@ -194,6 +190,10 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
         parts.push(`(description ~ "${token.value}")`);
       }
     }
+  }
+
+  if (authorParts.length > 0) {
+    parts.push(`(${authorParts.join(' || ')})`);
   }
 
   return parts.join(' && ');

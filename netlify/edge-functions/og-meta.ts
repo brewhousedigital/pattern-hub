@@ -82,8 +82,6 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
           : defaultPosterImage;
 
-        console.log('>>>imageUrl', imageUrl);
-
         return {
           ...base,
           title: `${pattern.name} — ${SITE_NAME}`,
@@ -113,8 +111,6 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
         const imageUrl = pattern?.opengraph_image
           ? `${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
           : defaultPosterImage;
-
-        console.log('>>>imageUrl', imageUrl);
 
         return {
           ...base,
