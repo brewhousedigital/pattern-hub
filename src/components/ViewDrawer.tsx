@@ -14,11 +14,12 @@ import { SidebarList } from '@/components/layout/Sidebar';
 import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
 import { useGlobalIsViewOpen } from '@/data/view';
+import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 
 import { alpha } from '@mui/material/styles';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Typography, Chip, Stack, Container, Button } from '@mui/material';
+import { Box, Typography, Chip, Stack, Container, Button, Tooltip } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -36,6 +37,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const { navigateToPattern } = usePatternSearch();
 
   const svgImageUrl = generatePbImage(viewData);
+
+  const handleCopyId = async () => {
+    await copyToClipboard(viewData?.id || '');
+  };
 
   React.useEffect(() => {
     if (!viewData && resultIds?.[0]) {
@@ -110,9 +115,15 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 </Typography>
               </Box>
 
-              <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.1em' }}>
-                ID: {viewData?.id}
-              </Typography>
+              <Tooltip title="Copy ID" arrow>
+                <Typography
+                  onClick={handleCopyId}
+                  variant="caption"
+                  sx={{ color: 'text.secondary', letterSpacing: '0.1em', cursor: 'pointer' }}
+                >
+                  ID: {viewData?.id}
+                </Typography>
+              </Tooltip>
 
               {viewData?.pattern_file_external && (
                 <Box sx={{ pt: 4 }}>

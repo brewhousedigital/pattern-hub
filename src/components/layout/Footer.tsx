@@ -1,7 +1,7 @@
 import React from 'react';
 import { Logo } from '@/components/layout/Header/Header.tsx';
 import { Link, useLocation } from '@tanstack/react-router';
-import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
+import { copyToURLClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
 import { SectionLabel } from '@/components/ViewHelpers.tsx';
 import { DOMAIN_URL } from '@/data/constants.ts';
 import { subLinkStyles } from '@/components/layout/Header/sublink-styles.ts';
@@ -15,7 +15,7 @@ export const Footer = () => {
   const location = useLocation();
 
   const shareSite = async () => {
-    await copyToClipboard(DOMAIN_URL + location.publicHref);
+    await copyToURLClipboard(DOMAIN_URL + location.publicHref);
   };
 
   return (
