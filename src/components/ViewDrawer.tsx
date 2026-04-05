@@ -17,7 +17,8 @@ import { useGlobalIsViewOpen } from '@/data/view';
 
 import { alpha } from '@mui/material/styles';
 
-import { Box, Typography, Chip, Stack, Container } from '@mui/material';
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
+import { Box, Typography, Chip, Stack, Container, Button } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -72,16 +73,24 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 p: 2,
               }}
             >
-              <img
-                src={svgImageUrl}
-                alt={`pattern template for ${viewData?.name}`}
-                style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-              />
+              {viewData?.pattern_file_external ? (
+                <img
+                  src={svgImageUrl}
+                  alt={`pattern template for ${viewData?.name}`}
+                  style={{ width: '100%', height: 'auto', borderRadius: 16, display: 'block' }}
+                />
+              ) : (
+                <img
+                  src={svgImageUrl}
+                  alt={`pattern template for ${viewData?.name}`}
+                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
+                />
+              )}
             </Box>
 
-            <ExportPatternToDownload viewData={viewData} />
+            {!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}
 
-            <ExportPatternForPrintV2 viewData={viewData} />
+            {!viewData?.pattern_file_external && <ExportPatternForPrintV2 viewData={viewData} />}
           </Box>
 
           <Box sx={{ order: { xs: 2, lg: 3 } }}>
@@ -104,6 +113,21 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.1em' }}>
                 ID: {viewData?.id}
               </Typography>
+
+              {viewData?.pattern_file_external && (
+                <Box sx={{ pt: 4 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    endIcon={<LaunchRoundedIcon />}
+                    component="a"
+                    href={viewData?.pattern_file_external_link}
+                    target="_blank"
+                  >
+                    View This Pattern
+                  </Button>
+                </Box>
+              )}
             </Box>
 
             {viewData?.description && (

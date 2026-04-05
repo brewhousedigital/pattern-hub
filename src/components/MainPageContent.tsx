@@ -6,7 +6,7 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
-import { Box, Grid, Card, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
+import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
 
 export const MainPageContent = () => {
   const { handleOpenView } = useGlobalIsViewOpen();
@@ -52,13 +52,35 @@ export const MainPageContent = () => {
                 style={{ textDecoration: 'none' }}
               >
                 <Card elevation={0}>
-                  <Box sx={{ p: 2 }}>
-                    <img
-                      src={generatePbImage(pattern)}
-                      alt={`pattern template for ${pattern.name}`}
-                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                    />
-                  </Box>
+                  {pattern.pattern_file_external ? (
+                    <Box sx={{ p: 2, position: 'relative' }}>
+                      <Box
+                        sx={{
+                          aspectRatio: '1/1',
+                          borderRadius: 4,
+                          backgroundImage: `url("${generatePbImage(pattern)}")`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      />
+
+                      <Chip label="External Pattern" color="primary" sx={{ position: 'absolute', top: 8, right: 8 }} />
+                    </Box>
+                  ) : (
+                    <Box sx={{ p: 2 }}>
+                      <img
+                        src={generatePbImage(pattern)}
+                        alt={`pattern template for ${pattern.name}`}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          aspectRatio: '1/1',
+                          borderRadius: 16,
+                          display: 'block',
+                        }}
+                      />
+                    </Box>
+                  )}
                 </Card>
               </MuiLink>
             </Grid>
