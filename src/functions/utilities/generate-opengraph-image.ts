@@ -1,26 +1,17 @@
+type ImageSource = { type: 'svg'; url: string } | { type: 'webp'; url: string };
+
 export const generateOpengraphImage = async (
-  svgUrl: string,
+  source: ImageSource,
   patternName: string,
   siteName = 'Pattern Archive',
 ): Promise<File> => {
   const WIDTH = 1200;
   const HEIGHT = 630;
 
-  // Fetch and inline the SVG
-  const svgText = await fetch(svgUrl).then((r) => r.text());
-
-  // Convert SVG to a bitmap via an offscreen Image
-  const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-  const svgObjectUrl = URL.createObjectURL(svgBlob);
-
-  const svgBitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = svgObjectUrl;
-  });
-
-  URL.revokeObjectURL(svgObjectUrl);
+  // Load the preview image — SVG needs to be fetched and re-blobbed so it
+  // renders correctly cross-origin; WebP (and other bitmaps) can be loaded
+  // directly via a regular Image with crossOrigin set.
+  const previewBitmap = await (source.type === 'svg' ? loadSvgAsImage(source.url) : loadBitmapImage(source.url));
 
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
@@ -35,24 +26,23 @@ export const generateOpengraphImage = async (
   ctx.fillStyle = '#2e7d32';
   ctx.fillRect(0, 0, 8, HEIGHT);
 
-  // Draw the SVG centered in the right portion
+  // Draw the preview image centered in the right portion
   const previewSize = 420;
-  const svgX = WIDTH - previewSize - 80;
-  const svgY = (HEIGHT - previewSize) / 2;
+  const imgX = WIDTH - previewSize - 80;
+  const imgY = (HEIGHT - previewSize) / 2;
 
-  // Subtle background tile for the SVG
+  // Subtle background tile for the preview
   ctx.fillStyle = '#f1f8e9';
-  ctx.roundRect(svgX - 24, svgY - 24, previewSize + 48, previewSize + 48, 16);
+  ctx.roundRect(imgX - 24, imgY - 24, previewSize + 48, previewSize + 48, 16);
   ctx.fill();
 
-  //ctx.drawImage(svgBitmap, svgX, svgY, previewSize, previewSize);
-  const scale = Math.min(previewSize / svgBitmap.naturalWidth, previewSize / svgBitmap.naturalHeight);
-  const scaledWidth = svgBitmap.naturalWidth * scale;
-  const scaledHeight = svgBitmap.naturalHeight * scale;
-  const centeredX = svgX + (previewSize - scaledWidth) / 2;
-  const centeredY = svgY + (previewSize - scaledHeight) / 2;
+  const scale = Math.min(previewSize / previewBitmap.naturalWidth, previewSize / previewBitmap.naturalHeight);
+  const scaledWidth = previewBitmap.naturalWidth * scale;
+  const scaledHeight = previewBitmap.naturalHeight * scale;
+  const centeredX = imgX + (previewSize - scaledWidth) / 2;
+  const centeredY = imgY + (previewSize - scaledHeight) / 2;
 
-  ctx.drawImage(svgBitmap, centeredX, centeredY, scaledWidth, scaledHeight);
+  ctx.drawImage(previewBitmap, centeredX, centeredY, scaledWidth, scaledHeight);
 
   // Site name
   ctx.fillStyle = '#2e7d32';
@@ -62,7 +52,7 @@ export const generateOpengraphImage = async (
   // Pattern name — wrap if long
   ctx.fillStyle = '#1a1a1a';
   ctx.font = '600 52px system-ui, sans-serif';
-  const maxWidth = svgX - 100;
+  const maxWidth = imgX - 100;
   wrapText(ctx, patternName, 60, HEIGHT / 2 - 20, maxWidth, 64);
 
   // Bottom label
@@ -77,6 +67,40 @@ export const generateOpengraphImage = async (
     }, 'image/png');
   });
 };
+
+// SVG must be fetched and converted to a blob URL so the browser renders it
+// correctly — direct cross-origin SVG URLs are often blocked by canvas tainting.
+async function loadSvgAsImage(url: string): Promise<HTMLImageElement> {
+  const svgText = await fetch(url).then((r) => r.text());
+  const blob = new Blob([svgText], { type: 'image/svg+xml' });
+  const objectUrl = URL.createObjectURL(blob);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load SVG'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+// Bitmaps (WebP, PNG, JPEG …) load directly. crossOrigin is required if the
+// file is served from a different origin (e.g. a PocketBase storage URL),
+// otherwise canvas.toBlob() will throw a tainted-canvas security error.
+async function loadBitmapImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load bitmap image'));
+    img.src = url;
+  });
+}
 
 function wrapText(
   ctx: CanvasRenderingContext2D,

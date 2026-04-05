@@ -47,7 +47,6 @@ export function usePatternSearch(): UsePatternSearchReturn {
   const tokens = useMemo(() => tokensFromSearch(search), [search]);
 
   const filter = useMemo(() => buildPocketBaseFilter(tokens), [tokens]);
-  console.log('>>>filter', filter);
 
   const { patternId } = search;
 

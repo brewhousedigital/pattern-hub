@@ -312,7 +312,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       if (file && previewUrl) {
         try {
           const svgUrl = generatePbImage(savedPattern);
-          const ogImage = await generateOpengraphImage(svgUrl, name);
+          const ogImage = await generateOpengraphImage({ type: 'svg', url: svgUrl }, name);
 
           await pocketbase.collection('patterns').update(savedPattern.id, {
             opengraph_image: ogImage,
@@ -326,13 +326,14 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       if (externalFile && previewExternalUrl) {
         try {
           const fileUrl = generatePbImageExternalFile(savedPattern);
-          const ogImage = await generateOpengraphImage(fileUrl, name);
+          const ogImage = await generateOpengraphImage({ type: 'webp', url: fileUrl }, name);
+          console.log('>>>ogImage', ogImage);
 
           await pocketbase.collection('patterns').update(savedPattern.id, {
             opengraph_image: ogImage,
           });
         } catch (err) {
-          // Non-fatal — pattern is saved, OG image just won't exist yet
+          // Non-fatal: pattern is saved, OG image just won't exist yet
           console.warn('OG image generation failed', err);
         }
       }
