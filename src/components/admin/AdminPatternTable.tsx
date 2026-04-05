@@ -192,10 +192,10 @@ function CustomToolbar() {
         name={''}
         description={''}
         difficulty={''}
-        authors={['']}
-        author_manual={['']}
+        authors={[]}
+        author_manual={[]}
         uploaded_by={''}
-        tags={['']}
+        tags={[]}
         pattern_file={''}
         pieces={0}
         design_width={0}
