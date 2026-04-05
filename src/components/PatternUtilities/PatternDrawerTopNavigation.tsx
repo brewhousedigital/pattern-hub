@@ -13,7 +13,6 @@ import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import { Box, Button, Container } from '@mui/material';
 
 type TopNavigationProps = {
-  hide?: boolean;
   handleClose?: () => void;
 };
 
@@ -22,8 +21,6 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
 
   const { nextPattern, prevPattern, hasNext, hasPrev, patternId } = usePatternSearch();
   const resultIds = data?.items.map((item) => item.id) || [];
-
-  if (props?.hide) return <></>;
 
   if (!data) return <></>;
 
@@ -53,7 +50,7 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
           </Button>
         </Box>
 
-        <Box sx={{ order: { xs: 1, md: 2 } }}>
+        {/*<Box sx={{ order: { xs: 1, md: 2 } }}>
           <Button
             startIcon={<OpenInNewRoundedIcon />}
             component={Link}
@@ -63,7 +60,7 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
           >
             View Standalone
           </Button>
-        </Box>
+        </Box>*/}
 
         <Box sx={{ order: { xs: 2, md: 3 }, textAlign: 'right' }}>
           <Button startIcon={<CloseIcon />} variant="outlined" size="small" onClick={props.handleClose}>

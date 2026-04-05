@@ -20,7 +20,6 @@ import { alpha } from '@mui/material/styles';
 import { Box, Typography, Chip, Stack, Container } from '@mui/material';
 
 type ViewDrawerProps = {
-  hideNavigation?: boolean;
   viewData: TypePatternResponse | undefined;
   handleClose?: () => void;
 };
@@ -48,9 +47,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
       <Container maxWidth={false} sx={{ py: 3, position: 'relative', zIndex: 1 }}>
-        {!props?.hideNavigation && (
-          <PatternDrawerTopNavigation hide={props.hideNavigation} handleClose={props.handleClose} />
-        )}
+        <PatternDrawerTopNavigation handleClose={props.handleClose} />
 
         <Box
           sx={{
@@ -61,7 +58,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             justifyContent: 'center',
           }}
         >
-          <Box sx={{ order: { xs: 3, lg: 1 } }}>{!props?.hideNavigation && <SidebarList />}</Box>
+          <Box sx={{ order: { xs: 3, lg: 1 } }}>
+            <SidebarList />
+          </Box>
 
           <Box sx={{ order: { xs: 1, lg: 2 } }}>
             <Box
@@ -191,7 +190,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <Box>
               <SectionLabel>Tags for this Pattern</SectionLabel>
 
-              {/*{!props?.hideNavigation && <SidebarList />}*/}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
                 {viewData?.tags?.map((tag) => (
                   <Chip
