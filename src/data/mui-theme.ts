@@ -18,8 +18,8 @@ const baseTheme = createTheme({
   typography: {
     fontFamily: '"Google Sans Flex", system-ui',
     h1: {
-      fontFamily: '"Protest Guerrilla", sans-serif',
-      fontWeight: 400,
+      fontFamily: '"Google Sans Flex", sans-serif',
+      fontWeight: 600,
       fontStyle: 'normal',
     },
     h2: {
@@ -28,23 +28,23 @@ const baseTheme = createTheme({
       fontStyle: 'normal',
     },
     h3: {
-      fontFamily: '"Protest Guerrilla", sans-serif',
-      fontWeight: 400,
+      fontFamily: '"Google Sans Flex", sans-serif',
+      fontWeight: 600,
       fontStyle: 'normal',
     },
     h4: {
-      fontFamily: '"Protest Guerrilla", sans-serif',
-      fontWeight: 400,
+      fontFamily: '"Google Sans Flex", sans-serif',
+      fontWeight: 600,
       fontStyle: 'normal',
     },
     h5: {
-      fontFamily: '"Protest Guerrilla", sans-serif',
-      fontWeight: 400,
+      fontFamily: '"Google Sans Flex", sans-serif',
+      fontWeight: 600,
       fontStyle: 'normal',
     },
     h6: {
-      fontFamily: '"Protest Guerrilla", sans-serif',
-      fontWeight: 400,
+      fontFamily: '"Google Sans Flex", sans-serif',
+      fontWeight: 600,
       fontStyle: 'normal',
     },
   },
