@@ -479,8 +479,9 @@ const PatternGrid = (props: PatternGridProps) => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }} key={pattern.id}>
           <Link
             to={`/`}
-            params={{
-              patternId: pattern?.expand?.pattern_id?.id,
+            search={{
+              id: [pattern?.pattern_id],
+              patternId: pattern?.pattern_id,
             }}
           >
             <PatternTile elevation={0}>

@@ -21,6 +21,7 @@ export type UsePatternSearchReturn = {
   addRawInput: (raw: string) => void;
   addTag: (tag: string, exclude?: boolean) => void;
   addAuthor: (author: string, exclude?: boolean) => void;
+  addId: (id: string, exclude?: boolean) => void;
   addTitle: (title: string, exclude?: boolean) => void;
   addDescription: (description: string, exclude?: boolean) => void;
   removeToken: (index: number) => void;
@@ -61,8 +62,8 @@ export function usePatternSearch(): UsePatternSearchReturn {
   }
 
   function updateTokens(nextTokens: Token[]) {
-    const { q, tags, authors, title, description } = searchFromTokens(nextTokens);
-    updateSearch({ q, tags, authors, title, description });
+    const { q, tags, authors, id, title, description } = searchFromTokens(nextTokens);
+    updateSearch({ q, tags, authors, id, title, description });
   }
 
   /**
@@ -95,6 +96,12 @@ export function usePatternSearch(): UsePatternSearchReturn {
     const alreadyExists = tokens.some((t) => t.type === 'author' && t.value === author && t.exclude === exclude);
     if (alreadyExists) return;
     updateTokens([...tokens, { type: 'author', value: author, exclude }]);
+  }
+
+  function addId(id: string, exclude = false) {
+    const alreadyExists = tokens.some((t) => t.type === 'id' && t.value === id && t.exclude === exclude);
+    if (alreadyExists) return;
+    updateTokens([...tokens, { type: 'id', value: id, exclude }]);
   }
 
   function addTitle(title: string, exclude = false) {
@@ -199,6 +206,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
     addRawInput,
     addTag,
     addAuthor,
+    addId,
     addTitle,
     addDescription,
     removeToken,

@@ -18,6 +18,12 @@ export type AuthorToken = {
   exclude: boolean;
 };
 
+export type IdToken = {
+  type: 'id';
+  value: string;
+  exclude: boolean;
+};
+
 export type TitleToken = {
   type: 'title';
   value: string;
@@ -30,13 +36,14 @@ export type DescriptionToken = {
   exclude: boolean;
 };
 
-export type Token = TextToken | TagToken | AuthorToken | TitleToken | DescriptionToken;
+export type Token = TextToken | TagToken | AuthorToken | IdToken | TitleToken | DescriptionToken;
 
 // URL Search Params Schema
 export const patternSearchSchema = z.object({
   q: z.string().default(''),
   tags: z.array(z.string()).default([]),
   authors: z.array(z.string()).default([]),
+  id: z.array(z.string()).default([]),
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
   patternId: z.string().optional(),
@@ -72,6 +79,12 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: author.startsWith('-'),
   }));
 
+  const idTokens: Token[] = search.id.map((id) => ({
+    type: 'id',
+    value: id.startsWith('-') ? id.slice(1) : id,
+    exclude: id.startsWith('-'),
+  }));
+
   const titleTokens: Token[] = search.title.map((title) => ({
     type: 'title',
     value: title.startsWith('-') ? title.slice(1) : title,
@@ -84,7 +97,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: description.startsWith('-'),
   }));
 
-  return [...textTokens, ...tagTokens, ...authorTokens, ...titleTokens, ...descriptionTokens];
+  return [...textTokens, ...tagTokens, ...authorTokens, ...idTokens, ...titleTokens, ...descriptionTokens];
 }
 
 /**
@@ -102,6 +115,8 @@ export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternI
     .filter((t): t is AuthorToken => t.type === 'author')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
+  const id = tokens.filter((t): t is IdToken => t.type === 'id').map((t) => (t.exclude ? `-${t.value}` : t.value));
+
   const title = tokens
     .filter((t): t is TitleToken => t.type === 'title')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
@@ -110,7 +125,7 @@ export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternI
     .filter((t): t is DescriptionToken => t.type === 'description')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
-  return { q, tags, authors, title, description };
+  return { q, tags, authors, id, title, description };
 }
 
 /**
@@ -123,6 +138,12 @@ export function parseRawInput(raw: string): Token {
     const exclude = stripped.startsWith('-');
     const value = stripped.replace(/^-?author:/i, '');
     return { type: 'author', value, exclude };
+  }
+
+  if (/^-?id:/i.test(stripped)) {
+    const exclude = stripped.startsWith('-');
+    const value = stripped.replace(/^-?id:/i, '');
+    return { type: 'id', value, exclude };
   }
 
   if (/^-?title:/i.test(stripped)) {
@@ -149,6 +170,7 @@ export function parseRawInput(raw: string): Token {
 export function buildPocketBaseFilter(tokens: Token[]): string {
   const parts: string[] = [];
   const authorParts: string[] = [];
+  const idParts: string[] = [];
 
   for (const token of tokens) {
     if (token.type === 'text') {
@@ -175,6 +197,14 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
       }
     }
 
+    if (token.type === 'id') {
+      if (token.exclude) {
+        idParts.push(`(id != "${token.value}")`);
+      } else {
+        idParts.push(`(id = "${token.value}")`);
+      }
+    }
+
     if (token.type === 'title') {
       if (token.exclude) {
         parts.push(`(name !~ "${token.value}")`);
@@ -194,6 +224,10 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
 
   if (authorParts.length > 0) {
     parts.push(`(${authorParts.join(' || ')})`);
+  }
+
+  if (idParts.length > 0) {
+    parts.push(`(${idParts.join(' || ')})`);
   }
 
   return parts.join(' && ');

@@ -41,6 +41,7 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   text: { color: 'default', icon: <SearchIcon fontSize="small" /> },
   tag: { color: 'success', icon: <LabelIcon fontSize="small" /> },
   author: { color: 'info', icon: <PersonIcon fontSize="small" /> },
+  id: { color: 'info', icon: <PersonIcon fontSize="small" /> },
   title: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
   description: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
 };
@@ -52,6 +53,7 @@ function getTokenStyle(token: Token) {
 
 function getTokenLabel(token: Token): string {
   if (token.type === 'author') return `author:${token.value}`;
+  if (token.type === 'id') return `id:${token.value}`;
   if (token.type === 'title') return `title:${token.value}`;
   if (token.type === 'description') return `description:${token.value}`;
   if (token.exclude) return `-${token.value}`;
@@ -67,6 +69,7 @@ function getTokenLabel(token: Token): string {
  */
 const PREFIX_MAP: Record<string, PrefixMode> = {
   'author:': 'author',
+  'id:': 'suppress',
   'title:': 'suppress',
   'description:': 'suppress',
 };
@@ -153,7 +156,7 @@ export const HomepageSearchV3 = ({
 
   // Reset highlight when results change
   useEffect(() => {
-    setHighlightedIndex(-1);
+    //setHighlightedIndex(-1);
   }, [dropdownItems]);
 
   const commitInput = useCallback(
@@ -375,7 +378,7 @@ export const HomepageSearchV3 = ({
           }}
         >
           {/* Context label */}
-          <Box sx={{ px: 2, py: 0.75, bgcolor: 'action.hover' }}>
+          <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
             <Typography variant="caption" color="text.secondary">
               {mode === 'author' ? 'Authors' : 'Tags'} — {dropdownItems.length} result
               {dropdownItems.length !== 1 ? 's' : ''}
@@ -397,9 +400,9 @@ export const HomepageSearchV3 = ({
                 onMouseEnter={() => setHighlightedIndex(index)}
                 sx={{
                   '&.Mui-selected': {
-                    bgcolor: 'primary.main',
+                    backgroundColor: 'primary.main',
                     color: 'primary.contrastText',
-                    '&:hover': { bgcolor: 'primary.dark' },
+                    '&:hover': { backgroundColor: 'primary.dark' },
                   },
                 }}
               >
