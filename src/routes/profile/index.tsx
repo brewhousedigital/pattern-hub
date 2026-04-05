@@ -478,7 +478,7 @@ const PatternGrid = (props: PatternGridProps) => {
       {props.patterns?.map((pattern) => (
         <Grid size={{ xs: 12, sm: 6, md: 3 }} key={pattern.id}>
           <Link
-            to={`/pattern/$patternId`}
+            to={`/`}
             params={{
               patternId: pattern?.expand?.pattern_id?.id,
             }}

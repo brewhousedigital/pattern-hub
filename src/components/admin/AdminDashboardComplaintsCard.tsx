@@ -19,7 +19,9 @@ export const AdminDashboardComplaintsCard = () => {
         <CardContent>
           <AdminCardWrapper isPending={isPending} isError={isError} error={error}>
             <Typography>Active Reports: {total}</Typography>
-            <Typography>Latest Report: {createPrettyDate(firstItem?.created || '')}</Typography>
+            <Typography>
+              Latest Report: {firstItem?.created ? createPrettyDate(firstItem?.created || '') : 'None'}
+            </Typography>
           </AdminCardWrapper>
         </CardContent>
       </Card>
