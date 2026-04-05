@@ -10,15 +10,17 @@ export const Route = createFileRoute('/space-command')({
 });
 
 function RouteComponent() {
+  const [isAuthLoading, setIsAuthLoading] = React.useState(true);
+
   const { isLoading, isAdmin, handleRefresh } = useRefreshAdminAuth();
 
   React.useEffect(() => {
-    handleRefresh().then();
+    handleRefresh().then(() => setIsAuthLoading(false));
   }, []);
 
   const { authData } = useGlobalAuthData();
 
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return <FullScreenLoader />;
   }
 

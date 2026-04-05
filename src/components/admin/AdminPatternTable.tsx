@@ -1,16 +1,33 @@
 import React from 'react';
 import { useDebounce } from '@/functions/hooks/useDebounce';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import {
+  generatePbImage,
+  generatePbImageSVG,
+  generatePbImageExternalFile,
+  generatePbImageOpenGraph,
+} from '@/functions/utilities/generate-pb-image';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 
 import { type TypePatternResponse, useQueryGetAllPatternsByPaginationAdmin } from '@/functions/database/patterns';
 import { AdminEditPatternModal } from '@/components/admin/AdminEditPatternModal';
 
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
-import { Box, Menu, MenuItem, InputAdornment, TextField, Stack, Typography, Tooltip, styled } from '@mui/material';
+import {
+  Box,
+  Menu,
+  MenuItem,
+  InputAdornment,
+  TextField,
+  Stack,
+  Typography,
+  Tooltip,
+  styled,
+  Button,
+} from '@mui/material';
 
 import {
   DataGrid,
@@ -89,30 +106,129 @@ export const AdminPatternTable = () => {
       headerName: 'Pattern',
       width: 100,
       renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
-        const filePath = generatePbImage(params.row);
+        const filePath = generatePbImageSVG(params.row);
 
-        return (
-          <Box sx={{ p: 2 }}>
-            <Tooltip
-              placement="left-start"
-              arrow
-              title={
-                <Stack direction="row" sx={{ alignItems: 'center' }}>
-                  <FileDownloadIcon />
-                  <>Download</>
-                </Stack>
-              }
-            >
-              <a href={filePath} download style={{ display: 'block' }}>
-                <img
-                  src={filePath}
-                  alt={`pattern template for ${params.row.name}`}
-                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                />
-              </a>
-            </Tooltip>
-          </Box>
-        );
+        if (params.value) {
+          return (
+            <Box sx={{ p: 2 }}>
+              <Tooltip
+                placement="left-start"
+                arrow
+                title={
+                  <Stack direction="row" sx={{ alignItems: 'center' }}>
+                    <FileDownloadIcon />
+                    <>Download</>
+                  </Stack>
+                }
+              >
+                <a href={filePath} download style={{ display: 'block' }}>
+                  <img
+                    src={filePath}
+                    alt={`pattern template for ${params.row.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                  />
+                </a>
+              </Tooltip>
+            </Box>
+          );
+        }
+
+        return '';
+      },
+    },
+    {
+      field: 'pattern_file_external',
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      headerName: 'External',
+      width: 100,
+      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
+        const filePath = generatePbImageExternalFile(params.row);
+
+        if (params.value) {
+          return (
+            <Box sx={{ p: 2 }}>
+              <Tooltip
+                placement="left-start"
+                arrow
+                title={
+                  <Stack direction="row" sx={{ alignItems: 'center' }}>
+                    <FileDownloadIcon />
+                    <>Download</>
+                  </Stack>
+                }
+              >
+                <a href={filePath} download target="_blank" style={{ display: 'block' }}>
+                  <img
+                    src={filePath}
+                    alt={`pattern template for ${params.row.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                  />
+                </a>
+              </Tooltip>
+            </Box>
+          );
+        }
+
+        return '';
+      },
+    },
+    {
+      field: 'pattern_file_external_link',
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      headerName: 'Ext Link',
+      width: 120,
+      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
+        if (params.value) {
+          return (
+            <Button component="a" target="_blank" href={params.value} endIcon={<LaunchRoundedIcon />}>
+              Link
+            </Button>
+          );
+        }
+
+        return '';
+      },
+    },
+    {
+      field: 'opengraph_image',
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      headerName: 'Share Image',
+      width: 100,
+      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
+        const filePath = generatePbImageOpenGraph(params.row);
+
+        if (params.value) {
+          return (
+            <Box sx={{ p: 2 }}>
+              <Tooltip
+                placement="left-start"
+                arrow
+                title={
+                  <Stack direction="row" sx={{ alignItems: 'center' }}>
+                    <FileDownloadIcon />
+                    <>Download</>
+                  </Stack>
+                }
+              >
+                <a href={filePath} download target="_blank" style={{ display: 'block' }}>
+                  <img
+                    src={filePath}
+                    alt={`pattern template for ${params.row.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                  />
+                </a>
+              </Tooltip>
+            </Box>
+          );
+        }
+
+        return '';
       },
     },
     {
@@ -197,6 +313,9 @@ function CustomToolbar() {
         uploaded_by={''}
         tags={[]}
         pattern_file={''}
+        pattern_file_external={''}
+        pattern_file_external_link={''}
+        opengraph_image={''}
         pieces={0}
         design_width={0}
         design_height={0}

@@ -17,6 +17,9 @@ export type TypePatternResponse = {
   uploaded_by: string;
   tags: string[];
   pattern_file: string;
+  pattern_file_external: string;
+  pattern_file_external_link: string;
+  opengraph_image: string;
   pieces: number;
   design_width: number;
   design_height: number;
@@ -89,6 +92,8 @@ export type TypePatternCreatePayload = {
   uploaded_by?: string;
   tags: string[];
   pattern_file?: File;
+  pattern_file_external?: File;
+  pattern_file_external_link?: string;
   pieces: string;
   design_width: string;
   design_height: string;
@@ -130,6 +135,14 @@ export const useMutationEditPattern = () => {
       // If this has a file upload, add it
       if (payload?.pattern_file) {
         formData.append('pattern_file', payload?.pattern_file);
+      }
+
+      if (payload?.pattern_file_external) {
+        formData.append('pattern_file_external', payload?.pattern_file_external);
+      }
+
+      if (payload?.pattern_file_external_link) {
+        formData.append('pattern_file_external_link', payload?.pattern_file_external_link || '');
       }
 
       if (payload?.id) {

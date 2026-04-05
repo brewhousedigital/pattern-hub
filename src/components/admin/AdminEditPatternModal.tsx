@@ -1,6 +1,6 @@
 import React from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { generatePbImage, generatePbImageExternalFile } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryGetAllTags } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
@@ -41,7 +41,13 @@ import {
   Typography,
   styled,
   Grid,
+  Tab,
+  Tabs,
 } from '@mui/material';
+
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
 
 type TypeModalMode = 'edit' | 'add';
 
@@ -51,6 +57,12 @@ type TypeEditModalProps = TypePatternResponse & {
 
 export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const { authData } = useGlobalAuthData();
+
+  const [tabValue, setTabValue] = React.useState('1');
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setTabValue(newValue);
+  };
 
   const {
     isPending: isPendingTags,
@@ -132,9 +144,16 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const isLoading = isPendingTags || isPendingManualAuthors || isPendingAuthorData;
   const isError = isErrorTags || isErrorManualAuthors || isErrorAuthorData;
 
+  // SVG Upload
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // External file upload
+  const [externalFile, setExternalFile] = React.useState<File | undefined>();
+  const [previewExternalUrl, setPreviewExternalUrl] = React.useState<string | null>(null);
+  const externalFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [externalFileLink, setExternalFileLink] = React.useState(props?.pattern_file_external_link || '');
 
   const handleFormReset = () => {
     setName('');
@@ -155,6 +174,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     //setUploadedByValue([]);
     //setUploadedByAutoCompleteInputValue('');
     handleFileDelete();
+    handleExternalFileDelete();
+    setExternalFileLink('');
   };
 
   // Clean up the URL when component unmounts or new file is selected
@@ -183,6 +204,23 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     }
   };
 
+  const handleExternalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      if (!file.type.includes('webp')) {
+        alert('Please upload an SVG file');
+        return;
+      }
+
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewExternalUrl(url);
+
+      setExternalFile(file);
+    }
+  };
+
   const handleFileDelete = () => {
     // Revoke the object URL to free memory
     if (previewUrl) {
@@ -196,6 +234,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleExternalFileDelete = () => {
+    // Revoke the object URL to free memory
+    if (previewExternalUrl) {
+      URL.revokeObjectURL(previewExternalUrl);
+    }
+
+    // Clear state
+    setPreviewExternalUrl(null);
+    setExternalFile(undefined);
+
+    // Reset the file input
+    if (externalFileInputRef.current) {
+      externalFileInputRef.current.value = '';
     }
   };
 
@@ -242,6 +296,16 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         payload.pattern_file = await sanitizeSvgFile(file);
       }
 
+      // Will attach a file if a new one exists
+      if (externalFile && previewExternalUrl) {
+        payload.pattern_file_external = externalFile;
+      }
+
+      // Updates the link if it was changed
+      if (externalFileLink) {
+        payload.pattern_file_external_link = externalFileLink;
+      }
+
       const savedPattern = await savePattern.mutateAsync(payload);
 
       // Generate the opengraph image and save it back to pocketbase
@@ -249,6 +313,20 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         try {
           const svgUrl = generatePbImage(savedPattern);
           const ogImage = await generateOpengraphImage(svgUrl, name);
+
+          await pocketbase.collection('patterns').update(savedPattern.id, {
+            opengraph_image: ogImage,
+          });
+        } catch (err) {
+          // Non-fatal — pattern is saved, OG image just won't exist yet
+          console.warn('OG image generation failed', err);
+        }
+      }
+
+      if (externalFile && previewExternalUrl) {
+        try {
+          const fileUrl = generatePbImageExternalFile(savedPattern);
+          const ogImage = await generateOpengraphImage(fileUrl, name);
 
           await pocketbase.collection('patterns').update(savedPattern.id, {
             opengraph_image: ogImage,
@@ -270,6 +348,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         handleFormReset();
       } else {
         handleFileDelete();
+        handleExternalFileDelete();
       }
     } catch (error: any) {
       console.warn('Error', error);
@@ -366,71 +445,164 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
             <Divider />
 
-            {file && previewUrl ? (
-              <Grid container>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box sx={{ p: 2 }}>
-                    <Typography>Old</Typography>
+            <Box sx={{ width: '100%', typography: 'body1' }}>
+              <TabContext value={tabValue}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <TabList onChange={handleTabChange} aria-label="Pattern upload type">
+                    <Tab label="Upload SVG" value="1" />
+                    <Tab label="External Pattern" value="2" />
+                  </TabList>
+                </Box>
 
-                    {props.pattern_file ? (
-                      <img
-                        src={generatePbImage(props)}
-                        alt={`pattern template for ${props.name}`}
-                        style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                      />
-                    ) : (
-                      <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
-                    )}
-                  </Box>
-                </Grid>
+                <TabPanel value="1">
+                  {file && previewUrl ? (
+                    <Grid container>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2 }}>
+                          <Typography>Old</Typography>
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Box sx={{ p: 2, position: 'relative' }}>
-                    <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
-                      <IconButton size="small" onClick={handleFileDelete}>
-                        <DeleteRoundedIcon fontSize="inherit" />
-                      </IconButton>
+                          {props.pattern_file ? (
+                            <img
+                              src={generatePbImage(props)}
+                              alt={`pattern template for ${props.name}`}
+                              style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                            />
+                          ) : (
+                            <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                          )}
+                        </Box>
+                      </Grid>
+
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2, position: 'relative' }}>
+                          <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
+                            <IconButton size="small" onClick={handleFileDelete}>
+                              <DeleteRoundedIcon fontSize="inherit" />
+                            </IconButton>
+                          </Box>
+
+                          <Typography>New</Typography>
+
+                          <img
+                            src={previewUrl}
+                            alt={`New pattern template for ${props.name}`}
+                            style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                          />
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Box sx={{ p: 2 }}>
+                      {props.pattern_file ? (
+                        <img
+                          src={generatePbImage(props)}
+                          alt={`pattern template for ${props.name}`}
+                          style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                        />
+                      ) : (
+                        <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
+                      )}
                     </Box>
+                  )}
 
-                    <Typography>New</Typography>
+                  <Button
+                    fullWidth
+                    component="label"
+                    role={undefined}
+                    variant="contained"
+                    tabIndex={-1}
+                    startIcon={<CloudUploadRoundedIcon />}
+                  >
+                    Upload SVG
+                    <VisuallyHiddenInput
+                      type="file"
+                      ref={fileInputRef}
+                      accept=".svg,image/svg+xml"
+                      onChange={handleFileChange}
+                    />
+                  </Button>
+                </TabPanel>
 
-                    <img
-                      src={previewUrl}
-                      alt={`New pattern template for ${props.name}`}
-                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                <TabPanel value="2">
+                  {externalFile && previewExternalUrl ? (
+                    <Grid container>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2 }}>
+                          <Typography>Old</Typography>
+
+                          {props.pattern_file_external ? (
+                            <img
+                              src={generatePbImage(props)}
+                              alt={`pattern template for ${props.name}`}
+                              style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                            />
+                          ) : (
+                            <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                          )}
+                        </Box>
+                      </Grid>
+
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2, position: 'relative' }}>
+                          <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
+                            <IconButton size="small" onClick={handleExternalFileDelete}>
+                              <DeleteRoundedIcon fontSize="inherit" />
+                            </IconButton>
+                          </Box>
+
+                          <Typography>New</Typography>
+
+                          <img
+                            src={previewExternalUrl}
+                            alt={`New external pattern template for ${props.name}`}
+                            style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                          />
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Box sx={{ p: 2 }}>
+                      {props.pattern_file_external ? (
+                        <img
+                          src={generatePbImage(props)}
+                          alt={`pattern template for ${props.name}`}
+                          style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                        />
+                      ) : (
+                        <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  <Box sx={{ mb: 2 }}>
+                    <TextField
+                      label="External Pattern Link"
+                      variant="filled"
+                      fullWidth
+                      value={externalFileLink}
+                      onChange={(e) => setExternalFileLink(e.target.value)}
                     />
                   </Box>
-                </Grid>
-              </Grid>
-            ) : (
-              <Box sx={{ p: 2 }}>
-                {props.pattern_file ? (
-                  <img
-                    src={generatePbImage(props)}
-                    alt={`pattern template for ${props.name}`}
-                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                  />
-                ) : (
-                  <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
-                )}
-              </Box>
-            )}
 
-            <Button
-              component="label"
-              role={undefined}
-              variant="contained"
-              tabIndex={-1}
-              startIcon={<CloudUploadRoundedIcon />}
-            >
-              Upload SVG
-              <VisuallyHiddenInput
-                type="file"
-                ref={fileInputRef}
-                accept=".svg,image/svg+xml"
-                onChange={handleFileChange}
-              />
-            </Button>
+                  <Button
+                    fullWidth
+                    component="label"
+                    role={undefined}
+                    variant="contained"
+                    tabIndex={-1}
+                    startIcon={<CloudUploadRoundedIcon />}
+                  >
+                    Upload WebP Image
+                    <VisuallyHiddenInput
+                      type="file"
+                      ref={externalFileInputRef}
+                      accept=".webp,image/webp"
+                      onChange={handleExternalFileChange}
+                    />
+                  </Button>
+                </TabPanel>
+              </TabContext>
+            </Box>
 
             <Divider />
 
