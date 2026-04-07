@@ -71,7 +71,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const location = useLocation();
   const thisRestriction = SidebarLinks.find((link) => link.href === location.pathname);
 
-  const canViewPage = checkAccess(thisRestriction?.view || '');
+  const canViewPage = typeof thisRestriction?.view === 'undefined' || checkAccess(thisRestriction?.view || '');
 
   const theme = useTheme();
   const [open, setOpen] = React.useState(true);
@@ -153,8 +153,16 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
               return (
                 <ListItem key={`sidebar-link` + index} disablePadding>
                   <ListItemButton component={Link} to={link.href}>
-                    <ListItemIcon>{link.icon}</ListItemIcon>
-                    <ListItemText primary={link.label} />
+                    <ListItemIcon sx={{ color: location.pathname === link.href ? 'primary.main' : '' }}>
+                      {link.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      sx={{
+                        color: location.pathname === link.href ? 'primary.main' : '',
+                        '& .MuiTypography-root': { fontWeight: location.pathname === link.href ? 700 : 400 },
+                      }}
+                      primary={link.label}
+                    />
                   </ListItemButton>
                 </ListItem>
               );
