@@ -11,6 +11,8 @@ import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
 import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
 import { useDebounce } from '@/functions/hooks/useDebounce';
+import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -63,6 +65,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
   };
+
+  const { checkAccess } = useCheckAdminAccess();
+
+  const canAdd = checkAccess(EnumLevelsAdmin.PATTERN_AC);
+  const canEdit = checkAccess(EnumLevelsAdmin.PATTERN_AU);
+  const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_AD);
 
   const {
     isPending: isPendingTags,
@@ -395,7 +403,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
           <EditRoundedIcon fontSize="inherit" />
         </IconButton>
       ) : (
-        <Button onClick={handleOpen} startIcon={<AddRoundedIcon />}>
+        <Button disabled={!canAdd} onClick={handleOpen} startIcon={<AddRoundedIcon />}>
           Add Pattern
         </Button>
       )}
@@ -720,6 +728,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         <DialogActions>
           <Button
             color="error"
+            disabled={!canDelete}
             variant="contained"
             sx={{ mr: 'auto' }}
             loading={isButtonLoading}
@@ -732,7 +741,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             Cancel
           </Button>
 
-          <Button onClick={handleSave} loading={isButtonLoading} variant="contained">
+          <Button disabled={!canEdit} onClick={handleSave} loading={isButtonLoading} variant="contained">
             Save
           </Button>
         </DialogActions>

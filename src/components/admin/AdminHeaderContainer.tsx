@@ -8,6 +8,7 @@ type TypeHeaderProps = {
   action?: () => void;
   actionText?: string;
   actionIcon?: React.ReactNode;
+  disabled?: boolean;
 };
 
 export const AdminHeaderContainer = (props: TypeHeaderProps) => {
@@ -29,7 +30,13 @@ export const AdminHeaderContainer = (props: TypeHeaderProps) => {
       </Box>
 
       {props.action && (
-        <Button variant="contained" color="success" startIcon={props.actionIcon} onClick={props.action}>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={props.actionIcon}
+          onClick={props.action}
+          disabled={props.disabled}
+        >
           {props.actionText}
         </Button>
       )}

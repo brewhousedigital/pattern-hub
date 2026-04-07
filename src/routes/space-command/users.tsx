@@ -9,5 +9,5 @@ export const Route = createFileRoute('/space-command/users')({
 });
 
 function RouteComponent() {
-  return <div>Coming Soon</div>;
+  return <div>Users Tool coming soon</div>;
 }

@@ -4,6 +4,8 @@ import { useQueryGetAllFAQ, useMutationDeleteFAQ, type TypeFAQItem } from '@/fun
 import { AdminFAQEditorModal } from '@/components/admin/AdminFAQEditorModal';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
+import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { EnumLevelsAdmin } from '@/functions/database/authentication';
 
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,6 +22,12 @@ export const Route = createFileRoute('/space-command/faq')({
 });
 
 function RouteComponent() {
+  const { checkAccess } = useCheckAdminAccess();
+
+  const canAdd = checkAccess(EnumLevelsAdmin.FAQ_AC);
+  const canEdit = checkAccess(EnumLevelsAdmin.FAQ_AU);
+  const canDelete = checkAccess(EnumLevelsAdmin.FAQ_AD);
+
   const { data: faqs, isLoading, isError } = useQueryGetAllFAQ();
   const deleteFaq = useMutationDeleteFAQ();
 
@@ -54,6 +62,7 @@ function RouteComponent() {
         action={openCreate}
         actionText="Add FAQ"
         actionIcon={<AddIcon />}
+        disabled={!canAdd}
       />
 
       <Typography sx={{ mb: 2 }}>
@@ -86,7 +95,7 @@ function RouteComponent() {
 
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => openEdit(faq)}>
+                      <IconButton disabled={!canEdit} size="small" onClick={() => openEdit(faq)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -96,7 +105,7 @@ function RouteComponent() {
                         size="small"
                         color="error"
                         onClick={() => handleDelete(faq.id, faq.title)}
-                        disabled={deleteFaq.isPending}
+                        disabled={deleteFaq.isPending || !canDelete}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>

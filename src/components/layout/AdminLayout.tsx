@@ -1,6 +1,9 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
+import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
+import { useGlobalAuthData } from '@/data/auth-data';
+import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -32,18 +35,38 @@ import {
   AppBar as MuiAppBar,
 } from '@mui/material';
 
-const SidebarLinks = [
+type SidebarLinkType = {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  view?: TypeLevelsAdmin;
+};
+
+const SidebarLinks: SidebarLinkType[] = [
   { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
-  { label: 'Patterns', href: '/space-command/patterns', icon: <ExtensionRoundedIcon /> },
+  {
+    label: 'Patterns',
+    href: '/space-command/patterns',
+    icon: <ExtensionRoundedIcon />,
+    view: EnumLevelsAdmin.PATTERN_AR,
+  },
   { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
-  { label: 'Complaints', href: '/space-command/complaints', icon: <FeedbackIcon /> },
-  { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon /> },
-  { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon /> },
-  { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon /> },
-  { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon /> },
+  {
+    label: 'Complaints',
+    href: '/space-command/complaints',
+    icon: <FeedbackIcon />,
+    view: EnumLevelsAdmin.COMPLAINTS_AR,
+  },
+  { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
+  { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
+  { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
+  { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon />, view: EnumLevelsAdmin.USERS_AR },
 ];
 
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
+  const { authData } = useGlobalAuthData();
+  const { checkAccess } = useCheckAdminAccess();
+
   const theme = useTheme();
   const [open, setOpen] = React.useState(true);
 
@@ -103,21 +126,35 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
 
         <List>
           {SidebarLinks.map((link, index) => {
-            if (link.label === 'divider') {
+            // Always render items marked as true
+            const isNotSet = typeof link.view === 'undefined';
+
+            // Always render dividers
+            const isDivider = link.label === 'divider';
+
+            // Check the database if the user has the right permission
+            const hasAccess = checkAccess(link?.view || '');
+
+            if (isDivider) {
               return (
                 <ListItem key={`sidebar-link` + index}>
                   <Box sx={{ height: '1px', width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.12)' }} />
                 </ListItem>
               );
             }
-            return (
-              <ListItem key={`sidebar-link` + index} disablePadding>
-                <ListItemButton component={Link} to={link.href}>
-                  <ListItemIcon>{link.icon}</ListItemIcon>
-                  <ListItemText primary={link.label} />
-                </ListItemButton>
-              </ListItem>
-            );
+
+            if (isNotSet || hasAccess) {
+              return (
+                <ListItem key={`sidebar-link` + index} disablePadding>
+                  <ListItemButton component={Link} to={link.href}>
+                    <ListItemIcon>{link.icon}</ListItemIcon>
+                    <ListItemText primary={link.label} />
+                  </ListItemButton>
+                </ListItem>
+              );
+            }
+
+            return <></>;
           })}
         </List>
       </Drawer>

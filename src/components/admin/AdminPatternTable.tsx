@@ -1,7 +1,6 @@
 import React from 'react';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import {
-  generatePbImage,
   generatePbImageSVG,
   generatePbImageExternalFile,
   generatePbImageOpenGraph,
@@ -240,7 +239,9 @@ export const AdminPatternTable = () => {
       headerName: 'Actions',
       width: 100,
       cellClassName: 'actions',
-      renderCell: (params) => <AdminEditPatternModal mode="edit" {...params.row} />,
+      renderCell: (params) => {
+        return <AdminEditPatternModal mode="edit" {...params.row} />;
+      },
     },
   ];
 

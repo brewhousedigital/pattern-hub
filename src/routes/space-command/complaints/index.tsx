@@ -4,6 +4,7 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image.ts';
 import { useQueryGetComplaints, type TypeComplaintsResponse } from '@/functions/database/complaints.ts';
 import { AdminComplaintsModal } from '@/components/admin/AdminComplaintsModal.tsx';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer.tsx';
+import { generatePatternLink } from '@/functions/utilities/generate-pattern-link';
 
 import {
   Box,
@@ -97,7 +98,7 @@ function RouteComponent() {
                           />
 
                           <Box>
-                            <a href={`/pattern/${pattern?.id}`} target="_blank">
+                            <a href={generatePatternLink(pattern?.id || '')} target="_blank">
                               <Typography fontSize={13} fontWeight={500} lineHeight={1.3}>
                                 {pattern?.name ?? '—'}
                               </Typography>

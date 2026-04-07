@@ -2,6 +2,45 @@ import { pocketbase, pocketbaseDomain } from '@/functions/database/authenticatio
 import type { AuthRecord, RecordAuthResponse } from 'pocketbase';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
+// Base Permissions for the database:
+// ["PATTERN_AR", "TAG_AR", "FAQ_AR", "MAP_AR", "USERS_AR", "COMPLAINTS_AR"]
+
+// Full Admin
+// ["PATTERN_AC", "PATTERN_AR", "PATTERN_AU", "PATTERN_AD", "TAG_AC", "TAG_AR", "TAG_AU", "TAG_AD", "FAQ_AC", "FAQ_AR", "FAQ_AU", "FAQ_AD", "MAP_AC", "MAP_AR", "MAP_AU", "MAP_AD", "COMPLAINTS_AC", "COMPLAINTS_AR", "COMPLAINTS_AU", "COMPLAINTS_AD", "USERS_AC", "USERS_AR", "USERS_AU", "USERS_AD"]
+
+const LEVELS_ADMIN_PATTERN = {
+  PATTERN_AC: 'PATTERN_AC',
+  PATTERN_AR: 'PATTERN_AR',
+  PATTERN_AU: 'PATTERN_AU',
+  PATTERN_AD: 'PATTERN_AD',
+};
+const LEVELS_ADMIN_TAGS = { TAG_AC: 'TAG_AC', TAG_AR: 'TAG_AR', TAG_AU: 'TAG_AU', TAG_AD: 'TAG_AD' };
+const LEVELS_ADMIN_FAQ = { FAQ_AC: 'FAQ_AC', FAQ_AR: 'FAQ_AR', FAQ_AU: 'FAQ_AU', FAQ_AD: 'FAQ_AD' };
+const LEVELS_ADMIN_MAP = { MAP_AC: 'MAP_AC', MAP_AR: 'MAP_AR', MAP_AU: 'MAP_AU', MAP_AD: 'MAP_AD' };
+const LEVELS_ADMIN_USERS = { USERS_AC: 'USERS_AC', USERS_AR: 'USERS_AR', USERS_AU: 'USERS_AU', USERS_AD: 'USERS_AD' };
+const LEVELS_ADMIN_COMPLAINTS = {
+  COMPLAINTS_AC: 'COMPLAINTS_AC',
+  COMPLAINTS_AR: 'COMPLAINTS_AR',
+  COMPLAINTS_AU: 'COMPLAINTS_AU',
+  COMPLAINTS_AD: 'COMPLAINTS_AD',
+};
+
+export const EnumLevelsAdmin = {
+  ...LEVELS_ADMIN_PATTERN,
+  ...LEVELS_ADMIN_TAGS,
+  ...LEVELS_ADMIN_FAQ,
+  ...LEVELS_ADMIN_MAP,
+  ...LEVELS_ADMIN_COMPLAINTS,
+  ...LEVELS_ADMIN_USERS,
+} as const;
+
+// NAME_TYPE_CRUD
+// A - Admin
+// U - User
+// Create Read Update Delete
+export type TypeLevelsAdmin = (typeof EnumLevelsAdmin)[keyof typeof EnumLevelsAdmin];
+
+// This is the data from the pocketbase user and admin table
 export type TypeAuthData = {
   created?: string;
   email?: string;
@@ -9,7 +48,7 @@ export type TypeAuthData = {
   name?: string;
   about?: string;
   interests?: string;
-  level?: number;
+  level?: TypeLevelsAdmin[];
   site_color?: string;
   site_color_secondary?: string;
   verified?: boolean;

@@ -9,5 +9,5 @@ export const Route = createFileRoute('/space-command/tags')({
 });
 
 function RouteComponent() {
-  return <div>Coming Soon</div>;
+  return <div>Tag Tool coming soon</div>;
 }

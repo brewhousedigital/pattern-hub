@@ -9,5 +9,5 @@ export const Route = createFileRoute('/space-command/map')({
 });
 
 function RouteComponent() {
-  return <div>Coming Soon</div>;
+  return <div>Map Tool coming soon</div>;
 }

@@ -7,6 +7,8 @@ import {
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
+import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { EnumLevelsAdmin } from '@/functions/database/authentication';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -36,6 +38,10 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
   const [notes, setNotes] = React.useState(props?.complaint?.review_notes || '');
   const [isSpam, setIsSpam] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const { checkAccess } = useCheckAdminAccess();
+
+  const canEdit = checkAccess(EnumLevelsAdmin.COMPLAINTS_AU);
 
   const { authData } = useGlobalAuthData();
 
@@ -188,7 +194,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           Cancel
         </Button>
 
-        <Button onClick={handleSubmit} variant="contained" color="success" loading={isLoading}>
+        <Button onClick={handleSubmit} variant="contained" color="success" loading={isLoading} disabled={!canEdit}>
           Mark as reviewed
         </Button>
       </DialogActions>
