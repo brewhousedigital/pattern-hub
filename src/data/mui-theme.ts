@@ -63,23 +63,7 @@ const baseTheme = createTheme({
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: {
-          backgroundColor: '#fff',
-
-          borderRadius: 36,
-          '&::before': {
-            border: 0,
-          },
-          '& svg': {
-            opacity: 0.6,
-          },
-          '& fieldset': {
-            borderColor: 'transparent',
-          },
-          '& input': {
-            paddingLeft: '6px',
-          },
-        },
+        root: {},
       },
     },
     MuiListItemSecondaryAction: {

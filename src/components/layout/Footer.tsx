@@ -3,7 +3,7 @@ import { Logo } from '@/components/layout/Header/Header.tsx';
 import { Link, useLocation } from '@tanstack/react-router';
 import { copyToURLClipboard } from '@/functions/utilities/copy-to-clipboard.ts';
 import { SectionLabel } from '@/components/ViewHelpers.tsx';
-import { DOMAIN_URL } from '@/data/constants.ts';
+import { DOMAIN_URL, KOFI_LINK, DISCORD_SERVER_LINK, REDDIT_LINK } from '@/data/constants.ts';
 import { subLinkStyles } from '@/components/layout/Header/sublink-styles.ts';
 import { DiscordIcon } from '@/assets/DiscordIcon.tsx';
 
@@ -28,7 +28,7 @@ export const Footer = () => {
             <Button
               variant="contained"
               component="a"
-              href="https://ko-fi.com/I2I51RLS9K"
+              href={KOFI_LINK}
               target="_blank"
               startIcon={
                 <img
@@ -90,16 +90,11 @@ export const Footer = () => {
                 Share
               </Button>
 
-              <Button
-                component="a"
-                startIcon={<RedditIcon />}
-                href="https://www.reddit.com/r/StainedGlass"
-                target="_blank"
-              >
+              <Button component="a" startIcon={<RedditIcon />} href={REDDIT_LINK} target="_blank">
                 Reddit
               </Button>
 
-              <Button component="a" startIcon={<DiscordIcon />} href="https://discord.gg/vFHvrhY5K8" target="_blank">
+              <Button component="a" startIcon={<DiscordIcon />} href={DISCORD_SERVER_LINK} target="_blank">
                 Discord
               </Button>
             </Stack>
