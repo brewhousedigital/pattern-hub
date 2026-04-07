@@ -283,7 +283,7 @@ export const HomepageSearchV3 = ({
           px: 1.5,
           py: 0.75,
           cursor: 'text',
-          borderRadius: showDropdown ? '8px 8px 0 0' : 2,
+          borderRadius: showDropdown ? '16px 16px 0 0' : 8,
           borderBottomColor: showDropdown ? 'transparent' : undefined,
           '&:focus-within': {
             borderColor: 'primary.main',
