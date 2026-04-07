@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
 import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
-import { useGlobalAuthData } from '@/data/auth-data';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -60,11 +60,12 @@ const SidebarLinks: SidebarLinkType[] = [
   { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
   { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
   { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
+  { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
+  { label: 'Admins', href: '/space-command/admins', icon: <AutoFixHighIcon />, view: EnumLevelsAdmin.ADMINS_AR },
   { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon />, view: EnumLevelsAdmin.USERS_AR },
 ];
 
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
-  const { authData } = useGlobalAuthData();
   const { checkAccess } = useCheckAdminAccess();
 
   const theme = useTheme();

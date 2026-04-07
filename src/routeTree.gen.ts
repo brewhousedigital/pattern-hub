@@ -20,6 +20,7 @@ import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tag
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
 import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
+import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
 import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
@@ -86,6 +87,11 @@ const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandAdminsRoute = SpaceCommandAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
   id: '/profile/edit',
   path: '/profile/edit',
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/profile/edit'
+    | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/map'
     | '/space-command/patterns'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/profile/edit'
+    | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/map'
     | '/space-command/patterns'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/help/privacy-policy'
     | '/help/terms-of-service'
     | '/profile/edit'
+    | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/map'
     | '/space-command/patterns'
@@ -374,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandFaqRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/admins': {
+      id: '/space-command/admins'
+      path: '/admins'
+      fullPath: '/space-command/admins'
+      preLoaderRoute: typeof SpaceCommandAdminsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/profile/edit': {
       id: '/profile/edit'
       path: '/profile/edit'
@@ -448,6 +467,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SpaceCommandRouteRouteChildren {
+  SpaceCommandAdminsRoute: typeof SpaceCommandAdminsRoute
   SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
   SpaceCommandMapRoute: typeof SpaceCommandMapRoute
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
@@ -459,6 +479,7 @@ interface SpaceCommandRouteRouteChildren {
 }
 
 const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
+  SpaceCommandAdminsRoute: SpaceCommandAdminsRoute,
   SpaceCommandFaqRoute: SpaceCommandFaqRoute,
   SpaceCommandMapRoute: SpaceCommandMapRoute,
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
