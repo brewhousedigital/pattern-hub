@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
 import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
@@ -67,6 +67,11 @@ const SidebarLinks: SidebarLinkType[] = [
 
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
+
+  const location = useLocation();
+  const thisRestriction = SidebarLinks.find((link) => link.href === location.pathname);
+
+  const canViewPage = checkAccess(thisRestriction?.view || '');
 
   const theme = useTheme();
   const [open, setOpen] = React.useState(true);
@@ -163,7 +168,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
       <Main open={open}>
         <DrawerHeader />
 
-        {props.children}
+        {canViewPage ? <>{props.children}</> : <>You do not have access to this page</>}
       </Main>
     </Box>
   );
