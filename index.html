@@ -13,6 +13,13 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <form name="contact" data-netlify="true" hidden netlify-honeypot="bot-field">
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <textarea name="message"></textarea>
+    </form>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

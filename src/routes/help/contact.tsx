@@ -105,12 +105,7 @@ function RouteComponent() {
           Have a question or feedback? Fill out the form below and we'll get back to you.
         </Typography>
 
-        {/* Hidden form for Netlify's build-time detection */}
-        <form name="contact" data-netlify="true" hidden>
-          <input type="text" name="name" />
-          <input type="email" name="email" />
-          <textarea name="message" />
-        </form>
+        {/* The hidden netlify form is in the index.html file */}
 
         {formState === 'success' ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
