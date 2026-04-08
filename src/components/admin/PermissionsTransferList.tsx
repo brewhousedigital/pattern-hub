@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { type TypeLevelsAdmin, EnumLevelsAdmin } from '@/functions/database/authentication';
+import { type TypeLevelsAdmin, EnumLevelsAdmin, type TypeAuthData } from '@/functions/database/authentication';
+import { useRefreshAdminAuth } from '@/data/auth-data';
+import { useQueryAdminUsersByPagination, useMutationUpdateAdminUser } from '@/functions/database/users_admin';
 
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -21,6 +23,7 @@ import {
   Chip,
   Typography,
 } from '@mui/material';
+import { enqueueSnackbar } from 'notistack';
 
 const ALL_PERMISSIONS = Object.values(EnumLevelsAdmin);
 
@@ -48,7 +51,7 @@ function union<T>(a: T[], b: T[]): T[] {
 function parsePermission(p: TypeLevelsAdmin) {
   const lastUnderscore = p.lastIndexOf('_');
   return {
-    resource: p.slice(0, lastUnderscore),
+    resource: p.slice(0, lastUnderscore)?.toLowerCase(),
     action: p.slice(lastUnderscore + 1),
   };
 }
@@ -69,13 +72,20 @@ function PermissionLabel({ perm }: { perm: TypeLevelsAdmin }) {
 
 interface PermissionsTransferListProps {
   /** Permissions already assigned to the user (from `level` column) */
-  assignedPermissions: TypeLevelsAdmin[];
+  userData: TypeAuthData;
 }
 
-export const PermissionsTransferList = ({ assignedPermissions }: PermissionsTransferListProps) => {
+export const PermissionsTransferList = (props: PermissionsTransferListProps) => {
   const [checked, setChecked] = React.useState<TypeLevelsAdmin[]>([]);
 
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const { refetch } = useQueryAdminUsersByPagination(1);
+
+  const saveAdminUser = useMutationUpdateAdminUser();
+  const { handleRefresh } = useRefreshAdminAuth();
+
+  const assignedPermissions = props.userData?.level || [];
 
   // Left = all permissions NOT yet assigned; Right = currently assigned
   const [left, setLeft] = React.useState<TypeLevelsAdmin[]>(not(ALL_PERMISSIONS, assignedPermissions));
@@ -116,8 +126,22 @@ export const PermissionsTransferList = ({ assignedPermissions }: PermissionsTran
     setChecked(not(checked, rightChecked));
   };
 
-  const handleSave = () => {
-    //saveAdminUser({ level: right });
+  const handleSave = async () => {
+    setIsLoading(true);
+
+    try {
+      const id = props.userData.id;
+
+      await saveAdminUser.mutateAsync({ id: id, level: right });
+
+      await refetch();
+
+      await handleRefresh();
+    } catch (error) {
+      enqueueSnackbar('Unable to save the permissions. Give it a few minutes and try again.', { variant: 'error' });
+    }
+
+    setIsLoading(false);
   };
 
   const customList = (title: string, items: TypeLevelsAdmin[]) => (

@@ -141,7 +141,7 @@ const EditPermissionsModal = (props: EditPermissionsModalProps) => {
         <DialogTitle id="permissions-dialog-title">Editing: {props.data.name}</DialogTitle>
 
         <DialogContent>
-          <PermissionsTransferList assignedPermissions={props.data.level || []} />
+          <PermissionsTransferList userData={props.data} />
         </DialogContent>
       </Dialog>
     </>

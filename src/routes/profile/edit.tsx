@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { PRIMARY_COLOR, SECONDARY_COLOR } from '@/data/constants';
-import { useMutationAuthGetUser, useMutationAuthUpdateUser } from '@/functions/database/authentication';
+import { useMutationAuthUpdateUser } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { useRefreshAuth } from '@/data/auth-data';
 
 import { styled, alpha } from '@mui/material/styles';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
@@ -55,7 +56,8 @@ function RouteComponent() {
 
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const getUserData = useMutationAuthGetUser();
+  const { handleRefresh } = useRefreshAuth();
+
   const updateUserData = useMutationAuthUpdateUser();
 
   useEffect(() => {
@@ -110,8 +112,7 @@ function RouteComponent() {
         site_color_secondary: form.site_color_secondary,
       });
 
-      const userData = await getUserData.mutateAsync({ userId: authData?.id || '' });
-      setAuthData(userData);
+      await handleRefresh();
 
       enqueueSnackbar('Successfully updated your profile!', { variant: 'success' });
 

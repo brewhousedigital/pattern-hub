@@ -104,7 +104,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           </IconButton>
 
           <Typography variant="h6" noWrap component="h1">
-            Pattern Archive - Admin (SUPER)
+            Pattern Archive - Admin
           </Typography>
         </Toolbar>
       </AppBar>
@@ -139,7 +139,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
             const isDivider = link.label === 'divider';
 
             // Check the database if the user has the right permission
-            const hasAccess = checkAccess(link?.view || '');
+            const hasAccess = link?.view ? checkAccess(link.view) : false;
 
             if (isDivider) {
               return (

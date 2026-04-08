@@ -1,11 +1,8 @@
 import React from 'react';
 import { atom, useAtom } from 'jotai';
 import { authRefreshAdminSession, type TypeAuthData } from '@/functions/database/authentication';
-import {
-  authRefreshSession,
-  useMutationAuthGetUser,
-  useMutationAuthGetAdmin,
-} from '@/functions/database/authentication';
+import { authRefreshSession } from '@/functions/database/authentication';
+import { pocketbase } from '@/functions/database/authentication-setup.ts';
 
 const globalAuthData = atom<TypeAuthData | null>(null);
 
@@ -23,12 +20,11 @@ export const useRefreshAuth = () => {
   const [isLoading, setIsLoading] = React.useState(true);
 
   const { setAuthData } = useGlobalAuthData();
-  const getUser = useMutationAuthGetUser();
 
   const handleRefresh = async () => {
     try {
-      const refreshUserData = await authRefreshSession();
-      const userData = await getUser.mutateAsync({ userId: refreshUserData.record.id });
+      await authRefreshSession();
+      const userData = pocketbase.authStore.record;
 
       setAuthData(userData);
     } catch (error) {
@@ -54,13 +50,12 @@ export const useRefreshAdminAuth = () => {
 
   const [isAdmin, setIsAdmin] = React.useState(false);
 
-  const { authData, setAuthData } = useGlobalAuthData();
-  const getUser = useMutationAuthGetAdmin();
+  const { setAuthData } = useGlobalAuthData();
 
   const handleRefresh = async () => {
     try {
-      const refreshUserData = await authRefreshAdminSession();
-      const userData = await getUser.mutateAsync({ userId: refreshUserData.record.id });
+      await authRefreshAdminSession();
+      const userData = pocketbase.authStore.record;
 
       setIsAdmin(true);
       setAuthData(userData);
