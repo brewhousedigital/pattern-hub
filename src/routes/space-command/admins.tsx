@@ -290,7 +290,7 @@ const DeleteAdminModel = (props: EditPermissionsModalProps) => {
   return (
     <>
       <Button startIcon={<CloseRoundedIcon />} color="error" onClick={handleClickOpen}>
-        Block
+        Delete
       </Button>
 
       <Dialog open={open} maxWidth="sm" fullWidth onClose={handleClose} aria-labelledby="delete-dialog-title">
