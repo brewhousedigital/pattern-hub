@@ -281,7 +281,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         line_width: lineWidth && lineWidth !== 'undefined' ? lineWidth : '0',
         design_width: designWidth && designWidth !== 'undefined' ? designWidth : '0',
         design_height: designHeight && designHeight !== 'undefined' ? designHeight : '0',
-        tags: filteredTags || [],
+        tags: filteredTags?.sort() || [],
         authors: filteredAuthors || [],
         author_manual: filteredManualAuthors || [],
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
