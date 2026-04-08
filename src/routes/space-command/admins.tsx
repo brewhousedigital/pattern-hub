@@ -1,16 +1,24 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo.ts';
-import { useQueryAdminUsersByPagination } from '@/functions/database/users_admin';
+import {
+  useMutationCreateAdminUser,
+  useMutationResetAdminUser,
+  useQueryAdminUsersByPagination,
+  useMutationDeleteAdminUser,
+} from '@/functions/database/users_admin';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import LocalActivityRoundedIcon from '@mui/icons-material/LocalActivityRounded';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { PermissionsTransferList } from '@/components/admin/PermissionsTransferList';
+import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer.tsx';
 
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { Box, Button, IconButton, Stack, Dialog, DialogContent, DialogTitle, DialogActions } from '@mui/material';
+import { Box, Button, Stack, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/admins')({
   component: RouteComponent,
@@ -72,9 +80,7 @@ function RouteComponent() {
         return (
           <Stack direction="row" spacing={2}>
             <EditPermissionsModal data={params.row} />
-            <Button startIcon={<CloseRoundedIcon />} color="error">
-              Block
-            </Button>
+            <DeleteAdminModel data={params.row} />
           </Stack>
         );
       },
@@ -82,36 +88,44 @@ function RouteComponent() {
   ];
 
   return (
-    <Box sx={{ height: 400, width: '100%' }}>
-      <DataGrid
-        autosizeOnMount
-        loading={isPending || isFetching}
-        rows={data?.items || []}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 25,
-            },
-          },
-        }}
-        pageSizeOptions={[25]}
-        checkboxSelection={false}
-        disableRowSelectionOnClick
-        pagination
-        rowCount={data?.totalItems || 0}
-        sortingMode="server"
-        filterMode="server"
-        paginationMode="server"
-        onPaginationModelChange={(newPaginationModel) => {
-          // fetch data from server
-          setPageNumber({
-            ...newPaginationModel,
-            // Pocketbase starts at page 1, not 0, so we have to manually increment
-            page: newPaginationModel.page + 1,
-          });
-        }}
+    <Box>
+      <AdminHeaderContainer
+        title="Admin Management"
+        subtitle="With great power comes great responsibility"
+        actionNode={<AddAdminModel />}
       />
+
+      <Box sx={{ height: 400, width: '100%' }}>
+        <DataGrid
+          autosizeOnMount
+          loading={isPending || isFetching}
+          rows={data?.items || []}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 100,
+              },
+            },
+          }}
+          pageSizeOptions={[100]}
+          checkboxSelection={false}
+          disableRowSelectionOnClick
+          pagination
+          rowCount={data?.totalItems || 0}
+          sortingMode="server"
+          filterMode="server"
+          paginationMode="server"
+          onPaginationModelChange={(newPaginationModel) => {
+            // fetch data from server
+            setPageNumber({
+              ...newPaginationModel,
+              // Pocketbase starts at page 1, not 0, so we have to manually increment
+              page: newPaginationModel.page + 1,
+            });
+          }}
+        />
+      </Box>
     </Box>
   );
 }
@@ -141,7 +155,153 @@ const EditPermissionsModal = (props: EditPermissionsModalProps) => {
         <DialogTitle id="permissions-dialog-title">Editing: {props.data.name}</DialogTitle>
 
         <DialogContent>
-          <PermissionsTransferList userData={props.data} />
+          <PermissionsTransferList userData={props.data} handleCloseModal={handleClose} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const AddAdminModel = () => {
+  const { refetch } = useQueryAdminUsersByPagination(1);
+
+  const registerNewUser = useMutationCreateAdminUser();
+  const resetAdminPassword = useMutationResetAdminUser();
+
+  const [open, setOpen] = React.useState(false);
+
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const [name, setName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleSubmit = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+
+    try {
+      const tempPassword = crypto.randomUUID();
+
+      await registerNewUser.mutateAsync({
+        name: name,
+        email: email,
+        emailVisibility: true,
+        password: tempPassword,
+        passwordConfirm: tempPassword,
+        level: [],
+      });
+
+      await resetAdminPassword.mutateAsync(email);
+
+      await refetch();
+
+      handleClose();
+
+      enqueueSnackbar(
+        `Created new admin for: '${email}'. They'll receive an email to reset their password and set up their account.`,
+        { variant: 'success' },
+      );
+
+      setTimeout(() => {
+        setName('');
+        setEmail('');
+      }, 1000);
+    } catch (error: any) {
+      enqueueSnackbar(`Error creating admin: ${error.message}`, { variant: 'error' });
+    }
+  };
+
+  return (
+    <>
+      <Button startIcon={<AddRoundedIcon />} variant="contained" onClick={handleClickOpen}>
+        Create Admin
+      </Button>
+
+      <Dialog open={open} maxWidth="sm" fullWidth onClose={handleClose} aria-labelledby="add-dialog-title">
+        <DialogTitle id="add-dialog-title">Create a new Admin</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} component="form" onSubmit={handleSubmit}>
+            <TextField variant="filled" label="Unique Name" value={name} onChange={(e) => setName(e.target.value)} />
+
+            <TextField
+              variant="filled"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <Button loading={isLoading} type="submit">
+              Save
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const DeleteAdminModel = (props: EditPermissionsModalProps) => {
+  const { refetch } = useQueryAdminUsersByPagination(1);
+
+  const deleteAdmin = useMutationDeleteAdminUser();
+
+  const [open, setOpen] = React.useState(false);
+
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleDelete = async () => {
+    setIsLoading(true);
+
+    try {
+      await deleteAdmin.mutateAsync(props.data.id);
+
+      await refetch();
+
+      handleClose();
+
+      enqueueSnackbar(`Deleted '${props.data.name}'. They will no longer be able to log in.`, { variant: 'success' });
+    } catch (error: any) {
+      enqueueSnackbar(
+        `Error deleting admin: '${error.message}'. Probably not good. Try again in a minute or two or contact Axin.`,
+        { variant: 'error' },
+      );
+    }
+
+    setIsLoading(false);
+  };
+
+  return (
+    <>
+      <Button startIcon={<CloseRoundedIcon />} color="error" onClick={handleClickOpen}>
+        Block
+      </Button>
+
+      <Dialog open={open} maxWidth="sm" fullWidth onClose={handleClose} aria-labelledby="delete-dialog-title">
+        <DialogTitle id="delete-dialog-title">Delete {props.data.name}?</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} component="form">
+            <Button loading={isLoading} type="submit" variant="contained" color="error" onClick={handleDelete}>
+              Are you sure you want to delete them?
+            </Button>
+          </Stack>
         </DialogContent>
       </Dialog>
     </>

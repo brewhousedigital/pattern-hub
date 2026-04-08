@@ -6,8 +6,12 @@ import { useMutationAuthUpdateUser } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useRefreshAuth } from '@/data/auth-data';
+import { useMutationValidateUsername } from '@/functions/database/users';
+import { generateSEO } from '@/functions/utilities/seo.ts';
 
 import { styled, alpha } from '@mui/material/styles';
+import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import NotesOutlinedIcon from '@mui/icons-material/NotesOutlined';
 import TagOutlinedIcon from '@mui/icons-material/TagOutlined';
@@ -27,8 +31,9 @@ import {
   Divider,
   InputAdornment,
   Skeleton,
+  Grid,
+  Stack,
 } from '@mui/material';
-import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/profile/edit')({
   component: RouteComponent,
@@ -41,6 +46,8 @@ function RouteComponent() {
   const { authData, setAuthData } = useGlobalAuthData();
 
   const navigate = useNavigate();
+
+  const verifyUsername = useMutationValidateUsername();
 
   const [form, setForm] = useState<ProfileFormData>({
     username: '',
@@ -59,6 +66,8 @@ function RouteComponent() {
   const { handleRefresh } = useRefreshAuth();
 
   const updateUserData = useMutationAuthUpdateUser();
+
+  const [isUserNameAvailable, setIsUserNameAvailable] = React.useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -95,12 +104,32 @@ function RouteComponent() {
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
+  const handleUsernameVerification = async () => {
+    if (form.username.trim() === authData?.name) {
+      return true;
+    }
+
+    try {
+      await verifyUsername.mutateAsync(form?.username);
+      setIsUserNameAvailable(false);
+      return false;
+    } catch (error: any) {
+      setIsUserNameAvailable(true);
+      return true;
+    }
+  };
+
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setSaveError(null);
 
     setSaving(true);
+
+    // Check the username verification first
+    const validUsername = handleUsernameVerification();
+
+    if (!validUsername) return;
 
     try {
       await updateUserData.mutateAsync({
@@ -144,15 +173,17 @@ function RouteComponent() {
           {loading ? (
             <EditProfileSkeleton />
           ) : (
-            <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Box component="form" onSubmit={handleSubmit}>
               <SectionCard elevation={0}>
                 <TextField
                   fullWidth
+                  required
                   variant="filled"
                   label="Username"
                   value={form.username}
                   onChange={handleChange('username')}
                   error={!!errors.username}
+                  helperText="You can only use letters, numbers, and underscores."
                   slotProps={{
                     input: {
                       endAdornment: (
@@ -165,9 +196,39 @@ function RouteComponent() {
                     },
                     htmlInput: {
                       maxLength: 32,
+                      pattern: '^[a-zA-Z0-9_]+$',
                     },
                   }}
                 />
+
+                <Grid container sx={{ alignItems: 'center', pt: 2 }}>
+                  <Grid size={{ xs: 6 }}>
+                    {isUserNameAvailable === true && (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <CheckCircleOutlineRoundedIcon color="success" />
+                        <Typography color="success">This name is available</Typography>
+                      </Stack>
+                    )}
+
+                    {isUserNameAvailable === false && (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <ReportRoundedIcon color="error" />
+                        <Typography color="error">This name is not available</Typography>
+                      </Stack>
+                    )}
+                  </Grid>
+
+                  <Grid size={{ xs: 6 }} sx={{ textAlign: 'right' }}>
+                    <Button
+                      variant="outlined"
+                      loading={verifyUsername.isPending}
+                      onClick={handleUsernameVerification}
+                      type="button"
+                    >
+                      Verify Username
+                    </Button>
+                  </Grid>
+                </Grid>
               </SectionCard>
 
               <SectionCard elevation={0}>
@@ -204,8 +265,6 @@ function RouteComponent() {
                     },
                   }}
                 />
-
-                <Typography></Typography>
               </SectionCard>
 
               <SectionCard elevation={0}>

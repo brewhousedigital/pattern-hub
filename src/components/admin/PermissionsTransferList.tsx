@@ -73,6 +73,7 @@ function PermissionLabel({ perm }: { perm: TypeLevelsAdmin }) {
 interface PermissionsTransferListProps {
   /** Permissions already assigned to the user (from `level` column) */
   userData: TypeAuthData;
+  handleCloseModal: () => void;
 }
 
 export const PermissionsTransferList = (props: PermissionsTransferListProps) => {
@@ -137,6 +138,10 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
       await refetch();
 
       await handleRefresh();
+
+      props.handleCloseModal();
+
+      enqueueSnackbar(`Permissions saved. Have the user refresh and they'll be good to go.`, { variant: 'error' });
     } catch (error) {
       enqueueSnackbar('Unable to save the permissions. Give it a few minutes and try again.', { variant: 'error' });
     }

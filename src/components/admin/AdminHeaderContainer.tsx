@@ -9,6 +9,7 @@ type TypeHeaderProps = {
   actionText?: string;
   actionIcon?: React.ReactNode;
   disabled?: boolean;
+  actionNode?: React.ReactNode;
 };
 
 export const AdminHeaderContainer = (props: TypeHeaderProps) => {
@@ -28,6 +29,8 @@ export const AdminHeaderContainer = (props: TypeHeaderProps) => {
           </Typography>
         )}
       </Box>
+
+      {props.actionNode && props.actionNode}
 
       {props.action && (
         <Button

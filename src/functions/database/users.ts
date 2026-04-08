@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
@@ -22,5 +22,15 @@ export const useQueryGetUserById = (id?: string) => {
       return await pocketbase.collection('users').getOne(id || '');
     },
     enabled: !!id,
+  });
+};
+
+export const useMutationValidateUsername = () => {
+  return useMutation({
+    mutationFn: async (name: string): Promise<TypePaginationDatabaseResponse<TypeAuthData>> => {
+      return await pocketbase.collection('users').getFirstListItem(`name="${name}"`, {
+        fields: 'name',
+      });
+    },
   });
 };
