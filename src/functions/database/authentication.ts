@@ -6,49 +6,75 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 // ["PATTERN_AR", "TAG_AR", "FAQ_AR", "MAP_AR", "USERS_AR", "COMPLAINTS_AR"]
 
 // Normal Admin
-// ["PATTERN_AC", "PATTERN_AR", "PATTERN_AU", "PATTERN_AD", "TAG_AC", "TAG_AR", "TAG_AU", "TAG_AD", "FAQ_AC", "FAQ_AR", "FAQ_AU", "FAQ_AD", "MAP_AC", "MAP_AR", "MAP_AU", "MAP_AD", "COMPLAINTS_AC", "COMPLAINTS_AR", "COMPLAINTS_AU", "COMPLAINTS_AD", "USERS_AC", "USERS_AR", "USERS_AU", "USERS_AD"]
+// ["PATTERN_AC", "PATTERN_AR", "PATTERN_AU", "PATTERN_AD", "TAG_AC", "TAG_AR", "TAG_AU", "TAG_AD", "FAQ_AC", "FAQ_AR", "FAQ_AU", "FAQ_AD", "MAP_AC", "MAP_AR", "MAP_AU", "MAP_AD", "COMPLAINTS_AC", "COMPLAINTS_AR", "COMPLAINTS_AU", "COMPLAINTS_AD", "USERS_AC", "USERS_AR", "USERS_AU", "USERS_AD", "ADMINS_AC", "ADMINS_AR", "ADMINS_AU", "ADMINS_AD"]
 
 // Super Admin
 // ["ADMINS_AC", "ADMINS_AR", "ADMINS_AU", "ADMINS_AD"]
 
-const LEVELS_ADMIN_PATTERN = {
-  PATTERN_AC: 'PATTERN_AC',
-  PATTERN_AR: 'PATTERN_AR',
-  PATTERN_AU: 'PATTERN_AU',
-  PATTERN_AD: 'PATTERN_AD',
-};
-const LEVELS_ADMIN_TAGS = { TAG_AC: 'TAG_AC', TAG_AR: 'TAG_AR', TAG_AU: 'TAG_AU', TAG_AD: 'TAG_AD' };
-const LEVELS_ADMIN_FAQ = { FAQ_AC: 'FAQ_AC', FAQ_AR: 'FAQ_AR', FAQ_AU: 'FAQ_AU', FAQ_AD: 'FAQ_AD' };
-const LEVELS_ADMIN_MAP = { MAP_AC: 'MAP_AC', MAP_AR: 'MAP_AR', MAP_AU: 'MAP_AU', MAP_AD: 'MAP_AD' };
-const LEVELS_ADMIN_USERS = { USERS_AC: 'USERS_AC', USERS_AR: 'USERS_AR', USERS_AU: 'USERS_AU', USERS_AD: 'USERS_AD' };
-const LEVELS_ADMIN_ADMINS = {
-  ADMINS_AC: 'ADMINS_AC',
-  ADMINS_AR: 'ADMINS_AR',
-  ADMINS_AU: 'ADMINS_AU',
-  ADMINS_AD: 'ADMINS_AD',
-};
-const LEVELS_ADMIN_COMPLAINTS = {
-  COMPLAINTS_AC: 'COMPLAINTS_AC',
-  COMPLAINTS_AR: 'COMPLAINTS_AR',
-  COMPLAINTS_AU: 'COMPLAINTS_AU',
-  COMPLAINTS_AD: 'COMPLAINTS_AD',
-};
-
-export const EnumLevelsAdmin = {
-  ...LEVELS_ADMIN_PATTERN,
-  ...LEVELS_ADMIN_TAGS,
-  ...LEVELS_ADMIN_FAQ,
-  ...LEVELS_ADMIN_MAP,
-  ...LEVELS_ADMIN_COMPLAINTS,
-  ...LEVELS_ADMIN_ADMINS,
-  ...LEVELS_ADMIN_USERS,
-} as const;
+export type TypeLevelsAdmin =
+  | 'PATTERN_AC'
+  | 'PATTERN_AR'
+  | 'PATTERN_AU'
+  | 'PATTERN_AD'
+  | 'TAG_AC'
+  | 'TAG_AR'
+  | 'TAG_AU'
+  | 'TAG_AD'
+  | 'FAQ_AC'
+  | 'FAQ_AR'
+  | 'FAQ_AU'
+  | 'FAQ_AD'
+  | 'MAP_AC'
+  | 'MAP_AR'
+  | 'MAP_AU'
+  | 'MAP_AD'
+  | 'COMPLAINTS_AC'
+  | 'COMPLAINTS_AR'
+  | 'COMPLAINTS_AU'
+  | 'COMPLAINTS_AD'
+  | 'USERS_AC'
+  | 'USERS_AR'
+  | 'USERS_AU'
+  | 'USERS_AD'
+  | 'ADMINS_AC'
+  | 'ADMINS_AR'
+  | 'ADMINS_AU'
+  | 'ADMINS_AD';
 
 // NAME_TYPE_CRUD
 // A - Admin
 // U - User
 // Create Read Update Delete
-export type TypeLevelsAdmin = (typeof EnumLevelsAdmin)[keyof typeof EnumLevelsAdmin];
+export const EnumLevelsAdmin = {
+  PATTERN_AC: 'PATTERN_AC',
+  PATTERN_AR: 'PATTERN_AR',
+  PATTERN_AU: 'PATTERN_AU',
+  PATTERN_AD: 'PATTERN_AD',
+  TAG_AC: 'TAG_AC',
+  TAG_AR: 'TAG_AR',
+  TAG_AU: 'TAG_AU',
+  TAG_AD: 'TAG_AD',
+  FAQ_AC: 'FAQ_AC',
+  FAQ_AR: 'FAQ_AR',
+  FAQ_AU: 'FAQ_AU',
+  FAQ_AD: 'FAQ_AD',
+  MAP_AC: 'MAP_AC',
+  MAP_AR: 'MAP_AR',
+  MAP_AU: 'MAP_AU',
+  MAP_AD: 'MAP_AD',
+  USERS_AC: 'USERS_AC',
+  USERS_AR: 'USERS_AR',
+  USERS_AU: 'USERS_AU',
+  USERS_AD: 'USERS_AD',
+  ADMINS_AC: 'ADMINS_AC',
+  ADMINS_AR: 'ADMINS_AR',
+  ADMINS_AU: 'ADMINS_AU',
+  ADMINS_AD: 'ADMINS_AD',
+  COMPLAINTS_AC: 'COMPLAINTS_AC',
+  COMPLAINTS_AR: 'COMPLAINTS_AR',
+  COMPLAINTS_AU: 'COMPLAINTS_AU',
+  COMPLAINTS_AD: 'COMPLAINTS_AD',
+} as const;
 
 // This is the data from the pocketbase user and admin table
 export type TypeAuthData = {

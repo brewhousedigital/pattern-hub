@@ -2,6 +2,7 @@ import React from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useMutationAuthAdminSignIn, useMutationAuthGetAdmin } from '@/functions/database/authentication';
+import { pocketbase } from '@/functions/database/authentication-setup';
 
 import { Box, Button, TextField, Stack, Typography } from '@mui/material';
 
@@ -24,8 +25,7 @@ export const AdminLoginView = () => {
     try {
       const signInData = await signIn.mutateAsync({ email, password });
 
-      // The sign in function doesn't automatically expand data points so we need to call it again to get the full record
-      const userData = await getUser.mutateAsync({ userId: signInData.record.id });
+      const userData = pocketbase.authStore.record;
 
       setAuthData(userData);
 

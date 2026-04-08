@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
-import {
-  useMutationAuthCreateUser,
-  useMutationAuthGetUser,
-  useMutationAuthSignIn,
-} from '@/functions/database/authentication';
+import { pocketbase } from '@/functions/database/authentication-setup';
+import { useMutationAuthCreateUser, useMutationAuthSignIn } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { generateSEO } from '@/functions/utilities/seo';
+import { enqueueSnackbar } from 'notistack';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -24,12 +22,10 @@ import {
   InputAdornment,
   IconButton,
   Link as MuiLink,
-  Alert,
   CircularProgress,
   LinearProgress,
   Tooltip,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
@@ -59,9 +55,8 @@ function RouteComponent() {
 
   const createUser = useMutationAuthCreateUser();
   const signIn = useMutationAuthSignIn();
-  const getUser = useMutationAuthGetUser();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!isValid) return;
@@ -72,10 +67,9 @@ function RouteComponent() {
       await createUser.mutateAsync({ email, password });
 
       // Sign in the newly created user so we have a valid token
-      const signInData = await signIn.mutateAsync({ email, password });
+      await signIn.mutateAsync({ email, password });
 
-      // The sign in function doesn't automatically expand data points so we need to call it again to get the full record
-      const userData = await getUser.mutateAsync({ userId: signInData.record.id });
+      const userData = pocketbase.authStore.record;
 
       setAuthData(userData);
 

@@ -43,9 +43,6 @@ import {
 } from '@mui/x-data-grid';
 
 export const AdminPatternTable = () => {
-  const [rows, setRows] = React.useState<TypePatternResponse[]>([]);
-  const [totalRows, setTotalRows] = React.useState(0);
-
   const { paginationModel, setPaginationModel } = useGlobalAdminPagination();
 
   const { setFilterModel, searchResult } = useGlobalAdminFilter();
@@ -55,15 +52,6 @@ export const AdminPatternTable = () => {
     debouncedSearchTerm,
     paginationModel.page,
   );
-
-  React.useEffect(() => {
-    if (data) {
-      setRows(data.items);
-      setTotalRows(data.totalItems);
-    } else {
-      setRows([]);
-    }
-  }, [data]);
 
   const columns: GridColDef<TypePatternResponse>[] = [
     { field: 'id', headerName: 'ID', width: 90, sortable: false, filterable: false },
@@ -249,7 +237,7 @@ export const AdminPatternTable = () => {
     <Box sx={{ height: 'calc(100svh - 150px)', width: '100%' }}>
       <DataGrid
         loading={isPending || isFetching}
-        rows={rows ?? []}
+        rows={data?.items ?? []}
         columns={columns}
         slots={{ toolbar: CustomToolbar }}
         showToolbar
@@ -257,7 +245,7 @@ export const AdminPatternTable = () => {
         checkboxSelection={false}
         disableRowSelectionOnClick
         pagination
-        rowCount={totalRows}
+        rowCount={data?.totalItems || 0}
         sortingMode="server"
         filterMode="server"
         paginationMode="server"
@@ -265,7 +253,7 @@ export const AdminPatternTable = () => {
           // fetch data from server
           setPaginationModel({
             ...newPaginationModel,
-            // Pocktbase starts at page 1, not 0, so we have to manually increment
+            // Pocketbase starts at page 1, not 0, so we have to manually increment
             page: newPaginationModel.page + 1,
           });
         }}

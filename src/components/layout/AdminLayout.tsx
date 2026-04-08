@@ -104,7 +104,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           </IconButton>
 
           <Typography variant="h6" noWrap component="h1">
-            Pattern Archive - Admin
+            Pattern Archive - Admin (SUPER)
           </Typography>
         </Toolbar>
       </AppBar>
@@ -156,6 +156,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
                     <ListItemIcon sx={{ color: location.pathname === link.href ? 'primary.main' : '' }}>
                       {link.icon}
                     </ListItemIcon>
+
                     <ListItemText
                       sx={{
                         color: location.pathname === link.href ? 'primary.main' : '',
@@ -168,7 +169,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
               );
             }
 
-            return <></>;
+            return <React.Fragment key={`sidebar-link` + index}></React.Fragment>;
           })}
         </List>
       </Drawer>

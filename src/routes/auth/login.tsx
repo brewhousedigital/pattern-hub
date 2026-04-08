@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useMutationAuthSignIn, useMutationAuthGetUser } from '@/functions/database/authentication';
+import { useMutationAuthSignIn } from '@/functions/database/authentication';
 import { enqueueSnackbar } from 'notistack';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { generateSEO } from '@/functions/utilities/seo';
+import { pocketbase } from '@/functions/database/authentication-setup';
 
 import { styled, alpha } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -32,7 +33,6 @@ export const Route = createFileRoute('/auth/login')({
 
 function RouteComponent() {
   const signIn = useMutationAuthSignIn();
-  const getUser = useMutationAuthGetUser();
 
   const navigate = useNavigate();
 
@@ -49,10 +49,9 @@ function RouteComponent() {
     setLoading(true);
 
     try {
-      const signInData = await signIn.mutateAsync({ email, password });
+      await signIn.mutateAsync({ email, password });
 
-      // The sign in function doesn't automatically expand data points so we need to call it again to get the full record
-      const userData = await getUser.mutateAsync({ userId: signInData.record.id });
+      const userData = pocketbase.authStore.record;
 
       setAuthData(userData);
 
