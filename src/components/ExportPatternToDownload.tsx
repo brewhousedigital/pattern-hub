@@ -84,7 +84,7 @@ function scaleSvgWithFixedStrokes(svgString: string, targetWidthPx: number, targ
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
   const svgEl = doc.documentElement;
 
-  // ── 1. Determine original coordinate dimensions ──────────────────────────
+  // 1. Determine original coordinate dimensions
   let originW: number | null = null;
   let originH: number | null = null;
 
@@ -115,13 +115,13 @@ function scaleSvgWithFixedStrokes(svgString: string, targetWidthPx: number, targ
     return new XMLSerializer().serializeToString(doc);
   }
 
-  // ── 2. Compute scale factor (use width axis; assume uniform scaling) ──────
+  // 2. Compute scale factor (use width axis; assume uniform scaling)
   const scaleX = targetWidthPx / originW;
   const scaleY = targetHeightPx / originH;
   // Use the smaller axis so strokes are never thinner than intended
   const scale = Math.min(scaleX, scaleY);
 
-  // ── 3. Update root dimensions and preserve viewBox ───────────────────────
+  // 3. Update root dimensions and preserve viewBox
   svgEl.setAttribute('width', String(targetWidthPx));
   svgEl.setAttribute('height', String(targetHeightPx));
 
@@ -130,7 +130,7 @@ function scaleSvgWithFixedStrokes(svgString: string, targetWidthPx: number, targ
     svgEl.setAttribute('viewBox', `0 0 ${originW} ${originH}`);
   }
 
-  // ── 4. Rescale all stroke-width attributes ────────────────────────────────
+  // 4. Rescale all stroke-width attributes
   const allElements = doc.querySelectorAll('*');
 
   allElements.forEach((el) => {

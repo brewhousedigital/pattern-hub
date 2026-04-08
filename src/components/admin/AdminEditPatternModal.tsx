@@ -2,7 +2,7 @@ import React from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { generatePbImage, generatePbImageExternalFile } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { useQueryGetAllTags } from '@/functions/database/tags';
+import { useQueryAdminTagStats, useQueryGetAllTags } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useQueryUsersByPagination } from '@/functions/database/users';
@@ -90,6 +90,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     data: allUploadedByData,
     refetch: refetchUploadedBy,
   } = useQueryGetAllUploadedBy();*/
+
+  const { refetch: refetchTagManagementStats } = useQueryAdminTagStats();
 
   const { searchResult } = useGlobalAdminFilter();
   const { paginationModel } = useGlobalAdminPagination();
@@ -350,6 +352,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       await refetchTags();
       await refetchManualAuthors();
       //await refetchUploadedBy();
+      await refetchTagManagementStats();
       handleClose();
 
       // Make sure to clear out the modal on save

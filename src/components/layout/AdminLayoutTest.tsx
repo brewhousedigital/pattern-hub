@@ -126,8 +126,6 @@ interface Pattern {
   created: string;
 }
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
 const MOCK_STATS: StatCard[] = [
   { label: 'Total Users', value: '2,841', sub: '+48 this week', icon: <PeopleIcon />, color: '#7B9E8F', trend: '+12%' },
   {
@@ -1351,7 +1349,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'users', label: 'Users', icon: <PeopleIcon />, badge: 5 },
 ];
 
-// ─── Root Layout ──────────────────────────────────────────────────────────────
+// Root Layout
 
 const AdminPanel = () => {
   const [section, setSection] = useState<NavSection>('stats');
@@ -1370,7 +1368,7 @@ const AdminPanel = () => {
   return (
     <>
       <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default', overflow: 'hidden' }}>
-        {/* ── Sidebar ── */}
+        {/* Sidebar */}
         <Box
           sx={{
             width: sideW,
@@ -1547,7 +1545,7 @@ const AdminPanel = () => {
           </Box>
         </Box>
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Top bar */}
           <Box

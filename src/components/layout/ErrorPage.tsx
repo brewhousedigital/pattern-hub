@@ -3,7 +3,6 @@ import { Box, Typography, Button, Stack } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { useEffect, useRef } from 'react';
 
-// ── Animations ──────────────────────────────────────────────────────────────
 const shimmer = keyframes`
   0%, 100% { opacity: 0.55; filter: brightness(1); }
   50%       { opacity: 1;    filter: brightness(1.35) saturate(1.2); }
@@ -26,9 +25,9 @@ const pulse = keyframes`
   50%       { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
 `;
 
-// ── Stained-glass SVG panel ─────────────────────────────────────────────────
+// Stained-glass SVG panel
 // A hand-composed rose-window–style mosaic. Each <path> is a "glass pane"
-// with its own colour and shimmer timing.
+// with its own color and shimmer timing
 const StainedGlassPanel = () => (
   <Box
     component="svg"
@@ -63,10 +62,9 @@ const StainedGlassPanel = () => (
       </radialGradient>
     </defs>
 
-    {/* ── Background ──────────────────────────────────────────────── */}
+    {/* Background */}
     <rect width="420" height="420" fill="#0d1a0d" rx="8" />
 
-    {/* ── Outer corner fillets – deep teal ────────────────────────── */}
     {[
       'M0,0 L140,0 L80,80 L0,80 Z',
       'M280,0 L420,0 L420,80 L340,80 Z',
@@ -84,7 +82,7 @@ const StainedGlassPanel = () => (
       />
     ))}
 
-    {/* ── Outer border arch segments – forest green ───────────────── */}
+    {/* Outer border arch segments – forest green */}
     {[
       'M140,0 L280,0 L260,60 L160,60 Z',
       'M0,80 L80,80 L60,220 L0,200 Z',
@@ -105,7 +103,7 @@ const StainedGlassPanel = () => (
       />
     ))}
 
-    {/* ── Mid-ring – sage / light green ───────────────────────────── */}
+    {/* Mid-ring – sage / light green */}
     {[
       'M160,60 L260,60 L240,130 L180,130 Z',
       'M80,80 L160,60 L140,130 L80,140 Z',
@@ -129,7 +127,6 @@ const StainedGlassPanel = () => (
       />
     ))}
 
-    {/* ── Inner ring – amber / gold accents ───────────────────────── */}
     {[
       'M140,130 L180,130 L170,190 L130,200 Z',
       'M240,130 L280,130 L290,200 L250,190 Z',

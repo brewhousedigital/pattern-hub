@@ -201,7 +201,6 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
 
       pdf.addImage(fullPng, 'PNG', imgX, imgY, svgWIn, svgHIn);
 
-      // ── Margin / crop marks ──
       const cropLen = 0.15;
       const cropGap = 0.05;
       pdf.setDrawColor(180, 160, 110);
@@ -222,7 +221,7 @@ async function buildTiledPdf(svgString: string, patternName: string, svgWIn: num
       pdf.line(trX + cropGap, blY, trX + cropGap + cropLen, blY);
       pdf.line(trX, blY + cropGap, trX, blY + cropGap + cropLen);
 
-      // ── Tile label  e.g. "Row 1 / Col 2  (A2)" ──
+      // Tile label  e.g. "Row 1 / Col 2  (A2)"
       const colLabel = String.fromCharCode(65 + col); // A, B, C…
       const label = `${colLabel}${row + 1}  ·  ${patternName}`;
       pdf.setFont('helvetica', 'normal');
