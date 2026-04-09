@@ -16,6 +16,8 @@ export type UsePatternSearchReturn = {
   tokens: Token[];
   patternId: string | undefined;
   filter: string;
+  pageNumber: number;
+  setPageNumber: (pageNumber: number) => void;
 
   // Token mutations
   addRawInput: (raw: string) => void;
@@ -49,7 +51,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   const filter = useMemo(() => buildPocketBaseFilter(tokens), [tokens]);
 
-  const { patternId } = search;
+  const { patternId, pageNumber } = search;
 
   /**
    * Central navigate helper. All mutations go through here so patternId is
@@ -61,9 +63,14 @@ export function usePatternSearch(): UsePatternSearchReturn {
     }).then();
   }
 
+  function setPageNumber(pageNumber: number) {
+    updateSearch({ pageNumber });
+  }
+
   function updateTokens(nextTokens: Token[]) {
     const { q, tags, authors, id, title, description } = searchFromTokens(nextTokens);
-    updateSearch({ q, tags, authors, id, title, description });
+    // When tokens change, set the pageNumber back to 1
+    updateSearch({ q, tags, authors, id, title, description, pageNumber: 1 });
   }
 
   /**
@@ -203,6 +210,8 @@ export function usePatternSearch(): UsePatternSearchReturn {
     tokens,
     patternId,
     filter,
+    pageNumber,
+    setPageNumber,
     addRawInput,
     addTag,
     addAuthor,

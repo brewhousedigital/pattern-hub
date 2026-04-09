@@ -1,7 +1,6 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { useGlobalSearchPagination } from '@/data/search';
 import { MainPageContent } from '@/components/MainPageContent';
 import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -29,11 +28,8 @@ function RouteComponent() {
   const theme = useTheme();
   const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
 
-  const { patternId } = usePatternSearch();
+  const { patternId, pageNumber, setPageNumber } = usePatternSearch();
   const { handleOpenView, isViewOpen } = useGlobalIsViewOpen();
-
-  // Pagination
-  const { page, setPage } = useGlobalSearchPagination();
 
   // Get the pattern data
   const { isFetching, isError, data } = useQueryGetAllPatternsByPagination();
@@ -70,7 +66,7 @@ function RouteComponent() {
           <Box sx={mainContentStyles}>
             <MainPageContent />
 
-            <PaginationBox data={data} value={page} setter={setPage} />
+            <PaginationBox data={data} value={pageNumber} setter={setPageNumber} />
           </Box>
         </Box>
 

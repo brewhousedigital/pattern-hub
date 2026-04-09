@@ -47,6 +47,7 @@ export const patternSearchSchema = z.object({
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
   patternId: z.string().optional(),
+  pageNumber: z.number().int().min(1).default(1),
 });
 
 export type PatternSearch = z.infer<typeof patternSearchSchema>;
@@ -103,7 +104,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
 /**
  * Reconstruct the three URL params from a flat token list.
  */
-export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternId'> {
+export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternId' | 'pageNumber'> {
   const q = tokens
     .filter((t): t is TextToken => t.type === 'text')
     .map((t) => (t.exclude ? `-${t.value}` : t.value))

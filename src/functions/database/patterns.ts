@@ -1,7 +1,6 @@
 import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
-import { useGlobalSearchPagination } from '@/data/search';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import type { TypeAuthData } from '@/functions/database/authentication.ts';
 
@@ -35,19 +34,18 @@ export type TypePatternResponse = {
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
-  const { page } = useGlobalSearchPagination();
-  const { filter } = usePatternSearch();
+  const { filter, pageNumber } = usePatternSearch();
 
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', filter, page],
+    queryKey: ['useQueryGetAllPatternsByPagination', filter, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(page, 25, {
+      return await pocketbase.collection('patterns').getList(pageNumber, 5, {
         filter: filter,
         expand: 'authors',
         sort: '-created',
       });
     },
-    enabled: !!page,
+    enabled: !!pageNumber,
     placeholderData: keepPreviousData,
   });
 };
