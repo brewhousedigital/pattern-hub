@@ -11,7 +11,7 @@ export const useQueryGetUserFavoritesByPagination = (userId: string, pageNumber:
       return await pocketbase.collection('user_favorites').getList(pageNumber, 25, {
         sort: '-created',
         expand: 'pattern_id',
-        filter: `owner_id = "${userId}"`,
+        filter: `owner_id = "${userId}" && pattern_id != ''`,
       });
     },
     enabled: !!pageNumber && !!userId,

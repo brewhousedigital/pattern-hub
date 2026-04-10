@@ -117,6 +117,7 @@ const ProfileContent = (props: ProfileContentProps) => {
     data: dataFavorite,
     refetch: refetchFavorite,
   } = useQueryGetUserFavoritesByPagination(thisAuthData?.id || '', favoritePagination);
+  console.log('>>>dataFavorite', dataFavorite);
 
   const {
     isPending: isPendingMarkedDone,
@@ -489,14 +490,14 @@ const PatternGrid = (props: PatternGridProps) => {
                 <Box
                   component="img"
                   src={generatePbImage(pattern.expand.pattern_id)}
-                  alt={pattern.expand.pattern_id.name}
+                  alt={pattern?.expand?.pattern_id?.name}
                   style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                 />
               </Box>
 
               <Box sx={{ p: 1.75 }}>
                 <Typography variant="subtitle2" fontWeight={700} noWrap>
-                  {pattern.expand.pattern_id.name}
+                  {pattern?.expand?.pattern_id?.name}
                 </Typography>
 
                 {props.showCompleted && (

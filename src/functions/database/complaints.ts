@@ -45,7 +45,7 @@ export const useQueryGetComplaints = () => {
     queryKey: ['useQueryGetComplaints'],
     queryFn: async (): Promise<TypeComplaintsResponse[]> => {
       return await pocketbase.collection('complaints').getFullList({
-        filter: `reviewed = false`,
+        filter: `reviewed = false && pattern_id != ''`,
         sort: '-created',
         expand: 'pattern_id,owner_id',
       });
@@ -57,7 +57,7 @@ export const useQueryGetReviewedComplaintsByPagination = (searchTerm: string, pa
   return useQuery({
     queryKey: ['useQueryGetReviewedComplaintsByPagination', searchTerm, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeComplaintsResponse>> => {
-      let filter = `reviewed = true && spam = false`;
+      let filter = `reviewed = true && spam = false && pattern_id != ''`;
 
       if (searchTerm) {
         filter =
