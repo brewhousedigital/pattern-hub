@@ -65,7 +65,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
           }}
         >
           <Box sx={{ order: { xs: 3, lg: 1 } }}>
-            <SidebarList />
+            <Box sx={sidebarBlockStyles}>
+              <SidebarList />
+            </Box>
           </Box>
 
           <Box sx={{ order: { xs: 1, lg: 2 } }}>
@@ -247,4 +249,13 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
       </Container>
     </Box>
   );
+};
+
+const sidebarBlockStyles = {
+  height: '100%',
+  maxHeight: '100svh',
+  overflowY: 'auto',
+  position: 'sticky',
+  top: 0,
+  scrollbarWidth: 'none',
 };
