@@ -67,9 +67,6 @@ export const SidebarList = () => {
       sx={{
         minWidth: 250,
         maxWidth: isMediumSizeAndUp ? '100%' : 250,
-        maxHeight: isMediumSizeAndUp ? 'calc(100svh - 136px)' : 'calc(100svh - 50px)',
-        overflowY: 'auto',
-        scrollbarWidth: 'none',
       }}
     >
       {isPending && <SkeletonLink />}
@@ -141,9 +138,18 @@ export const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
   );
 };
 
+const sidebarBlockStyles = {
+  height: '100%',
+  maxHeight: '100svh',
+  overflowY: 'auto',
+  position: 'sticky',
+  top: 0,
+  scrollbarWidth: 'none',
+};
+
 export const SidebarBlock = () => {
   return (
-    <Box>
+    <Box sx={sidebarBlockStyles}>
       <SidebarCategoryTitle title="Current Page Tags" />
 
       <SidebarList />

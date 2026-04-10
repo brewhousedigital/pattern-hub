@@ -129,4 +129,5 @@ const ContainerStyles = {
   display: 'grid',
   gridTemplateColumns: { xs: '1fr', md: '300px 1fr' },
   gap: 0,
+  alignItems: 'start',
 };
