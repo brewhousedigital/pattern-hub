@@ -19,6 +19,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       fullWidth
       id={`tags-filled-${props.label}`}
       options={props.data?.map((option) => option.tag)}
+      getOptionLabel={(option) => String(option)}
       freeSolo={props.freeSolo}
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
