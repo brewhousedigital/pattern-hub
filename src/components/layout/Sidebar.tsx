@@ -50,7 +50,8 @@ export const SidebarList = () => {
       }
       return acc;
     }, [])
-    .sort((a, b) => a.tag.localeCompare(b.tag));
+    .sort((a, b) => a.tag.localeCompare(b.tag))
+    .sort((a, b) => b.count - a.count);
 
   const handleAddTag = (tag: string) => {
     addTag(tag);
