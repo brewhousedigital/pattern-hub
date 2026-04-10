@@ -39,7 +39,7 @@ export const useQueryGetAllPatternsByPagination = () => {
   return useQuery({
     queryKey: ['useQueryGetAllPatternsByPagination', filter, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(pageNumber, 5, {
+      return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         filter: filter,
         expand: 'authors',
         sort: '-created',
