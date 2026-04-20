@@ -60,7 +60,7 @@ type TypeEditModalProps = TypePatternResponse & {
 export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const { authData } = useGlobalAuthData();
 
-  const [tabValue, setTabValue] = React.useState('1');
+  const [tabValue, setTabValue] = React.useState(props?.pattern_file_external_link ? '2' : '1');
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
