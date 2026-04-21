@@ -26,6 +26,7 @@ export const Footer = () => {
             <Logo />
 
             <Button
+              size="small"
               variant="contained"
               component="a"
               href={KOFI_LINK}
@@ -36,11 +37,11 @@ export const Footer = () => {
                   height="71"
                   style={{ border: 0, maxWidth: 24, width: '100%', height: 'auto' }}
                   src="/kofi-logo.png"
-                  alt="Support the project on ko-fi.com"
+                  alt="Support the developer of Pattern Archive"
                 />
               }
             >
-              Support the project on Ko-fi
+              Support the developer of Pattern Archive
             </Button>
           </Grid>
 

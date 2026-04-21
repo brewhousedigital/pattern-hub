@@ -267,12 +267,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
 
     try {
-      const filteredTags = tagValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toLowerCase()) || [];
+      const filteredTags =
+        tagValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) || [];
 
       const filteredAuthors = authorValue || [];
 
       const filteredManualAuthors =
-        manualAuthorValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toLowerCase()) || [];
+        manualAuthorValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) || [];
 
       //const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
 
