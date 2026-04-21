@@ -38,8 +38,9 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
           borderBottom: `1px solid ${alpha('#C8A96E', 0.2)}`,
         }}
       >
-        <Box sx={{ order: { xs: 3, md: 1 } }}>
+        <Box sx={{ order: { xs: 1 } }}>
           <Button
+            fullWidth
             startIcon={<ArrowBackIosNewIcon fontSize="inherit" />}
             variant="outlined"
             disabled={!hasPrev(resultIds)}
@@ -50,26 +51,15 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
           </Button>
         </Box>
 
-        {/*<Box sx={{ order: { xs: 1, md: 2 } }}>
-          <Button
-            startIcon={<OpenInNewRoundedIcon />}
-            component={Link}
-            variant="outlined"
-            size="small"
-            to={`/pattern/${patternId}`}
-          >
-            View Standalone
-          </Button>
-        </Box>*/}
-
-        <Box sx={{ order: { xs: 2, md: 3 }, textAlign: 'right' }}>
-          <Button startIcon={<CloseIcon />} variant="outlined" size="small" onClick={props.handleClose}>
+        <Box sx={{ order: { xs: 3, md: 2 }, gridColumn: 'span 2', textAlign: 'center' }}>
+          <Button fullWidth startIcon={<CloseIcon />} variant="outlined" size="small" onClick={props.handleClose}>
             Close Window
           </Button>
         </Box>
 
-        <Box sx={{ order: { xs: 4, md: 4 }, textAlign: 'right' }}>
+        <Box sx={{ order: { xs: 2, md: 3 }, textAlign: 'right' }}>
           <Button
+            fullWidth
             disabled={!hasNext(resultIds)}
             endIcon={<ArrowForwardIosIcon fontSize="inherit" />}
             variant="outlined"
