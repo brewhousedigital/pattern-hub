@@ -90,6 +90,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
    */
   function addTag(tag: string, exclude = false) {
     const alreadyExists = tokens.some((t) => t.type === 'tag' && t.value === tag && t.exclude === exclude);
+
     if (alreadyExists) return;
 
     updateTokens([...tokens, { type: 'tag', value: tag, exclude }]);

@@ -106,18 +106,22 @@ type TagListItemProps = {
 };
 
 const TagListItem = (props: TagListItemProps) => {
-  const { addTag } = usePatternSearch();
+  const { addTag, setPatternId } = usePatternSearch();
 
   const handleAddTag = (tag: string) => {
     addTag(tag);
+
     if (props?.handleClose) {
+      setPatternId(undefined);
       props?.handleClose();
     }
   };
 
   const handleRemoveTag = (tag: string) => {
     addTag(tag, true);
+
     if (props?.handleClose) {
+      setPatternId(undefined);
       props?.handleClose();
     }
   };
