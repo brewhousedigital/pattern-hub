@@ -89,12 +89,12 @@ export const SidebarList = (props: SidebarListProps) => {
       {!props?.tagList &&
         tagCounts &&
         tagCounts?.map((thisTag) => {
-          return <TagListItem data={thisTag} />;
+          return <TagListItem data={thisTag} key={`sidebar-link-${thisTag.tag}`} />;
         })}
 
       {props?.tagList &&
         passThroughDataTagCounts?.map((thisTag) => {
-          return <TagListItem data={thisTag} handleClose={props.handleClose} />;
+          return <TagListItem data={thisTag} key={`sidebar-link-${thisTag.tag}`} handleClose={props.handleClose} />;
         })}
     </List>
   );
@@ -124,7 +124,6 @@ const TagListItem = (props: TagListItemProps) => {
 
   return (
     <ListItem
-      key={`sidebar-link-${props.data.tag}`}
       sx={{ textTransform: 'capitalize', paddingRight: '94px' }}
       secondaryAction={
         <Stack direction="row" sx={{ alignItems: 'center' }}>

@@ -97,9 +97,13 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             </Box>
 
             {/*{!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}*/}
-            {!viewData?.pattern_file_external && <ExportPatternToDownloadV2 viewData={viewData} key={viewData?.id} />}
+            {!viewData?.pattern_file_external && (
+              <ExportPatternToDownloadV2 viewData={viewData} key={'download' + viewData?.id} />
+            )}
 
-            {!viewData?.pattern_file_external && <ExportPatternForPrintV2 viewData={viewData} key={viewData?.id} />}
+            {!viewData?.pattern_file_external && (
+              <ExportPatternForPrintV2 viewData={viewData} key={'print' + viewData?.id} />
+            )}
           </Box>
 
           <Box sx={{ order: { xs: 2, lg: 3 } }}>
