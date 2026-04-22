@@ -11,7 +11,7 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
-import { SidebarList } from '@/components/layout/Sidebar';
+import { SidebarList, ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
 import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -67,7 +67,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
         >
           <Box sx={{ order: { xs: 3, lg: 1 } }}>
             <Box sx={sidebarBlockStyles}>
-              <SidebarList />
+              <ViewDrawerPatternSidebar tagList={viewData?.tags || []} handleClose={props.handleClose} />
             </Box>
           </Box>
 
@@ -224,9 +224,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <PatternReportIssue viewData={viewData} />
 
-            <ThinDivider />
-
-            <Box>
+            {/*<Box>
               <SectionLabel>Tags for this Pattern</SectionLabel>
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
@@ -243,7 +241,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   />
                 ))}
               </Box>
-            </Box>
+            </Box>*/}
 
             <ThinDivider />
           </Box>
