@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';
+import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -95,9 +96,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               )}
             </Box>
 
-            {!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}
+            {/*{!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}*/}
+            {!viewData?.pattern_file_external && <ExportPatternToDownloadV2 viewData={viewData} key={viewData?.id} />}
 
-            {!viewData?.pattern_file_external && <ExportPatternForPrintV2 viewData={viewData} />}
+            {!viewData?.pattern_file_external && <ExportPatternForPrintV2 viewData={viewData} key={viewData?.id} />}
           </Box>
 
           <Box sx={{ order: { xs: 2, lg: 3 } }}>
