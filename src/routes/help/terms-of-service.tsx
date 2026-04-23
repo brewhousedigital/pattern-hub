@@ -13,7 +13,7 @@ import HandshakeOutlinedIcon from '@mui/icons-material/HandshakeOutlined';
 
 import { Box, Container, Typography, Divider, Chip, Paper, Stack } from '@mui/material';
 
-const LAST_UPDATED = 'March 16, 2026';
+const LAST_UPDATED = 'April 23, 2026';
 
 export const Route = createFileRoute('/help/terms-of-service')({
   component: RouteComponent,
@@ -136,7 +136,18 @@ const sections: TosSection[] = [
   {
     icon: <CardGiftcardOutlinedIcon />,
     title: 'Pattern Use',
-    body: <>You are welcome to use the patterns for personal or professional purposes.</>,
+    body: (
+      <>
+        Pattern Archive does not have restrictions on how you use the downloadable patterns available through this
+        service. Some patterns may still be protected by other copyright holders though.
+        <br />
+        <br />
+        External Source Patterns follow the terms and copyright policies set by their original creators. We include them
+        here to make them easier to discover, and when possible, we display images from the source location you are
+        linked to which may change at any time outside of Pattern Archive's control. Because these patterns come from
+        other platforms, their availability and pricing are determined solely by the provider, not by Pattern Archive.
+      </>
+    ),
   },
   {
     icon: <PersonOutlinedIcon />,
