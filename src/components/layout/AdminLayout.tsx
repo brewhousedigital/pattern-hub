@@ -50,6 +50,12 @@ const SidebarLinks: SidebarLinkType[] = [
     icon: <ExtensionRoundedIcon />,
     view: EnumLevelsAdmin.PATTERN_AR,
   },
+  {
+    label: 'Pattern Key Mgmt',
+    href: '/space-command/pattern-key-mgmt',
+    icon: <ExtensionRoundedIcon />,
+    view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
+  },
   { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
   {
     label: 'Complaints',
