@@ -60,7 +60,7 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
             value={props.content}
             onChange={(e) => props.setContent(e.target.value)}
             minRows={12}
-            maxRows={20}
+            maxRows={35}
             variant="outlined"
             slotProps={{
               input: {
