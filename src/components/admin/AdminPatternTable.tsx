@@ -51,7 +51,7 @@ export const AdminPatternTable = () => {
   const { setFilterModel, searchResult } = useGlobalAdminFilter();
   const debouncedSearchTerm = useDebounce(searchResult, 600);
 
-  const { isPending, isFetching, data } = useQueryGetAllPatternsByPaginationAdmin(
+  const { isPending, isFetching, data, refetch } = useQueryGetAllPatternsByPaginationAdmin(
     debouncedSearchTerm,
     paginationModel.page,
   );
@@ -234,7 +234,7 @@ export const AdminPatternTable = () => {
         return (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <AdminEditPatternModal mode="edit" {...params.row} />
-            <AdminPatternInstructionsModal {...params.row} />
+            <AdminPatternInstructionsModal callback={refetch} {...params.row} />
           </Stack>
         );
       },

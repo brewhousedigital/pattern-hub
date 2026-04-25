@@ -178,6 +178,19 @@ export const useMutationSoftDeletePattern = () => {
   });
 };
 
+export type TypePatternUpdateInstructionsPayload = {
+  id: string;
+  instructions: string;
+};
+
+export const useMutationUpdateInstructionsPattern = () => {
+  return useMutation({
+    mutationFn: async (payload: TypePatternUpdateInstructionsPayload): Promise<TypePatternResponse> => {
+      return await pocketbase.collection('patterns').update(payload?.id, payload);
+    },
+  });
+};
+
 /** @deprecated: Delete method is now a Soft Delete */
 export const useMutationDeletePattern = () => {
   return useMutation({
