@@ -36,11 +36,17 @@ export type TypePatternResponse = {
 export const useQueryGetAllPatternsByPagination = () => {
   const { filter, pageNumber } = usePatternSearch();
 
+  let includeIsDeletedFilter = `isDeleted = false`;
+
+  if (filter) {
+    includeIsDeletedFilter = filter + ' && ' + includeIsDeletedFilter;
+  }
+
   return useQuery({
     queryKey: ['useQueryGetAllPatternsByPagination', filter, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
-        filter: filter,
+        filter: includeIsDeletedFilter,
         expand: 'authors',
         sort: '-created',
       });
@@ -50,27 +56,18 @@ export const useQueryGetAllPatternsByPagination = () => {
   });
 };
 
-export const useQueryGetAllPatternsByPaginationForAdmin = (filter: string, page: number) => {
-  return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', filter, page],
-    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(page, 25, {
-        filter,
-        expand: 'authors',
-        sort: '-created',
-      });
-    },
-    enabled: !!page,
-    placeholderData: keepPreviousData,
-  });
-};
+export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: number, filterIsDeleted = true) => {
+  let includeIsDeletedFilter = `isDeleted = ${String(!filterIsDeleted)}`;
 
-export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: number) => {
+  if (filter) {
+    includeIsDeletedFilter = filter + ' && ' + includeIsDeletedFilter;
+  }
+
   return useQuery({
     queryKey: ['useQueryGetAllPatternsByPaginationAdmin', filter, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(page, 25, {
-        filter,
+        filter: includeIsDeletedFilter,
         expand: 'authors',
         sort: '-created',
       });
@@ -99,6 +96,7 @@ export type TypePatternCreatePayload = {
   design_width_unit: string;
   design_height_unit: string;
   line_width_unit: string;
+  isDeleted?: boolean;
 };
 
 export const useMutationEditPattern = () => {
@@ -152,6 +150,20 @@ export const useMutationEditPattern = () => {
   });
 };
 
+export type TypePatternSoftDeletePayload = {
+  id: string;
+  isDeleted: boolean;
+};
+
+export const useMutationSoftDeletePattern = () => {
+  return useMutation({
+    mutationFn: async (payload: TypePatternSoftDeletePayload): Promise<TypePatternResponse> => {
+      return await pocketbase.collection('patterns').update(payload?.id, payload);
+    },
+  });
+};
+
+/** @deprecated: Delete method is now a Soft Delete */
 export const useMutationDeletePattern = () => {
   return useMutation({
     mutationFn: async (patternId: string) => {

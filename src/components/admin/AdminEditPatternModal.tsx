@@ -18,7 +18,7 @@ import {
   type TypePatternCreatePayload,
   useQueryGetAllPatternsByPaginationAdmin,
   useMutationEditPattern,
-  useMutationDeletePattern,
+  useMutationSoftDeletePattern,
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup.ts';
@@ -97,7 +97,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const { paginationModel } = useGlobalAdminPagination();
 
   const savePattern = useMutationEditPattern();
-  const deletePattern = useMutationDeletePattern();
+  const deletePattern = useMutationSoftDeletePattern();
 
   const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
 
@@ -381,7 +381,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
 
     try {
-      await deletePattern.mutateAsync(props.id!);
+      await deletePattern.mutateAsync({
+        id: props.id,
+        isDeleted: true,
+      });
       await refetchPatterns();
       handleClose();
     } catch (error: any) {
