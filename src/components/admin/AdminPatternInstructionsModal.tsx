@@ -81,7 +81,7 @@ export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEdi
         </DialogTitle>
 
         <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <GenericMarkdownEditor content={content} setContent={setContent} />
+          <GenericMarkdownEditor content={content} setContent={setContent} characterLimit={10000} />
         </DialogContent>
 
         <DialogActions sx={{ px: 3, py: 1.5 }}>

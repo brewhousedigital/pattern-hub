@@ -37,7 +37,7 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
             flexDirection: 'column',
             position: 'sticky',
             top: -16,
-            maxHeight: '100vh',
+            maxHeight: '90vh',
             overflowY: 'auto',
           }}
         >
@@ -79,7 +79,15 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
         </Box>
 
         {/* Preview pane */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', borderLeft: '1px solid #eee' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderLeft: '1px solid #eee',
+            maxHeight: '70vh',
+          }}
+        >
           <Typography
             variant="caption"
             sx={{
