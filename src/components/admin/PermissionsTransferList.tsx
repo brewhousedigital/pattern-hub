@@ -22,6 +22,7 @@ import {
   Box,
   Chip,
   Typography,
+  Stack,
 } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 
@@ -65,7 +66,10 @@ function PermissionLabel({ perm }: { perm: TypeLevelsAdmin }) {
       <Typography variant="body2" sx={{ fontWeight: 500, minWidth: 100 }}>
         {resource}
       </Typography>
-      {meta && <Chip label={meta.label} color={meta.color} size="small" sx={{ fontSize: '0.65rem', height: 20 }} />}
+
+      {meta && (
+        <Chip label={meta.label} color={meta.color} size="small" sx={{ fontSize: '0.65rem', height: 20, ml: 'auto' }} />
+      )}
     </Box>
   );
 }
@@ -152,7 +156,7 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
   const customList = (title: string, items: TypeLevelsAdmin[]) => (
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardHeader
-        sx={{ px: 2, py: 1, bgcolor: 'grey.50' }}
+        sx={{ px: 2, py: 1, backgroundColor: 'grey.50' }}
         avatar={
           <Checkbox
             onClick={handleToggleAll(items)}
@@ -160,7 +164,6 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
             indeterminate={numberOfChecked(items) !== items.length && numberOfChecked(items) !== 0}
             disabled={items.length === 0}
             color="primary"
-            inputProps={{ 'aria-label': 'all items selected' }}
           />
         }
         title={
@@ -178,7 +181,7 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
       <Divider />
 
       <List
-        sx={{ width: 280, height: 380, bgcolor: 'background.paper', overflow: 'auto' }}
+        sx={{ width: '100%', height: 380, backgroundColor: 'background.paper', overflow: 'auto' }}
         dense
         component="div"
         role="list"
@@ -199,11 +202,11 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
             sx={{
               borderRadius: 1,
               mx: 0.5,
-              '&.Mui-selected': { bgcolor: 'primary.50' },
+              '&.Mui-selected': { backgroundColor: 'primary.50' },
             }}
             selected={checked.includes(perm)}
           >
-            <ListItemIcon sx={{ minWidth: 36 }}>
+            <ListItemIcon>
               <Checkbox checked={checked.includes(perm)} tabIndex={-1} disableRipple color="primary" size="small" />
             </ListItemIcon>
 
@@ -222,11 +225,11 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
     <Box>
       <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
         {/* Left: Available permissions */}
-        <Grid>{customList('Available Permissions', left)}</Grid>
+        <Grid size="grow">{customList('Available Permissions', left)}</Grid>
 
         {/* Move buttons */}
         <Grid>
-          <Grid container direction="column" sx={{ alignItems: 'center', gap: 1 }}>
+          <Stack sx={{ alignItems: 'center', gap: 1 }}>
             <IconButton
               onClick={handleMoveRight}
               disabled={leftChecked.length === 0}
@@ -242,11 +245,11 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
             >
               <ArrowBackIosNewIcon />
             </IconButton>
-          </Grid>
+          </Stack>
         </Grid>
 
         {/* Right: Assigned permissions */}
-        <Grid>{customList('Assigned Permissions', right)}</Grid>
+        <Grid size="grow">{customList('Assigned Permissions', right)}</Grid>
       </Grid>
 
       <Box sx={{ py: 3 }}>

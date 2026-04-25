@@ -128,7 +128,6 @@ function RouteComponent() {
         </Box>
       )}
 
-      {/* @ts-ignore */}
       <AdminFAQEditorModal open={dialogOpen} onClose={() => setDialogOpen(false)} faq={selected} />
     </>
   );

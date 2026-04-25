@@ -9,6 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
+import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
@@ -53,7 +54,7 @@ const SidebarLinks: SidebarLinkType[] = [
   {
     label: 'Pattern Key Mgmt',
     href: '/space-command/pattern-key-mgmt',
-    icon: <ExtensionRoundedIcon />,
+    icon: <KeyRoundedIcon />,
     view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
   },
   { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },

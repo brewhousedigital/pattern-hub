@@ -21,7 +21,7 @@ import {
   useMutationSoftDeletePattern,
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
-import { pocketbase } from '@/functions/database/authentication-setup.ts';
+import { pocketbase } from '@/functions/database/authentication-setup';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
@@ -417,6 +417,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
       <Dialog
         fullWidth
+        maxWidth="md"
         open={isOpen}
         onClose={handleClose}
         aria-labelledby="edit-item-title"
@@ -729,6 +730,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             {/*<Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>*/}
 
             <Divider />
+
+            <Typography>Pattern Key Builder</Typography>
           </Stack>
         </DialogContent>
 

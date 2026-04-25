@@ -20,3 +20,8 @@ export const generatePbImageExternalFile = (pattern?: TypePatternResponse) => {
 export const generatePbImageOpenGraph = (pattern?: TypePatternResponse) => {
   return `${pocketbaseDomain}/api/files/${pattern?.collectionId}/${pattern?.id}/${pattern?.opengraph_image}`;
 };
+
+// This function is used to generate the pattern key reference image stored on each pattern
+export const generatePbImagePatternKeyRef = (id: string, fileName: string) => {
+  return `${pocketbaseDomain}/api/files/pbc_669275364/${id}/${fileName}`;
+};

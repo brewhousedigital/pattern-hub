@@ -314,6 +314,8 @@ function CustomToolbar() {
         line_width_unit={''}
         created={''}
         updated={''}
+        pattern_key_reference_list={[]}
+        instructions={''}
       />
 
       <Menu

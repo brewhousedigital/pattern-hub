@@ -10,6 +10,7 @@ export type TypePatternResponse = {
   id: string;
   name: string;
   description: string;
+  instructions: string;
   difficulty: string;
   authors: string[];
   author_manual: string[];
@@ -28,9 +29,15 @@ export type TypePatternResponse = {
   line_width_unit: string;
   created: string;
   updated: string;
+  pattern_key_reference_list: TypePatternKeyReferenceObject[];
   expand?: {
     authors: TypeAuthData[];
   };
+};
+
+export type TypePatternKeyReferenceObject = {
+  id: string;
+  name: string;
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
@@ -81,6 +88,7 @@ export type TypePatternCreatePayload = {
   id?: string;
   name: string;
   description: string;
+  instructions?: string;
   difficulty?: string;
   authors?: string[];
   author_manual?: string[];
@@ -97,6 +105,7 @@ export type TypePatternCreatePayload = {
   design_height_unit: string;
   line_width_unit: string;
   isDeleted?: boolean;
+  pattern_key_reference_list?: TypePatternKeyReferenceObject[];
 };
 
 export const useMutationEditPattern = () => {
