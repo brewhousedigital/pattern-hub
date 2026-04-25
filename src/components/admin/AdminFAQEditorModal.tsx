@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { MarkdownWrapper } from '@/components/MarkdownWrapper';
+import React from 'react';
 import {
   useMutationCreateFAQ,
   useMutationUpdateFAQ,
@@ -32,8 +31,8 @@ type AdminFAQEditorModalProps = {
 };
 
 export const AdminFAQEditorModal = (props: AdminFAQEditorModalProps) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = React.useState('');
+  const [content, setContent] = React.useState('');
 
   const { refetch } = useQueryGetAllFAQ();
 
@@ -43,7 +42,7 @@ export const AdminFAQEditorModal = (props: AdminFAQEditorModalProps) => {
   const isPending = create.isPending || update.isPending;
   const isEdit = props.faq !== null;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (props.open) {
       setTitle(props.faq?.title ?? '');
       setContent(props.faq?.content ?? '');

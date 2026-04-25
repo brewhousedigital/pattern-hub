@@ -1,13 +1,17 @@
 import React from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { generatePbImage, generatePbImageExternalFile } from '@/functions/utilities/generate-pb-image';
+import {
+  generatePbImage,
+  generatePbImageExternalFile,
+  generatePbImagePatternKeyRef,
+} from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryAdminTagStats, useQueryGetAllTags } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
-import { FullScreenLoader } from '@/components/layout/FullScreenLoader.tsx';
+import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
 import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
 import { useDebounce } from '@/functions/hooks/useDebounce';
@@ -16,9 +20,11 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
+  type TypePatternKeyReferenceObject,
   useQueryGetAllPatternsByPaginationAdmin,
   useMutationEditPattern,
   useMutationSoftDeletePattern,
+  useQueryGetAllPatternKeys,
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
@@ -37,14 +43,20 @@ import {
   IconButton,
   DialogActions,
   DialogContent,
+  ListItemText,
   DialogTitle,
   TextField,
   Stack,
+  List,
+  ListItem,
   Typography,
   styled,
   Grid,
   Tab,
   Tabs,
+  CircularProgress,
+  Alert,
+  Menu,
 } from '@mui/material';
 
 import TabContext from '@mui/lab/TabContext';
@@ -100,6 +112,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const deletePattern = useMutationSoftDeletePattern();
 
   const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
+
+  // Fetch all the pattern keys for the legend here so admins can add new ones to the pattern if needed
+  const {
+    isPending: isPendingPatternKeys,
+    isError: isErrorPatternKeys,
+    data: patternKeys,
+  } = useQueryGetAllPatternKeys();
 
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -165,6 +184,47 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const externalFileInputRef = React.useRef<HTMLInputElement>(null);
   const [externalFileLink, setExternalFileLink] = React.useState(props?.pattern_file_external_link || '');
 
+  // Pattern Key manager
+  const [newPatternKey, setNewPatternKey] = React.useState<TypePatternKeyReferenceObject>({
+    image: '',
+    name: '',
+  });
+
+  const [patternKeyObject, setPatternKeyObject] = React.useState<TypePatternKeyReferenceObject[]>(
+    props?.pattern_key_reference_list || [],
+  );
+
+  const handleNewChangePatternKey = (newData: any) => {
+    setNewPatternKey((prev) => {
+      return {
+        ...prev,
+        ...newData,
+      };
+    });
+  };
+
+  const handleResetChangePatternKey = () => {
+    setNewPatternKey({
+      image: '',
+      name: '',
+    });
+  };
+
+  const handleAddPatternKey = (newData: TypePatternKeyReferenceObject) => {
+    setPatternKeyObject((prev) => {
+      return [
+        ...prev,
+        {
+          ...newData,
+        },
+      ];
+    });
+
+    setTimeout(() => {
+      handleResetChangePatternKey();
+    }, 500);
+  };
+
   const handleFormReset = () => {
     setName('');
     setDescription('');
@@ -186,6 +246,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     handleFileDelete();
     handleExternalFileDelete();
     setExternalFileLink('');
+    handleResetChangePatternKey();
+    setPatternKeyObject([]);
   };
 
   // Clean up the URL when component unmounts or new file is selected
@@ -290,6 +352,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         line_width_unit: lineWidthUnit && lineWidthUnit !== 'undefined' ? lineWidthUnit : 'in',
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
+        pattern_key_reference_list: patternKeyObject || [],
       };
 
       // If a pattern has already been uploaded, don't reset the `uploaded_by` property
@@ -406,9 +469,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   return (
     <>
       {props.mode === 'edit' ? (
-        <IconButton onClick={handleOpen} size="small">
-          <EditRoundedIcon fontSize="inherit" />
-        </IconButton>
+        <Box>
+          <IconButton onClick={handleOpen} size="small">
+            <EditRoundedIcon fontSize="inherit" />
+          </IconButton>
+        </Box>
       ) : (
         <Button disabled={!canAdd} onClick={handleOpen} startIcon={<AddRoundedIcon />}>
           Add Pattern
@@ -731,7 +796,101 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
             <Divider />
 
-            <Typography>Pattern Key Builder</Typography>
+            {!props.pattern_file_external_link && (
+              <>
+                <Typography>Pattern Key Builder</Typography>
+
+                <Typography variant="body2">Add a new key to the legend</Typography>
+
+                {isPendingPatternKeys && <CircularProgress />}
+
+                {isErrorPatternKeys && (
+                  <Alert severity="error">
+                    Unable to load the pattern keys... that's probably not good. Try refreshing.
+                  </Alert>
+                )}
+
+                {patternKeys && (
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        select
+                        variant="filled"
+                        label="Key Image"
+                        value={newPatternKey.image}
+                        onChange={(e) => handleNewChangePatternKey({ image: e.target.value })}
+                      >
+                        {patternKeys.map((item) => (
+                          <MenuItem value={generatePbImagePatternKeyRef(item)}>
+                            <img
+                              src={generatePbImagePatternKeyRef(item)}
+                              alt={`pattern-key-img-${item.id}`}
+                              style={{ width: '100%', height: 'auto' }}
+                            />
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box sx={{ mb: 2 }}>
+                        <TextField
+                          fullWidth
+                          variant="filled"
+                          label="Name"
+                          value={newPatternKey.name}
+                          onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
+                        />
+                      </Box>
+
+                      <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
+                        <Button variant="outlined" color="error" onClick={handleResetChangePatternKey}>
+                          Reset
+                        </Button>
+
+                        <Button variant="outlined" color="success" onClick={() => handleAddPatternKey(newPatternKey)}>
+                          Add this key
+                        </Button>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                )}
+
+                <Typography>Current Assigned Pattern Keys</Typography>
+
+                {!patternKeyObject?.length ? (
+                  <Alert severity="warning">No keys have been assigned to this pattern yet.</Alert>
+                ) : (
+                  <List>
+                    {patternKeyObject.map((item, index) => (
+                      <ListItem
+                        key={item.image}
+                        disableGutters
+                        secondaryAction={
+                          <IconButton aria-label="delete this pattern key">
+                            <DeleteRoundedIcon />
+                          </IconButton>
+                        }
+                      >
+                        <ListItemText
+                          primary={item.name}
+                          secondary={
+                            <img
+                              src={item.image}
+                              alt={`pattern-key-img-added-${item.name}`}
+                              style={{ width: '100%', maxWidth: 200, height: 'auto' }}
+                            />
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </>
+            )}
+
+            <Divider />
           </Stack>
         </DialogContent>
 

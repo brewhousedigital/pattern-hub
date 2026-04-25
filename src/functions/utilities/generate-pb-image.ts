@@ -1,5 +1,5 @@
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
-import type { TypePatternResponse } from '@/functions/database/patterns.ts';
+import type { TypePatternResponse, TypePatternKeyTableResponse } from '@/functions/database/patterns.ts';
 
 export const generatePbImage = (pattern?: TypePatternResponse) => {
   const thisPatternFile = pattern?.pattern_file ? pattern?.pattern_file : pattern?.pattern_file_external;
@@ -22,6 +22,6 @@ export const generatePbImageOpenGraph = (pattern?: TypePatternResponse) => {
 };
 
 // This function is used to generate the pattern key reference image stored on each pattern
-export const generatePbImagePatternKeyRef = (id: string, fileName: string) => {
-  return `${pocketbaseDomain}/api/files/pbc_669275364/${id}/${fileName}`;
+export const generatePbImagePatternKeyRef = (keyItem: TypePatternKeyTableResponse) => {
+  return `${pocketbaseDomain}/api/files/pbc_669275364/${keyItem.id}/${keyItem.name}`;
 };

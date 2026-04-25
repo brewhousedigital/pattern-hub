@@ -9,7 +9,9 @@ import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-glo
 
 import { type TypePatternResponse, useQueryGetAllPatternsByPaginationAdmin } from '@/functions/database/patterns';
 import { AdminEditPatternModal } from '@/components/admin/AdminEditPatternModal';
+import { AdminPatternInstructionsModal } from '@/components/admin/AdminPatternInstructionsModal';
 
+import VerticalSplitRoundedIcon from '@mui/icons-material/VerticalSplitRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
@@ -26,6 +28,7 @@ import {
   Tooltip,
   styled,
   Button,
+  IconButton,
 } from '@mui/material';
 
 import {
@@ -225,10 +228,15 @@ export const AdminPatternTable = () => {
       filterable: false,
       disableColumnMenu: true,
       headerName: 'Actions',
-      width: 100,
+      width: 120,
       cellClassName: 'actions',
       renderCell: (params) => {
-        return <AdminEditPatternModal mode="edit" {...params.row} />;
+        return (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <AdminEditPatternModal mode="edit" {...params.row} />
+            <AdminPatternInstructionsModal {...params.row} />
+          </Stack>
+        );
       },
     },
   ];

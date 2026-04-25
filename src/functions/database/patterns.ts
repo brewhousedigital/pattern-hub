@@ -36,6 +36,11 @@ export type TypePatternResponse = {
 };
 
 export type TypePatternKeyReferenceObject = {
+  image: string;
+  name: string;
+};
+
+export type TypePatternKeyTableResponse = {
   id: string;
   name: string;
 };
@@ -127,6 +132,7 @@ export const useMutationEditPattern = () => {
       formData.append('design_width_unit', payload?.design_width_unit || 'in');
       formData.append('design_height_unit', payload?.design_height_unit || 'in');
       formData.append('line_width_unit', payload?.line_width_unit || 'in');
+      formData.append('pattern_key_reference_list', JSON.stringify(payload?.pattern_key_reference_list));
 
       if (payload?.uploaded_by) {
         formData.append('uploaded_by', payload?.uploaded_by || '');
@@ -196,3 +202,13 @@ export const getPatternByIdOptions = (patternId: string) =>
     queryKey: ['getPatternByIdOptions', patternId],
     queryFn: () => pocketbase.collection('patterns').getOne(patternId),
   });
+
+// This will query the list of pattern keys
+export const useQueryGetAllPatternKeys = () => {
+  return useQuery({
+    queryKey: ['useQueryGetAllPatternKeys'],
+    queryFn: async (): Promise<TypePatternKeyTableResponse[]> => {
+      return await pocketbase.collection('pattern_key_reference_images').getFullList();
+    },
+  });
+};
