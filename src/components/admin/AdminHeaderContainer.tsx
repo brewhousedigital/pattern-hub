@@ -23,10 +23,12 @@ export const AdminHeaderContainer = (props: TypeHeaderProps) => {
           {props.title}
         </Typography>
 
-        {props.subtitle && (
+        {props.subtitle && typeof props.subtitle === 'string' ? (
           <Typography variant="body2" color="text.secondary">
             {props.subtitle}
           </Typography>
+        ) : (
+          <>{props.subtitle}</>
         )}
       </Box>
 

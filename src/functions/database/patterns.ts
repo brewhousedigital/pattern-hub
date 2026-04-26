@@ -38,11 +38,13 @@ export type TypePatternResponse = {
 export type TypePatternKeyReferenceObject = {
   image: string;
   name: string;
+  fullPath?: string;
 };
 
 export type TypePatternKeyTableResponse = {
   id: string;
   name: string;
+  fullPath?: string;
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
@@ -222,6 +224,58 @@ export const useQueryGetAllPatternKeys = () => {
     queryKey: ['useQueryGetAllPatternKeys'],
     queryFn: async (): Promise<TypePatternKeyTableResponse[]> => {
       return await pocketbase.collection('pattern_key_reference_images').getFullList();
+    },
+  });
+};
+
+export const useMutationSavePatternKey = () => {
+  return useMutation({
+    mutationFn: async (file: File): Promise<TypePatternResponse> => {
+      const form = new FormData();
+      form.append('name', file);
+      return await pocketbase.collection('pattern_key_reference_images').create(form);
+    },
+  });
+};
+
+export type TypePatternKeyCollectionResponse = {
+  id: string;
+  name: string;
+  collection: TypePatternKeyReferenceObject[];
+  created: Date;
+};
+
+export const useQueryGetAllPatternKeyCollections = () => {
+  return useQuery({
+    queryKey: ['useQueryGetAllPatternKeyCollections'],
+    queryFn: async (): Promise<TypePatternKeyCollectionResponse[]> => {
+      return await pocketbase.collection('pattern_key_reference_collections').getFullList();
+    },
+  });
+};
+
+export type TypeSavePatternKeyCollectionPayload = {
+  id?: string;
+  name: string;
+  collection: TypePatternKeyReferenceObject[];
+};
+
+export const useMutationSavePatternKeyCollection = () => {
+  return useMutation({
+    mutationFn: async (payload: TypeSavePatternKeyCollectionPayload): Promise<TypePatternKeyCollectionResponse> => {
+      if (payload?.id) {
+        return await pocketbase.collection('pattern_key_reference_collections').update(payload.id, payload);
+      } else {
+        return await pocketbase.collection('pattern_key_reference_collections').create(payload);
+      }
+    },
+  });
+};
+
+export const useMutationDeletePatternKeyCollection = () => {
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      return await pocketbase.collection('pattern_key_reference_collections').delete(id);
     },
   });
 };

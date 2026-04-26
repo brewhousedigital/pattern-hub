@@ -2,9 +2,10 @@ import { useState, useCallback, useMemo } from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { generateSEO } from '@/functions/utilities/seo.ts';
+import { generateSEO } from '@/functions/utilities/seo';
 import { useAtom, atom } from 'jotai';
 import { useQueryAdminTagStats, type TypeTagStat, type TypePatternRecord } from '@/functions/database/tags';
+import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 
 import SearchIcon from '@mui/icons-material/Search';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -12,7 +13,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import MergeIcon from '@mui/icons-material/Merge';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 import {
@@ -625,46 +625,39 @@ const TagManagementPage = () => {
     }
   }, [pendingOp, executeOperation, queryClient]);
 
-  // Stats summary
-  const totalPatterns = useMemo(() => {
-    // estimate: max count is the highest single-tag usage, but we don't track total easily
-    return null;
-  }, []);
-
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1100, mx: 'auto' }}>
+    <>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-          <AutoAwesomeIcon sx={{ color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight={700}>
-            Tag Management
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          Manage tags across all patterns. Operations are processed one after the other to protect server performance.
-        </Typography>
+      <AdminHeaderContainer
+        title="Tag Management"
+        subtitle={
+          <>
+            <Typography variant="body2" color="text.secondary">
+              Manage tags across all patterns. Operations are processed one after the other to protect server
+              performance.
+            </Typography>
 
-        {/* Summary chips */}
-        <Box sx={{ mt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-          <Chip
-            label={`${uniqueTagCount.toLocaleString()} unique tags`}
-            color="primary"
-            variant="outlined"
-            size="small"
-          />
-          <Chip label={`${totalTagUsages.toLocaleString()} total usages`} variant="outlined" size="small" />
-          <Chip
-            label={`${tagStats.filter((t) => t.count === 1).length} singleton tags`}
-            color="warning"
-            variant="outlined"
-            size="small"
-          />
-        </Box>
-      </Box>
+            <Box sx={{ mt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Chip
+                label={`${uniqueTagCount.toLocaleString()} unique tags`}
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+              <Chip label={`${totalTagUsages.toLocaleString()} total usages`} variant="outlined" size="small" />
+              <Chip
+                label={`${tagStats.filter((t) => t.count === 1).length} singleton tags`}
+                color="warning"
+                variant="outlined"
+                size="small"
+              />
+            </Box>
+          </>
+        }
+      />
 
       {/* Rename / Merge Panel */}
       <Box sx={{ mb: 3 }}>
@@ -840,6 +833,6 @@ const TagManagementPage = () => {
         message={toast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
-    </Box>
+    </>
   );
 };
