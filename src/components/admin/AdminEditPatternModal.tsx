@@ -186,6 +186,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [newPatternKey, setNewPatternKey] = React.useState<TypePatternKeyReferenceObject>({
     image: '',
     name: '',
+    fullPath: '',
   });
 
   const [patternKeyObject, setPatternKeyObject] = React.useState<TypePatternKeyReferenceObject[]>(
@@ -205,6 +206,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setNewPatternKey({
       image: '',
       name: '',
+      fullPath: '',
     });
   };
 
@@ -220,7 +222,25 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
     setTimeout(() => {
       handleResetChangePatternKey();
-    }, 500);
+    }, 100);
+  };
+
+  const [openKeySelectWindow, setOpenKeySelectWindow] = React.useState(false);
+
+  const handleOpenKeySelect = () => {
+    // Preload all images before opening
+    const promises =
+      patternKeys?.map(
+        (item) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = generatePbImagePatternKeyRef(item);
+          }),
+      ) || [];
+
+    Promise.all(promises).then(() => setOpenKeySelectWindow(true));
   };
 
   const handleFormReset = () => {
@@ -454,6 +474,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     }
 
     setIsButtonLoading(false);
+  };
+
+  const handleDeletePatternKey = async (fullPath: string) => {
+    setPatternKeyObject((prev) => {
+      return prev.filter((item) => item.fullPath !== fullPath);
+    });
   };
 
   if (isLoading) {
@@ -816,15 +842,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                         select
                         variant="filled"
                         label="Key Image"
-                        value={newPatternKey.image}
-                        onChange={(e) => handleNewChangePatternKey({ image: e.target.value })}
+                        value={newPatternKey.fullPath}
+                        slotProps={{
+                          select: {
+                            open: openKeySelectWindow,
+                            onOpen: handleOpenKeySelect,
+                            onClose: () => setOpenKeySelectWindow(false),
+                          },
+                        }}
+                        onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
                       >
                         {patternKeys.map((item) => (
                           <MenuItem value={generatePbImagePatternKeyRef(item)}>
                             <img
                               src={generatePbImagePatternKeyRef(item)}
                               alt={`pattern-key-img-${item.id}`}
-                              style={{ width: '100%', height: 'auto' }}
+                              style={{ width: '100%', height: 'auto', maxHeight: 100 }}
                             />
                           </MenuItem>
                         ))}
@@ -863,10 +896,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   <List>
                     {patternKeyObject.map((item, index) => (
                       <ListItem
-                        key={item.image}
+                        key={item.fullPath}
                         disableGutters
                         secondaryAction={
-                          <IconButton aria-label="delete this pattern key">
+                          <IconButton
+                            aria-label="delete this pattern key"
+                            onClick={() => handleDeletePatternKey(item?.fullPath || '')}
+                          >
                             <DeleteRoundedIcon />
                           </IconButton>
                         }
@@ -875,9 +911,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                           primary={item.name}
                           secondary={
                             <img
-                              src={item.image}
+                              src={item.fullPath}
                               alt={`pattern-key-img-added-${item.name}`}
                               style={{ width: '100%', maxWidth: 200, height: 'auto' }}
+                              width={200}
+                              height={150}
                             />
                           }
                         />
