@@ -6,6 +6,7 @@ import {
   useMutationSavePatternKey,
   useMutationSavePatternKeyCollection,
   useMutationDeletePatternKeyCollection,
+  useMutationSoftDeletePatternKey,
   type TypePatternKeyReferenceObject,
   type TypePatternKeyCollectionResponse,
   type TypeSavePatternKeyCollectionPayload,
@@ -13,6 +14,8 @@ import {
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import { enqueueSnackbar } from 'notistack';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
+import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { EnumLevelsAdmin } from '@/functions/database/authentication';
 
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -50,6 +53,12 @@ function RouteComponent() {
   const [collectionName, setCollectionName] = React.useState('');
   const [selectedLegends, setSelectedLegends] = React.useState<TypePatternKeyReferenceObject[]>([]);
 
+  const { checkAccess } = useCheckAdminAccess();
+
+  const canAdd = checkAccess(EnumLevelsAdmin.PATTERN_KEY_MGMT_AC);
+  const canEdit = checkAccess(EnumLevelsAdmin.PATTERN_KEY_MGMT_AU);
+  const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_KEY_MGMT_AD);
+
   const { data: legends = [], isLoading: legendsLoading, refetch: refetchKeys } = useQueryGetAllPatternKeys();
 
   const {
@@ -59,6 +68,7 @@ function RouteComponent() {
   } = useQueryGetAllPatternKeyCollections();
 
   const savePatternKey = useMutationSavePatternKey();
+  const softDeleteKey = useMutationSoftDeletePatternKey();
 
   const saveCollection = useMutationSavePatternKeyCollection();
   const deleteCollection = useMutationDeletePatternKeyCollection();
@@ -187,6 +197,19 @@ function RouteComponent() {
     setCollectionId(collection.id);
   };
 
+  const handleSoftDeleteKey = async (id: string) => {
+    const shouldDelete = confirm('Are you sure you want to delete this?');
+
+    if (shouldDelete) {
+      try {
+        await softDeleteKey.mutateAsync(id);
+        await refetchKeys();
+      } catch (error: any) {
+        enqueueSnackbar(`Ran into an error trying to delete this key image... whoops. Error: ${error?.message}`);
+      }
+    }
+  };
+
   return (
     <Box>
       <AdminHeaderContainer
@@ -213,54 +236,56 @@ function RouteComponent() {
         Legends
       </Typography>
 
-      <Box
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        sx={{
-          border: '1.5px dashed',
-          borderColor: dragOver ? '#3B6D11' : 'divider',
-          borderRadius: 2,
-          py: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0.75,
-          cursor: 'pointer',
-          transition: 'background 0.15s, border-color 0.15s',
-          backgroundColor: dragOver ? '#EAF3DE' : 'transparent',
-          mb: 1.5,
-          '&:hover': { backgroundColor: 'action.hover' },
-        }}
-      >
-        <Avatar sx={{ backgroundColor: '#EAF3DE', width: 40, height: 40 }}>
-          {savePatternKey.isPending ? (
-            <CircularProgress size={18} sx={{ color: '#3B6D11' }} />
-          ) : (
-            <UploadFileIcon sx={{ color: '#3B6D11', fontSize: 20 }} />
-          )}
-        </Avatar>
+      {canAdd && (
+        <Box
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          sx={{
+            border: '1.5px dashed',
+            borderColor: dragOver ? '#3B6D11' : 'divider',
+            borderRadius: 2,
+            py: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 0.75,
+            cursor: 'pointer',
+            transition: 'background 0.15s, border-color 0.15s',
+            backgroundColor: dragOver ? '#EAF3DE' : 'transparent',
+            mb: 1.5,
+            '&:hover': { backgroundColor: 'action.hover' },
+          }}
+        >
+          <Avatar sx={{ backgroundColor: '#EAF3DE', width: 40, height: 40 }}>
+            {savePatternKey.isPending ? (
+              <CircularProgress size={18} sx={{ color: '#3B6D11' }} />
+            ) : (
+              <UploadFileIcon sx={{ color: '#3B6D11', fontSize: 20 }} />
+            )}
+          </Avatar>
 
-        <Typography variant="body2" fontWeight={500}>
-          Click to upload
-        </Typography>
+          <Typography variant="body2" fontWeight={500}>
+            Click to upload
+          </Typography>
 
-        <Typography variant="caption" color="text.disabled">
-          .webp only
-        </Typography>
+          <Typography variant="caption" color="text.disabled">
+            .webp only
+          </Typography>
 
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/webp"
-          hidden
-          onChange={(e) => handleFile(e.target.files?.[0])}
-        />
-      </Box>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/webp"
+            hidden
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+        </Box>
+      )}
 
       {legendsLoading ? (
         <Box display="flex" justifyContent="center" py={3}>
@@ -278,33 +303,35 @@ function RouteComponent() {
 
             return (
               <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }}>
-                {/* Thumbnail */}
-                <Box
-                  component="img"
-                  src={url}
-                  alt={filename}
-                  sx={{
-                    width: '100%',
-                    height: 'auto',
-                    borderRadius: 1,
-                    objectFit: 'cover',
-                  }}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    component="img"
+                    src={url}
+                    alt={filename}
+                    sx={{
+                      width: '100%',
+                      height: 'auto',
+                      borderRadius: 1,
+                      objectFit: 'cover',
+                    }}
+                  />
 
-                {/* Delete */}
-                {/*<Tooltip title="Delete">
-                    <IconButton
-                      size="small"
-                      onClick={() => deleteMutation.mutate(legend.id)}
-                      disabled={deleteMutation.isPending}
-                      sx={{
-                        color: 'text.secondary',
-                        '&:hover': { color: 'error.main', backgroundColor: 'error.50' },
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>*/}
+                  <IconButton
+                    size="small"
+                    onClick={() => handleSoftDeleteKey(legend.id)}
+                    disabled={softDeleteKey.isPending}
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      zIndex: 6,
+                      backgroundColor: '#eee',
+                      '&:hover': { color: 'error.main', backgroundColor: '#eee' },
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               </Grid>
             );
           })}
@@ -318,6 +345,7 @@ function RouteComponent() {
         subtitle="Pre-built pattern key lists that can be quickly added to new pattern uploads."
         actionNode={
           <Button
+            disabled={!canAdd}
             size="small"
             startIcon={<AddIcon fontSize="small" />}
             onClick={() => setPanelOpen((v) => !v)}
@@ -526,13 +554,17 @@ function RouteComponent() {
                         </Box>
 
                         <Box>
-                          <IconButton size="small" onClick={() => handleEditCollection(collection)}>
+                          <IconButton disabled={!canEdit} size="small" onClick={() => handleEditCollection(collection)}>
                             <EditRoundedIcon fontSize="small" />
                           </IconButton>
                         </Box>
 
                         <Box>
-                          <IconButton size="small" onClick={() => handleDeleteCollection(collection)}>
+                          <IconButton
+                            disabled={!canDelete}
+                            size="small"
+                            onClick={() => handleDeleteCollection(collection)}
+                          >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
                         </Box>

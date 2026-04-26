@@ -45,6 +45,7 @@ export type TypePatternKeyTableResponse = {
   id: string;
   name: string;
   fullPath?: string;
+  isDeleted: boolean;
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
@@ -223,7 +224,9 @@ export const useQueryGetAllPatternKeys = () => {
   return useQuery({
     queryKey: ['useQueryGetAllPatternKeys'],
     queryFn: async (): Promise<TypePatternKeyTableResponse[]> => {
-      return await pocketbase.collection('pattern_key_reference_images').getFullList();
+      return await pocketbase.collection('pattern_key_reference_images').getFullList({
+        filter: 'isDeleted = false',
+      });
     },
   });
 };
@@ -234,6 +237,14 @@ export const useMutationSavePatternKey = () => {
       const form = new FormData();
       form.append('name', file);
       return await pocketbase.collection('pattern_key_reference_images').create(form);
+    },
+  });
+};
+
+export const useMutationSoftDeletePatternKey = () => {
+  return useMutation({
+    mutationFn: async (id: string): Promise<TypePatternResponse> => {
+      return await pocketbase.collection('pattern_key_reference_images').update(id, { isDeleted: true });
     },
   });
 };
