@@ -25,6 +25,7 @@ import {
   useMutationEditPattern,
   useMutationSoftDeletePattern,
   useQueryGetAllPatternKeys,
+  useQueryGetAllPatternKeyCollections,
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
@@ -55,6 +56,7 @@ import {
   Tab,
   CircularProgress,
   Alert,
+  Menu,
 } from '@mui/material';
 
 import TabContext from '@mui/lab/TabContext';
@@ -117,6 +119,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     isError: isErrorPatternKeys,
     data: patternKeys,
   } = useQueryGetAllPatternKeys();
+
+  const { data: patternKeyCollections } = useQueryGetAllPatternKeyCollections();
+
+  const [quickAddKeyCollection, setQuickAddKeyCollection] = React.useState('');
 
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -482,6 +488,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     });
   };
 
+  const handleClickQuickAddKeyCollection = () => {
+    const quickAdd = JSON.parse(quickAddKeyCollection);
+    setPatternKeyObject(quickAdd);
+    setQuickAddKeyCollection('');
+  };
+
   if (isLoading) {
     return <FullScreenLoader />;
   }
@@ -822,9 +834,37 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
             {!props.pattern_file_external_link && (
               <>
-                <Typography>Pattern Key Builder</Typography>
+                <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ mr: 'auto' }}>
+                    <Typography>Pattern Key Builder</Typography>
 
-                <Typography variant="body2">Add a new key to the legend</Typography>
+                    <Typography variant="caption">Add a new key to the legend</Typography>
+                  </Box>
+
+                  <TextField
+                    select
+                    size="small"
+                    label="Key Collection"
+                    sx={{ minWidth: 200 }}
+                    value={quickAddKeyCollection}
+                    onChange={(e) => setQuickAddKeyCollection(e.target.value)}
+                  >
+                    {patternKeyCollections?.map((item, index) => (
+                      <MenuItem key={`key-collection-quick-add-${index}`} value={JSON.stringify(item.collection)}>
+                        {item.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleClickQuickAddKeyCollection}
+                    disabled={!quickAddKeyCollection}
+                  >
+                    Add
+                  </Button>
+                </Stack>
 
                 {isPendingPatternKeys && <CircularProgress />}
 
