@@ -110,6 +110,10 @@ function RouteComponent() {
       await savePatternKey.mutateAsync(file);
 
       await refetchKeys();
+
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     } catch (error: any) {
       enqueueSnackbar(`Couldn't upload for some reason. Try again in a few minutes. Error: ${error?.message}`, {
         variant: 'error',
