@@ -18,6 +18,7 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { downloadAllFilesAsZip } from '@/functions/utilities/download-all-files';
 
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -93,6 +94,22 @@ function RouteComponent() {
       resetPanel();
     } catch (error: any) {
       enqueueSnackbar('Not able to save your collection for some reason... try again in a few minutes.', {
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleDuplicateCollection = async (collectionData: TypeSavePatternKeyCollectionPayload) => {
+    try {
+      const clonedData = JSON.parse(JSON.stringify(collectionData)) as TypeSavePatternKeyCollectionPayload;
+      delete clonedData.id;
+      clonedData.name = 'Duplicated Collection';
+
+      await saveCollection.mutateAsync(clonedData);
+
+      await refetchCollections();
+    } catch (error: any) {
+      enqueueSnackbar('Not able to duplicate your collection for some reason... try again in a few minutes.', {
         variant: 'error',
       });
     }
@@ -236,6 +253,8 @@ function RouteComponent() {
     setIsZippingFiles(false);
   };
 
+  const isCollectionsLoading = saveCollection.isPending || collectionsLoading;
+
   return (
     <Box>
       <AdminHeaderContainer
@@ -272,7 +291,7 @@ function RouteComponent() {
             cursor: 'pointer',
             transition: 'background 0.15s, border-color 0.15s',
             backgroundColor: dragOver ? '#EAF3DE' : 'transparent',
-            mb: 1.5,
+            mb: 4,
             '&:hover': { backgroundColor: 'action.hover' },
           }}
         >
@@ -317,43 +336,54 @@ function RouteComponent() {
             const filename = legend.name;
 
             return (
-              <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }}>
-                <Box sx={{ position: 'relative' }}>
-                  <Box
-                    component="img"
-                    src={url}
-                    alt={filename}
+              <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }} sx={{ height: '100%' }}>
+                <Card>
+                  <CardContent
                     sx={{
-                      width: '100%',
-                      height: 'auto',
-                      maxHeight: 100,
-                      borderRadius: 1,
-                    }}
-                  />
-
-                  <IconButton
-                    size="small"
-                    onClick={() => handleSoftDeleteKey(legend.id)}
-                    disabled={softDeleteKey.isPending}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      zIndex: 6,
-                      backgroundColor: '#eee',
-                      '&:hover': { color: 'error.main', backgroundColor: '#eee' },
+                      p: 3,
+                      position: 'relative',
+                      minHeight: 150,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Box>
+                    <Box
+                      component="img"
+                      src={url}
+                      alt={filename}
+                      sx={{
+                        width: '100%',
+                        height: 'auto',
+                        maxHeight: 100,
+                        borderRadius: 1,
+                      }}
+                    />
+
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSoftDeleteKey(legend.id)}
+                      disabled={softDeleteKey.isPending}
+                      sx={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        zIndex: 6,
+                        backgroundColor: '#eee',
+                        '&:hover': { color: 'error.main', backgroundColor: '#eee' },
+                      }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </CardContent>
+                </Card>
               </Grid>
             );
           })}
         </Grid>
       )}
 
-      <Divider sx={{ my: 3 }} />
+      <Divider sx={{ my: 4 }} />
 
       <AdminHeaderContainer
         title="Key Collections"
@@ -364,17 +394,7 @@ function RouteComponent() {
             size="small"
             startIcon={<AddIcon fontSize="small" />}
             onClick={() => setPanelOpen((v) => !v)}
-            sx={{
-              fontSize: 13,
-              color: 'text.primary',
-              border: '0.5px solid',
-              borderColor: 'divider',
-              borderRadius: 1.5,
-              px: 1.5,
-              py: 0.5,
-              textTransform: 'none',
-              '&:hover': { backgroundColor: 'action.hover' },
-            }}
+            variant="contained"
           >
             New collection
           </Button>
@@ -462,11 +482,8 @@ function RouteComponent() {
                       alt={legend.name}
                       sx={{
                         width: 200,
+                        maxHeight: 50,
                         height: 'auto',
-                        borderRadius: 0.75,
-                        objectFit: 'cover',
-                        flexShrink: 0,
-                        backgroundColor: 'action.hover',
                       }}
                     />
 
@@ -569,13 +586,30 @@ function RouteComponent() {
                         </Box>
 
                         <Box>
-                          <IconButton disabled={!canEdit} size="small" onClick={() => handleEditCollection(collection)}>
+                          <IconButton
+                            loading={isCollectionsLoading}
+                            disabled={!canEdit}
+                            size="small"
+                            onClick={() => handleEditCollection(collection)}
+                          >
                             <EditRoundedIcon fontSize="small" />
                           </IconButton>
                         </Box>
 
                         <Box>
                           <IconButton
+                            loading={isCollectionsLoading}
+                            disabled={!canEdit}
+                            size="small"
+                            onClick={() => handleDuplicateCollection(collection)}
+                          >
+                            <ContentCopyRoundedIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+
+                        <Box>
+                          <IconButton
+                            loading={isCollectionsLoading}
                             disabled={!canDelete}
                             size="small"
                             onClick={() => handleDeleteCollection(collection)}
