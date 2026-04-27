@@ -10,6 +10,7 @@ type TypeHeaderProps = {
   actionIcon?: React.ReactNode;
   disabled?: boolean;
   actionNode?: React.ReactNode;
+  actionLoading?: boolean;
 };
 
 export const AdminHeaderContainer = (props: TypeHeaderProps) => {
@@ -41,6 +42,7 @@ export const AdminHeaderContainer = (props: TypeHeaderProps) => {
           startIcon={props.actionIcon}
           onClick={props.action}
           disabled={props.disabled}
+          loading={props.actionLoading}
         >
           {props.actionText}
         </Button>

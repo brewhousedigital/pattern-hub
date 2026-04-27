@@ -16,7 +16,9 @@ import { enqueueSnackbar } from 'notistack';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { downloadAllFilesAsZip } from '@/functions/utilities/download-all-files';
 
+import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -214,9 +216,35 @@ function RouteComponent() {
     }
   };
 
+  const [isZippingFiles, setIsZippingFiles] = React.useState(false);
+
+  const handleDownloadPatternKeys = async () => {
+    setIsZippingFiles(true);
+
+    try {
+      const fileArray = legends?.map((legend) => {
+        return generatePbImagePatternKeyRef(legend);
+      });
+
+      await downloadAllFilesAsZip(fileArray, 'pattern-archive-legend-images');
+    } catch (error: any) {
+      enqueueSnackbar(
+        `Something went wrong zipping up the pattern keys... sorry about that. Try again in a minute or two. Error: ${error?.message}`,
+      );
+    }
+
+    setIsZippingFiles(false);
+  };
+
   return (
     <Box>
-      <AdminHeaderContainer title="Pattern Key Management" />
+      <AdminHeaderContainer
+        title="Pattern Key Management"
+        action={handleDownloadPatternKeys}
+        actionText="Download All Key Patterns"
+        actionIcon={<DownloadForOfflineRoundedIcon />}
+        actionLoading={isZippingFiles}
+      />
 
       {/* ── Legends ── */}
       <Typography variant="overline" color="text.secondary" display="block" mb={1}>
