@@ -99,8 +99,8 @@ function RouteComponent() {
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
 
-    if (file.type !== 'image/webp') {
-      enqueueSnackbar('Not a Webp format! Use the TinyPNG tool to compress your key image into a Webp file.', {
+    if (file.type !== 'image/svg+xml') {
+      enqueueSnackbar('Not a SVG format!', {
         variant: 'error',
       });
       return;
@@ -212,24 +212,7 @@ function RouteComponent() {
 
   return (
     <Box>
-      <AdminHeaderContainer
-        title="Pattern Key Management"
-        subtitle={
-          <>
-            <Typography color="text.secondary" variant="body2">
-              Convert your pattern key images into webp format before uploading.
-            </Typography>
-
-            <Typography color="text.secondary" variant="body2">
-              You can use this tool:{' '}
-              <a href="https://tinypng.com/" target="_blank">
-                https://tinypng.com/
-              </a>
-              . Make sure to select "Convert my images automatically" and select webp as the format.
-            </Typography>
-          </>
-        }
-      />
+      <AdminHeaderContainer title="Pattern Key Management" />
 
       {/* ── Legends ── */}
       <Typography variant="overline" color="text.secondary" display="block" mb={1}>
@@ -262,7 +245,7 @@ function RouteComponent() {
           }}
         >
           <Avatar sx={{ backgroundColor: '#EAF3DE', width: 40, height: 40 }}>
-            {savePatternKey.isPending ? (
+            {savePatternKey.isPending || legendsLoading ? (
               <CircularProgress size={18} sx={{ color: '#3B6D11' }} />
             ) : (
               <UploadFileIcon sx={{ color: '#3B6D11', fontSize: 20 }} />
@@ -274,13 +257,13 @@ function RouteComponent() {
           </Typography>
 
           <Typography variant="caption" color="text.disabled">
-            .webp only
+            .svg only
           </Typography>
 
           <input
             ref={inputRef}
             type="file"
-            accept="image/webp"
+            accept="image/svg+xml"
             hidden
             onChange={(e) => handleFile(e.target.files?.[0])}
           />

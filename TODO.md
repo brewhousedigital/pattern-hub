@@ -2,14 +2,11 @@ When the view drawer slides up, we populate the pattern data in a consistent man
 Update print view with forced padding. Figure this out once the attribution card has been designed.
 Update the print view to include any additional information and instructions as separate pages
 Update the image download to have the attribution card, plus all instructions
-Build new admin entry to manage Pattern Key Reference Images
-Build new Instructions button on Admin Panel Manager
+
 Update ViewDrawer to show Instructions
-Update Admin Pattern Edit Modal to have a pattern key builder system
 Update admin panel for patterns to have a "show deleted patterns" section.
 Expand admin panel patterns page to use SQL syntax directly from Pocketbase: name='Vulva'
 The database doesn't actually use any permissions... maybe set that up lol
-New admin dashboard panel to show pattern key reference links 
 
 we got a solid plan for phase one. i'll have all weekend to work on that on account of i cant leave the house. so i'll get most of this knocked out i think
 
