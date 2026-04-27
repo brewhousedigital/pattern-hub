@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/space-command/wiki')({
+export const Route = createFileRoute('/space-command/wiki/')({
   component: RouteComponent,
 })
 

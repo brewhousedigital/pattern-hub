@@ -15,7 +15,6 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
-import { Route as SpaceCommandWikiRouteImport } from './routes/space-command/wiki'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
@@ -32,6 +31,7 @@ import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpAboutRouteImport } from './routes/help/about'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
 
@@ -64,11 +64,6 @@ const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const SpaceCommandWikiRoute = SpaceCommandWikiRouteImport.update({
-  id: '/wiki',
-  path: '/wiki',
-  getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
   id: '/users',
@@ -151,6 +146,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
+  id: '/wiki/',
+  path: '/wiki/',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
 const SpaceCommandComplaintsIndexRoute =
   SpaceCommandComplaintsIndexRouteImport.update({
     id: '/complaints/',
@@ -183,13 +183,13 @@ export interface FileRoutesByFullPath {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -209,13 +209,13 @@ export interface FileRoutesByTo {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/wiki': typeof SpaceCommandWikiIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -237,13 +237,13 @@ export interface FileRoutesById {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -266,13 +266,13 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/space-command/wiki'
     | '/collections/'
     | '/guides/'
     | '/profile/'
     | '/space-command/'
     | '/space-command/complaints/reviewed'
     | '/space-command/complaints/'
+    | '/space-command/wiki/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -292,13 +292,13 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/space-command/wiki'
     | '/collections'
     | '/guides'
     | '/profile'
     | '/space-command'
     | '/space-command/complaints/reviewed'
     | '/space-command/complaints'
+    | '/space-command/wiki'
   id:
     | '__root__'
     | '/'
@@ -319,13 +319,13 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/space-command/wiki'
     | '/collections/'
     | '/guides/'
     | '/profile/'
     | '/space-command/'
     | '/space-command/complaints/reviewed'
     | '/space-command/complaints/'
+    | '/space-command/wiki/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -387,13 +387,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/collections/'
       preLoaderRoute: typeof CollectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/space-command/wiki': {
-      id: '/space-command/wiki'
-      path: '/wiki'
-      fullPath: '/space-command/wiki'
-      preLoaderRoute: typeof SpaceCommandWikiRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/users': {
       id: '/space-command/users'
@@ -507,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/space-command/wiki/': {
+      id: '/space-command/wiki/'
+      path: '/wiki'
+      fullPath: '/space-command/wiki/'
+      preLoaderRoute: typeof SpaceCommandWikiIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/complaints/': {
       id: '/space-command/complaints/'
       path: '/complaints'
@@ -533,10 +533,10 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandTagsRoute: typeof SpaceCommandTagsRoute
   SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
-  SpaceCommandWikiRoute: typeof SpaceCommandWikiRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
   SpaceCommandComplaintsReviewedRoute: typeof SpaceCommandComplaintsReviewedRoute
   SpaceCommandComplaintsIndexRoute: typeof SpaceCommandComplaintsIndexRoute
+  SpaceCommandWikiIndexRoute: typeof SpaceCommandWikiIndexRoute
 }
 
 const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
@@ -548,10 +548,10 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandTagsRoute: SpaceCommandTagsRoute,
   SpaceCommandTestRoute: SpaceCommandTestRoute,
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
-  SpaceCommandWikiRoute: SpaceCommandWikiRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
   SpaceCommandComplaintsReviewedRoute: SpaceCommandComplaintsReviewedRoute,
   SpaceCommandComplaintsIndexRoute: SpaceCommandComplaintsIndexRoute,
+  SpaceCommandWikiIndexRoute: SpaceCommandWikiIndexRoute,
 }
 
 const SpaceCommandRouteRouteWithChildren =
