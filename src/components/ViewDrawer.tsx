@@ -31,9 +31,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
   const { handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
-  const { data } = useQueryGetAllPatternsByPagination();
-  const resultIds = data?.items.map((p) => p.id) || [];
-
   const { patternId } = usePatternSearch();
 
   const svgImageUrl = generatePbImage(viewData);
@@ -224,8 +221,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <MetaRow label="Uploaded On" value={createPrettyDate(viewData?.created || '')} />
               <MetaRow label="Last Update" value={createPrettyDate(viewData?.updated || '')} />
             </Box>
-
-            <ThinDivider />
 
             <ThinDivider />
 

@@ -6,6 +6,7 @@ export const BorderedCard = (props: TypeComponentWithChildrenProps) => {
   return (
     <Box
       sx={{
+        width: '100%',
         backgroundColor: '#fff',
         border: (theme) => `2px solid ${theme.palette.primary.main}`,
         borderRadius: 6,
