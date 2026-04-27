@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import type { TypeViewData } from '@/functions/types/types.ts';
+import type { TypeViewData } from '@/functions/types/types';
+import { BorderedCard } from '@/components/cards/BorderedCard';
 
 import { alpha } from '@mui/material/styles';
 import CropPortraitIcon from '@mui/icons-material/CropPortrait';
@@ -341,15 +342,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
   }, [canExport, svgString, mode, orientation, pageWIn, pageHIn, svgWIn, svgHIn, viewData?.name]);
 
   return (
-    <Box
-      sx={{
-        backgroundColor: '#fff',
-        border: (theme) => `2px solid ${theme.palette.primary.main}`,
-        borderRadius: 6,
-        p: 3,
-        mb: 3,
-      }}
-    >
+    <BorderedCard>
       <DecorativeTitle>Export Pattern for Print</DecorativeTitle>
 
       <Box sx={{ mb: 2.5 }}>
@@ -582,7 +575,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
             ? `Download Tiled PDF${tileInfo ? ` (${tileInfo.pages} pages)` : ''}`
             : 'Download PDF'}
       </Button>
-    </Box>
+    </BorderedCard>
   );
 };
 

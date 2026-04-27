@@ -3,6 +3,7 @@ import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import type { TypeViewData } from '@/functions/types/types';
+import { BorderedCard } from '@/components/cards/BorderedCard';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -368,15 +369,7 @@ export const ExportPatternToDownloadV2 = (props: TypeViewData) => {
   };
 
   return (
-    <Box
-      sx={{
-        backgroundColor: '#fff',
-        border: (theme) => `2px solid ${theme.palette.primary.main}`,
-        borderRadius: 6,
-        p: 3,
-        mb: 3,
-      }}
-    >
+    <BorderedCard>
       <DecorativeTitle>Download Pattern</DecorativeTitle>
 
       {/* Warning if source dims missing */}
@@ -593,6 +586,6 @@ export const ExportPatternToDownloadV2 = (props: TypeViewData) => {
           Download Original SVG
         </Button>
       </Collapse>
-    </Box>
+    </BorderedCard>
   );
 };

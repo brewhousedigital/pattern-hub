@@ -17,6 +17,7 @@ import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { downloadAllFilesAsZip } from '@/functions/utilities/download-all-files';
+import { BorderedCard } from '@/components/cards/BorderedCard';
 
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
@@ -282,7 +283,7 @@ function RouteComponent() {
           sx={{
             border: '1.5px dashed',
             borderColor: dragOver ? '#3B6D11' : 'divider',
-            borderRadius: 2,
+            borderRadius: 6,
             py: 4,
             display: 'flex',
             flexDirection: 'column',
@@ -337,10 +338,9 @@ function RouteComponent() {
 
             return (
               <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }} sx={{ height: '100%' }}>
-                <Card>
-                  <CardContent
+                <BorderedCard>
+                  <Box
                     sx={{
-                      p: 3,
                       position: 'relative',
                       minHeight: 150,
                       display: 'flex',
@@ -366,8 +366,8 @@ function RouteComponent() {
                       disabled={softDeleteKey.isPending}
                       sx={{
                         position: 'absolute',
-                        top: 12,
-                        right: 12,
+                        top: 0,
+                        right: 0,
                         zIndex: 6,
                         backgroundColor: '#eee',
                         '&:hover': { color: 'error.main', backgroundColor: '#eee' },
@@ -375,8 +375,8 @@ function RouteComponent() {
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </BorderedCard>
               </Grid>
             );
           })}
@@ -562,9 +562,9 @@ function RouteComponent() {
           <Grid container spacing={4}>
             {collections?.map((collection) => {
               return (
-                <Grid key={collection.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }}>
-                  <Card>
-                    <CardContent>
+                <Grid key={collection.id} size={{ xs: 12, md: 4, lg: 3 }}>
+                  <BorderedCard>
+                    <Box>
                       <Stack
                         direction="row"
                         sx={{
@@ -619,27 +619,29 @@ function RouteComponent() {
                         </Box>
                       </Stack>
 
-                      {collection.collection.map((item, index) => (
-                        <Box key={`collection-${collection.id}-${index}`}>
-                          <Typography variant="caption" color="text.secondary">
-                            {item.name}
-                          </Typography>
+                      <Stack sx={{ gap: 2 }}>
+                        {collection.collection.map((item, index) => (
+                          <Box key={`collection-${collection.id}-${index}`}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {item.name}
+                            </Typography>
 
-                          <Box
-                            component="img"
-                            src={item.fullPath}
-                            alt={item.name}
-                            sx={{
-                              width: '100%',
-                              height: 'auto',
-                              borderRadius: 1,
-                              maxHeight: 100,
-                            }}
-                          />
-                        </Box>
-                      ))}
-                    </CardContent>
-                  </Card>
+                            <Box
+                              component="img"
+                              src={item.fullPath}
+                              alt={item.name}
+                              sx={{
+                                width: '100%',
+                                height: 'auto',
+                                borderRadius: 1,
+                                maxHeight: 75,
+                              }}
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  </BorderedCard>
                 </Grid>
               );
             })}

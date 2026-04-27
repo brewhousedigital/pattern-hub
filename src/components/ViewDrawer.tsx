@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
-import { MetaRow, ThinDivider, SectionLabel } from '@/components/ViewHelpers';
+import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
-import { ExportPatternToDownload } from '@/components/ExportPatternToDownload';
 import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
@@ -11,16 +10,16 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
-import { SidebarList, ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
+import { ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
 import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
-import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2.ts';
+import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
-
-import { alpha } from '@mui/material/styles';
+import type { TypeViewData } from '@/functions/types/types';
+import { BorderedCard } from '@/components/cards/BorderedCard';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Typography, Chip, Stack, Container, Button, Tooltip } from '@mui/material';
+import { Box, Typography, Stack, Container, Button, Tooltip } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -72,15 +71,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
           </Box>
 
           <Box sx={{ order: { xs: 1, lg: 2 } }}>
-            <Box
-              sx={{
-                backgroundColor: '#fff',
-                border: (theme) => `2px solid ${theme.palette.primary.main}`,
-                borderRadius: 6,
-                mb: 3,
-                p: 2,
-              }}
-            >
+            <BorderedCard>
               {viewData?.pattern_file_external ? (
                 <img
                   src={svgImageUrl}
@@ -94,7 +85,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
                 />
               )}
-            </Box>
+            </BorderedCard>
 
             {/*{!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}*/}
             {!viewData?.pattern_file_external && (
@@ -103,6 +94,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             {!viewData?.pattern_file_external && (
               <ExportPatternForPrintV2 viewData={viewData} key={'print' + viewData?.id} />
+            )}
+
+            {!viewData?.pattern_file_external && (
+              <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
             )}
           </Box>
 
@@ -182,6 +177,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <Stack spacing={2} sx={{ mb: 2.5 }}>
               <Box>
                 <SectionLabel>Designed by</SectionLabel>
+
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
                   {viewData?.expand?.authors?.map((author, index) => (
                     <Link
@@ -205,7 +201,12 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               </Box>
 
               <Box>
+                <MetaRow label="Design Date" value={createPrettyDate(viewData?.design_date || '')} />
+              </Box>
+
+              <Box>
                 <SectionLabel>Uploaded by</SectionLabel>
+
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body1">{viewData?.uploaded_by || 'Not Listed'}</Typography>
                 </Box>
@@ -223,6 +224,8 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <MetaRow label="Uploaded On" value={createPrettyDate(viewData?.created || '')} />
               <MetaRow label="Last Update" value={createPrettyDate(viewData?.updated || '')} />
             </Box>
+
+            <ThinDivider />
 
             <ThinDivider />
 
@@ -262,4 +265,16 @@ const sidebarBlockStyles = {
   position: 'sticky',
   top: 0,
   scrollbarWidth: 'none',
+};
+
+const PatternInstructions = (props: TypeViewData) => {
+  if (!props.viewData?.instructions) return <></>;
+
+  return (
+    <BorderedCard>
+      <DecorativeTitle>Pattern Instructions</DecorativeTitle>
+
+      <MarkdownWrapper>{props.viewData?.instructions}</MarkdownWrapper>
+    </BorderedCard>
+  );
 };
