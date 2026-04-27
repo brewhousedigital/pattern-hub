@@ -29,12 +29,12 @@ type ViewDrawerProps = {
 export const ViewDrawer = (props: ViewDrawerProps) => {
   const viewData = props.viewData;
 
-  const { isViewOpen } = useGlobalIsViewOpen();
+  const { handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   const { data } = useQueryGetAllPatternsByPagination();
   const resultIds = data?.items.map((p) => p.id) || [];
 
-  const { navigateToPattern } = usePatternSearch();
+  const { patternId } = usePatternSearch();
 
   const svgImageUrl = generatePbImage(viewData);
 
@@ -43,12 +43,12 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   };
 
   React.useEffect(() => {
-    if (!viewData && resultIds?.[0]) {
-      if (isViewOpen) {
-        navigateToPattern(resultIds?.[0], resultIds);
-      }
+    if (patternId) {
+      handleOpenView();
+    } else {
+      handleCloseView();
     }
-  }, [viewData]);
+  }, [patternId]);
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>

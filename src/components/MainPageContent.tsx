@@ -9,8 +9,6 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
 
 export const MainPageContent = () => {
-  const { handleOpenView } = useGlobalIsViewOpen();
-
   // Get the pattern data
   const { isPending, data } = useQueryGetAllPatternsByPagination();
   const resultIds = data?.items.map((p) => p.id) || [];
@@ -22,9 +20,6 @@ export const MainPageContent = () => {
 
     // Set the global view
     navigateToPattern(pattern?.id, resultIds);
-
-    // Open the modal
-    handleOpenView();
   };
 
   if (isPending) {
