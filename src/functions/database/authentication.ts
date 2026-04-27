@@ -28,6 +28,10 @@ export type TypeLevelsAdmin =
   | 'FAQ_AR'
   | 'FAQ_AU'
   | 'FAQ_AD'
+  | 'WIKI_AC'
+  | 'WIKI_AR'
+  | 'WIKI_AU'
+  | 'WIKI_AD'
   | 'MAP_AC'
   | 'MAP_AR'
   | 'MAP_AU'
@@ -66,6 +70,10 @@ export const EnumLevelsAdmin = {
   FAQ_AR: 'FAQ_AR',
   FAQ_AU: 'FAQ_AU',
   FAQ_AD: 'FAQ_AD',
+  WIKI_AC: 'WIKI_AC',
+  WIKI_AR: 'WIKI_AR',
+  WIKI_AU: 'WIKI_AU',
+  WIKI_AD: 'WIKI_AD',
   MAP_AC: 'MAP_AC',
   MAP_AR: 'MAP_AR',
   MAP_AU: 'MAP_AU',

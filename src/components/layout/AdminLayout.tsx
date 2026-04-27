@@ -9,6 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
+import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
@@ -65,6 +66,7 @@ const SidebarLinks: SidebarLinkType[] = [
     view: EnumLevelsAdmin.COMPLAINTS_AR,
   },
   { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
+  { label: 'Wiki', href: '/space-command/wiki', icon: <AutoStoriesRoundedIcon />, view: EnumLevelsAdmin.WIKI_AR },
   { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
   { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
   { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },

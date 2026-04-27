@@ -15,6 +15,7 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
+import { Route as SpaceCommandWikiRouteImport } from './routes/space-command/wiki'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
@@ -63,6 +64,11 @@ const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SpaceCommandWikiRoute = SpaceCommandWikiRouteImport.update({
+  id: '/wiki',
+  path: '/wiki',
+  getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
   id: '/users',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/space-command/wiki': typeof SpaceCommandWikiRoute
   '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
+    | '/space-command/wiki'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
+    | '/space-command/wiki'
     | '/collections'
     | '/guides'
     | '/profile'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
+    | '/space-command/wiki'
     | '/collections/'
     | '/guides/'
     | '/profile/'
@@ -375,6 +387,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/collections/'
       preLoaderRoute: typeof CollectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/space-command/wiki': {
+      id: '/space-command/wiki'
+      path: '/wiki'
+      fullPath: '/space-command/wiki'
+      preLoaderRoute: typeof SpaceCommandWikiRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/users': {
       id: '/space-command/users'
@@ -514,6 +533,7 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandTagsRoute: typeof SpaceCommandTagsRoute
   SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
+  SpaceCommandWikiRoute: typeof SpaceCommandWikiRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
   SpaceCommandComplaintsReviewedRoute: typeof SpaceCommandComplaintsReviewedRoute
   SpaceCommandComplaintsIndexRoute: typeof SpaceCommandComplaintsIndexRoute
@@ -528,6 +548,7 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandTagsRoute: SpaceCommandTagsRoute,
   SpaceCommandTestRoute: SpaceCommandTestRoute,
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
+  SpaceCommandWikiRoute: SpaceCommandWikiRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
   SpaceCommandComplaintsReviewedRoute: SpaceCommandComplaintsReviewedRoute,
   SpaceCommandComplaintsIndexRoute: SpaceCommandComplaintsIndexRoute,
