@@ -311,7 +311,7 @@ function RouteComponent() {
           No legends yet.
         </Typography>
       ) : (
-        <Grid container spacing={4}>
+        <Grid container spacing={4} sx={{ alignItems: 'center' }}>
           {legends?.map((legend) => {
             const url = generatePbImagePatternKeyRef(legend);
             const filename = legend.name;
@@ -326,8 +326,8 @@ function RouteComponent() {
                     sx={{
                       width: '100%',
                       height: 'auto',
+                      maxHeight: 100,
                       borderRadius: 1,
-                      objectFit: 'cover',
                     }}
                   />
 
@@ -599,7 +599,7 @@ function RouteComponent() {
                               width: '100%',
                               height: 'auto',
                               borderRadius: 1,
-                              objectFit: 'cover',
+                              maxHeight: 100,
                             }}
                           />
                         </Box>
