@@ -32,8 +32,8 @@ If you want to do a partial match, you can use the \`~\` operator. For example:
 \`name ~ 'Vul'\` will return any pattern with "Vul" in the name, such as "Vulva" or "Vulture"
 
 You can also combine multiple conditions using logical operators. For example:
-\`(title ~ 'abc' && created > '2022-01-01')\`
-This will return patterns with "abc" in the title that were created after January 1, 2022.
+\`(name ~ 'moon' && created > '2022-01-01')\`
+This will return patterns with "moon" in the name (case-insensitive) that were created after January 1, 2022.
 
 You can use parentheses to group conditions and control the order of evaluation. For example:
 \`(name ~ 'Clock' || name ~ 'Sun') && created > '2022-01-01'\`
@@ -57,12 +57,12 @@ This will return patterns that do not have "clock" in the name and were created 
 # Filter expressions to filter/search:
 
 \`\`\`
-title ~ 'abc' && created > '2022-01-01'
+name ~ 'moon' && created > '2022-01-01'
 \`\`\`
 
 ## Supported record filter fields:
 
-String / Number:
+String / Number / Dates:
 
 \`\`\`
 id,
@@ -76,6 +76,14 @@ line_width,
 design_date,
 updated,
 created
+\`\`\`
+
+For strings and dates, the value has to be wrapped in quote signs. For numbers, you can leave it as is
+
+\`\`\`
+name = 'Toucan'
+pieces > 3
+updated > '2022-01-01'
 \`\`\`
 
 The columns below require the \`contains\` search to be able to look through the array of tags for a match:
@@ -146,7 +154,7 @@ export const OpenAdminPatternTableHowToSearchButton = () => {
 
   return (
     <Button size="small" startIcon={<QuizRoundedIcon fontSize="small" />} onClick={handleClick}>
-      Open Search/Filter Info Box
+      How to Search/Filter
     </Button>
   );
 };
