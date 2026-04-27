@@ -44,6 +44,7 @@ import {
   QuickFilterClear,
   QuickFilterTrigger,
 } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 
 export const AdminPatternTable = () => {
   const { paginationModel, setPaginationModel } = useGlobalAdminPagination();
@@ -233,8 +234,8 @@ export const AdminPatternTable = () => {
       renderCell: (params) => {
         return (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <AdminEditPatternModal mode="edit" {...params.row} />
-            <AdminPatternInstructionsModal callback={refetch} {...params.row} />
+            <AdminEditPatternModal mode="edit" callback={refetch} {...params.row} />
+            {/*<AdminPatternInstructionsModal callback={refetch} {...params.row} />*/}
           </Stack>
         );
       },
@@ -324,6 +325,7 @@ function CustomToolbar() {
         updated={''}
         pattern_key_reference_list={[]}
         instructions={''}
+        design_date={dayjs()}
       />
 
       <Menu

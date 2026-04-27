@@ -20,7 +20,8 @@ import {
 } from '@mui/material';
 
 type AdminPatternInstructionsEditorModalProps = TypePatternResponse & {
-  callback: () => void;
+  callback?: () => void;
+  largeButton?: boolean;
 };
 
 export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEditorModalProps) => {
@@ -50,7 +51,9 @@ export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEdi
     try {
       await update.mutateAsync({ id: props?.id, instructions: content });
 
-      await props.callback();
+      if (props?.callback) {
+        await props.callback();
+      }
 
       handleCloseModal();
     } catch (error: any) {
@@ -62,11 +65,21 @@ export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEdi
   return (
     <>
       <Box>
-        <Tooltip title="Instructions" arrow>
-          <IconButton size="small" onClick={handleOpenModal}>
-            <VerticalSplitRoundedIcon fontSize="inherit" />
-          </IconButton>
-        </Tooltip>
+        {props.largeButton ? (
+          <Button
+            startIcon={<VerticalSplitRoundedIcon fontSize="inherit" />}
+            variant="outlined"
+            onClick={handleOpenModal}
+          >
+            Instructions Popup
+          </Button>
+        ) : (
+          <Tooltip title="Instructions" arrow>
+            <IconButton size="small" onClick={handleOpenModal}>
+              <VerticalSplitRoundedIcon fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       <Dialog open={isOpen} onClose={handleCloseModal} fullWidth maxWidth="xl">

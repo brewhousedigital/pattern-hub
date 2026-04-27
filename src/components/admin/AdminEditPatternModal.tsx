@@ -64,11 +64,13 @@ import {
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { AdminPatternInstructionsModal } from '@/components/admin/AdminPatternInstructionsModal.tsx';
 
 type TypeModalMode = 'edit' | 'add';
 
 type TypeEditModalProps = TypePatternResponse & {
   mode?: TypeModalMode;
+  callback?: () => void;
 };
 
 export const AdminEditPatternModal = (props: TypeEditModalProps) => {
@@ -571,6 +573,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               }
               error={description?.length > 2000}
             />
+
+            <AdminPatternInstructionsModal callback={props.callback} largeButton {...props} />
 
             <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
 
