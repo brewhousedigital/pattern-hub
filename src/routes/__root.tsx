@@ -6,6 +6,8 @@ import { muiTheme } from '../data/mui-theme';
 import { SnackbarProvider } from 'notistack';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/functions/database/authentication-setup';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 const RootLayout = () => {
   return (
@@ -17,7 +19,9 @@ const RootLayout = () => {
 
         <SnackbarProvider autoHideDuration={6000} anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}>
           <QueryClientProvider client={queryClient}>
-            <Outlet />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Outlet />
+            </LocalizationProvider>
           </QueryClientProvider>
         </SnackbarProvider>
       </ThemeProvider>

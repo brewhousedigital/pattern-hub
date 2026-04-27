@@ -2,7 +2,8 @@ import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import type { TypeAuthData } from '@/functions/database/authentication.ts';
+import type { TypeAuthData } from '@/functions/database/authentication';
+import dayjs, { Dayjs } from 'dayjs';
 
 export type TypePatternResponse = {
   collectionId: string;
@@ -15,6 +16,7 @@ export type TypePatternResponse = {
   authors: string[];
   author_manual: string[];
   uploaded_by: string;
+  design_date: Date | Dayjs | null;
   tags: string[];
   pattern_file: string;
   pattern_file_external: string;
@@ -114,6 +116,7 @@ export type TypePatternCreatePayload = {
   line_width_unit: string;
   isDeleted?: boolean;
   pattern_key_reference_list?: TypePatternKeyReferenceObject[];
+  design_date?: Date | Dayjs | null;
 };
 
 export const useMutationEditPattern = () => {
@@ -157,6 +160,11 @@ export const useMutationEditPattern = () => {
 
       if (payload?.pattern_file_external_link) {
         formData.append('pattern_file_external_link', payload?.pattern_file_external_link || '');
+      }
+
+      if (payload?.design_date) {
+        const dateString = dayjs(payload?.design_date).startOf('day').toISOString();
+        formData.append('design_date', dateString || '');
       }
 
       if (payload?.id) {

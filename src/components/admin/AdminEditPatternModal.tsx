@@ -17,6 +17,7 @@ import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import dayjs, { Dayjs } from 'dayjs';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
@@ -34,6 +35,8 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import {
   Box,
@@ -56,7 +59,6 @@ import {
   Tab,
   CircularProgress,
   Alert,
-  Menu,
 } from '@mui/material';
 
 import TabContext from '@mui/lab/TabContext';
@@ -160,6 +162,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // Manual Authors
   const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.author_manual || []);
   const [manualAuthorAutoCompleteInputValue, setManualAuthorAutoCompleteInputValue] = React.useState('');
+
+  // Design Date
+  const now = props?.design_date ? dayjs(props?.design_date) : dayjs();
+  const [designDate, setDesignDate] = React.useState<Dayjs | null>(now);
 
   // Query the authors table with the debounced value
   const {
@@ -272,6 +278,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setExternalFileLink('');
     handleResetChangePatternKey();
     setPatternKeyObject([]);
+    setDesignDate(dayjs());
   };
 
   // Clean up the URL when component unmounts or new file is selected
@@ -377,6 +384,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         design_width_unit: designWidthUnit && designWidthUnit !== 'undefined' ? designWidthUnit : 'in',
         design_height_unit: designHeightUnit && designHeightUnit !== 'undefined' ? designHeightUnit : 'in',
         pattern_key_reference_list: patternKeyObject || [],
+        design_date: designDate,
       };
 
       // If a pattern has already been uploaded, don't reset the `uploaded_by` property
@@ -425,7 +433,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         try {
           const fileUrl = generatePbImageExternalFile(savedPattern);
           const ogImage = await generateOpengraphImage({ type: 'webp', url: fileUrl }, name);
-          console.log('>>>ogImage', ogImage);
 
           await pocketbase.collection('patterns').update(savedPattern.id, {
             opengraph_image: ogImage,
@@ -547,19 +554,25 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               helperText={
-                description?.length > 1000
-                  ? `Description is too long: ${description?.length}/1000`
-                  : `${description?.length}/1000`
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="caption">
+                    {description?.length > 2000
+                      ? `Description is too long: ${description?.length}/2000`
+                      : `${description?.length}/2000`}
+                  </Typography>
+
+                  <Typography variant="caption">
+                    Description supports{' '}
+                    <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+                      Markdown
+                    </a>
+                  </Typography>
+                </Stack>
               }
-              error={description?.length > 1000}
+              error={description?.length > 2000}
             />
 
-            <Typography>
-              Description supports{' '}
-              <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
-                Markdown
-              </a>
-            </Typography>
+            <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
 
             <Divider />
 
