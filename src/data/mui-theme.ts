@@ -1,4 +1,4 @@
-import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { alpha, createTheme, responsiveFontSizes } from '@mui/material/styles';
 import { PRIMARY_COLOR, SECONDARY_COLOR } from '@/data/constants';
 
 const baseTheme = createTheme({
@@ -48,6 +48,9 @@ const baseTheme = createTheme({
       fontStyle: 'normal',
     },
   },
+});
+
+const componentTheme = createTheme(baseTheme, {
   components: {
     MuiButton: {
       defaultProps: {
@@ -81,7 +84,25 @@ const baseTheme = createTheme({
         },
       },
     },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'capitalize',
+          borderColor: alpha(baseTheme.palette.primary.main, 0.3),
+          color: baseTheme.palette.primary.main,
+          px: 1.25,
+          fontSize: '0.72rem',
+          '&.Mui-selected': {
+            bgcolor: alpha(baseTheme.palette.primary.main, 0.15),
+            color: baseTheme.palette.primary.main,
+            borderColor: alpha(baseTheme.palette.primary.main, 0.5),
+            '&:hover': { bgcolor: alpha(baseTheme.palette.primary.main, 0.2) },
+          },
+          '&:hover': { bgcolor: alpha(baseTheme.palette.primary.main, 0.07) },
+        },
+      },
+    },
   },
 });
 
-export const muiTheme = responsiveFontSizes(baseTheme);
+export const muiTheme = responsiveFontSizes(componentTheme);

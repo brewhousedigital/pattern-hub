@@ -3,6 +3,8 @@ import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
+import { ExportPatternToDownloadV3 } from '@/components/PatternExport/ExportPatternToDownloadV3';
+import type { TypeExportPatternContext } from '@/components/PatternExport/useExportPattern';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -11,7 +13,7 @@ import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportI
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
 import { ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
-import { type TypePatternResponse, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns.ts';
+import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
@@ -46,6 +48,22 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
       handleCloseView();
     }
   }, [patternId]);
+
+  const exportPatternContext: TypeExportPatternContext = {
+    patternFileUrl: svgImageUrl,
+    patternName: viewData?.name || '',
+    authorLine: viewData?.expand?.authors?.map((a) => a.name).join(', ') ?? '',
+    pieces: viewData?.pieces || 0,
+    designDate: viewData?.design_date as Date | null,
+    designWidth: viewData?.design_width || 0,
+    designWidthUnit: viewData?.design_width_unit || '',
+    designHeight: viewData?.design_height || 0,
+    designHeightUnit: viewData?.design_height_unit || '',
+    lineWidth: viewData?.line_width || 0,
+    lineWidthUnit: viewData?.line_width_unit || '',
+    instructionsMarkdown: viewData?.instructions || '',
+    patternKeys: viewData?.pattern_key_reference_list || [],
+  };
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
@@ -85,8 +103,11 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             </BorderedCard>
 
             {/*{!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}*/}
-            {!viewData?.pattern_file_external && (
+            {/*{!viewData?.pattern_file_external && (
               <ExportPatternToDownloadV2 viewData={viewData} key={'download' + viewData?.id} />
+            )}*/}
+            {!viewData?.pattern_file_external && (
+              <ExportPatternToDownloadV3 ctx={exportPatternContext} key={'download' + viewData?.id} />
             )}
 
             {!viewData?.pattern_file_external && (
@@ -223,6 +244,32 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             </Box>
 
             <ThinDivider />
+
+            {viewData?.pattern_key_reference_list && (
+              <>
+                {/*{viewData.pattern_key_reference_list?.map((item) => {
+                  return (
+                    <Grid container sx={{ alignItems: 'center', mb: 2 }}>
+                      <Grid size={{ xs: 4 }}>{item.name}</Grid>
+                      <Grid size={{ xs: 8 }}>
+                        <img
+                          src={item.fullPath}
+                          alt={item.name}
+                          //style={{ width: '100%', height: 'auto', maxHeight: 50, borderRadius: 8 }}
+                          style={{
+                            width: '100%',
+                            height: 40,
+                            objectFit: 'contain',
+                            objectPosition: 'left',
+                            display: 'block',
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  );
+                })}*/}
+              </>
+            )}
 
             <PatternReportIssue viewData={viewData} />
 
