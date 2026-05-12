@@ -3,15 +3,17 @@ import DOMPurify from 'dompurify';
 export const sanitizeSvg = (code: string) => {
   return DOMPurify.sanitize(code, {
     USE_PROFILES: { svg: true, svgFilters: true },
+    // Explicitly allow the 'use' tag
+    ADD_TAGS: ['use'],
+    // Explicitly allow the 'xlink:href' attribute
+    ADD_ATTR: ['xlink:href', 'clip-path'],
   });
 };
 
 export const sanitizeSvgFile = async (file: File): Promise<File> => {
   const raw = await file.text();
 
-  const clean = DOMPurify.sanitize(raw, {
-    USE_PROFILES: { svg: true, svgFilters: true },
-  });
+  const clean = sanitizeSvg(raw);
 
   if (!clean || clean.trim().length === 0) {
     throw new Error('SVG failed sanitization — file may be malformed or malicious');
