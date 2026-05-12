@@ -16,6 +16,7 @@ import {
   OpenAdminPatternTableHowToSearchButton,
 } from '@/components/admin/AdminPatternTableHowToSearch';
 
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
@@ -32,6 +33,7 @@ import {
   Tooltip,
   styled,
   Button,
+  IconButton,
 } from '@mui/material';
 
 import {
@@ -205,7 +207,7 @@ function RouteComponent() {
 
         if (params.value) {
           return (
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ textAlign: 'center' }}>
               <Tooltip
                 placement="left-start"
                 arrow
@@ -216,13 +218,9 @@ function RouteComponent() {
                   </Stack>
                 }
               >
-                <a href={filePath} download target="_blank" style={{ display: 'block' }}>
-                  <img
-                    src={filePath}
-                    alt={`pattern template for ${params.row.name}`}
-                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                  />
-                </a>
+                <IconButton component="a" href={filePath} download target="_blank">
+                  <CheckRoundedIcon color="success" />
+                </IconButton>
               </Tooltip>
             </Box>
           );
