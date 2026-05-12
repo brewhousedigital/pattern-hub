@@ -556,7 +556,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               helperText={
-                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                <Stack component="span" direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                   <Typography variant="caption">
                     {description?.length > 2000
                       ? `Description is too long: ${description?.length}/2000`

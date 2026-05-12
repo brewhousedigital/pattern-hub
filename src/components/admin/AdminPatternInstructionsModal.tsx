@@ -7,6 +7,7 @@ import VerticalSplitRoundedIcon from '@mui/icons-material/VerticalSplitRounded';
 import CloseIcon from '@mui/icons-material/Close';
 
 import {
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,6 +23,7 @@ import {
 type AdminPatternInstructionsEditorModalProps = TypePatternResponse & {
   callback?: () => void;
   largeButton?: boolean;
+  mode?: 'edit' | 'add';
 };
 
 export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEditorModalProps) => {
@@ -66,13 +68,20 @@ export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEdi
     <>
       <Box>
         {props.largeButton ? (
-          <Button
-            startIcon={<VerticalSplitRoundedIcon fontSize="inherit" />}
-            variant="outlined"
-            onClick={handleOpenModal}
-          >
-            Instructions Popup
-          </Button>
+          <Stack sx={{ gap: 2 }}>
+            <Button
+              startIcon={<VerticalSplitRoundedIcon fontSize="inherit" />}
+              variant="outlined"
+              onClick={handleOpenModal}
+              disabled={props?.mode === 'add'}
+            >
+              Instructions Popup
+            </Button>
+
+            {props?.mode === 'add' && (
+              <Typography sx={{ textAlign: 'center' }}>Save this pattern first before adding Instructions</Typography>
+            )}
+          </Stack>
         ) : (
           <Tooltip title="Instructions" arrow>
             <IconButton size="small" onClick={handleOpenModal}>
@@ -84,7 +93,7 @@ export const AdminPatternInstructionsModal = (props: AdminPatternInstructionsEdi
 
       <Dialog open={isOpen} onClose={handleCloseModal} fullWidth maxWidth="xl">
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-          <Typography variant="h6" fontWeight={500}>
+          <Typography component="span" variant="h6" sx={{ display: 'block', fontWeight: 500 }}>
             Instructions
           </Typography>
 
