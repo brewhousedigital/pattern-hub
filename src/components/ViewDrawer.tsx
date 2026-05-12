@@ -199,6 +199,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
                   {viewData?.expand?.authors?.map((author, index) => (
                     <Link
+                      key={`designed-by-list-${index}`}
                       to={`/profile`}
                       search={{
                         id: author?.id,

@@ -19,7 +19,7 @@ type TopNavigationProps = {
 export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
   const { data } = useQueryGetAllPatternsByPagination();
 
-  const { nextPattern, prevPattern, hasNext, hasPrev, patternId } = usePatternSearch();
+  const { nextPattern, prevPattern, hasNext, hasPrev } = usePatternSearch();
   const resultIds = data?.items.map((item) => item.id) || [];
 
   if (!data) return <></>;
