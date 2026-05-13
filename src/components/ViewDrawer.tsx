@@ -107,9 +107,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             {/*{!viewData?.pattern_file_external && (
               <ExportPatternToDownloadV2 viewData={viewData} key={'download' + viewData?.id} />
             )}*/}
-            {!viewData?.pattern_file_external && (
+            {/*{!viewData?.pattern_file_external && (
               <ExportPatternToDownloadV3 ctx={exportPatternContext} key={'download' + viewData?.id} />
-            )}
+            )}*/}
 
             {!viewData?.pattern_file_external && (
               <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
