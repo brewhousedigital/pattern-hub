@@ -19,67 +19,88 @@ export const sanitizeSvgFile = async (file: File): Promise<File> => {
     throw new Error('SVG failed sanitization — file may be malformed or malicious');
   }
 
-  //const fixed = await normalizeSvgDimensions(clean);
+  const fixed = await normalizeSvgDimensions(clean);
 
-  const blob = new Blob([clean], { type: 'image/svg+xml' });
+  const blob = new Blob([fixed], { type: 'image/svg+xml' });
   return new File([blob], file.name, { type: 'image/svg+xml' });
 };
-
-/*const normalizeSvgDimensions = (svg: string): string => {
-  const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-  const root = doc.documentElement;
-
-  root.removeAttribute('width');
-  root.removeAttribute('height');
-
-  // Pad viewBox to cover stroke + overflow
-  const vb = root
-    .getAttribute('viewBox')
-    ?.split(/[\s,]+/)
-    .map(Number);
-  if (vb?.length === 4) {
-    const [x, y, w, h] = vb;
-    const pad = 24; // covers stroke + minor overflow
-    root.setAttribute('viewBox', `${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`);
-  }
-
-  root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  return new XMLSerializer().serializeToString(doc);
-};*/
 
 const computeBBox = (svgString: string): Promise<DOMRect | null> =>
   new Promise((resolve) => {
     const container = document.createElement('div');
-    container.style.cssText = 'position:absolute;visibility:hidden;width:0;height:0;overflow:hidden';
+    container.style.cssText = 'position:absolute;visibility:hidden;left:-9999px;top:-9999px;width:auto;height:auto';
     container.innerHTML = svgString;
     document.body.appendChild(container);
     const svgEl = container.querySelector('svg') as SVGSVGElement | null;
     requestAnimationFrame(() => {
-      try {
-        resolve(svgEl?.getBBox() ?? null);
-      } catch {
-        resolve(null);
-      } finally {
-        container.remove();
-      }
+      requestAnimationFrame(() => {
+        try {
+          resolve(svgEl?.getBBox() ?? null);
+        } catch {
+          resolve(null);
+        } finally {
+          container.remove();
+        }
+      });
     });
   });
+
+const getMaxStrokeWidth = (root: Element): number => {
+  let max = 0;
+  root.querySelectorAll('*').forEach((el) => {
+    const sw = el.getAttribute('stroke-width') ?? el.getAttribute('style')?.match(/stroke-width:\s*([\d.]+)/)?.[1];
+    if (sw) max = Math.max(max, parseFloat(sw));
+  });
+  return max;
+};
 
 const normalizeSvgDimensions = async (svg: string): Promise<string> => {
   const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
   const root = doc.documentElement;
+
   root.removeAttribute('width');
   root.removeAttribute('height');
-
-  const bbox = await computeBBox(svg);
-  if (bbox) {
-    const stroke = 12; // max stroke width buffer
-    const x = bbox.x - stroke;
-    const y = bbox.y - stroke;
-    const w = bbox.width + stroke * 2;
-    const h = bbox.height + stroke * 2;
-    root.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  if (!root.getAttribute('preserveAspectRatio')) {
+    root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   }
-  root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  const vbAttr = root
+    .getAttribute('viewBox')
+    ?.split(/[\s,]+/)
+    .map(Number);
+  const bbox = await computeBBox(svg);
+
+  if (!bbox || vbAttr?.length !== 4) {
+    return new XMLSerializer().serializeToString(doc);
+  }
+
+  const [vx, vy, vw, vh] = vbAttr;
+  const stroke = getMaxStrokeWidth(root) / 2; // half extends each side
+
+  // Real bounds including stroke
+  const minX = bbox.x - stroke;
+  const minY = bbox.y - stroke;
+  const maxX = bbox.x + bbox.width + stroke;
+  const maxY = bbox.y + bbox.height + stroke;
+
+  // Only expand viewBox if content overflows. Never shrink.
+  const newX = Math.min(vx, minX);
+  const newY = Math.min(vy, minY);
+  const newW = Math.max(vx + vw, maxX) - newX;
+  const newH = Math.max(vy + vh, maxY) - newY;
+
+  console.log('1 before:', vbAttr);
+  console.log('1 bbox:', bbox);
+  console.log('1 stroke:', stroke);
+  console.log('1 after:', [newX, newY, newW, newH]);
+
+  // Skip if no change (within 0.5 unit tolerance)
+  const changed =
+    Math.abs(newX - vx) > 0.5 || Math.abs(newY - vy) > 0.5 || Math.abs(newW - vw) > 0.5 || Math.abs(newH - vh) > 0.5;
+
+  if (changed) {
+    root.setAttribute('viewBox', `${newX} ${newY} ${newW} ${newH}`);
+  }
+
   return new XMLSerializer().serializeToString(doc);
 };
