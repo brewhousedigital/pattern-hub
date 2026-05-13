@@ -38,9 +38,9 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_MARGIN_IN = 0.25;
-const LEGEND_W_IN = 2.5;       // physical width of the legend stamp on paper
-const LEGEND_SVG_PX = 320;     // legend SVG pixel width (must match render-legend.ts WIDTH)
-const LEGEND_GAP_IN = 0.2;     // vertical gap between pattern bottom and legend top
+const LEGEND_W_IN = 2.5; // physical width of the legend stamp on paper
+const LEGEND_SVG_PX = 320; // legend SVG pixel width (must match render-legend.ts WIDTH)
+const LEGEND_GAP_IN = 0.2; // vertical gap between pattern bottom and legend top
 
 const TILE_SHEET_W = 8.5;
 const TILE_SHEET_H = 11;
@@ -105,7 +105,13 @@ function r3(n: number): number {
 
 // Mirrors the height formula in render-legend.ts exactly.
 function legendPhysicalHeightIn(keyCount: number): number {
-  const PAD = 20, HEADER_H = 32, SUB_H = 22, STAT_H = 20, STATS = 4, DIV_H = 16, KEY_H = 32;
+  const PAD = 20,
+    HEADER_H = 32,
+    SUB_H = 22,
+    STAT_H = 20,
+    STATS = 4,
+    DIV_H = 16,
+    KEY_H = 32;
   const px = PAD + HEADER_H + SUB_H + 6 + STATS * STAT_H + DIV_H + keyCount * KEY_H + PAD;
   return px * (LEGEND_W_IN / LEGEND_SVG_PX);
 }
@@ -113,7 +119,10 @@ function legendPhysicalHeightIn(keyCount: number): number {
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return s
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<string> {
@@ -191,7 +200,8 @@ function prepareSvgForPrint(
 }
 
 function drawCropMarks(pdf: jsPDF, x: number, y: number, w: number, h: number) {
-  const CL = 0.15, G = 0.05;
+  const CL = 0.15,
+    G = 0.05;
   pdf.setDrawColor(180, 160, 110);
   pdf.setLineWidth(0.005);
   // top-left
@@ -475,11 +485,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const availH = finalPageH - 2 * PAGE_MARGIN_IN;
   const requiredH = patternHIn + LEGEND_GAP_IN + legendHIn;
   const fitsCheck: 'ok' | 'warn' | null =
-    finalPageW > 0 && patternWIn > 0
-      ? patternWIn <= availW && requiredH <= availH
-        ? 'ok'
-        : 'warn'
-      : null;
+    finalPageW > 0 && patternWIn > 0 ? (patternWIn <= availW && requiredH <= availH ? 'ok' : 'warn') : null;
 
   // Tile info
   const tileW = TILE_SHEET_W - 2 * TILE_MARGIN;
@@ -488,10 +494,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const tileRows = patternHIn > 0 ? Math.ceil(patternHIn / tileH) : 0;
   const tilePages = tileCols * tileRows;
 
-  const canExport =
-    !!svgString &&
-    patternWIn > 0 &&
-    (mode === 'tiled' || (paperWIn !== null && paperHIn !== null));
+  const canExport = !!svgString && patternWIn > 0 && (mode === 'tiled' || (paperWIn !== null && paperHIn !== null));
 
   const handleExport = useCallback(async () => {
     if (!canExport || !viewData) return;
@@ -500,9 +503,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
     try {
       const authorLine =
-        viewData.expand?.authors?.map((a) => a.name).join(', ') ||
-        viewData.author_manual?.join(', ') ||
-        '';
+        viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
 
       const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
@@ -751,7 +752,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
               <Typography variant="caption" sx={{ lineHeight: 1.5 }}>
                 {fitsCheck === 'ok'
                   ? `Pattern + legend fit on ${paperPreset || 'custom paper'} (${orientation}).`
-                  : `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}") and legend (${r2(legendHIn)}" tall) need ${r2(requiredH + 2 * PAGE_MARGIN_IN)}" of height but the ${orientation} page provides only ${r2(availH)}". Try a larger paper size or landscape orientation.`}
+                  : `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}") and legend (${r2(legendHIn)}" tall) need ${r2(requiredH + 2 * PAGE_MARGIN_IN)}" of height but the ${orientation} page provides only ${r2(availH)}". Try a larger paper size or a different orientation.`}
               </Typography>
             </Box>
           )}
@@ -787,7 +788,11 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
       {viewData?.instructions && (
         <FormControlLabel
           control={
-            <Checkbox checked={includeInstructions} onChange={(e) => setIncludeInstructions(e.target.checked)} size="small" />
+            <Checkbox
+              checked={includeInstructions}
+              onChange={(e) => setIncludeInstructions(e.target.checked)}
+              size="small"
+            />
           }
           label={
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
