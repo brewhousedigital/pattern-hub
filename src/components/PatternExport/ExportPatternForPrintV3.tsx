@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import { scaleSVG } from './scaling-SVG';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
@@ -127,8 +126,7 @@ function slugify(s: string) {
 }
 
 async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<string> {
-  const src = svgStr.includes('xmlns=') ? svgStr : svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-  const blob = new Blob([src], { type: 'image/svg+xml;charset=utf-8' });
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -146,6 +144,59 @@ async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<strin
     };
     img.src = url;
   });
+}
+
+// Prepare an SVG string for print rasterization at `targetWPx × targetHPx`.
+//
+// WHY this exists (not scaleSVG):
+//   scaleSVG sets stroke-width via setAttribute(), which is a CSS "presentation
+//   attribute". SVGs exported from Affinity Designer, Inkscape, etc. store
+//   stroke widths inside inline style="" or <style> blocks, which have higher
+//   CSS specificity and silently override the attribute. The result is that the
+//   original thin stroke from the file wins.
+//
+//   Fix: use regex to replace ALL stroke-width occurrences (both CSS and
+//   attribute) with the correct user-unit value derived from the viewBox.
+//   Formula: strokeUserUnits = lineWidthIn × (viewBoxWidth / patternWIn)
+//   This is unit-system-agnostic — works for mm, pt, px, or any other
+//   coordinate space the SVG uses.
+function prepareSvgForPrint(
+  svgString: string,
+  targetWPx: number,
+  targetHPx: number,
+  patternWIn: number,
+  lineWidthIn: number,
+): string {
+  let result = svgString;
+
+  // Ensure SVG namespace for canvas rendering
+  if (!result.includes('xmlns=')) {
+    result = result.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+
+  // Compute stroke width in SVG user units from the viewBox coordinate system
+  const vbMatch = result.match(/viewBox=["']\s*[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+[\d.]+/i);
+  if (vbMatch) {
+    const viewBoxWidth = parseFloat(vbMatch[1]);
+    if (viewBoxWidth > 0 && patternWIn > 0) {
+      const userUnitsPerInch = viewBoxWidth / patternWIn;
+      const strokeUserUnits = (lineWidthIn * userUnitsPerInch).toFixed(5);
+      // Replace inline CSS  (style="...stroke-width:X...")
+      result = result.replace(/stroke-width\s*:\s*[\d.]+/g, `stroke-width:${strokeUserUnits}`);
+      // Replace presentation attribute  (stroke-width="X")
+      result = result.replace(/stroke-width=["'][\d.]+["']/g, `stroke-width="${strokeUserUnits}"`);
+    }
+  }
+
+  // Set the output pixel dimensions on the root <svg> element
+  result = result.replace(/(<svg\b[^>]*?)\s+width=["'][^"']*["']/i, `$1 width="${targetWPx}"`);
+  result = result.replace(/(<svg\b[^>]*?)\s+height=["'][^"']*["']/i, `$1 height="${targetHPx}"`);
+  // Inject width/height if the element had neither
+  if (!/\bwidth=["']\d/.test(result)) {
+    result = result.replace(/(<svg\b[^>]*)>/i, `$1 width="${targetWPx}" height="${targetHPx}">`);
+  }
+
+  return result;
 }
 
 function drawCropMarks(pdf: jsPDF, x: number, y: number, w: number, h: number) {
@@ -194,17 +245,10 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
   const availW = fw - 2 * M;
 
   // Rasterize pattern at exact requested size
-  const scaledSvg = scaleSVG({
-    svgText: a.svgString,
-    targetWidthPx: Math.round(a.patternWIn * DPI_SINGLE),
-    targetHeightPx: Math.round(a.patternHIn * DPI_SINGLE),
-    strokeWidthPx: Math.max(a.lineWidthIn * DPI_SINGLE, 0.5),
-  });
-  const patPng = await svgToPng(
-    scaledSvg,
-    Math.round(a.patternWIn * DPI_SINGLE),
-    Math.round(a.patternHIn * DPI_SINGLE),
-  );
+  const wPx = Math.round(a.patternWIn * DPI_SINGLE);
+  const hPx = Math.round(a.patternHIn * DPI_SINGLE);
+  const preparedSvg = prepareSvgForPrint(a.svgString, wPx, hPx, a.patternWIn, a.lineWidthIn);
+  const patPng = await svgToPng(preparedSvg, wPx, hPx);
 
   // Center pattern horizontally on the page
   const patX = M + (availW - a.patternWIn) / 2;
@@ -252,13 +296,8 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
   // the correct region falls within the printable area (jsPDF clips to page).
   const fullWPx = Math.round(a.patternWIn * DPI_TILED);
   const fullHPx = Math.round(a.patternHIn * DPI_TILED);
-  const scaledSvg = scaleSVG({
-    svgText: a.svgString,
-    targetWidthPx: fullWPx,
-    targetHeightPx: fullHPx,
-    strokeWidthPx: Math.max(a.lineWidthIn * DPI_TILED, 0.5),
-  });
-  const fullPng = await svgToPng(scaledSvg, fullWPx, fullHPx);
+  const preparedSvg = prepareSvgForPrint(a.svgString, fullWPx, fullHPx, a.patternWIn, a.lineWidthIn);
+  const fullPng = await svgToPng(preparedSvg, fullWPx, fullHPx);
 
   // Rasterize legend once; reuse across all pages
   const legendPng = await svgToPng(
