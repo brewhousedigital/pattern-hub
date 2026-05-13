@@ -150,7 +150,7 @@ export function ExportPatternToDownloadV3({ ctx }: ExportPatternToDownloadV3Prop
 
   return (
     <BorderedCard>
-      <DecorativeTitle>Download Pattern V3</DecorativeTitle>
+      <DecorativeTitle>Download Pattern</DecorativeTitle>
 
       <Box sx={{ mb: 3 }}>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
