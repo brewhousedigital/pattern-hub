@@ -406,6 +406,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [unit, setUnit] = useState<PrintUnit>('in');
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
+  const [patternHeightInput, setPatternHeightInput] = useState(() => String(r3(baseHIn)));
   const [paperPreset, setPaperPreset] = useState<PaperPreset | ''>('');
   const [customPageW, setCustomPageW] = useState('');
   const [customPageH, setCustomPageH] = useState('');
@@ -415,22 +416,43 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const [error, setError] = useState<string | null>(null);
   const [svgString, setSvgString] = useState('');
 
-  // Sync width input when viewData loads
+  // Sync both inputs when viewData loads
   useEffect(() => {
     if (viewData) {
       const wIn = dbToIn(viewData.design_width, viewData.design_width_unit);
+      const hIn = dbToIn(viewData.design_height, viewData.design_height_unit);
       setPatternWidthInput(String(r3(fromIn(wIn, unit))));
+      setPatternHeightInput(String(r3(fromIn(hIn, unit))));
     }
   }, [viewData?.id]);
 
-  // Sync width input display when unit selector changes
+  // Convert both displayed values when unit selector changes
   const handleUnitChange = (newUnit: PrintUnit) => {
-    const current = parseFloat(patternWidthInput);
-    if (!isNaN(current) && current > 0) {
-      const inInches = toIn(current, unit);
-      setPatternWidthInput(String(r3(fromIn(inInches, newUnit))));
+    const w = parseFloat(patternWidthInput);
+    if (!isNaN(w) && w > 0) {
+      const wIn = toIn(w, unit);
+      setPatternWidthInput(String(r3(fromIn(wIn, newUnit))));
+      setPatternHeightInput(String(r3(fromIn(wIn * aspectRatio, newUnit))));
     }
     setUnit(newUnit);
+  };
+
+  // Changing width → recalculate height
+  const handleWidthChange = (raw: string) => {
+    setPatternWidthInput(raw);
+    const n = parseFloat(raw);
+    if (!isNaN(n) && n > 0) {
+      setPatternHeightInput(String(r3(fromIn(toIn(n, unit) * aspectRatio, unit))));
+    }
+  };
+
+  // Changing height → recalculate width
+  const handleHeightChange = (raw: string) => {
+    setPatternHeightInput(raw);
+    const n = parseFloat(raw);
+    if (!isNaN(n) && n > 0) {
+      setPatternWidthInput(String(r3(fromIn(toIn(n, unit) / aspectRatio, unit))));
+    }
   };
 
   // Fetch SVG source
@@ -442,13 +464,12 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
       .catch(console.error);
   }, [viewData?.id]);
 
-  // Derived pattern dimensions
+  // Derived pattern dimensions (width drives the ratio-locked height)
   const patternWIn = (() => {
     const n = parseFloat(patternWidthInput);
     return !isNaN(n) && n > 0 ? toIn(n, unit) : 0;
   })();
   const patternHIn = patternWIn * aspectRatio;
-  const patternHeightDisplay = patternWIn > 0 ? r3(fromIn(patternHIn, unit)) : '';
 
   // Paper dimensions (always stored in inches; presets are inch-native)
   const paperWIn: number | null = React.useMemo(() => {
@@ -610,7 +631,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <SectionLabel>Pattern Size</SectionLabel>
-          <Tooltip title="Height adjusts automatically to preserve the original aspect ratio." arrow>
+          <Tooltip title="Width and height are linked — changing either one updates the other to preserve the original aspect ratio." arrow>
             <LockIcon sx={{ fontSize: '0.8rem', color: 'text.secondary', mb: '2px', cursor: 'help' }} />
           </Tooltip>
         </Box>
@@ -622,7 +643,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             variant="filled"
             fullWidth
             value={patternWidthInput}
-            onChange={(e) => setPatternWidthInput(e.target.value)}
+            onChange={(e) => handleWidthChange(e.target.value)}
           />
 
           <TextField
@@ -630,9 +651,8 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             size="small"
             variant="filled"
             fullWidth
-            value={patternHeightDisplay}
-            slotProps={{ input: { readOnly: true } }}
-            sx={{ '& .MuiFilledInput-root': { bgcolor: alpha('#000', 0.03) } }}
+            value={patternHeightInput}
+            onChange={(e) => handleHeightChange(e.target.value)}
           />
 
           <TextField
