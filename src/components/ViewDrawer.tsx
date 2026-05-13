@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
+import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
 import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
 import { ExportPatternToDownloadV3 } from '@/components/PatternExport/ExportPatternToDownloadV3';
 import type { TypeExportPatternContext } from '@/components/PatternExport/useExportPattern';
@@ -111,7 +112,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             )}
 
             {!viewData?.pattern_file_external && (
-              <ExportPatternForPrintV2 viewData={viewData} key={'print' + viewData?.id} />
+              <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
             )}
 
             {!viewData?.pattern_file_external && (
