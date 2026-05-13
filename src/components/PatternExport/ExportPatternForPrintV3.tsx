@@ -406,9 +406,10 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [unit, setUnit] = useState<PrintUnit>('in');
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
-  const [paperPreset, setPaperPreset] = useState<PaperPreset | ''>('Letter');
+  const [paperPreset, setPaperPreset] = useState<PaperPreset | ''>('');
   const [customPageW, setCustomPageW] = useState('');
   const [customPageH, setCustomPageH] = useState('');
+  const [paperUnit, setPaperUnit] = useState<PrintUnit>('in');
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -453,14 +454,14 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   const paperWIn: number | null = React.useMemo(() => {
     if (paperPreset) return PAPER_PRESETS.find((p) => p.name === paperPreset)?.wIn ?? null;
     const n = parseFloat(customPageW);
-    return !isNaN(n) && n > 0 ? toIn(n, unit) : null;
-  }, [paperPreset, customPageW, unit]);
+    return !isNaN(n) && n > 0 ? toIn(n, paperUnit) : null;
+  }, [paperPreset, customPageW, paperUnit]);
 
   const paperHIn: number | null = React.useMemo(() => {
     if (paperPreset) return PAPER_PRESETS.find((p) => p.name === paperPreset)?.hIn ?? null;
     const n = parseFloat(customPageH);
-    return !isNaN(n) && n > 0 ? toIn(n, unit) : null;
-  }, [paperPreset, customPageH, unit]);
+    return !isNaN(n) && n > 0 ? toIn(n, paperUnit) : null;
+  }, [paperPreset, customPageH, paperUnit]);
 
   // Apply orientation to get final page dimensions
   const finalPageW =
@@ -678,9 +679,8 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
                 setCustomPageH('');
               }}
             >
-              <MenuItem value="">
-                <em>Custom…</em>
-              </MenuItem>
+              <MenuItem value="">Custom Size</MenuItem>
+
               {PAPER_PRESETS.map((p) => (
                 <MenuItem key={p.name} value={p.name}>
                   {`${p.name} — ${p.wIn}" × ${p.hIn}"`}
@@ -713,23 +713,41 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
           {/* Custom paper dimensions */}
           <Collapse in={!paperPreset}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 1.5 }}>
+            <Box
+              sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}
+            >
               <TextField
-                label={`Paper Width (${unit})`}
+                label={`Width (${paperUnit})`}
                 size="small"
                 variant="filled"
                 fullWidth
+                placeholder={paperUnit === 'in' ? 'e.g. 24' : paperUnit === 'cm' ? 'e.g. 61' : 'e.g. 610'}
                 value={customPageW}
                 onChange={(e) => setCustomPageW(e.target.value)}
               />
               <TextField
-                label={`Paper Height (${unit})`}
+                label={`Height (${paperUnit})`}
                 size="small"
                 variant="filled"
                 fullWidth
+                placeholder={paperUnit === 'in' ? 'e.g. 36' : paperUnit === 'cm' ? 'e.g. 91' : 'e.g. 914'}
                 value={customPageH}
                 onChange={(e) => setCustomPageH(e.target.value)}
               />
+              <TextField
+                select
+                size="small"
+                variant="filled"
+                label="Unit"
+                value={paperUnit}
+                onChange={(e) => setPaperUnit(e.target.value as PrintUnit)}
+              >
+                {(['in', 'cm', 'mm'] as PrintUnit[]).map((u) => (
+                  <MenuItem key={u} value={u}>
+                    {u}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Box>
           </Collapse>
 
