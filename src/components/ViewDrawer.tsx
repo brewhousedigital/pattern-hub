@@ -96,11 +96,15 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   style={{ width: '100%', height: 'auto', borderRadius: 16, display: 'block' }}
                 />
               ) : (
-                <img
-                  src={svgImageUrl}
-                  alt={`pattern template for ${viewData?.name}`}
-                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
-                />
+                <>
+                  <img
+                    src={svgImageUrl}
+                    alt={`pattern template for ${viewData?.name}`}
+                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
+                  />
+
+                  <PatternLegendCard viewData={viewData} />
+                </>
               )}
             </BorderedCard>
 
@@ -116,9 +120,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
             )}
 
-            {!viewData?.pattern_file_external && (
-              <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />
-            )}
+            {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
 
             {!viewData?.pattern_file_external && (
               <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
@@ -314,6 +316,74 @@ const sidebarBlockStyles = {
   position: 'sticky',
   top: 0,
   scrollbarWidth: 'none',
+};
+
+const PatternLegendCard = ({ viewData }: TypeViewData) => {
+  if (!viewData) return null;
+
+  const authorLine = [...(viewData.expand?.authors?.map((a) => a.name) ?? []), ...(viewData.author_manual ?? [])]
+    .filter(Boolean)
+    .join(', ');
+
+  const sizeLabel = `${viewData.design_width}${viewData.design_width_unit} × ${viewData.design_height}${viewData.design_height_unit}`;
+  const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+  const dateLabel = createPrettyDate(viewData.design_date || '');
+
+  const stats: [string, string][] = [
+    ['Project Size', sizeLabel],
+    ['Pieces', (viewData.pieces ?? 0).toLocaleString()],
+    ['Line Width', lineWidthLabel],
+    ['Design Date', dateLabel],
+  ];
+
+  return (
+    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.3, mb: 0.25 }}>
+        {viewData.name}
+      </Typography>
+
+      {authorLine && (
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+          {authorLine}
+        </Typography>
+      )}
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+        {stats.map(([label, value]) => (
+          <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+            <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600, fontSize: '0.72rem' }}>
+              {label}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.primary', fontSize: '0.72rem' }}>
+              {value}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {viewData.pattern_key_reference_list && viewData.pattern_key_reference_list.length > 0 && (
+        <>
+          <Box sx={{ borderTop: '1px solid', borderColor: 'divider', mt: 1.25, mb: 1.25 }} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            {viewData.pattern_key_reference_list.map((key, i) => (
+              <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {key.fullPath && (
+                  <img
+                    src={key.fullPath}
+                    alt={key.name}
+                    style={{ width: 24, height: 24, objectFit: 'contain', flexShrink: 0 }}
+                  />
+                )}
+                <Typography variant="caption" sx={{ color: 'text.primary', fontSize: '0.72rem' }}>
+                  {key.name}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
+    </Box>
+  );
 };
 
 const PatternInstructions = (props: TypeViewData) => {
