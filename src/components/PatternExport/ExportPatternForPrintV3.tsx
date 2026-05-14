@@ -325,51 +325,63 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
       const contentH = Math.min(tileH, a.patternHIn - srcY);
       drawCropMarks(pdf, TILE_MARGIN, TILE_MARGIN, contentW, contentH);
 
-      // Legend stamp in the reserved strip below the tile area
       const legendY = TILE_MARGIN + tileH + LEGEND_GAP_IN;
-      pdf.addImage(legendPng, 'PNG', TILE_MARGIN, legendY, LEGEND_W_IN, a.legendHIn);
 
-      // Tile label (bottom-left of page)
-      const colLabel = String.fromCharCode(65 + col); // A, B, C…
+      const colLabel = String.fromCharCode(65 + col);
       const labelText = `${colLabel}${row + 1}  ·  ${a.patternName}`;
+      //const hintText = `${cols} × ${rows} sheets (${cols * rows} pages total)  ·  align crop marks and tape together`;
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(7);
 
-      // White background behind label
-      const textWidth = pdf.getTextWidth(labelText);
-      const textHeight = 7 / 72; // pt to inch (assuming inch units)
+      // Measure label + hint widths at their respective sizes
+      pdf.setFontSize(7);
+      const labelWidth = pdf.getTextWidth(labelText);
+      const labelHeight = 7 / 72;
+
+      pdf.setFontSize(6);
+      //const hintWidth = pdf.getTextWidth(hintText);
+      //const hintHeight = 6 / 72;
+
       const padX = 0.05;
       const padY = 0.03;
-      const bgX = TILE_MARGIN - padX;
-      const bgY = TILE_SHEET_H - 0.18 - textHeight;
-      const bgW = textWidth + padX * 2;
-      const bgH = textHeight + padY * 2;
+      const BOTTOM_MARGIN = 1; // 1 inch reserved at bottom
 
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(bgX, bgY, bgW, bgH, 'F'); // 'F' = fill only
+      const labelY = TILE_SHEET_H - BOTTOM_MARGIN - 0.08; // label baseline
+      const hintY = TILE_SHEET_H - BOTTOM_MARGIN; // hint baseline below label
 
-      pdf.setTextColor(150, 130, 90);
-      pdf.text(labelText, TILE_MARGIN, TILE_SHEET_H - 0.18);
-
-      // Assembly hint on the first page only
-      // Assembly hint on the first page only
-      if (row === 0 && col === 0) {
-        pdf.setFontSize(6);
-        const hintText = `${cols} × ${rows} sheets (${cols * rows} pages total)  ·  align crop marks and tape together`;
-
-        const hintWidth = pdf.getTextWidth(hintText);
-        const hintHeight = 6 / 72;
-        const hintBgX = TILE_MARGIN - padX;
-        const hintBgY = TILE_SHEET_H - 0.1 - hintHeight;
-        const hintBgW = hintWidth + padX * 2;
-        const hintBgH = hintHeight + padY * 2;
+      // Assembly hint on the last row of the first column only
+      if (row === rows - 1 && col === 0) {
+        const bgX = TILE_MARGIN - padX;
+        const bgY = legendY - padY;
+        const bgW = Math.max(LEGEND_W_IN, labelWidth) + padX * 2;
+        const bgH = hintY - legendY + padY * 2;
+        //const bgW = Math.max(LEGEND_W_IN, labelWidth, hintWidth) + padX * 2;
+        //const bgH = hintY - legendY + hintHeight + padY * 2;
 
         pdf.setFillColor(255, 255, 255);
-        pdf.rect(hintBgX, hintBgY, hintBgW, hintBgH, 'F');
+        pdf.rect(bgX, bgY, bgW, bgH, 'F');
 
+        pdf.addImage(legendPng, 'PNG', TILE_MARGIN, legendY - BOTTOM_MARGIN, LEGEND_W_IN, a.legendHIn);
+
+        pdf.setFontSize(7);
         pdf.setTextColor(150, 130, 90);
-        pdf.text(hintText, TILE_MARGIN, TILE_SHEET_H - 0.1);
+        pdf.text(labelText, TILE_MARGIN, labelY);
+
+        //pdf.setFontSize(6);
+        //pdf.text(hintText, TILE_MARGIN, hintY);
+      } else {
+        // White bg behind label only
+        const bgX = TILE_MARGIN - padX;
+        const bgY = labelY - labelHeight;
+        const bgW = labelWidth + padX * 2;
+        const bgH = labelHeight + padY * 2;
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(bgX, bgY, bgW, bgH, 'F');
+
+        pdf.setFontSize(7);
+        pdf.setTextColor(150, 130, 90);
+        pdf.text(labelText, TILE_MARGIN, labelY);
       }
     }
   }
