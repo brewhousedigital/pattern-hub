@@ -5,6 +5,7 @@ import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
 import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
 import { ExportPatternToDownloadV3 } from '@/components/PatternExport/ExportPatternToDownloadV3';
+import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
 import type { TypeExportPatternContext } from '@/components/PatternExport/useExportPattern';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
@@ -113,6 +114,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             {!viewData?.pattern_file_external && (
               <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
+            )}
+
+            {!viewData?.pattern_file_external && (
+              <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />
             )}
 
             {!viewData?.pattern_file_external && (
