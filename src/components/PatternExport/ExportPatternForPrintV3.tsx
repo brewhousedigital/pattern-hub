@@ -331,19 +331,45 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
 
       // Tile label (bottom-left of page)
       const colLabel = String.fromCharCode(65 + col); // A, B, C…
+      const labelText = `${colLabel}${row + 1}  ·  ${a.patternName}`;
+
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(7);
-      pdf.setTextColor(150, 130, 90);
-      pdf.text(`${colLabel}${row + 1}  ·  ${a.patternName}`, TILE_MARGIN, TILE_SHEET_H - 0.18);
 
+      // White background behind label
+      const textWidth = pdf.getTextWidth(labelText);
+      const textHeight = 7 / 72; // pt to inch (assuming inch units)
+      const padX = 0.05;
+      const padY = 0.03;
+      const bgX = TILE_MARGIN - padX;
+      const bgY = TILE_SHEET_H - 0.18 - textHeight;
+      const bgW = textWidth + padX * 2;
+      const bgH = textHeight + padY * 2;
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(bgX, bgY, bgW, bgH, 'F'); // 'F' = fill only
+
+      pdf.setTextColor(150, 130, 90);
+      pdf.text(labelText, TILE_MARGIN, TILE_SHEET_H - 0.18);
+
+      // Assembly hint on the first page only
       // Assembly hint on the first page only
       if (row === 0 && col === 0) {
         pdf.setFontSize(6);
-        pdf.text(
-          `${cols} × ${rows} sheets (${cols * rows} pages total)  ·  align crop marks and tape together`,
-          TILE_MARGIN,
-          TILE_SHEET_H - 0.1,
-        );
+        const hintText = `${cols} × ${rows} sheets (${cols * rows} pages total)  ·  align crop marks and tape together`;
+
+        const hintWidth = pdf.getTextWidth(hintText);
+        const hintHeight = 6 / 72;
+        const hintBgX = TILE_MARGIN - padX;
+        const hintBgY = TILE_SHEET_H - 0.1 - hintHeight;
+        const hintBgW = hintWidth + padX * 2;
+        const hintBgH = hintHeight + padY * 2;
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(hintBgX, hintBgY, hintBgW, hintBgH, 'F');
+
+        pdf.setTextColor(150, 130, 90);
+        pdf.text(hintText, TILE_MARGIN, TILE_SHEET_H - 0.1);
       }
     }
   }
