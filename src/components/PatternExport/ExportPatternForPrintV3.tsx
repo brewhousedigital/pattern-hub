@@ -631,7 +631,10 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <SectionLabel>Pattern Size</SectionLabel>
-          <Tooltip title="Width and height are linked — changing either one updates the other to preserve the original aspect ratio." arrow>
+          <Tooltip
+            title="Width and height are linked — changing either one updates the other to preserve the original aspect ratio."
+            arrow
+          >
             <LockIcon sx={{ fontSize: '0.8rem', color: 'text.secondary', mb: '2px', cursor: 'help' }} />
           </Tooltip>
         </Box>
@@ -776,7 +779,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             <Box
               sx={{
                 display: 'flex',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 gap: 0.75,
                 mt: 1,
                 color: fitsCheck === 'ok' ? 'success.main' : 'warning.main',
@@ -787,6 +790,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
               ) : (
                 <WarningAmberIcon fontSize="small" sx={{ mt: '1px', flexShrink: 0 }} />
               )}
+
               <Typography variant="caption" sx={{ lineHeight: 1.5 }}>
                 {fitsCheck === 'ok'
                   ? `Pattern + legend fit on ${paperPreset || 'custom paper'} (${orientation}).`
