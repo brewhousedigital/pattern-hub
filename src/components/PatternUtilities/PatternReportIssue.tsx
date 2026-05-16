@@ -6,10 +6,10 @@ import { enqueueSnackbar } from 'notistack';
 
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 
-import { Alert, Box, Button, Collapse, Stack, TextField } from '@mui/material';
+import { Alert, Box, Button, Collapse, MenuItem, Stack, TextField } from '@mui/material';
 
 const COOLDOWN_KEY = 'report_last_submit';
-const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+const COOLDOWN_MS = 30 * 1000; // 30 seconds
 
 export const PatternReportIssue = (props: TypeViewData) => {
   const viewData = props.viewData;
@@ -19,6 +19,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
   const [isDone, setIsDone] = React.useState(false);
   const [reason, setReason] = React.useState('');
   const [email, setEmail] = React.useState('');
+  const [category, setCategory] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [honeypot, setHoneypot] = React.useState('');
@@ -75,6 +76,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
           owner_id: authData?.id || '',
           email,
           reason,
+          category,
           token: turnstileToken,
           hp: honeypot,
           ts: formOpenTime.current,
@@ -127,6 +129,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
 
           <TextField
             variant="filled"
+            size="small"
             type="email"
             label="Contact Email"
             value={email}
@@ -134,7 +137,22 @@ export const PatternReportIssue = (props: TypeViewData) => {
           />
 
           <TextField
+            select
+            variant="filled"
+            size="small"
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <MenuItem value="broken file">Broken File</MenuItem>
+            <MenuItem value="incorrect size">Incorrect Size</MenuItem>
+            <MenuItem value="duplicate upload">Duplicate Upload</MenuItem>
+            <MenuItem value="Broken Link">Broken Link</MenuItem>
+          </TextField>
+
+          <TextField
             multiline
+            size="small"
             variant="filled"
             label="Reason"
             rows={4}

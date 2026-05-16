@@ -12,10 +12,11 @@ export default async (req: Request) => {
     return Response.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { pattern_id, email, reason, owner_id, token, hp, ts } = body as {
+  const { pattern_id, email, reason, category, owner_id, token, hp, ts } = body as {
     pattern_id?: string;
     email?: string;
     reason?: string;
+    category?: string;
     owner_id?: string;
     token?: string;
     hp?: string;
@@ -34,7 +35,7 @@ export default async (req: Request) => {
   }
 
   // 3. Basic field presence
-  if (!pattern_id?.trim() || !email?.trim() || !reason?.trim()) {
+  if (!pattern_id?.trim() || !email?.trim() || !reason?.trim() || !category?.trim()) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -69,6 +70,7 @@ export default async (req: Request) => {
       pattern_id: pattern_id.trim(),
       email: email.trim(),
       reason: reason.trim(),
+      category: category.trim(),
       owner_id: owner_id?.trim() || '',
       password: process.env.FORM_SUBMISSION_PASSWORD,
     }),
