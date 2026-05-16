@@ -52,7 +52,6 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
 
   const { data: complaintsData } = useQueryGetComplaints();
-  console.log('>>>complaintsData', complaintsData);
 
   const SidebarLinks: SidebarLinkType[] = [
     { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },

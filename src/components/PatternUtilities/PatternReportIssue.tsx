@@ -36,7 +36,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
     e.preventDefault();
 
     if (reason.length < 25) {
-      enqueueSnackbar('Please make your complaint more descriptive.', { variant: 'warning' });
+      enqueueSnackbar('Please make your report more descriptive.', { variant: 'warning' });
       return;
     }
 
@@ -57,7 +57,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
         setReason('');
       }, 1000);
     } catch (error: any) {
-      enqueueSnackbar("Couldn't submit your complaint right now. Try again in a few minutes.", { variant: 'error' });
+      enqueueSnackbar("Couldn't submit your report right now. Try again in a few minutes.", { variant: 'error' });
     }
 
     setIsLoading(false);

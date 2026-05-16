@@ -3,7 +3,7 @@ import { AdminDashboardCardTitle } from '@/components/admin/AdminDashboardCardTi
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 
-import { Card, CardContent, Typography, CircularProgress } from '@mui/material';
+import { Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardComplaintsCard = () => {
   const { isPending, isError, error, data } = useQueryGetComplaints();

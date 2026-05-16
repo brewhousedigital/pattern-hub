@@ -150,7 +150,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
             fontWeight={500}
             sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75 }}
           >
-            Complaint reason
+            Report / Complaint
           </Typography>
 
           <Box
