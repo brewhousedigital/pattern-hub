@@ -60,7 +60,12 @@ export default async (req: Request) => {
   const pbResp = await fetch(`${PB_URL}/api/collections/contact_submissions/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: name.trim(), email: email.trim(), message: message.trim() }),
+    body: JSON.stringify({
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim(),
+      password: process.env.FORM_SUBMISSION_PASSWORD,
+    }),
   });
 
   if (!pbResp.ok) {

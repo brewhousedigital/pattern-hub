@@ -70,6 +70,7 @@ export default async (req: Request) => {
       email: email.trim(),
       reason: reason.trim(),
       owner_id: owner_id?.trim() || '',
+      password: process.env.FORM_SUBMISSION_PASSWORD,
     }),
   });
 
