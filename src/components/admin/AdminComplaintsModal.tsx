@@ -87,7 +87,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
     <Dialog open={props.open} onClose={props.onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Typography variant="h6" component="span" fontWeight={500}>
-          Review complaint
+          Review report
         </Typography>
 
         <IconButton onClick={props.onClose} size="small">

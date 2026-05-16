@@ -20,7 +20,7 @@ import { generateSEO } from '@/functions/utilities/seo.ts';
 export const Route = createFileRoute('/space-command/complaints/reviewed')({
   component: RouteComponent,
   head: ({ match }) => ({
-    meta: generateSEO('Reviewed Complaints - Admin', '', match.pathname),
+    meta: generateSEO('Reviewed Reports - Admin', '', match.pathname),
   }),
 });
 
@@ -188,7 +188,7 @@ function RouteComponent() {
 
   return (
     <Box>
-      <AdminHeaderContainer title="Reviewed Complaints" />
+      <AdminHeaderContainer title="Reviewed Reports" />
 
       <DataGrid
         columns={columns}

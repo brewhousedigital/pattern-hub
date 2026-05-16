@@ -22,6 +22,7 @@ import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import {
   Box,
+  Badge,
   Drawer,
   styled,
   useTheme,
@@ -35,47 +36,54 @@ import {
   ListItemIcon,
   ListItemText,
   AppBar as MuiAppBar,
+  Chip,
 } from '@mui/material';
+import { useQueryGetComplaints } from '@/functions/database/complaints.ts';
 
 type SidebarLinkType = {
   label: string;
   href: string;
   icon: React.ReactNode;
   view?: TypeLevelsAdmin;
+  secondaryValue?: number;
 };
-
-const SidebarLinks: SidebarLinkType[] = [
-  { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
-  {
-    label: 'Patterns',
-    href: '/space-command/patterns',
-    icon: <ExtensionRoundedIcon />,
-    view: EnumLevelsAdmin.PATTERN_AR,
-  },
-  {
-    label: 'Pattern Key Mgmt',
-    href: '/space-command/pattern-key-mgmt',
-    icon: <KeyRoundedIcon />,
-    view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
-  },
-  { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
-  {
-    label: 'Reports',
-    href: '/space-command/complaints',
-    icon: <FeedbackIcon />,
-    view: EnumLevelsAdmin.COMPLAINTS_AR,
-  },
-  { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
-  { label: 'Wiki', href: '/space-command/wiki', icon: <AutoStoriesRoundedIcon />, view: EnumLevelsAdmin.WIKI_AR },
-  { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
-  { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
-  { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
-  { label: 'Admins', href: '/space-command/admins', icon: <AutoFixHighIcon />, view: EnumLevelsAdmin.ADMINS_AR },
-  { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon />, view: EnumLevelsAdmin.USERS_AR },
-];
 
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
+
+  const { data: complaintsData } = useQueryGetComplaints();
+  console.log('>>>complaintsData', complaintsData);
+
+  const SidebarLinks: SidebarLinkType[] = [
+    { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
+    {
+      label: 'Patterns',
+      href: '/space-command/patterns',
+      icon: <ExtensionRoundedIcon />,
+      view: EnumLevelsAdmin.PATTERN_AR,
+    },
+    {
+      label: 'Pattern Key Mgmt',
+      href: '/space-command/pattern-key-mgmt',
+      icon: <KeyRoundedIcon />,
+      view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
+    },
+    { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
+    {
+      label: 'Reports',
+      href: '/space-command/complaints',
+      icon: <FeedbackIcon />,
+      view: EnumLevelsAdmin.COMPLAINTS_AR,
+      secondaryValue: complaintsData?.length,
+    },
+    { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
+    { label: 'Wiki', href: '/space-command/wiki', icon: <AutoStoriesRoundedIcon />, view: EnumLevelsAdmin.WIKI_AR },
+    { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
+    { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
+    { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
+    { label: 'Admins', href: '/space-command/admins', icon: <AutoFixHighIcon />, view: EnumLevelsAdmin.ADMINS_AR },
+    { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon />, view: EnumLevelsAdmin.USERS_AR },
+  ];
 
   const location = useLocation();
   const thisRestriction = SidebarLinks.find((link) => link.href === location.pathname);
@@ -150,6 +158,8 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
             // Check the database if the user has the right permission
             const hasAccess = link?.view ? checkAccess(link.view) : false;
 
+            const showSecondaryChip = link?.secondaryValue && link?.secondaryValue > 0;
+
             if (isDivider) {
               return (
                 <ListItem key={`sidebar-link` + index}>
@@ -160,7 +170,17 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
 
             if (isNotSet || hasAccess) {
               return (
-                <ListItem key={`sidebar-link` + index} disablePadding>
+                <ListItem
+                  key={`sidebar-link` + index}
+                  disablePadding
+                  secondaryAction={
+                    showSecondaryChip ? (
+                      <Box>
+                        <Chip label={link.secondaryValue} size="small" color="error" />
+                      </Box>
+                    ) : null
+                  }
+                >
                   <ListItemButton component={Link} to={link.href}>
                     <ListItemIcon sx={{ color: location.pathname === link.href ? 'primary.main' : '' }}>
                       {link.icon}
