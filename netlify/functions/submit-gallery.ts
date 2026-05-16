@@ -137,8 +137,12 @@ export default async (req: Request) => {
     uploadBlob = new Blob([new Uint8Array(processedBuffer)], { type: 'image/webp' });
     const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
     sanitizedName = `${baseName}.webp`;
-  } catch {
-    return Response.json({ error: 'Failed to process image — please try a different file.' }, { status: 400 });
+  } catch (error: any) {
+    console.log('>>>Error', JSON.stringify(error));
+    return Response.json(
+      { error: 'Failed to process image — please try a different file.', message: error?.message || '' },
+      { status: 400 },
+    );
   }
 
   // 8. Upload to ImageKit
