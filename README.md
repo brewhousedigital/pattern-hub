@@ -135,17 +135,18 @@ FROM user_ratings
 GROUP BY pattern_id
 ```
 
-### `user_gallery`
+### `gallery`
 
 User-uploaded progress/completion photos tied to a pattern.
 
-| Field        | Type                |
-|--------------|---------------------|
-| `owner_id`   | relation            |
-| `pattern_id` | relation (optional) |
-| `image`      | file                |
-| `caption`    | text                |
-| `created`    | datetime            |
+| Field         | Type                |
+|---------------|---------------------|
+| `owner_id`    | relation            |
+| `pattern_id`  | relation (optional) |
+| `src`         | string              |
+| `title`       | string              |
+| `description` | string              |
+| `created`     | datetime            |
 
 ### `faq_pages`
 

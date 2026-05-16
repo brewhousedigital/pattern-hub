@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import type { TypePatternResponse } from '@/functions/database/patterns';
-import { useGlobalIsViewOpen } from '@/data/view';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';

@@ -483,7 +483,7 @@ const PatternGrid = (props: PatternGridProps) => {
             }}
           >
             <PatternTile elevation={0}>
-              <Box sx={{ position: 'relative' }}>
+              <Box sx={{ position: 'relative', p: 2 }}>
                 <Box
                   component="img"
                   src={generatePbImage(pattern.expand.pattern_id)}
@@ -585,6 +585,7 @@ const ProfileSkeleton = () => (
             <Skeleton variant="text" width={200} height={36} />
             <Skeleton variant="text" width={140} height={20} sx={{ mt: 0.5 }} />
           </Box>
+
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} variant="rounded" width={72} height={72} sx={{ borderRadius: '12px' }} />
@@ -624,12 +625,15 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
             sx={{ textAlign: 'center', py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
           >
             <PersonOffOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', opacity: 0.4 }} />
+
             <Typography variant="h6" fontWeight={600}>
               Profile not found
             </Typography>
+
             <Typography variant="body2" color="text.secondary">
               This user doesn't exist or their profile is unavailable.
             </Typography>
+
             <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>
               Try again
             </Button>
