@@ -103,11 +103,12 @@ const ViewDrawerContainer = () => {
 
     setTimeout(() => {
       setPatternId(undefined);
-    }, 600);
+    }, 300);
   };
 
   return (
     <SwipeableDrawer
+      transitionDuration={300}
       anchor="bottom"
       open={isViewOpen}
       onClose={handleClose}
