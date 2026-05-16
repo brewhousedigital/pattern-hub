@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WikiIndexRouteImport } from './routes/wiki/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
@@ -31,8 +32,10 @@ import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpAboutRouteImport } from './routes/help/about'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
 import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
+import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
 
 const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
@@ -43,6 +46,11 @@ const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WikiIndexRoute = WikiIndexRouteImport.update({
+  id: '/wiki/',
+  path: '/wiki/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
@@ -146,6 +154,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WikiCategorySlugIndexRoute = WikiCategorySlugIndexRouteImport.update({
+  id: '/wiki/$categorySlug/',
+  path: '/wiki/$categorySlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
   id: '/wiki/',
   path: '/wiki/',
@@ -156,6 +169,12 @@ const SpaceCommandComplaintsIndexRoute =
     id: '/complaints/',
     path: '/complaints/',
     getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const WikiCategorySlugPageSlugRoute =
+  WikiCategorySlugPageSlugRouteImport.update({
+    id: '/wiki/$categorySlug/$pageSlug',
+    path: '/wiki/$categorySlug/$pageSlug',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const SpaceCommandComplaintsReviewedRoute =
   SpaceCommandComplaintsReviewedRouteImport.update({
@@ -187,9 +206,12 @@ export interface FileRoutesByFullPath {
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
+  '/wiki/': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
+  '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,9 +235,12 @@ export interface FileRoutesByTo {
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
+  '/wiki': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/wiki': typeof SpaceCommandWikiIndexRoute
+  '/wiki/$categorySlug': typeof WikiCategorySlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -241,9 +266,12 @@ export interface FileRoutesById {
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
+  '/wiki/': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
+  '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -270,9 +298,12 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/profile/'
     | '/space-command/'
+    | '/wiki/'
     | '/space-command/complaints/reviewed'
+    | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
     | '/space-command/wiki/'
+    | '/wiki/$categorySlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -296,9 +327,12 @@ export interface FileRouteTypes {
     | '/guides'
     | '/profile'
     | '/space-command'
+    | '/wiki'
     | '/space-command/complaints/reviewed'
+    | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints'
     | '/space-command/wiki'
+    | '/wiki/$categorySlug'
   id:
     | '__root__'
     | '/'
@@ -323,9 +357,12 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/profile/'
     | '/space-command/'
+    | '/wiki/'
     | '/space-command/complaints/reviewed'
+    | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
     | '/space-command/wiki/'
+    | '/wiki/$categorySlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,6 +379,9 @@ export interface RootRouteChildren {
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
+  WikiIndexRoute: typeof WikiIndexRoute
+  WikiCategorySlugPageSlugRoute: typeof WikiCategorySlugPageSlugRoute
+  WikiCategorySlugIndexRoute: typeof WikiCategorySlugIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wiki/': {
+      id: '/wiki/'
+      path: '/wiki'
+      fullPath: '/wiki/'
+      preLoaderRoute: typeof WikiIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/space-command/': {
@@ -500,6 +547,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wiki/$categorySlug/': {
+      id: '/wiki/$categorySlug/'
+      path: '/wiki/$categorySlug'
+      fullPath: '/wiki/$categorySlug/'
+      preLoaderRoute: typeof WikiCategorySlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/space-command/wiki/': {
       id: '/space-command/wiki/'
       path: '/wiki'
@@ -513,6 +567,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/space-command/complaints/'
       preLoaderRoute: typeof SpaceCommandComplaintsIndexRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/wiki/$categorySlug/$pageSlug': {
+      id: '/wiki/$categorySlug/$pageSlug'
+      path: '/wiki/$categorySlug/$pageSlug'
+      fullPath: '/wiki/$categorySlug/$pageSlug'
+      preLoaderRoute: typeof WikiCategorySlugPageSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/space-command/complaints/reviewed': {
       id: '/space-command/complaints/reviewed'
@@ -571,6 +632,9 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
+  WikiIndexRoute: WikiIndexRoute,
+  WikiCategorySlugPageSlugRoute: WikiCategorySlugPageSlugRoute,
+  WikiCategorySlugIndexRoute: WikiCategorySlugIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
