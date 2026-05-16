@@ -1,4 +1,5 @@
-import * as sharp from 'sharp';
+// @ts-ignore
+import sharp from 'sharp';
 
 const PB_URL = 'https://stained-glass.pockethost.io';
 const IK_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
