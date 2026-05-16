@@ -179,6 +179,10 @@ export default async (req: Request) => {
         tags = ['nsfw-flagged'];
         break;
       }
+
+      // Catch all
+      tags = ['nsfw-flagged'];
+      break;
     }
   }
 
