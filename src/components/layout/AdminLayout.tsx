@@ -60,7 +60,7 @@ const SidebarLinks: SidebarLinkType[] = [
   },
   { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
   {
-    label: 'Complaints',
+    label: 'Reports',
     href: '/space-command/complaints',
     icon: <FeedbackIcon />,
     view: EnumLevelsAdmin.COMPLAINTS_AR,

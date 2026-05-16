@@ -13,7 +13,7 @@ export const AdminDashboardComplaintsCard = () => {
 
   return (
     <>
-      <AdminDashboardCardTitle>Complaints</AdminDashboardCardTitle>
+      <AdminDashboardCardTitle>Reports</AdminDashboardCardTitle>
 
       <Card>
         <CardContent>
