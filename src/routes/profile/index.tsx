@@ -47,8 +47,6 @@ import {
   Grid,
   Tab,
   Tabs,
-  ImageList,
-  ImageListItem,
   ImageListItemBar,
   Dialog,
   DialogContent,
@@ -360,7 +358,11 @@ const ProfileContent = (props: ProfileContentProps) => {
               {galleryData && galleryData?.totalItems === 0 ? (
                 <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
               ) : (
-                <GalleryTab photos={galleryData?.items || []} onPhotoClick={setSelectedPhoto} />
+                <>
+                  <GalleryTab photos={galleryData?.items || []} onPhotoClick={setSelectedPhoto} />
+
+                  <PaginationBox data={galleryData} value={galleryPagination} setter={setGalleryPagination} />
+                </>
               )}
             </Box>
           )}
@@ -597,9 +599,10 @@ type GalleryTabProps = {
 };
 
 const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
-  <ImageList variant="masonry" cols={3} gap={12}>
+  <Grid container spacing={2} sx={{ mb: 2.5 }}>
     {photos.map((photo) => (
-      <ImageListItem
+      <Grid
+        size={{ xs: 12, md: 6, lg: 4 }}
         key={photo.id}
         onClick={() => onPhotoClick(photo)}
         sx={{
@@ -641,9 +644,9 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
             sx={{ borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}
           />
         )}
-      </ImageListItem>
+      </Grid>
     ))}
-  </ImageList>
+  </Grid>
 );
 
 // ─── Shared sub-components ───────────────────────────────────────────────────
