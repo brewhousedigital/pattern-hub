@@ -151,38 +151,46 @@ export default async (req: Request) => {
   };
   const { fileId, url } = ikData;
 
-  // 8. Poll for AI task completion (up to POLL_ATTEMPTS × POLL_DELAY_MS)
+  // 8. Resolve AI task result
+  // The upload response sometimes already contains a terminal extensionStatus
+  // (when the AI completes synchronously). Check that first before polling.
   let tags: string[] = ikData.tags ?? [];
+  const uploadAiStatus = ikData.extensionStatus?.['ai-tasks'];
 
-  for (let i = 0; i < POLL_ATTEMPTS; i++) {
-    await delay(POLL_DELAY_MS);
+  if (uploadAiStatus === 'failed') {
+    // AI model refused to process the image — treat as NSFW
+    tags = ['nsfw-flagged'];
+  } else if (uploadAiStatus !== 'success') {
+    // Status is 'pending' — poll until the AI task resolves
+    for (let i = 0; i < POLL_ATTEMPTS; i++) {
+      await delay(POLL_DELAY_MS);
 
-    const fileResp = await fetch(`${IK_API_URL}/${fileId}`, {
-      headers: { Authorization: ikAuthHeader() },
-    });
+      // NOTE: the correct file-details endpoint requires the /details suffix
+      const fileResp = await fetch(`${IK_API_URL}/${fileId}/details`, {
+        headers: { Authorization: ikAuthHeader() },
+      });
 
-    if (fileResp.ok) {
-      const fileData = (await fileResp.json()) as {
-        tags?: string[];
-        extensionStatus?: Record<string, string>;
-      };
-      const aiStatus = fileData.extensionStatus?.['ai-tasks'];
+      if (fileResp.ok) {
+        const fileData = (await fileResp.json()) as {
+          tags?: string[];
+          extensionStatus?: Record<string, string>;
+        };
+        const aiStatus = fileData.extensionStatus?.['ai-tasks'];
 
-      if (aiStatus === 'success') {
-        tags = fileData.tags ?? [];
-        break;
+        if (aiStatus === 'success') {
+          tags = fileData.tags ?? [];
+          break;
+        }
+
+        // 'failed' means the AI model refused to process the image — a strong
+        // signal that the content is explicitly NSFW. Block it.
+        if (aiStatus === 'failed') {
+          tags = ['nsfw-flagged'];
+          break;
+        }
+
+        // 'pending' — keep polling
       }
-
-      // 'failed' means the AI model refused to process the image — a strong
-      // signal that the content is explicitly NSFW. Block it.
-      if (aiStatus === 'failed') {
-        tags = ['nsfw-flagged'];
-        break;
-      }
-
-      // Catch all
-      tags = ['nsfw-flagged'];
-      break;
     }
   }
 
