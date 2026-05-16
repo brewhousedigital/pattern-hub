@@ -34,8 +34,10 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
 import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
+import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
 import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
+import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
 
 const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
@@ -164,6 +166,12 @@ const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
   path: '/wiki/',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandContactIndexRoute =
+  SpaceCommandContactIndexRouteImport.update({
+    id: '/contact/',
+    path: '/contact/',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandComplaintsIndexRoute =
   SpaceCommandComplaintsIndexRouteImport.update({
     id: '/complaints/',
@@ -175,6 +183,12 @@ const WikiCategorySlugPageSlugRoute =
     id: '/wiki/$categorySlug/$pageSlug',
     path: '/wiki/$categorySlug/$pageSlug',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const SpaceCommandContactReviewedRoute =
+  SpaceCommandContactReviewedRouteImport.update({
+    id: '/contact/reviewed',
+    path: '/contact/reviewed',
+    getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
 const SpaceCommandComplaintsReviewedRoute =
   SpaceCommandComplaintsReviewedRouteImport.update({
@@ -208,8 +222,10 @@ export interface FileRoutesByFullPath {
   '/space-command/': typeof SpaceCommandIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/contact/': typeof SpaceCommandContactIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
 }
@@ -237,8 +253,10 @@ export interface FileRoutesByTo {
   '/space-command': typeof SpaceCommandIndexRoute
   '/wiki': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/contact': typeof SpaceCommandContactIndexRoute
   '/space-command/wiki': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug': typeof WikiCategorySlugIndexRoute
 }
@@ -268,8 +286,10 @@ export interface FileRoutesById {
   '/space-command/': typeof SpaceCommandIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
+  '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
+  '/space-command/contact/': typeof SpaceCommandContactIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
 }
@@ -300,8 +320,10 @@ export interface FileRouteTypes {
     | '/space-command/'
     | '/wiki/'
     | '/space-command/complaints/reviewed'
+    | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
+    | '/space-command/contact/'
     | '/space-command/wiki/'
     | '/wiki/$categorySlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -329,8 +351,10 @@ export interface FileRouteTypes {
     | '/space-command'
     | '/wiki'
     | '/space-command/complaints/reviewed'
+    | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints'
+    | '/space-command/contact'
     | '/space-command/wiki'
     | '/wiki/$categorySlug'
   id:
@@ -359,8 +383,10 @@ export interface FileRouteTypes {
     | '/space-command/'
     | '/wiki/'
     | '/space-command/complaints/reviewed'
+    | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
+    | '/space-command/contact/'
     | '/space-command/wiki/'
     | '/wiki/$categorySlug/'
   fileRoutesById: FileRoutesById
@@ -561,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandWikiIndexRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/contact/': {
+      id: '/space-command/contact/'
+      path: '/contact'
+      fullPath: '/space-command/contact/'
+      preLoaderRoute: typeof SpaceCommandContactIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/complaints/': {
       id: '/space-command/complaints/'
       path: '/complaints'
@@ -574,6 +607,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/wiki/$categorySlug/$pageSlug'
       preLoaderRoute: typeof WikiCategorySlugPageSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/space-command/contact/reviewed': {
+      id: '/space-command/contact/reviewed'
+      path: '/contact/reviewed'
+      fullPath: '/space-command/contact/reviewed'
+      preLoaderRoute: typeof SpaceCommandContactReviewedRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/complaints/reviewed': {
       id: '/space-command/complaints/reviewed'
@@ -596,7 +636,9 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
   SpaceCommandComplaintsReviewedRoute: typeof SpaceCommandComplaintsReviewedRoute
+  SpaceCommandContactReviewedRoute: typeof SpaceCommandContactReviewedRoute
   SpaceCommandComplaintsIndexRoute: typeof SpaceCommandComplaintsIndexRoute
+  SpaceCommandContactIndexRoute: typeof SpaceCommandContactIndexRoute
   SpaceCommandWikiIndexRoute: typeof SpaceCommandWikiIndexRoute
 }
 
@@ -611,7 +653,9 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
   SpaceCommandComplaintsReviewedRoute: SpaceCommandComplaintsReviewedRoute,
+  SpaceCommandContactReviewedRoute: SpaceCommandContactReviewedRoute,
   SpaceCommandComplaintsIndexRoute: SpaceCommandComplaintsIndexRoute,
+  SpaceCommandContactIndexRoute: SpaceCommandContactIndexRoute,
   SpaceCommandWikiIndexRoute: SpaceCommandWikiIndexRoute,
 }
 

@@ -12,6 +12,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import MailRoundedIcon from '@mui/icons-material/MailRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
@@ -39,6 +40,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useQueryGetComplaints } from '@/functions/database/complaints.ts';
+import { useQueryGetPendingContactSubmissions } from '@/functions/database/contact';
 
 type SidebarLinkType = {
   label: string;
@@ -52,6 +54,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
 
   const { data: complaintsData } = useQueryGetComplaints();
+  const { data: contactData } = useQueryGetPendingContactSubmissions();
 
   const SidebarLinks: SidebarLinkType[] = [
     { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
@@ -74,6 +77,13 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
       icon: <FeedbackIcon />,
       view: EnumLevelsAdmin.COMPLAINTS_AR,
       secondaryValue: complaintsData?.length,
+    },
+    {
+      label: 'Contact',
+      href: '/space-command/contact',
+      icon: <MailRoundedIcon />,
+      view: EnumLevelsAdmin.CONTACT_AR,
+      secondaryValue: contactData?.length,
     },
     { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
     { label: 'Wiki', href: '/space-command/wiki', icon: <AutoStoriesRoundedIcon />, view: EnumLevelsAdmin.WIKI_AR },

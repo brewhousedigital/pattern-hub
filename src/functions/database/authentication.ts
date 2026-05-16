@@ -40,6 +40,10 @@ export type TypeLevelsAdmin =
   | 'COMPLAINTS_AR'
   | 'COMPLAINTS_AU'
   | 'COMPLAINTS_AD'
+  | 'CONTACT_AC'
+  | 'CONTACT_AR'
+  | 'CONTACT_AU'
+  | 'CONTACT_AD'
   | 'USERS_AC'
   | 'USERS_AR'
   | 'USERS_AU'
@@ -90,6 +94,10 @@ export const EnumLevelsAdmin = {
   COMPLAINTS_AR: 'COMPLAINTS_AR',
   COMPLAINTS_AU: 'COMPLAINTS_AU',
   COMPLAINTS_AD: 'COMPLAINTS_AD',
+  CONTACT_AC: 'CONTACT_AC',
+  CONTACT_AR: 'CONTACT_AR',
+  CONTACT_AU: 'CONTACT_AU',
+  CONTACT_AD: 'CONTACT_AD',
 } as const;
 
 // This is the data from the pocketbase user and admin table

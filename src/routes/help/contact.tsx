@@ -3,6 +3,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { DISCORD_SERVER_LINK } from '@/data/constants';
+import { useMutationCreateContactSubmission } from '@/functions/database/contact';
+import { useGlobalAuthData } from '@/data/auth-data';
 
 import { Box, Typography, TextField, Button, Alert, CircularProgress, Container, Link } from '@mui/material';
 
@@ -17,6 +19,16 @@ function RouteComponent() {
   const [formState, setFormState] = useState<FormState>('idle');
   const [fields, setFields] = useState({ name: '', email: '', message: '' });
 
+  const { authData } = useGlobalAuthData();
+
+  React.useEffect(() => {
+    if (authData) {
+      setFields((prev) => ({ ...prev, email: authData?.email || '' }));
+    }
+  }, [authData]);
+
+  const createSubmission = useMutationCreateContactSubmission();
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFields((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
@@ -26,11 +38,7 @@ function RouteComponent() {
     setFormState('loading');
 
     try {
-      await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode({ 'form-name': 'contact', ...fields }),
-      });
+      await createSubmission.mutateAsync(fields);
       setFormState('success');
       setFields({ name: '', email: '', message: '' });
     } catch {
@@ -104,8 +112,6 @@ function RouteComponent() {
         <Typography variant="body2" color="text.secondary" mb={4}>
           Have a question or feedback? Fill out the form below and we'll get back to you.
         </Typography>
-
-        {/* The hidden netlify form is in the index.html file */}
 
         {formState === 'success' ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
@@ -182,9 +188,3 @@ function RouteComponent() {
 }
 
 type FormState = 'idle' | 'loading' | 'success' | 'error';
-
-function encode(data: Record<string, string>) {
-  return Object.entries(data)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&');
-}
