@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
+import { renderInstructions } from './render-instructions';
 import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
 import { BorderedCard } from '@/components/cards/BorderedCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -16,9 +17,11 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Collapse,
   Divider,
+  FormControlLabel,
   MenuItem,
   TextField,
   ToggleButton,
@@ -122,6 +125,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
   const [unit, setUnit] = useState<PrintUnit>('in');
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
   const [patternHeightInput, setPatternHeightInput] = useState(() => String(r3(baseHIn)));
+  const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [svgString, setSvgString] = useState('');
@@ -140,6 +144,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     if (viewData) {
       setPatternWidthInput(String(r3(fromIn(baseWIn, unit))));
       setPatternHeightInput(String(r3(fromIn(baseHIn, unit))));
+      setIncludeInstructions(!!viewData.instructions);
     }
   }, [viewData?.id]);
 
@@ -215,8 +220,26 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       const gapUU = LEGEND_GAP_IN * userUnitsPerInch;
       const legendWUU = LEGEND_W_IN * userUnitsPerInch;
       const legendHUU = resolvedLegendHIn * userUnitsPerInch;
-      const totalVbH = vb.vbH + gapUU + legendHUU;
-      const totalHIn = patternHIn + LEGEND_GAP_IN + resolvedLegendHIn;
+
+      // Instructions: rendered as a rasterized PNG image block below the legend.
+      // Width matches the pattern's full width; height scales from the canvas ratio.
+      let instrImageElement = '';
+      let instrExtraVbH = 0;
+      let instrExtraHIn = 0;
+      if (includeInstructions && viewData.instructions) {
+        const { canvas, width: logicW, height: logicH } = await renderInstructions(viewData.instructions);
+        const instrDataUri = canvas.toDataURL('image/png');
+        const instrPhysHIn = patternWIn * (logicH / logicW);
+        const instrWUU = vb.vbW; // span the full pattern width in user units
+        const instrHUU = instrPhysHIn * userUnitsPerInch;
+        const instrY = vb.vbY + vb.vbH + gapUU + legendHUU + gapUU;
+        instrImageElement = `<image x="${vb.vbX}" y="${instrY}" width="${instrWUU}" height="${instrHUU.toFixed(3)}" href="${instrDataUri}"/>`;
+        instrExtraVbH = gapUU + instrHUU;
+        instrExtraHIn = LEGEND_GAP_IN + instrPhysHIn;
+      }
+
+      const totalVbH = vb.vbH + gapUU + legendHUU + instrExtraVbH;
+      const totalHIn = patternHIn + LEGEND_GAP_IN + resolvedLegendHIn + instrExtraHIn;
 
       // Custom mode: normalize stroke widths to the target physical size
       let processedSvg = svgString;
@@ -237,7 +260,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
         .replace(/url\(#shadow\)/g, 'url(#legend-card-shadow)');
       const legendInner = extractSvgInner(safeLegendSvg);
 
-      // Build composite: pattern content + legend as a nested <svg> in user-unit space
+      // Build composite: pattern + legend (nested <svg>) + optional instructions (<image>)
       const composite = [
         `<svg xmlns="http://www.w3.org/2000/svg"`,
         ` viewBox="${vb.vbX} ${vb.vbY} ${vb.vbW} ${totalVbH}"`,
@@ -252,6 +275,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
         `>`,
         legendInner,
         `</svg>`,
+        instrImageElement,
         `</svg>`,
       ].join('');
 
@@ -269,7 +293,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     } finally {
       setLoading(false);
     }
-  }, [canExport, viewData, svgString, mode, patternWIn, patternHIn, lineWidthIn, legendHIn, queryClient]);
+  }, [canExport, viewData, svgString, mode, patternWIn, patternHIn, lineWidthIn, legendHIn, includeInstructions, queryClient]);
 
   return (
     <BorderedCard>
@@ -351,6 +375,24 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       </Collapse>
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2 }} />
+
+      {viewData?.instructions && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={includeInstructions}
+              onChange={(e) => setIncludeInstructions(e.target.checked)}
+              size="small"
+            />
+          }
+          label={
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Append pattern instructions
+            </Typography>
+          }
+          sx={{ mb: 2, ml: 0 }}
+        />
+      )}
 
       <Collapse in={!!error}>
         <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
