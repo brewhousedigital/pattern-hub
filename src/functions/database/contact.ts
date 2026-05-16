@@ -57,7 +57,7 @@ export const useMutationUpdateContactSubmission = () => {
 
 export const useQueryGetPendingContactSubmissions = () => {
   return useQuery({
-    queryKey: ['useQueryGetPendingContactSubmissions'],
+    queryKey: ['GetPendingContactSubmissions'],
     queryFn: async (): Promise<TypeContactResponse[]> => {
       return await pocketbase.collection('contact_submissions').getFullList({
         filter: `reviewed = false`,
@@ -69,7 +69,7 @@ export const useQueryGetPendingContactSubmissions = () => {
 
 export const useQueryGetReviewedContactSubmissionsByPagination = (searchTerm: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetReviewedContactSubmissionsByPagination', searchTerm, pageNumber],
+    queryKey: ['GetReviewedContactSubmissionsByPagination', searchTerm, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeContactResponse>> => {
       let filter = `reviewed = true`;
 

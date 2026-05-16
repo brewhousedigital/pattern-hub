@@ -6,7 +6,7 @@ import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 
 export const useQueryGetUserMarkedDoneByPagination = (userId: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetUserMarkedDoneByPagination', userId, pageNumber],
+    queryKey: ['GetUserMarkedDoneByPagination', userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeFavoriteDoneRatingsResponse>> => {
       return await pocketbase.collection('user_marked_done').getList(pageNumber, 25, {
         sort: '-created',
@@ -21,7 +21,7 @@ export const useQueryGetUserMarkedDoneByPagination = (userId: string, pageNumber
 
 export const useQueryGetPatternDoneStatus = (pattern_id: string) => {
   return useQuery({
-    queryKey: ['useQueryGetPatternDoneStatus', pattern_id],
+    queryKey: ['GetPatternDoneStatus', pattern_id],
     queryFn: async (): Promise<TypeFavoriteDoneRatingsResponse> => {
       return await pocketbase.collection('user_marked_done').getFirstListItem(`pattern_id="${pattern_id}"`);
     },

@@ -4,7 +4,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 export const useQueryGetAllUploadedBy = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllUploadedBy'],
+    queryKey: ['GetAllUploadedBy'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       return await pocketbase.collection('uploaded_by').getFullList();
     },

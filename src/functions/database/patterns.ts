@@ -60,7 +60,7 @@ export const useQueryGetAllPatternsByPagination = () => {
   }
 
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPagination', filter, pageNumber],
+    queryKey: ['GetAllPatternsByPagination', filter, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         filter: includeIsDeletedFilter,
@@ -81,7 +81,7 @@ export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: nu
   }
 
   return useQuery({
-    queryKey: ['useQueryGetAllPatternsByPaginationAdmin', filter, page],
+    queryKey: ['GetAllPatternsByPaginationAdmin', filter, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(page, 25, {
         filter: includeIsDeletedFilter,
@@ -213,7 +213,7 @@ export const useMutationDeletePattern = () => {
 
 export const useQueryGetPatternById = (patternId: string) => {
   return useQuery({
-    queryKey: ['useQueryGetPatternById', patternId],
+    queryKey: ['GetPatternById', patternId],
     queryFn: async (): Promise<TypePatternResponse> => {
       return await pocketbase.collection('patterns').getOne(patternId);
     },
@@ -230,7 +230,7 @@ export const getPatternByIdOptions = (patternId: string) =>
 // This will query the list of pattern keys
 export const useQueryGetAllPatternKeys = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllPatternKeys'],
+    queryKey: ['GetAllPatternKeys'],
     queryFn: async (): Promise<TypePatternKeyTableResponse[]> => {
       return await pocketbase.collection('pattern_key_reference_images').getFullList({
         filter: 'isDeleted = false',
@@ -266,7 +266,7 @@ export type TypePatternKeyCollectionResponse = {
 
 export const useQueryGetAllPatternKeyCollections = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllPatternKeyCollections'],
+    queryKey: ['GetAllPatternKeyCollections'],
     queryFn: async (): Promise<TypePatternKeyCollectionResponse[]> => {
       return await pocketbase.collection('pattern_key_reference_collections').getFullList();
     },

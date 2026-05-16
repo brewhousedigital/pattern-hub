@@ -13,7 +13,7 @@ export type TypeFAQItem = {
 
 export const useQueryGetAllFAQ = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllFAQ'],
+    queryKey: ['GetAllFAQ'],
     queryFn: async (): Promise<TypeFAQItem[]> => {
       return await pocketbase.collection('faq').getFullList({
         sort: 'title',

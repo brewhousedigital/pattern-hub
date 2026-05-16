@@ -4,6 +4,7 @@ import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import type { TypeAuthData } from '@/functions/database/authentication';
 
+/** @deprecated - Uses Netlify functions instead  */
 type TypeComplaintPayload = {
   pattern_id: string;
   reason: string;
@@ -11,6 +12,7 @@ type TypeComplaintPayload = {
   owner_id?: string;
 };
 
+/** @deprecated - Uses Netlify functions instead  */
 export const useMutationCreateComplaint = () => {
   return useMutation({
     mutationFn: async (payload: TypeComplaintPayload) => {
@@ -25,6 +27,7 @@ export type TypeComplaintsResponse = {
   id: string;
   pattern_id: string;
   reason: string;
+  category: string;
   owner_id: string;
   email: string;
   reviewed: boolean;
@@ -42,7 +45,7 @@ export type TypeComplaintsResponse = {
 
 export const useQueryGetComplaints = () => {
   return useQuery({
-    queryKey: ['useQueryGetComplaints'],
+    queryKey: ['GetComplaints'],
     queryFn: async (): Promise<TypeComplaintsResponse[]> => {
       return await pocketbase.collection('complaints').getFullList({
         filter: `reviewed = false && pattern_id != ''`,
@@ -55,7 +58,7 @@ export const useQueryGetComplaints = () => {
 
 export const useQueryGetReviewedComplaintsByPagination = (searchTerm: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetReviewedComplaintsByPagination', searchTerm, pageNumber],
+    queryKey: ['GetReviewedComplaintsByPagination', searchTerm, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeComplaintsResponse>> => {
       let filter = `reviewed = true && spam = false && pattern_id != ''`;
 

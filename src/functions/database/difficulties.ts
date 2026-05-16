@@ -4,7 +4,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 export const useQueryGetAllDifficulties = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllDifficulties'],
+    queryKey: ['GetAllDifficulties'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       return await pocketbase.collection('difficulties').getFullList();
     },

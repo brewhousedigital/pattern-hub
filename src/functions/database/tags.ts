@@ -4,7 +4,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 export const useQueryGetAllTags = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllTags'],
+    queryKey: ['GetAllTags'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       return await pocketbase.collection('tags').getFullList({
         sort: '-count',
@@ -47,7 +47,7 @@ async function fetchAllPatternTags(): Promise<TypePatternRecord[]> {
 
 export const useQueryAdminTagStats = () => {
   return useQuery({
-    queryKey: ['tag-stats'],
+    queryKey: ['AdminTagStats'],
     queryFn: async (): Promise<TypeTagStat[]> => {
       const records = await fetchAllPatternTags();
 

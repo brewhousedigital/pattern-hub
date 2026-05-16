@@ -6,7 +6,7 @@ import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 
 export const useQueryGetUserRatingsByPagination = (userId: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['useQueryGetUserRatingsByPagination', userId, pageNumber],
+    queryKey: ['GetUserRatingsByPagination', userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeFavoriteDoneRatingsResponse>> => {
       return await pocketbase.collection('user_ratings').getList(pageNumber, 25, {
         sort: '-created',
@@ -21,7 +21,7 @@ export const useQueryGetUserRatingsByPagination = (userId: string, pageNumber: n
 
 export const useQueryGetPatternRating = (pattern_id: string) => {
   return useQuery({
-    queryKey: ['useQueryGetPatternRating', pattern_id],
+    queryKey: ['GetPatternRating', pattern_id],
     queryFn: async (): Promise<TypeFavoriteDoneRatingsResponse> => {
       return await pocketbase.collection('user_ratings').getFirstListItem(`pattern_id="${pattern_id}"`);
     },
@@ -82,7 +82,7 @@ type TypeCommunityRatingItem = {
 
 export const useQueryGetCommunityRatingByPatternId = (patternId: string) => {
   return useQuery({
-    queryKey: ['useQueryGetUserRatingsByPagination', patternId],
+    queryKey: ['GetUserRatingsByPagination', patternId],
     queryFn: async (): Promise<TypeCommunityRatingItem> => {
       return await pocketbase.collection('community_ratings').getFirstListItem(`pattern_id="${patternId}"`);
     },

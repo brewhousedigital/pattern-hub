@@ -4,7 +4,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 export const useQueryGetAllAuthors = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllAuthors'],
+    queryKey: ['GetAllAuthors'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       return await pocketbase.collection('authors').getFullList();
     },
@@ -13,7 +13,7 @@ export const useQueryGetAllAuthors = () => {
 
 export const useQueryGetAllManualAuthors = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllManualAuthors'],
+    queryKey: ['GetAllManualAuthors'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       return await pocketbase.collection('authors').getFullList({
         filter: 'manual > 0',

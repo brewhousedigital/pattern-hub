@@ -34,7 +34,7 @@ export type TypeWikiPage = {
 
 export const useQueryGetAllWikiCategories = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllWikiCategories'],
+    queryKey: ['GetAllWikiCategories'],
     queryFn: async (): Promise<TypeWikiCategory[]> => {
       return await pocketbase.collection('wiki_categories').getFullList({
         sort: 'order,name',
@@ -78,7 +78,7 @@ export const useMutationDeleteWikiCategory = () => {
 
 export const useQueryGetAllWikiPages = () => {
   return useQuery({
-    queryKey: ['useQueryGetAllWikiPages'],
+    queryKey: ['GetAllWikiPages'],
     queryFn: async (): Promise<TypeWikiPage[]> => {
       return await pocketbase.collection('wiki_pages').getFullList({
         expand: 'category',
@@ -90,7 +90,7 @@ export const useQueryGetAllWikiPages = () => {
 
 export const useQueryGetWikiPage = (categorySlug: string, pageSlug: string) => {
   return useQuery({
-    queryKey: ['useQueryGetWikiPage', categorySlug, pageSlug],
+    queryKey: ['GetWikiPage', categorySlug, pageSlug],
     queryFn: async (): Promise<TypeWikiPage> => {
       return await pocketbase
         .collection('wiki_pages')

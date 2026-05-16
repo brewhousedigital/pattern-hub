@@ -5,7 +5,7 @@ import type { TypeAuthData } from '@/functions/database/authentication';
 
 export const useQueryUsersByPagination = (pageNumber: number, filter?: string) => {
   return useQuery({
-    queryKey: ['useQueryUsersByPagination'],
+    queryKey: ['UsersByPagination'],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeAuthData>> => {
       return await pocketbase.collection('users').getList(pageNumber, 25, {
         sort: '-created',
@@ -17,7 +17,7 @@ export const useQueryUsersByPagination = (pageNumber: number, filter?: string) =
 
 export const useQueryGetUserById = (id?: string) => {
   return useQuery({
-    queryKey: ['useQueryGetUserById', id],
+    queryKey: ['GetUserById', id],
     queryFn: async (): Promise<TypeAuthData> => {
       return await pocketbase.collection('users').getOne(id || '');
     },

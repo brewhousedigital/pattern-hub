@@ -6,7 +6,7 @@ import type { TypeLevelsAdmin } from '@/functions/database/authentication';
 
 export const useQueryAdminUsersByPagination = (pageNumber: number, filter?: string) => {
   return useQuery({
-    queryKey: ['useQueryAdminUsersByPagination'],
+    queryKey: ['AdminUsersByPagination'],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeAuthData>> => {
       return await pocketbase.collection('admins').getList(pageNumber, 100, {
         sort: '-created',
