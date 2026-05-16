@@ -8,7 +8,7 @@ export const useQueryGetUserMarkedDoneByPagination = (userId: string, pageNumber
   return useQuery({
     queryKey: ['GetUserMarkedDoneByPagination', userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeFavoriteDoneRatingsResponse>> => {
-      return await pocketbase.collection('user_marked_done').getList(pageNumber, 25, {
+      return await pocketbase.collection('user_marked_done').getList(pageNumber, 10, {
         sort: '-created',
         expand: 'pattern_id',
         filter: `owner_id = "${userId}" && pattern_id != ''`,

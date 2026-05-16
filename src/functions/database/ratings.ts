@@ -8,7 +8,7 @@ export const useQueryGetUserRatingsByPagination = (userId: string, pageNumber: n
   return useQuery({
     queryKey: ['GetUserRatingsByPagination', userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeFavoriteDoneRatingsResponse>> => {
-      return await pocketbase.collection('user_ratings').getList(pageNumber, 25, {
+      return await pocketbase.collection('user_ratings').getList(pageNumber, 10, {
         sort: '-created',
         expand: 'pattern_id',
         filter: `owner_id = "${userId}" && pattern_id != ''`,

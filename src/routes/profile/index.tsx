@@ -12,6 +12,10 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useQueryGetUserById } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import { useQueryGetUserGallery, type TypeGalleryResponse } from '@/functions/database/gallery';
+import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
+import { pocketbase } from '@/functions/database/authentication-setup';
+import { enqueueSnackbar } from 'notistack';
 
 import { styled, alpha } from '@mui/material/styles';
 import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
@@ -24,6 +28,11 @@ import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlin
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
 import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 
 import {
   Alert,
@@ -41,6 +50,8 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
+  Dialog,
+  DialogContent,
   Divider,
   IconButton,
   Skeleton,
@@ -107,6 +118,7 @@ const ProfileContent = (props: ProfileContentProps) => {
   const [favoritePagination, setFavoritePagination] = React.useState(1);
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
   const [ratingsPagination, setRatingsPagination] = React.useState(1);
+  const [galleryPagination, setGalleryPagination] = React.useState(1);
 
   const {
     isPending: isPendingFavorite,
@@ -114,7 +126,6 @@ const ProfileContent = (props: ProfileContentProps) => {
     data: dataFavorite,
     refetch: refetchFavorite,
   } = useQueryGetUserFavoritesByPagination(thisAuthData?.id || '', favoritePagination);
-  console.log('>>>dataFavorite', dataFavorite);
 
   const {
     isPending: isPendingMarkedDone,
@@ -130,7 +141,15 @@ const ProfileContent = (props: ProfileContentProps) => {
     refetch: refetchRatings,
   } = useQueryGetUserRatingsByPagination(thisAuthData?.id || '', ratingsPagination);
 
-  const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
+  const {
+    isPending: isPendingGallery,
+    isError: isErrorGallery,
+    data: galleryData,
+    refetch: refetchGallery,
+  } = useQueryGetUserGallery(thisAuthData?.id || '', galleryPagination);
+
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<TypeGalleryResponse | null>(null);
 
   const [tab, setTab] = useState(0);
 
@@ -138,8 +157,7 @@ const ProfileContent = (props: ProfileContentProps) => {
     { label: 'Favorites', icon: <FavoriteBorderOutlinedIcon fontSize="small" /> },
     { label: 'Completed', icon: <TaskAltOutlinedIcon fontSize="small" /> },
     { label: 'Rated', icon: <StarOutlinedIcon fontSize="small" /> },
-    // TODO: Coming Soon
-    //{ label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
+    { label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
   ];
 
   if (!thisAuthData) return <ProfileSkeleton />;
@@ -198,11 +216,11 @@ const ProfileContent = (props: ProfileContentProps) => {
                   value: dataRatings?.totalItems || 0,
                   label: 'Rated',
                 },
-                /*{
+                {
                   icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 16, color: 'secondary.main' }} />,
-                  value: dataMarkedDone?.totalItems || 0,
+                  value: galleryData?.totalItems || 0,
                   label: 'Photos',
-                },*/
+                },
               ].map((stat) => (
                 <StatBox key={stat.label}>
                   {stat.icon}
@@ -266,16 +284,7 @@ const ProfileContent = (props: ProfileContentProps) => {
                 key={t.label}
                 icon={t.icon}
                 iconPosition="start"
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    {t.label}
-                    {/*<Chip
-                      label={t.count}
-                      size="small"
-                      sx={{ height: 18, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.75 } }}
-                    />*/}
-                  </Box>
-                }
+                label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>{t.label}</Box>}
               />
             ))}
           </StyledTabs>
@@ -336,36 +345,304 @@ const ProfileContent = (props: ProfileContentProps) => {
           {/* Tab: Gallery */}
           {tab === 3 && (
             <Box>
-              {gallery.length === 0 ? (
+              {!isPublicView && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                  <Button
+                    startIcon={<AddPhotoAlternateOutlinedIcon />}
+                    variant="contained"
+                    onClick={() => setUploadOpen(true)}
+                  >
+                    Upload Photo
+                  </Button>
+                </Box>
+              )}
+
+              {galleryData && galleryData?.totalItems === 0 ? (
                 <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
               ) : (
-                <>
-                  <GalleryTab photos={gallery} />
-
-                  {dataMarkedDone && dataMarkedDone?.totalItems > 0 && (
-                    <PaginationBox
-                      data={dataMarkedDone}
-                      value={markedDonePagination}
-                      setter={setMarkedDonePagination}
-                    />
-                  )}
-                </>
+                <GalleryTab photos={galleryData?.items || []} onPhotoClick={setSelectedPhoto} />
               )}
             </Box>
           )}
         </Box>
       </Container>
+
+      {/* Gallery lightbox */}
+      <GalleryLightbox
+        photo={selectedPhoto}
+        photos={galleryData?.items || []}
+        onClose={() => setSelectedPhoto(null)}
+        onNavigate={setSelectedPhoto}
+        onDeleteSuccess={() => {
+          void refetchGallery();
+          setSelectedPhoto(null);
+        }}
+        isOwner={!isPublicView}
+      />
+
+      {/* Upload dialog */}
+      <GalleryUploadDialog
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onSuccess={() => {
+          void refetchGallery();
+          setUploadOpen(false);
+        }}
+      />
     </PageWrapper>
   );
 };
 
-interface GalleryPhoto {
-  id: string;
-  imageUrl: string;
-  caption?: string;
-  patternTitle?: string;
-  uploadedAt: string;
-}
+// ─── Gallery Lightbox ─────────────────────────────────────────────────────────
+
+type GalleryLightboxProps = {
+  photo: TypeGalleryResponse | null;
+  photos: TypeGalleryResponse[];
+  onClose: () => void;
+  onNavigate: (photo: TypeGalleryResponse) => void;
+  onDeleteSuccess: () => void;
+  isOwner: boolean;
+};
+
+const GalleryLightbox = (props: GalleryLightboxProps) => {
+  const { photo, photos, onClose, onNavigate, onDeleteSuccess, isOwner } = props;
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const currentIndex = photo ? photos.findIndex((p) => p.id === photo.id) : -1;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < photos.length - 1;
+
+  // Reset error state when navigating to a different photo
+  React.useEffect(() => {
+    setDeleteError('');
+  }, [photo?.id]);
+
+  // Keyboard navigation
+  React.useEffect(() => {
+    if (!photo) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && hasPrev) onNavigate(photos[currentIndex - 1]);
+      if (e.key === 'ArrowRight' && hasNext) onNavigate(photos[currentIndex + 1]);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [photo, currentIndex, hasPrev, hasNext, onNavigate, photos]);
+
+  async function handleDelete() {
+    if (!photo) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/delete-gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recordId: photo.id, authToken: pocketbase.authStore.token }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setDeleteError(data.error ?? 'Delete failed — please try again.');
+        return;
+      }
+      enqueueSnackbar('Photo deleted.', { variant: 'success' });
+      onDeleteSuccess();
+    } catch {
+      setDeleteError('Something went wrong — please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const patternExpand = photo?.expand?.pattern_id;
+
+  return (
+    <Dialog open={!!photo} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogContent sx={{ p: 0, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400 }}>
+        {/* Image side */}
+        <Box
+          sx={{
+            position: 'relative',
+            flex: '0 0 auto',
+            width: { xs: '100%', md: '60%' },
+            bgcolor: 'grey.100',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: { xs: 240, md: 400 },
+          }}
+        >
+          {photo && (
+            <Box
+              component="img"
+              src={`${photo.src}?tr=w-900`}
+              alt={photo.title}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                maxHeight: { xs: 300, md: 500 },
+              }}
+            />
+          )}
+
+          {/* Prev arrow */}
+          {hasPrev && (
+            <IconButton
+              onClick={() => onNavigate(photos[currentIndex - 1])}
+              sx={{
+                position: 'absolute',
+                left: 8,
+                bgcolor: 'rgba(0,0,0,0.45)',
+                color: 'white',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
+              }}
+            >
+              <ChevronLeftRoundedIcon />
+            </IconButton>
+          )}
+
+          {/* Next arrow */}
+          {hasNext && (
+            <IconButton
+              onClick={() => onNavigate(photos[currentIndex + 1])}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                bgcolor: 'rgba(0,0,0,0.45)',
+                color: 'white',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
+              }}
+            >
+              <ChevronRightRoundedIcon />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Info panel */}
+        <Box
+          sx={{
+            flex: 1,
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            overflowY: 'auto',
+            minWidth: 0,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+            <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+              {photo?.title}
+            </Typography>
+            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
+              <CloseRoundedIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          {photo?.description && (
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+              {photo.description}
+            </Typography>
+          )}
+
+          {patternExpand && (
+            <Box>
+              <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
+                Tagged pattern
+              </Typography>
+              <Link to="/" search={{ patternId: patternExpand.id }} onClick={onClose}>
+                <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
+              </Link>
+            </Box>
+          )}
+
+          <Typography variant="caption" color="text.disabled">
+            {photo ? createPrettyDate(String(photo.created)) : ''}
+          </Typography>
+
+          <Box sx={{ flex: 1 }} />
+
+          {deleteError && (
+            <Alert severity="error" sx={{ py: 0.5 }}>
+              {deleteError}
+            </Alert>
+          )}
+
+          {isOwner && (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlinedIcon />}
+              onClick={handleDelete}
+              disabled={deleting}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              {deleting ? 'Deleting…' : 'Delete photo'}
+            </Button>
+          )}
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ─── Gallery Tab ──────────────────────────────────────────────────────────────
+
+type GalleryTabProps = {
+  photos: TypeGalleryResponse[];
+  onPhotoClick: (photo: TypeGalleryResponse) => void;
+};
+
+const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
+  <ImageList variant="masonry" cols={3} gap={12}>
+    {photos.map((photo) => (
+      <ImageListItem
+        key={photo.id}
+        onClick={() => onPhotoClick(photo)}
+        sx={{
+          borderRadius: 3,
+          overflow: 'hidden',
+          cursor: 'pointer',
+          '& img': { transition: 'transform 0.3s ease' },
+          '&:hover img': { transform: 'scale(1.04)' },
+          '&:hover .overlay': { opacity: 1 },
+          position: 'relative',
+        }}
+      >
+        <GalleryImage src={photo.src} alt={photo.title} loading="lazy" />
+        <Box
+          className="overlay"
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            opacity: 0,
+            transition: 'opacity 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ZoomInOutlinedIcon sx={{ color: 'white', fontSize: 32 }} />
+        </Box>
+        {photo.title && (
+          <ImageListItemBar
+            title={photo.title}
+            subtitle={
+              photo.expand?.pattern_id?.name
+                ? `Pattern: ${photo.expand.pattern_id.name}`
+                : createPrettyDate(String(photo.created))
+            }
+            sx={{ borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}
+          />
+        )}
+      </ImageListItem>
+    ))}
+  </ImageList>
+);
+
+// ─── Shared sub-components ───────────────────────────────────────────────────
 
 const difficultyColor = (d: string): 'success' | 'warning' | 'error' | 'default' => {
   if (d === 'Beginner') return 'success';
@@ -510,53 +787,6 @@ const PatternGrid = (props: PatternGridProps) => {
     </Grid>
   );
 };
-
-const GalleryTab: React.FC<{ photos: GalleryPhoto[] }> = ({ photos }) => (
-  <ImageList variant="masonry" cols={3} gap={12}>
-    {photos.map((photo) => (
-      <ImageListItem
-        key={photo.id}
-        sx={{
-          borderRadius: 3,
-          overflow: 'hidden',
-          cursor: 'pointer',
-          '& img': { transition: 'transform 0.3s ease' },
-          '&:hover img': { transform: 'scale(1.04)' },
-          '&:hover .overlay': { opacity: 1 },
-          position: 'relative',
-        }}
-      >
-        <GalleryImage
-          src={photo.imageUrl}
-          alt={photo.caption || photo.patternTitle || 'Gallery photo'}
-          loading="lazy"
-        />
-        <Box
-          className="overlay"
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.45)',
-            opacity: 0,
-            transition: 'opacity 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ZoomInOutlinedIcon sx={{ color: 'white', fontSize: 32 }} />
-        </Box>
-        {(photo.caption || photo.patternTitle) && (
-          <ImageListItemBar
-            title={photo.caption || photo.patternTitle}
-            subtitle={createPrettyDate(photo.uploadedAt)}
-            sx={{ borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}
-          />
-        )}
-      </ImageListItem>
-    ))}
-  </ImageList>
-);
 
 const EmptyState: React.FC<{ icon: React.ReactNode; message: string }> = ({ icon, message }) => (
   <Box

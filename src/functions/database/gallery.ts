@@ -1,12 +1,62 @@
-import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
+import { useQuery } from '@tanstack/react-query';
+import { pocketbase } from '@/functions/database/authentication-setup';
+import type { TypePatternResponse } from '@/functions/database/patterns';
+import type { TypePaginationDatabaseResponse } from '@/functions/types/types.ts';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type TypeGalleryResponse = {
+  collectionId: string;
+  collectionName: string;
   id: string;
   title: string;
   description: string;
-  src: string;
+  src: string; // ImageKit CDN URL
+  imagekit_file_id: string; // For deletion from ImageKit
   pattern_id: string;
   owner_id: string;
   created: Date;
   updated: Date;
+  expand?: {
+    pattern_id?: TypePatternResponse;
+  };
+};
+
+// ─── Queries ──────────────────────────────────────────────────────────────────
+
+export const useQueryGetUserGallery = (userId: string, pageNumber: number) => {
+  return useQuery({
+    queryKey: ['GetUserGallery', userId, pageNumber],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeGalleryResponse>> => {
+      return await pocketbase.collection('gallery').getList(pageNumber, 10, {
+        filter: `owner_id = "${userId}"`,
+        sort: '-created',
+        expand: 'pattern_id',
+      });
+    },
+    enabled: !!pageNumber && !!userId,
+    refetchOnMount: 'always',
+  });
+};
+
+// ─── Pattern search (used in GalleryUploadDialog) ─────────────────────────────
+
+export type TypePatternSearchResult = {
+  id: string;
+  name: string;
+};
+
+export const useQuerySearchPatternsByName = (term: string) => {
+  return useQuery({
+    queryKey: ['SearchPatternsByName', term],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternSearchResult>> => {
+      return await pocketbase.collection('patterns').getList(1, 8, {
+        filter: `name ~ "${term.replace(/"/g, '')}"`,
+        fields: 'id,name',
+        sort: 'name',
+      });
+    },
+    enabled: term.length >= 2,
+    staleTime: 30_000,
+  });
 };
