@@ -534,6 +534,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
             <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
+
             <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
               <CloseRoundedIcon fontSize="small" />
             </IconButton>
@@ -550,7 +551,8 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
                 Tagged pattern
               </Typography>
-              <Link to="/" search={{ patternId: patternExpand.id }} onClick={onClose}>
+
+              <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
                 <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
               </Link>
             </Box>
@@ -611,6 +613,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
         }}
       >
         <GalleryImage src={photo.src} alt={photo.title} loading="lazy" />
+
         <Box
           className="overlay"
           sx={{
@@ -626,6 +629,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
         >
           <ZoomInOutlinedIcon sx={{ color: 'white', fontSize: 32 }} />
         </Box>
+
         {photo.title && (
           <ImageListItemBar
             title={photo.title}
@@ -720,9 +724,10 @@ const PatternTile = styled(Paper)(({ theme }) => ({
 
 const GalleryImage = styled('img')({
   width: '100%',
-  height: '100%',
-  objectFit: 'cover',
+  height: 'auto',
+  maxHeight: 275,
   display: 'block',
+  objectFit: 'contain',
 });
 
 type PatternGridProps = {

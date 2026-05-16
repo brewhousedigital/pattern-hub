@@ -13,8 +13,15 @@ const AI_TASK_EXTENSIONS = JSON.stringify([
         type: 'yes_no',
         instruction:
           'Does this image contain explicit nudity, pornographic content, or extreme graphic violence that is clearly not artistic in nature? Note: stained glass art, abstract patterns, craft photography, and typical art community content should pass. Only flag content that is blatantly NSFW.',
-        on_yes: { add_tags: ['nsfw-flagged'] },
-        on_no: { add_tags: ['content-safe'] },
+        on_yes: { add_tags: ['nsfw-flagged'], set_metadata: [{ field: 'status', value: 'rejected' }] },
+        on_no: {
+          add_tags: ['content-safe'],
+          set_metadata: [{ field: 'status', value: 'approved' }],
+        },
+        on_unknown: {
+          add_tags: ['needs-review'],
+          set_metadata: [{ field: 'status', value: 'pending' }],
+        },
       },
     ],
   },
