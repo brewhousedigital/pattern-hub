@@ -13,6 +13,7 @@
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@imagekit/react": "5.0.2",
+    "@marsidev/react-turnstile": "^1.5.2",
     "@mui/icons-material": "7.3.9",
     "@mui/lab": "7.0.1-beta.23",
     "@mui/material": "7.3.9",

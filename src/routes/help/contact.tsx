@@ -3,8 +3,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { DISCORD_SERVER_LINK } from '@/data/constants';
-import { useMutationCreateContactSubmission } from '@/functions/database/contact';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { enqueueSnackbar } from 'notistack';
 
 import { Box, Typography, TextField, Button, Alert, CircularProgress, Container, Link } from '@mui/material';
 
@@ -15,19 +16,29 @@ export const Route = createFileRoute('/help/contact')({
   }),
 });
 
+const COOLDOWN_KEY = 'contact_last_submit';
+const COOLDOWN_MS = 60 * 1000; // 1 minute
+
 function RouteComponent() {
-  const [formState, setFormState] = useState<FormState>('idle');
+  const [formState, setFormState] = useState<FormState>(() => {
+    const last = localStorage.getItem(COOLDOWN_KEY);
+    if (last && Date.now() - parseInt(last) < COOLDOWN_MS) return 'cooldown';
+    return 'idle';
+  });
+
   const [fields, setFields] = useState({ name: '', email: '', message: '' });
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState('');
+
+  const formOpenTime = React.useRef(Date.now());
 
   const { authData } = useGlobalAuthData();
 
   React.useEffect(() => {
-    if (authData) {
-      setFields((prev) => ({ ...prev, email: authData?.email || '' }));
+    if (authData?.email) {
+      setFields((prev) => ({ ...prev, email: authData.email || '' }));
     }
   }, [authData]);
-
-  const createSubmission = useMutationCreateContactSubmission();
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFields((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -35,10 +46,34 @@ function RouteComponent() {
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
+
+    // Client-side bot guards (silent fails)
+    if (honeypot) return;
+    const elapsed = Date.now() - formOpenTime.current;
+    if (elapsed < 2000) return;
+
+    if (!turnstileToken) {
+      enqueueSnackbar('Security check not complete yet — wait a moment and try again.', { variant: 'warning' });
+      return;
+    }
+
     setFormState('loading');
 
     try {
-      await createSubmission.mutateAsync(fields);
+      const res = await fetch('/api/submit-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...fields,
+          token: turnstileToken,
+          hp: honeypot,
+          ts: formOpenTime.current,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed');
+
+      localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       setFormState('success');
       setFields({ name: '', email: '', message: '' });
     } catch {
@@ -128,6 +163,10 @@ function RouteComponent() {
               Send another message
             </Button>
           </Box>
+        ) : formState === 'cooldown' ? (
+          <Alert severity="info">
+            You've already sent a message recently. Please wait a few minutes before sending another.
+          </Alert>
         ) : (
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {formState === 'error' && (
@@ -135,6 +174,17 @@ function RouteComponent() {
                 Something went wrong — please try again or reach out on Discord.
               </Alert>
             )}
+
+            {/* Honeypot — invisible to humans, traps bots that fill every field */}
+            <input
+              aria-hidden="true"
+              tabIndex={-1}
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              autoComplete="off"
+              style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+            />
 
             <TextField
               label="Name"
@@ -170,11 +220,18 @@ function RouteComponent() {
               size="small"
             />
 
+            <Turnstile
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onError={() => setTurnstileToken(null)}
+              onExpire={() => setTurnstileToken(null)}
+            />
+
             <Button
               type="submit"
               variant="contained"
               color="success"
-              disabled={formState === 'loading'}
+              disabled={formState === 'loading' || !turnstileToken}
               startIcon={formState === 'loading' ? <CircularProgress size={16} color="inherit" /> : null}
               sx={{ alignSelf: 'flex-start', px: 4 }}
             >
@@ -187,4 +244,4 @@ function RouteComponent() {
   );
 }
 
-type FormState = 'idle' | 'loading' | 'success' | 'error';
+type FormState = 'idle' | 'loading' | 'success' | 'error' | 'cooldown';
