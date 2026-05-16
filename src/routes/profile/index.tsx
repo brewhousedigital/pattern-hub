@@ -8,7 +8,6 @@ import { useQueryGetUserRatingsByPagination } from '@/functions/database/ratings
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
-import { useMutationGetGalleryUploadAuth } from '@/functions/database/gallery';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useQueryGetUserById } from '@/functions/database/users';
@@ -108,8 +107,6 @@ const ProfileContent = (props: ProfileContentProps) => {
   const [favoritePagination, setFavoritePagination] = React.useState(1);
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
   const [ratingsPagination, setRatingsPagination] = React.useState(1);
-
-  const getGalleryAuth = useMutationGetGalleryUploadAuth();
 
   const {
     isPending: isPendingFavorite,
