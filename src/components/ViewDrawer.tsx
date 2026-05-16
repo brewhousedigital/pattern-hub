@@ -1,12 +1,8 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
-import { ExportPatternForPrintV2 } from '@/components/ExportPatternForPrintV2';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
-import { ExportPatternToDownloadV2 } from '@/components/ExportPatternToDownloadV2';
-import { ExportPatternToDownloadV3 } from '@/components/PatternExport/ExportPatternToDownloadV3';
 import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
-import type { TypeExportPatternContext } from '@/components/PatternExport/useExportPattern';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -50,22 +46,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
       handleCloseView();
     }
   }, [patternId]);
-
-  const exportPatternContext: TypeExportPatternContext = {
-    patternFileUrl: svgImageUrl,
-    patternName: viewData?.name || '',
-    authorLine: viewData?.expand?.authors?.map((a) => a.name).join(', ') ?? '',
-    pieces: viewData?.pieces || 0,
-    designDate: viewData?.design_date as Date | null,
-    designWidth: viewData?.design_width || 0,
-    designWidthUnit: viewData?.design_width_unit || '',
-    designHeight: viewData?.design_height || 0,
-    designHeightUnit: viewData?.design_height_unit || '',
-    lineWidth: viewData?.line_width || 0,
-    lineWidthUnit: viewData?.line_width_unit || '',
-    instructionsMarkdown: viewData?.instructions || '',
-    patternKeys: viewData?.pattern_key_reference_list || [],
-  };
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
