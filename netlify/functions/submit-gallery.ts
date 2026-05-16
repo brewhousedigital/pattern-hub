@@ -166,8 +166,17 @@ export default async (req: Request) => {
         tags?: string[];
         extensionStatus?: Record<string, string>;
       };
-      if (fileData.extensionStatus?.['ai-tasks'] === 'success') {
+      const aiStatus = fileData.extensionStatus?.['ai-tasks'];
+
+      if (aiStatus === 'success') {
         tags = fileData.tags ?? [];
+        break;
+      }
+
+      // 'failed' means the AI model refused to process the image — a strong
+      // signal that the content is explicitly NSFW. Block it.
+      if (aiStatus === 'failed') {
+        tags = ['nsfw-flagged'];
         break;
       }
     }
