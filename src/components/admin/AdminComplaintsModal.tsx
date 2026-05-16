@@ -142,6 +142,19 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           </Box>
         </Box>
 
+        <Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            fontWeight={500}
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75 }}
+          >
+            Category
+          </Typography>
+
+          <Typography>{props.complaint?.category}</Typography>
+        </Box>
+
         {/* Reason */}
         <Box>
           <Typography

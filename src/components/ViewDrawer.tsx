@@ -260,7 +260,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               </>
             )}
 
-            <PatternReportIssue viewData={viewData} />
+            <PatternReportIssue viewData={viewData} key={patternId} />
 
             {/*<Box>
               <SectionLabel>Tags for this Pattern</SectionLabel>

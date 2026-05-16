@@ -92,6 +92,7 @@ function RouteComponent() {
         );
       },
     },
+    { field: 'category', disableColumnMenu: true, headerName: 'Category', flex: 1, sortable: false, filterable: false },
     { field: 'reason', disableColumnMenu: true, headerName: 'Reason', flex: 1, sortable: false, filterable: false },
     {
       field: 'email',

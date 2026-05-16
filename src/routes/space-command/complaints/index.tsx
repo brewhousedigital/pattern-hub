@@ -57,6 +57,7 @@ function RouteComponent() {
           <TableHead>
             <TableRow sx={{ backgroundColor: 'grey.50' }}>
               <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Pattern</TableCell>
+              <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Category</TableCell>
               <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Reason</TableCell>
               <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Reporter</TableCell>
               <TableCell sx={{ fontWeight: 500, fontSize: 11, letterSpacing: '0.05em' }}>Submitted</TableCell>
@@ -70,7 +71,7 @@ function RouteComponent() {
             {isLoading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 5 }).map((_, j) => (
+                    {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton />
                       </TableCell>
@@ -109,6 +110,12 @@ function RouteComponent() {
                             </Typography>
                           </Box>
                         </Box>
+                      </TableCell>
+
+                      <TableCell sx={{ maxWidth: 220 }}>
+                        <Typography fontSize={13} color="text.secondary" noWrap>
+                          {complaint.category}
+                        </Typography>
                       </TableCell>
 
                       <TableCell sx={{ maxWidth: 220 }}>

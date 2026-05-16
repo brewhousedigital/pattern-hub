@@ -91,6 +91,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
 
       setTimeout(() => {
         setReason('');
+        setCategory('');
       }, 1000);
     } catch {
       enqueueSnackbar("Couldn't submit your report right now. Try again in a few minutes.", { variant: 'error' });
