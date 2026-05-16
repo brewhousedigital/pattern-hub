@@ -474,7 +474,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
           {photo && (
             <Box
               component="img"
-              src={`${photo.src}?tr=w-900`}
+              src={`${photo.src}?tr=w-900,f-auto,q-80`}
               alt={photo.title}
               sx={{
                 width: '100%',
@@ -612,7 +612,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
           position: 'relative',
         }}
       >
-        <GalleryImage src={photo.src} alt={photo.title} loading="lazy" />
+        <GalleryImage src={`${photo.src}?tr=w-600,f-auto,q-80`} alt={photo.title} loading="lazy" />
 
         <Box
           className="overlay"

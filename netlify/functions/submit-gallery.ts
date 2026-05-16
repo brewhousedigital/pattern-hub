@@ -1,3 +1,5 @@
+import * as sharp from 'sharp';
+
 const PB_URL = 'https://stained-glass.pockethost.io';
 const IK_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
 const IK_API_URL = 'https://api.imagekit.io/v1/files';
@@ -121,10 +123,27 @@ export default async (req: Request) => {
     return Response.json({ error: 'File too large — maximum 10 MB' }, { status: 400 });
   }
 
-  // 7. Upload to ImageKit
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  // 7. Convert to WebP and cap dimensions before uploading to ImageKit
+  let uploadBlob: Blob;
+  let sanitizedName: string;
+
+  try {
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
+    const processedBuffer = await sharp(originalBuffer)
+      .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    uploadBlob = new Blob([new Uint8Array(processedBuffer)], { type: 'image/webp' });
+    const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
+    sanitizedName = `${baseName}.webp`;
+  } catch {
+    return Response.json({ error: 'Failed to process image — please try a different file.' }, { status: 400 });
+  }
+
+  // 8. Upload to ImageKit
   const ikForm = new FormData();
-  ikForm.append('file', file, sanitizedName);
+  ikForm.append('file', uploadBlob, sanitizedName);
   ikForm.append('fileName', sanitizedName);
   ikForm.append('folder', `/user-gallery/${userId}/`);
   ikForm.append('useUniqueFileName', 'true');
@@ -151,7 +170,7 @@ export default async (req: Request) => {
   };
   const { fileId, url } = ikData;
 
-  // 8. Resolve AI task result
+  // 9. Resolve AI task result
   // The upload response sometimes already contains a terminal extensionStatus
   // (when the AI completes synchronously). Check that first before polling.
   let tags: string[] = ikData.tags ?? [];
@@ -194,13 +213,13 @@ export default async (req: Request) => {
     }
   }
 
-  // 9. Block NSFW content
+  // 10. Block NSFW content
   if (tags.includes('nsfw-flagged')) {
     await deleteIkFile(fileId);
     return Response.json({ error: 'Content not permitted in this community' }, { status: 400 });
   }
 
-  // 10. Save to PocketBase
+  // 11. Save to PocketBase
   const pbResp = await fetch(`${PB_URL}/api/collections/gallery/records`, {
     method: 'POST',
     headers: {
