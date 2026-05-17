@@ -568,7 +568,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
   const patternExpand = photo?.expand?.pattern_id;
 
   return (
-    <Dialog open={!!photo} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={!!photo} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 6 } }}>
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400 }}>
         {/* Image */}
         <Box
@@ -576,11 +576,12 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
             position: 'relative',
             flex: '0 0 auto',
             width: { xs: '100%', md: '60%' },
-            bgcolor: 'grey.100',
+
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: { xs: 240, md: 400 },
+            p: 1.5,
           }}
         >
           {photo && (
@@ -589,15 +590,21 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               loading="lazy"
               src={`${photo.src}?tr=w-900,f-auto,q-80`}
               alt={photo.title}
-              sx={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: { xs: 300, md: 500 } }}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                borderRadius: 5,
+              }}
             />
           )}
+
           {hasPrev && (
             <IconButton
               onClick={() => onNavigate(photos[currentIndex - 1])}
               sx={{
                 position: 'absolute',
-                left: 8,
+                left: -3,
                 bgcolor: 'rgba(0,0,0,0.45)',
                 color: 'white',
                 '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
@@ -612,7 +619,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               onClick={() => onNavigate(photos[currentIndex + 1])}
               sx={{
                 position: 'absolute',
-                right: 8,
+                right: -3,
                 bgcolor: 'rgba(0,0,0,0.45)',
                 color: 'white',
                 '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
@@ -629,6 +636,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
             <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
+
             <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
               <CloseRoundedIcon fontSize="small" />
             </IconButton>
@@ -645,7 +653,8 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
                 Tagged pattern
               </Typography>
-              <Link to="/" search={{ patternId: patternExpand.id }} onClick={onClose}>
+
+              <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
                 <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
               </Link>
             </Box>
@@ -719,6 +728,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
               transition: 'transform 0.3s ease',
             }}
           />
+
           <Box
             className="overlay"
             sx={{
@@ -736,6 +746,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
               <Typography variant="caption" fontWeight={600} color="white" noWrap display="block">
                 {photo.title}
               </Typography>
+
               {photo.expand?.pattern_id?.name && (
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }} noWrap display="block">
                   {photo.expand.pattern_id.name}
@@ -933,17 +944,22 @@ const PatternTile = styled(Paper)(({ theme }) => ({
 const ProfileSkeleton = () => (
   <PageWrapper>
     <HeroBanner />
+
     <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
-      <ProfileCard elevation={0}>
+      <ProfileCard elevation={0} sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
           <Skeleton variant="circular" width={72} height={72} />
+
           <Box sx={{ flex: 1 }}>
             <Skeleton variant="text" width={180} height={32} />
             <Skeleton variant="text" width={140} height={18} sx={{ mt: 0.5 }} />
           </Box>
+
           <Skeleton variant="rounded" width={36} height={36} sx={{ borderRadius: 1.5 }} />
         </Box>
+
         <Divider sx={{ my: 2.5 }} />
+
         <Box sx={{ display: 'flex', gap: 2 }}>
           {[1, 2, 3, 4].map((i) => (
             <Box key={i} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
@@ -959,6 +975,7 @@ const ProfileSkeleton = () => (
         <Grid size={{ xs: 12, md: 3 }}>
           <Skeleton variant="rounded" height={180} sx={{ borderRadius: 4 }} />
         </Grid>
+
         <Grid size={{ xs: 12, md: 9 }}>
           <Skeleton variant="rounded" width="100%" height={48} sx={{ mb: 3, borderRadius: 2 }} />
           <Grid container spacing={2}>
