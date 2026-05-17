@@ -54,11 +54,6 @@ function RouteComponent() {
       width: 160,
       sortable: false,
       filterable: false,
-      renderCell: (params) => (
-        <Typography sx={{ fontWeight: 500 }} fontSize={13}>
-          {params.value}
-        </Typography>
-      ),
     },
     {
       field: 'email',
@@ -197,12 +192,7 @@ function RouteComponent() {
         }}
       />
 
-      <AdminContactModal
-        open={dialogOpen}
-        onClose={handleModalClose}
-        submission={selected}
-        key={selected?.id || ''}
-      />
+      <AdminContactModal open={dialogOpen} onClose={handleModalClose} submission={selected} key={selected?.id || ''} />
     </Box>
   );
 }
