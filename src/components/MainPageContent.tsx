@@ -70,7 +70,6 @@ export const MainPageContent = () => {
                           width: '100%',
                           height: 'auto',
                           aspectRatio: '1/1',
-                          borderRadius: 16,
                           display: 'block',
                         }}
                       />
