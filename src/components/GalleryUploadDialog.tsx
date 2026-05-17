@@ -312,7 +312,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
           ) : (
             <>
               <TextField
-                label="Tag a pattern (optional)"
+                label="Tag a pattern by it's name (optional)"
                 variant="filled"
                 value={patternSearch}
                 onChange={(e) => {
@@ -335,7 +335,8 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
                   elevation={4}
                   sx={{
                     position: 'absolute',
-                    top: '100%',
+                    //top: '100%',
+                    bottom: 52,
                     left: 0,
                     right: 0,
                     zIndex: 10,
