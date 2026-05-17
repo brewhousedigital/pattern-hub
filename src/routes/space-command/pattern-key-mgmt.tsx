@@ -292,6 +292,7 @@ function RouteComponent() {
                   >
                     <Box
                       component="img"
+                      loading="lazy"
                       src={url}
                       alt={filename}
                       sx={{
@@ -420,6 +421,7 @@ function RouteComponent() {
 
                     <Box
                       component="img"
+                      loading="lazy"
                       src={url}
                       alt={legend.name}
                       sx={{
@@ -570,6 +572,7 @@ function RouteComponent() {
 
                             <Box
                               component="img"
+                              loading="lazy"
                               src={item.fullPath}
                               alt={item.name}
                               sx={{

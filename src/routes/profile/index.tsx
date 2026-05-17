@@ -27,7 +27,6 @@ import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
-import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
@@ -54,6 +53,7 @@ import {
   IconButton,
   Skeleton,
   Tooltip,
+  Rating,
 } from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 
@@ -586,6 +586,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
           {photo && (
             <Box
               component="img"
+              loading="lazy"
               src={`${photo.src}?tr=w-900,f-auto,q-80`}
               alt={photo.title}
               sx={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: { xs: 300, md: 500 } }}
@@ -707,13 +708,13 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
         >
           <Box
             component="img"
-            src={`${photo.src}?tr=w-600,f-auto,q-80`}
+            src={`${photo.src}?tr=w-500,h-500,f-auto,q-80`}
             alt={photo.title}
             loading="lazy"
             sx={{
               width: '100%',
               height: '100%',
-              objectFit: 'cover',
+              objectFit: 'contain',
               display: 'block',
               transition: 'transform 0.3s ease',
             }}
@@ -774,25 +775,34 @@ const PatternGrid = (props: PatternGridProps) => {
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns?.map((pattern) => (
         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pattern.id}>
-          <Link to="/" search={{ id: [pattern?.pattern_id], patternId: pattern?.pattern_id }}>
+          <Link
+            to="/"
+            search={{ id: [pattern?.pattern_id], patternId: pattern?.pattern_id }}
+            style={{ textDecoration: 'none' }}
+          >
             <PatternTile elevation={0}>
               <Box sx={{ position: 'relative', p: 2 }}>
                 <Box
                   component="img"
+                  loading="lazy"
                   src={generatePbImage(pattern.expand.pattern_id)}
                   alt={pattern?.expand?.pattern_id?.name}
                   style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
                 />
               </Box>
+
               <Box sx={{ px: 2, pb: 2 }}>
                 <Typography variant="subtitle2" fontWeight={700} noWrap>
                   {pattern?.expand?.pattern_id?.name}
                 </Typography>
+
                 {props.showCompleted && (
                   <Typography variant="caption" color="text.disabled">
                     Completed {createPrettyDate(pattern.created!)}
                   </Typography>
                 )}
+
+                {props.showRating && <Rating value={pattern?.rating} readOnly />}
               </Box>
             </PatternTile>
           </Link>
@@ -822,13 +832,6 @@ const EmptyState: React.FC<{ icon: React.ReactNode; message: string }> = ({ icon
 );
 
 // ─── Styled components ────────────────────────────────────────────────────────
-
-const difficultyColor = (d: string): 'success' | 'warning' | 'error' | 'default' => {
-  if (d === 'Beginner') return 'success';
-  if (d === 'Intermediate') return 'warning';
-  if (d === 'Advanced') return 'error';
-  return 'default';
-};
 
 const PageWrapper = styled(Box)(({ theme }) => ({
   paddingBottom: theme.spacing(12),

@@ -33,6 +33,7 @@ export const Footer = () => {
               target="_blank"
               startIcon={
                 <img
+                  loading="lazy"
                   width="88"
                   height="71"
                   style={{ border: 0, maxWidth: 24, width: '100%', height: 'auto' }}

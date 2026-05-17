@@ -196,6 +196,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
           <Box sx={{ position: 'relative' }}>
             <Box
               component="img"
+              loading="lazy"
               src={preview}
               alt="Preview"
               sx={{

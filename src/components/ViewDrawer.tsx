@@ -71,6 +71,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             <BorderedCard>
               {viewData?.pattern_file_external ? (
                 <img
+                  loading="lazy"
                   src={svgImageUrl}
                   alt={`pattern template for ${viewData?.name}`}
                   style={{ width: '100%', height: 'auto', borderRadius: 16, display: 'block' }}
@@ -78,6 +79,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               ) : (
                 <>
                   <img
+                    loading="lazy"
                     src={svgImageUrl}
                     alt={`pattern template for ${viewData?.name}`}
                     style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
@@ -234,52 +236,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             <ThinDivider />
 
-            {viewData?.pattern_key_reference_list && (
-              <>
-                {/*{viewData.pattern_key_reference_list?.map((item) => {
-                  return (
-                    <Grid container sx={{ alignItems: 'center', mb: 2 }}>
-                      <Grid size={{ xs: 4 }}>{item.name}</Grid>
-                      <Grid size={{ xs: 8 }}>
-                        <img
-                          src={item.fullPath}
-                          alt={item.name}
-                          //style={{ width: '100%', height: 'auto', maxHeight: 50, borderRadius: 8 }}
-                          style={{
-                            width: '100%',
-                            height: 40,
-                            objectFit: 'contain',
-                            objectPosition: 'left',
-                            display: 'block',
-                          }}
-                        />
-                      </Grid>
-                    </Grid>
-                  );
-                })}*/}
-              </>
-            )}
-
             <PatternReportIssue viewData={viewData} key={patternId} />
-
-            {/*<Box>
-              <SectionLabel>Tags for this Pattern</SectionLabel>
-
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
-                {viewData?.tags?.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      borderColor: alpha('#C8A96E', 0.25),
-                      color: 'text.secondary',
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>*/}
 
             <ThinDivider />
           </Box>
@@ -349,6 +306,7 @@ const PatternLegendCard = ({ viewData }: TypeViewData) => {
               <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {key.fullPath && (
                   <img
+                    loading="lazy"
                     src={key.fullPath}
                     alt={key.name}
                     style={{ width: 24, height: 24, objectFit: 'contain', flexShrink: 0 }}

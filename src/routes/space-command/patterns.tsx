@@ -125,6 +125,7 @@ function RouteComponent() {
               >
                 <a href={filePath} download style={{ display: 'block' }}>
                   <img
+                    loading="lazy"
                     src={filePath}
                     alt={`pattern template for ${params.row.name}`}
                     style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
@@ -163,6 +164,7 @@ function RouteComponent() {
               >
                 <a href={filePath} download target="_blank" style={{ display: 'block' }}>
                   <img
+                    loading="lazy"
                     src={filePath}
                     alt={`pattern template for ${params.row.name}`}
                     style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}

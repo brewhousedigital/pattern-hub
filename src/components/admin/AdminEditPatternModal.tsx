@@ -435,7 +435,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ py: 1 }}>
-
             {/* ── Info ── */}
             <FormSection label="Pattern Info" />
 
@@ -497,12 +496,19 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     <>
                       <Grid container spacing={2} sx={{ mb: 1.5 }}>
                         <Grid size={{ xs: 12, md: 6 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                            display="block"
+                            mb={0.75}
+                          >
                             Current
                           </Typography>
                           {props.pattern_file ? (
                             <Box
                               component="img"
+                              loading="lazy"
                               src={generatePbImage(props)}
                               alt={`current pattern for ${props.name}`}
                               sx={{
@@ -563,6 +569,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             </IconButton>
                             <Box
                               component="img"
+                              loading="lazy"
                               src={previewUrl}
                               alt="New pattern preview"
                               sx={{
@@ -606,6 +613,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                           </Typography>
                           <Box
                             component="img"
+                            loading="lazy"
                             src={generatePbImage(props)}
                             alt={`current pattern for ${props.name}`}
                             sx={{
@@ -649,12 +657,19 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     <>
                       <Grid container spacing={2} sx={{ mb: 1.5 }}>
                         <Grid size={{ xs: 12, md: 6 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                            display="block"
+                            mb={0.75}
+                          >
                             Current
                           </Typography>
                           {props.pattern_file_external ? (
                             <Box
                               component="img"
+                              loading="lazy"
                               src={generatePbImage(props)}
                               alt={`current pattern for ${props.name}`}
                               sx={{
@@ -715,6 +730,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             </IconButton>
                             <Box
                               component="img"
+                              loading="lazy"
                               src={previewExternalUrl}
                               alt="New external pattern preview"
                               sx={{
@@ -758,6 +774,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                           </Typography>
                           <Box
                             component="img"
+                            loading="lazy"
                             src={generatePbImage(props)}
                             alt={`current external pattern for ${props.name}`}
                             sx={{
@@ -844,7 +861,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   onChange={(e) => setDesignWidth(e.target.value)}
                 />
               </Grid>
-              <UnitOfMeasurementSelect label="Design Width Unit" value={designWidthUnit} onChange={setDesignWidthUnit} />
+              <UnitOfMeasurementSelect
+                label="Design Width Unit"
+                value={designWidthUnit}
+                onChange={setDesignWidthUnit}
+              />
             </Grid>
 
             <Grid container spacing={2}>
@@ -971,6 +992,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                           <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
                             <Box
                               component="img"
+                              loading="lazy"
                               src={generatePbImagePatternKeyRef(item)}
                               alt={`pattern-key-img-${item.id}`}
                               sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
@@ -1036,6 +1058,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             secondary={
                               <Box
                                 component="img"
+                                loading="lazy"
                                 src={item.fullPath}
                                 alt={`pattern-key-img-added-${item.name}`}
                                 sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}

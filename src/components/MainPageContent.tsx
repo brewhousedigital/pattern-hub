@@ -63,6 +63,7 @@ export const MainPageContent = () => {
                   ) : (
                     <Box sx={{ p: 2 }}>
                       <img
+                        loading="lazy"
                         src={generatePbImage(pattern)}
                         alt={`pattern template for ${pattern.name}`}
                         style={{

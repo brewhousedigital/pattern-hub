@@ -62,6 +62,7 @@ function RouteComponent() {
 
         return (
           <img
+            loading="lazy"
             src={thumbUrl}
             alt="pattern"
             style={{
