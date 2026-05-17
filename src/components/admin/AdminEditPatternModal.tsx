@@ -152,6 +152,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const [name, setName] = React.useState(props?.name || '');
   const [description, setDescription] = React.useState(props?.description || '');
+  const [sourceURL, setSourceURL] = React.useState(props?.source_url || '');
   const [pieces, setPieces] = React.useState(String(props?.pieces) || '1');
   const [lineWidth, setLineWidth] = React.useState(String(props?.line_width) || '0');
   const [lineWidthUnit, setLineWidthUnit] = React.useState(String(props?.line_width_unit) || 'in');
@@ -239,6 +240,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const handleFormReset = () => {
     setName('');
     setDescription('');
+    setSourceURL('');
     setPieces('1');
     setLineWidth('0');
     setLineWidthUnit('in');
@@ -291,6 +293,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       const payload: TypePatternCreatePayload = {
         name,
         description,
+        source_url: sourceURL,
         pieces: pieces && pieces !== 'undefined' ? pieces : '0',
         line_width: lineWidth && lineWidth !== 'undefined' ? lineWidth : '0',
         design_width: designWidth && designWidth !== 'undefined' ? designWidth : '0',
@@ -484,6 +487,14 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               <AdminPatternInstructionsModal callback={props.callback} largeButton {...props} />
 
               <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
+
+              <TextField
+                fullWidth
+                variant="filled"
+                label="Source URL"
+                value={sourceURL}
+                onChange={(e) => setSourceURL(e.target.value)}
+              />
 
               {/* ── Pattern File ── */}
               <FormSection label="Pattern File" />

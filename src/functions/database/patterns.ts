@@ -12,6 +12,7 @@ export type TypePatternResponse = {
   name: string;
   description: string;
   instructions: string;
+  source_url?: string;
   difficulty: string;
   authors: string[];
   author_manual: string[];
@@ -99,6 +100,7 @@ export type TypePatternCreatePayload = {
   name: string;
   description: string;
   instructions?: string;
+  source_url?: string;
   difficulty?: string;
   authors?: string[];
   author_manual?: string[];
@@ -127,6 +129,7 @@ export const useMutationEditPattern = () => {
       // Insert the base data first
       formData.append('name', payload?.name || '');
       formData.append('description', payload?.description || '');
+      formData.append('source_url', payload?.source_url || '');
       formData.append('tags', JSON.stringify(payload?.tags));
       formData.append('authors', JSON.stringify(payload?.authors));
       formData.append('author_manual', JSON.stringify(payload?.author_manual));
