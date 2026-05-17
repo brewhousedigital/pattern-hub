@@ -57,6 +57,7 @@ import {
   Tab,
   CircularProgress,
   Alert,
+  Tooltip,
 } from '@mui/material';
 
 import TabContext from '@mui/lab/TabContext';
@@ -523,24 +524,29 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             >
                               Current
                             </Typography>
+
                             {props.pattern_file ? (
-                              <Box
-                                component="img"
-                                loading="lazy"
-                                src={generatePbImage(props)}
-                                alt={`current pattern for ${props.name}`}
-                                sx={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  aspectRatio: '1/1',
-                                  objectFit: 'contain',
-                                  borderRadius: 1.5,
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  bgcolor: 'grey.50',
-                                  p: 1,
-                                }}
-                              />
+                              <Tooltip title="Download" arrow>
+                                <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
+                                  <Box
+                                    component="img"
+                                    loading="lazy"
+                                    src={generatePbImage(props)}
+                                    alt={`current pattern for ${props.name}`}
+                                    sx={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      aspectRatio: '1/1',
+                                      objectFit: 'contain',
+                                      borderRadius: 1.5,
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      bgcolor: 'grey.50',
+                                      p: 1,
+                                    }}
+                                  />
+                                </a>
+                              </Tooltip>
                             ) : (
                               <Box
                                 sx={{
@@ -570,6 +576,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                               >
                                 New
                               </Typography>
+
                               <IconButton
                                 size="small"
                                 onClick={handleFileDelete}
@@ -585,6 +592,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                               >
                                 <DeleteRoundedIcon fontSize="small" />
                               </IconButton>
+
                               <Box
                                 component="img"
                                 loading="lazy"
@@ -605,47 +613,47 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             </Box>
                           </Grid>
                         </Grid>
-
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="inherit"
-                          onClick={handleFileDelete}
-                          sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
-                        >
-                          Remove & re-upload
-                        </Button>
                       </>
                     ) : (
                       <>
                         {props.pattern_file && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              fontWeight={600}
-                              display="block"
-                              mb={0.75}
-                            >
-                              Current pattern
-                            </Typography>
-                            <Box
-                              component="img"
-                              loading="lazy"
-                              src={generatePbImage(props)}
-                              alt={`current pattern for ${props.name}`}
-                              sx={{
-                                width: '100%',
-                                maxWidth: 280,
-                                height: 'auto',
-                                borderRadius: 1.5,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                bgcolor: 'grey.50',
-                                p: 1,
-                              }}
-                            />
-                          </Box>
+                          <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                              <>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  fontWeight={600}
+                                  display="block"
+                                  mb={0.75}
+                                >
+                                  Current pattern
+                                </Typography>
+
+                                <Tooltip title="Download" arrow>
+                                  <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
+                                    <Box
+                                      component="img"
+                                      loading="lazy"
+                                      src={generatePbImage(props)}
+                                      alt={`current pattern for ${props.name}`}
+                                      sx={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        aspectRatio: '1/1',
+                                        objectFit: 'contain',
+                                        borderRadius: 1.5,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        bgcolor: 'grey.50',
+                                        p: 1,
+                                      }}
+                                    />
+                                  </a>
+                                </Tooltip>
+                              </>
+                            </Grid>
+                          </Grid>
                         )}
 
                         <SvgDropZone
@@ -766,16 +774,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             </Box>
                           </Grid>
                         </Grid>
-
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="inherit"
-                          onClick={handleExternalFileDelete}
-                          sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
-                        >
-                          Remove & re-upload
-                        </Button>
                       </>
                     ) : (
                       <>
