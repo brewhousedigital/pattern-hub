@@ -19,6 +19,7 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  Drawer,
   SwipeableDrawer,
 } from '@mui/material';
 
@@ -214,14 +215,14 @@ export const MobileSidebarBlock = () => {
   const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
 
   return (
-    <SwipeableDrawer
+    <Drawer
       anchor="right"
       open={isSidebarOpen}
       onClose={handleCloseMobileSidebar}
-      onOpen={handleOpenMobileSidebar}
+      /*onOpen={handleOpenMobileSidebar}*/
     >
       <SidebarBlock />
-    </SwipeableDrawer>
+    </Drawer>
   );
 };
 
