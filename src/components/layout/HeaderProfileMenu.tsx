@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data.ts';
-import { authSignOut } from '@/functions/database/authentication.ts';
+import { authSignOut } from '@/functions/database/authentication';
 
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
+import PersonIcon from '@mui/icons-material/Person';
 import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import DoneRoundedIcon from '@mui/icons-material/DoneRounded';
@@ -42,7 +44,7 @@ export const HeaderProfileMenu = () => {
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
       >
-        <Avatar />
+        <AccountCircleRoundedIcon />
       </IconButton>
 
       <Menu
@@ -76,13 +78,6 @@ export const HeaderProfileMenu = () => {
 };
 
 const authenticatedMenuItems = [
-  /*{
-    label: 'Home',
-    icon: <DashboardRoundedIcon />,
-    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-      navigateTo({ to: '/' });
-    },
-  },*/
   {
     label: 'Profile',
     icon: <PersonRoundedIcon />,
@@ -115,13 +110,6 @@ const authenticatedMenuItems = [
     onClick: () => {},
     disabled: true,
   },
-  /*{
-    label: 'Admin Panel',
-    icon: <DisplaySettingsRoundedIcon />,
-    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-      navigateTo({ to: '/space-command' });
-    },
-  },*/
   {
     label: 'Logout',
     icon: <Logout />,

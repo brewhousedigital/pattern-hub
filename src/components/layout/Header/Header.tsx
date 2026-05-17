@@ -4,6 +4,7 @@ import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
 import { subLinkStyles } from '@/components/layout/Header/sublink-styles';
+import { NotificationBell } from '@/components/layout/Header/NotificationBell';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
 import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
@@ -25,6 +26,7 @@ export const Header = () => {
         <Box sx={showTagMobileSidebar ? [mobileNavbarStyles, mobileHomepageNavbarStyles] : mobileNavbarStyles}>
           <Logo />
 
+          <NotificationBell />
           <HeaderProfileMenu />
 
           {showTagMobileSidebar && (
@@ -49,6 +51,8 @@ export const Header = () => {
         <ExtraLinks />
 
         <Box sx={{ textAlign: 'right' }}>
+          <NotificationBell />
+
           <HeaderProfileMenu />
         </Box>
       </Box>
@@ -100,7 +104,7 @@ const navbarStyles = {
   gap: 4,
   alignItems: 'center',
   paddingX: 2,
-  paddingY: 0,
+  paddingY: 1,
 };
 
 const mobileNavbarContainerStyles = {

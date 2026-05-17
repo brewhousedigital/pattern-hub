@@ -39,6 +39,7 @@ import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-
 import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
 import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
+import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
 
 const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
   id: '/space-command',
@@ -196,6 +197,12 @@ const SpaceCommandComplaintsReviewedRoute =
     path: '/complaints/reviewed',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
+const ProfileCollectionsCollectionIdRoute =
+  ProfileCollectionsCollectionIdRouteImport.update({
+    id: '/profile/collections/$collectionId',
+    path: '/profile/collections/$collectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
   '/wiki/': typeof WikiIndexRoute
+  '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
@@ -252,6 +260,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
   '/wiki': typeof WikiIndexRoute
+  '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
@@ -285,6 +294,7 @@ export interface FileRoutesById {
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
   '/wiki/': typeof WikiIndexRoute
+  '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/space-command/'
     | '/wiki/'
+    | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/space-command'
     | '/wiki'
+    | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
@@ -382,6 +394,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/space-command/'
     | '/wiki/'
+    | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
@@ -406,6 +419,7 @@ export interface RootRouteChildren {
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   WikiIndexRoute: typeof WikiIndexRoute
+  ProfileCollectionsCollectionIdRoute: typeof ProfileCollectionsCollectionIdRoute
   WikiCategorySlugPageSlugRoute: typeof WikiCategorySlugPageSlugRoute
   WikiCategorySlugIndexRoute: typeof WikiCategorySlugIndexRoute
 }
@@ -622,6 +636,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandComplaintsReviewedRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/profile/collections/$collectionId': {
+      id: '/profile/collections/$collectionId'
+      path: '/profile/collections/$collectionId'
+      fullPath: '/profile/collections/$collectionId'
+      preLoaderRoute: typeof ProfileCollectionsCollectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -677,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   WikiIndexRoute: WikiIndexRoute,
+  ProfileCollectionsCollectionIdRoute: ProfileCollectionsCollectionIdRoute,
   WikiCategorySlugPageSlugRoute: WikiCategorySlugPageSlugRoute,
   WikiCategorySlugIndexRoute: WikiCategorySlugIndexRoute,
 }
