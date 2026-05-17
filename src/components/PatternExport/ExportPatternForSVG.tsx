@@ -212,6 +212,32 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
 
       const resolvedLegendHIn = legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX);
 
+      // Rasterize the legend SVG to a PNG so it renders consistently across all
+      // SVG tools (Inkscape, Illustrator, Adobe XD, etc.), not just Chrome.
+      const legendPngDataUri = await new Promise<string>((resolve, reject) => {
+        const scale = 2; // 2× oversample for crisp output
+        const canvasW = Math.ceil(LEGEND_SVG_PX * scale);
+        const canvasH = Math.ceil(legendOutput.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasW;
+        canvas.height = canvasH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas 2D context unavailable')); return; }
+        const svgBlob = new Blob([legendOutput.svg], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvasW, canvasH);
+          URL.revokeObjectURL(svgUrl);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(svgUrl);
+          reject(new Error('Failed to rasterize legend SVG to PNG'));
+        };
+        img.src = svgUrl;
+      });
+
       const vb = parseSvgViewBox(svgString);
       if (!vb) throw new Error('Pattern SVG is missing a viewBox — cannot composite.');
 
@@ -254,13 +280,11 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
 
       const patternInner = extractSvgInner(processedSvg);
 
-      // Namespace the legend's filter ID to prevent collisions in the composite document
-      const safeLegendSvg = legendOutput.svg
-        .replace(/id="shadow"/g, 'id="legend-card-shadow"')
-        .replace(/url\(#shadow\)/g, 'url(#legend-card-shadow)');
-      const legendInner = extractSvgInner(safeLegendSvg);
+      // Build composite: pattern inner content + legend PNG image + optional instructions PNG image.
+      // Both legend and instructions are embedded as flat <image> elements so the output renders
+      // consistently in all SVG tools, not just Chrome (no nested <svg> coordinate systems needed).
+      const legendImageElement = `<image x="${vb.vbX}" y="${vb.vbY + vb.vbH + gapUU}" width="${legendWUU}" height="${legendHUU}" href="${legendPngDataUri}"/>`;
 
-      // Build composite: pattern + legend (nested <svg>) + optional instructions (<image>)
       const composite = [
         `<svg xmlns="http://www.w3.org/2000/svg"`,
         ` viewBox="${vb.vbX} ${vb.vbY} ${vb.vbW} ${totalVbH}"`,
@@ -268,13 +292,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
         ` height="${r3(totalHIn)}in"`,
         `>`,
         patternInner,
-        `<svg`,
-        ` x="${vb.vbX}" y="${vb.vbY + vb.vbH + gapUU}"`,
-        ` width="${legendWUU}" height="${legendHUU}"`,
-        ` viewBox="0 0 ${LEGEND_SVG_PX} ${legendOutput.height}"`,
-        `>`,
-        legendInner,
-        `</svg>`,
+        legendImageElement,
         instrImageElement,
         `</svg>`,
       ].join('');
