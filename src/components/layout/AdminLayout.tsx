@@ -228,11 +228,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           </Box>
           <Tooltip title="Collapse sidebar">
             <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: 'text.disabled' }}>
-              {theme.direction === 'ltr' ? (
-                <ChevronLeftIcon fontSize="small" />
-              ) : (
-                <ChevronRightIcon fontSize="small" />
-              )}
+              {theme.direction === 'ltr' ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
         </Box>
@@ -283,9 +279,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
                             bgcolor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                             color: isActive ? 'primary.main' : 'text.secondary',
                             '&:hover': {
-                              bgcolor: isActive
-                                ? alpha(theme.palette.primary.main, 0.14)
-                                : 'action.hover',
+                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.14) : 'action.hover',
                               color: isActive ? 'primary.main' : 'text.primary',
                             },
                             transition: 'background-color 0.15s, color 0.15s',
