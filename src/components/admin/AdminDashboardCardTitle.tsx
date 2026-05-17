@@ -3,7 +3,7 @@ import { Typography } from '@mui/material';
 
 export const AdminDashboardCardTitle = (props: TypeComponentWithChildrenProps) => {
   return (
-    <Typography variant="h2" sx={{ fontSize: '32px!important', fontWeight: 600, mb: 2 }}>
+    <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
       {props.children}
     </Typography>
   );

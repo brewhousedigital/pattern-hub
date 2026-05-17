@@ -3,11 +3,13 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
 import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { alpha } from '@mui/material/styles';
 
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
@@ -37,7 +39,7 @@ import {
   ListItemIcon,
   ListItemText,
   AppBar as MuiAppBar,
-  Chip,
+  Tooltip,
 } from '@mui/material';
 import { useQueryGetComplaints } from '@/functions/database/complaints.ts';
 import { useQueryGetPendingContactSubmissions } from '@/functions/database/contact';
@@ -47,7 +49,12 @@ type SidebarLinkType = {
   href: string;
   icon: React.ReactNode;
   view?: TypeLevelsAdmin;
-  secondaryValue?: number;
+  badge?: number;
+};
+
+type NavGroup = {
+  groupLabel: string;
+  links: SidebarLinkType[];
 };
 
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
@@ -56,81 +63,111 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { data: complaintsData } = useQueryGetComplaints();
   const { data: contactData } = useQueryGetPendingContactSubmissions();
 
-  const SidebarLinks: SidebarLinkType[] = [
-    { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon /> },
+  const navGroups: NavGroup[] = [
     {
-      label: 'Patterns',
-      href: '/space-command/patterns',
-      icon: <ExtensionRoundedIcon />,
-      view: EnumLevelsAdmin.PATTERN_AR,
+      groupLabel: 'Overview',
+      links: [
+        { label: 'Dashboard', href: '/space-command', icon: <DashboardRoundedIcon fontSize="small" /> },
+        {
+          label: 'Patterns',
+          href: '/space-command/patterns',
+          icon: <ExtensionRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.PATTERN_AR,
+        },
+        {
+          label: 'Pattern Keys',
+          href: '/space-command/pattern-key-mgmt',
+          icon: <KeyRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
+        },
+      ],
     },
     {
-      label: 'Pattern Key Mgmt',
-      href: '/space-command/pattern-key-mgmt',
-      icon: <KeyRoundedIcon />,
-      view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
+      groupLabel: 'Community',
+      links: [
+        {
+          label: 'Reports',
+          href: '/space-command/complaints',
+          icon: <FeedbackIcon fontSize="small" />,
+          view: EnumLevelsAdmin.COMPLAINTS_AR,
+          badge: complaintsData?.length,
+        },
+        {
+          label: 'Contact',
+          href: '/space-command/contact',
+          icon: <MailRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.CONTACT_AR,
+          badge: contactData?.length,
+        },
+        {
+          label: 'FAQ',
+          href: '/space-command/faq',
+          icon: <ArticleRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.FAQ_AR,
+        },
+        {
+          label: 'Wiki',
+          href: '/space-command/wiki',
+          icon: <AutoStoriesRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.WIKI_AR,
+        },
+        {
+          label: 'Map Control',
+          href: '/space-command/map',
+          icon: <LocationOnRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.MAP_AR,
+        },
+        {
+          label: 'Tags',
+          href: '/space-command/tags',
+          icon: <LocalOfferRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.TAG_AR,
+        },
+      ],
     },
-    { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
     {
-      label: 'Reports',
-      href: '/space-command/complaints',
-      icon: <FeedbackIcon />,
-      view: EnumLevelsAdmin.COMPLAINTS_AR,
-      secondaryValue: complaintsData?.length,
+      groupLabel: 'Management',
+      links: [
+        {
+          label: 'Admins',
+          href: '/space-command/admins',
+          icon: <AutoFixHighIcon fontSize="small" />,
+          view: EnumLevelsAdmin.ADMINS_AR,
+        },
+        {
+          label: 'Users',
+          href: '/space-command/users',
+          icon: <PeopleRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.USERS_AR,
+        },
+      ],
     },
-    {
-      label: 'Contact',
-      href: '/space-command/contact',
-      icon: <MailRoundedIcon />,
-      view: EnumLevelsAdmin.CONTACT_AR,
-      secondaryValue: contactData?.length,
-    },
-    { label: 'FAQ', href: '/space-command/faq', icon: <ArticleRoundedIcon />, view: EnumLevelsAdmin.FAQ_AR },
-    { label: 'Wiki', href: '/space-command/wiki', icon: <AutoStoriesRoundedIcon />, view: EnumLevelsAdmin.WIKI_AR },
-    { label: 'Map Control', href: '/space-command/map', icon: <LocationOnRoundedIcon />, view: EnumLevelsAdmin.MAP_AR },
-    { label: 'Tags', href: '/space-command/tags', icon: <LocalOfferRoundedIcon />, view: EnumLevelsAdmin.TAG_AR },
-    { label: 'divider', href: '/space-command', icon: <ArticleRoundedIcon /> },
-    { label: 'Admins', href: '/space-command/admins', icon: <AutoFixHighIcon />, view: EnumLevelsAdmin.ADMINS_AR },
-    { label: 'Users', href: '/space-command/users', icon: <PeopleRoundedIcon />, view: EnumLevelsAdmin.USERS_AR },
   ];
 
   const location = useLocation();
-  const thisRestriction = SidebarLinks.find((link) => link.href === location.pathname);
-
+  const allLinks = navGroups.flatMap((g) => g.links);
+  const thisRestriction = allLinks.find((link) => link.href === location.pathname);
   const canViewPage = typeof thisRestriction?.view === 'undefined' || checkAccess(thisRestriction?.view || '');
+  const currentPageLabel = allLinks.find((l) => l.href === location.pathname)?.label ?? 'Admin';
 
   const theme = useTheme();
   const [open, setOpen] = React.useState(true);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
-
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
       <AppBar position="fixed" open={open}>
-        <Toolbar>
+        <Toolbar sx={{ minHeight: '56px !important' }}>
           <IconButton
-            color="inherit"
             aria-label="open drawer"
-            onClick={handleDrawerOpen}
+            onClick={() => setOpen(true)}
             edge="start"
-            sx={[
-              {
-                mr: 2,
-              },
-              open && { display: 'none' },
-            ]}
+            size="small"
+            sx={[{ mr: 1.5, color: 'text.secondary' }, open && { display: 'none' }]}
           >
-            <MenuIcon />
+            <MenuIcon fontSize="small" />
           </IconButton>
-
-          <Typography variant="h6" noWrap component="h1">
-            Pattern Archive - Admin
+          <Typography variant="subtitle1" fontWeight={600} color="text.primary" noWrap>
+            {currentPageLabel}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -142,84 +179,191 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            border: 'none',
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
         variant="persistent"
         anchor="left"
         open={open}
       >
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-          </IconButton>
-        </DrawerHeader>
+        {/* Brand header */}
+        <Box
+          sx={{
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: 56,
+            flexShrink: 0,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Box
+              sx={{
+                width: 28,
+                height: 28,
+                borderRadius: 1,
+                bgcolor: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <AutoFixHighIcon sx={{ fontSize: 16, color: 'white' }} />
+            </Box>
+            <Box>
+              <Typography variant="body2" fontWeight={700} lineHeight={1.15} color="text.primary">
+                Pattern Archive
+              </Typography>
+              <Typography sx={{ fontSize: '0.65rem' }} color="text.disabled" lineHeight={1}>
+                Admin Panel
+              </Typography>
+            </Box>
+          </Box>
+          <Tooltip title="Collapse sidebar">
+            <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: 'text.disabled' }}>
+              {theme.direction === 'ltr' ? (
+                <ChevronLeftIcon fontSize="small" />
+              ) : (
+                <ChevronRightIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         <Divider />
 
-        <List>
-          {SidebarLinks.map((link, index) => {
-            // Always render items marked as true
-            const isNotSet = typeof link.view === 'undefined';
+        {/* Navigation groups */}
+        <Box sx={{ flex: 1, overflowY: 'auto', py: 1.5 }}>
+          {navGroups.map((group, gi) => {
+            const visibleLinks = group.links.filter((link) => {
+              const isNotSet = typeof link.view === 'undefined';
+              return isNotSet || checkAccess(link.view!);
+            });
 
-            // Always render dividers
-            const isDivider = link.label === 'divider';
+            if (visibleLinks.length === 0) return null;
 
-            // Check the database if the user has the right permission
-            const hasAccess = link?.view ? checkAccess(link.view) : false;
-
-            const showSecondaryChip = link?.secondaryValue && link?.secondaryValue > 0;
-
-            if (isDivider) {
-              return (
-                <ListItem key={`sidebar-link` + index}>
-                  <Box sx={{ height: '1px', width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.12)' }} />
-                </ListItem>
-              );
-            }
-
-            if (isNotSet || hasAccess) {
-              return (
-                <ListItem
-                  key={`sidebar-link` + index}
-                  disablePadding
-                  secondaryAction={
-                    showSecondaryChip ? (
-                      <Box>
-                        <Chip label={link.secondaryValue} size="small" color="error" />
-                      </Box>
-                    ) : null
-                  }
+            return (
+              <Box key={group.groupLabel}>
+                <Typography
+                  sx={{
+                    px: 2.5,
+                    pb: 0.5,
+                    display: 'block',
+                    color: 'text.disabled',
+                    fontWeight: 700,
+                    letterSpacing: '0.09em',
+                    textTransform: 'uppercase',
+                    fontSize: '0.62rem',
+                  }}
                 >
-                  <ListItemButton component={Link} to={link.href}>
-                    <ListItemIcon sx={{ color: location.pathname === link.href ? 'primary.main' : '' }}>
-                      {link.icon}
-                    </ListItemIcon>
+                  {group.groupLabel}
+                </Typography>
 
-                    <ListItemText
-                      sx={{
-                        color: location.pathname === link.href ? 'primary.main' : '',
-                        '& .MuiTypography-root': { fontWeight: location.pathname === link.href ? 700 : 400 },
-                      }}
-                      primary={link.label}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            }
+                <List dense disablePadding sx={{ px: 1, mb: 0.5 }}>
+                  {visibleLinks.map((link) => {
+                    const isActive = location.pathname === link.href;
+                    const hasBadge = (link.badge ?? 0) > 0;
 
-            return <React.Fragment key={`sidebar-link` + index}></React.Fragment>;
+                    return (
+                      <ListItem key={link.href} disablePadding sx={{ mb: 0.25 }}>
+                        <ListItemButton
+                          component={Link}
+                          to={link.href}
+                          sx={{
+                            borderRadius: 1.5,
+                            py: 0.7,
+                            px: 1.25,
+                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                            color: isActive ? 'primary.main' : 'text.secondary',
+                            '&:hover': {
+                              bgcolor: isActive
+                                ? alpha(theme.palette.primary.main, 0.14)
+                                : 'action.hover',
+                              color: isActive ? 'primary.main' : 'text.primary',
+                            },
+                            transition: 'background-color 0.15s, color 0.15s',
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                            <Badge
+                              badgeContent={hasBadge ? link.badge : 0}
+                              color="error"
+                              max={99}
+                              sx={{
+                                '& .MuiBadge-badge': {
+                                  fontSize: '0.6rem',
+                                  height: 14,
+                                  minWidth: 14,
+                                  padding: '0 3px',
+                                },
+                              }}
+                            >
+                              {link.icon}
+                            </Badge>
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={link.label}
+                            sx={{
+                              '& .MuiTypography-root': {
+                                fontSize: '0.8125rem',
+                                fontWeight: isActive ? 600 : 400,
+                                color: 'inherit',
+                              },
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+
+                {gi < navGroups.length - 1 && <Divider sx={{ mx: 2, mt: 0.5, mb: 1.5 }} />}
+              </Box>
+            );
           })}
-        </List>
+        </Box>
+
+        {/* Footer — back to site */}
+        <Divider />
+        <Box sx={{ p: 1 }}>
+          <ListItemButton
+            component={Link}
+            to="/"
+            sx={{
+              borderRadius: 1.5,
+              py: 0.7,
+              px: 1.25,
+              color: 'text.disabled',
+              '&:hover': { bgcolor: 'action.hover', color: 'text.secondary' },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+              <ArrowBackRoundedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Back to Site"
+              sx={{ '& .MuiTypography-root': { fontSize: '0.8125rem', color: 'inherit' } }}
+            />
+          </ListItemButton>
+        </Box>
       </Drawer>
 
       <Main open={open}>
         <DrawerHeader />
-
         {canViewPage ? <>{props.children}</> : <>You do not have access to this page</>}
       </Main>
     </Box>
   );
 };
+
+// ─── Styled components ────────────────────────────────────────────────────────
 
 const drawerWidth = 240;
 
@@ -255,6 +399,10 @@ interface AppBarProps extends MuiAppBarProps {
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
+  boxShadow: 'none',
+  borderBottom: `1px solid ${theme.palette.divider}`,
   transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -278,7 +426,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
+  minHeight: 56,
   ...theme.mixins.toolbar,
   justifyContent: 'flex-end',
 }));
