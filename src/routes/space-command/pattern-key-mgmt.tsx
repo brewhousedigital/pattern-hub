@@ -18,11 +18,11 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { downloadAllFilesAsZip } from '@/functions/utilities/download-all-files';
 import { BorderedCard } from '@/components/cards/BorderedCard';
+import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddIcon from '@mui/icons-material/Add';
 
@@ -32,7 +32,6 @@ import {
   Typography,
   Stack,
   IconButton,
-  Avatar,
   Tooltip,
   CircularProgress,
   Divider,
@@ -49,8 +48,6 @@ export const Route = createFileRoute('/space-command/pattern-key-mgmt')({
 });
 
 function RouteComponent() {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = React.useState(false);
   const [panelOpen, setPanelOpen] = React.useState(false);
 
   const [collectionId, setCollectionId] = React.useState('');
@@ -116,35 +113,20 @@ function RouteComponent() {
     }
   };
 
-  const handleFile = async (file: File | undefined) => {
-    if (!file) return;
-
+  const handleFile = async (file: File) => {
     if (file.type !== 'image/svg+xml') {
-      enqueueSnackbar('Not a SVG format!', {
-        variant: 'error',
-      });
+      enqueueSnackbar('Not a SVG format!', { variant: 'error' });
       return;
     }
 
     try {
       await savePatternKey.mutateAsync(file);
-
       await refetchKeys();
-
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
     } catch (error: any) {
       enqueueSnackbar(`Couldn't upload for some reason. Try again in a few minutes. Error: ${error?.message}`, {
         variant: 'error',
       });
     }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFile(e.dataTransfer.files[0]);
   };
 
   const resetPanel = () => {
@@ -272,52 +254,12 @@ function RouteComponent() {
       </Typography>
 
       {canAdd && (
-        <Box
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          sx={{
-            border: '1.5px dashed',
-            borderColor: dragOver ? '#3B6D11' : 'divider',
-            borderRadius: 6,
-            py: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 0.75,
-            cursor: 'pointer',
-            transition: 'background 0.15s, border-color 0.15s',
-            backgroundColor: dragOver ? '#EAF3DE' : 'transparent',
-            mb: 4,
-            '&:hover': { backgroundColor: 'action.hover' },
-          }}
-        >
-          <Avatar sx={{ backgroundColor: '#EAF3DE', width: 40, height: 40 }}>
-            {savePatternKey.isPending || legendsLoading ? (
-              <CircularProgress size={18} sx={{ color: '#3B6D11' }} />
-            ) : (
-              <UploadFileIcon sx={{ color: '#3B6D11', fontSize: 20 }} />
-            )}
-          </Avatar>
-
-          <Typography variant="body2" fontWeight={500}>
-            Click to upload
-          </Typography>
-
-          <Typography variant="caption" color="text.disabled">
-            .svg only
-          </Typography>
-
-          <input
-            ref={inputRef}
-            type="file"
+        <Box sx={{ mb: 4 }}>
+          <SvgDropZone
             accept="image/svg+xml"
-            hidden
-            onChange={(e) => handleFile(e.target.files?.[0])}
+            acceptLabel=".svg only"
+            onFile={handleFile}
+            isLoading={savePatternKey.isPending || legendsLoading}
           />
         </Box>
       )}

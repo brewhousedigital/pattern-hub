@@ -8,7 +8,6 @@ import {
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryAdminTagStats, useQueryGetAllTags } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
-import { useQueryGetAllUploadedBy } from '@/functions/database/uploaded-by';
 import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
@@ -30,11 +29,12 @@ import {
 } from '@/functions/database/patterns';
 import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
+import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -54,7 +54,6 @@ import {
   List,
   ListItem,
   Typography,
-  styled,
   Grid,
   Tab,
   CircularProgress,
@@ -66,6 +65,8 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { AdminPatternInstructionsModal } from '@/components/admin/AdminPatternInstructionsModal.tsx';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type TypeModalMode = 'edit' | 'add';
 
 type TypeEditModalProps = TypePatternResponse & {
@@ -73,12 +74,34 @@ type TypeEditModalProps = TypePatternResponse & {
   callback?: () => void;
 };
 
+// ─── Section label helper ─────────────────────────────────────────────────────
+
+const FormSection = ({ label }: { label: string }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, my: 0.5 }}>
+    <Typography
+      sx={{
+        whiteSpace: 'nowrap',
+        fontSize: '0.67rem',
+        fontWeight: 700,
+        letterSpacing: '0.09em',
+        textTransform: 'uppercase',
+        color: 'text.disabled',
+      }}
+    >
+      {label}
+    </Typography>
+    <Divider sx={{ flex: 1 }} />
+  </Box>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const { authData } = useGlobalAuthData();
 
   const [tabValue, setTabValue] = React.useState(props?.pattern_file_external_link ? '2' : '1');
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
   };
 
@@ -100,12 +123,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     data: allManualAuthorsData,
     refetch: refetchManualAuthors,
   } = useQueryGetAllManualAuthors();
-  /*const {
-    isPending: isPendingUploadedBy,
-    isError: isErrorUploadedBy,
-    data: allUploadedByData,
-    refetch: refetchUploadedBy,
-  } = useQueryGetAllUploadedBy();*/
 
   const { refetch: refetchTagManagementStats } = useQueryAdminTagStats();
 
@@ -117,7 +134,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
 
-  // Fetch all the pattern keys for the legend here so admins can add new ones to the pattern if needed
   const {
     isPending: isPendingPatternKeys,
     isError: isErrorPatternKeys,
@@ -130,13 +146,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const handleOpen = () => {
-    setIsOpen(true);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
-  };
+  const handleOpen = () => setIsOpen(true);
+  const handleClose = () => setIsOpen(false);
 
   const [isButtonLoading, setIsButtonLoading] = React.useState(false);
 
@@ -158,7 +169,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
   const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
 
-  // Debounce the author search for the API
   const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 750);
 
   // Manual Authors
@@ -169,18 +179,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const now = props?.design_date ? dayjs(props?.design_date) : dayjs();
   const [designDate, setDesignDate] = React.useState<Dayjs | null>(now);
 
-  // Query the authors table with the debounced value
   const {
     isPending: isPendingAuthorData,
     isError: isErrorAuthorData,
     data: authorData,
   } = useQueryUsersByPagination(1, debouncedAuthorSearch);
-
-  // Uploaded By
-  /*const [uploadedByValue, setUploadedByValue] = React.useState<string[] | undefined>(
-    props?.uploaded_by?.split(',') || [],
-  );*/
-  //const [uploadedByAutoCompleteInputValue, setUploadedByAutoCompleteInputValue] = React.useState('');
 
   const isLoading = isPendingTags || isPendingManualAuthors || isPendingAuthorData;
   const isError = isErrorTags || isErrorManualAuthors || isErrorAuthorData;
@@ -188,12 +191,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // SVG Upload
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // External file upload
   const [externalFile, setExternalFile] = React.useState<File | undefined>();
   const [previewExternalUrl, setPreviewExternalUrl] = React.useState<string | null>(null);
-  const externalFileInputRef = React.useRef<HTMLInputElement>(null);
   const [externalFileLink, setExternalFileLink] = React.useState(props?.pattern_file_external_link || '');
 
   // Pattern Key manager
@@ -208,41 +209,21 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   );
 
   const handleNewChangePatternKey = (newData: any) => {
-    setNewPatternKey((prev) => {
-      return {
-        ...prev,
-        ...newData,
-      };
-    });
+    setNewPatternKey((prev) => ({ ...prev, ...newData }));
   };
 
   const handleResetChangePatternKey = () => {
-    setNewPatternKey({
-      image: '',
-      name: '',
-      fullPath: '',
-    });
+    setNewPatternKey({ image: '', name: '', fullPath: '' });
   };
 
   const handleAddPatternKey = (newData: TypePatternKeyReferenceObject) => {
-    setPatternKeyObject((prev) => {
-      return [
-        ...prev,
-        {
-          ...newData,
-        },
-      ];
-    });
-
-    setTimeout(() => {
-      handleResetChangePatternKey();
-    }, 100);
+    setPatternKeyObject((prev) => [...prev, { ...newData }]);
+    setTimeout(() => handleResetChangePatternKey(), 100);
   };
 
   const [openKeySelectWindow, setOpenKeySelectWindow] = React.useState(false);
 
   const handleOpenKeySelect = () => {
-    // Preload all images before opening
     const promises =
       patternKeys?.map(
         (item) =>
@@ -253,7 +234,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             img.src = generatePbImagePatternKeyRef(item);
           }),
       ) || [];
-
     Promise.all(promises).then(() => setOpenKeySelectWindow(true));
   };
 
@@ -273,8 +253,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setAuthorAutoCompleteInputValue('');
     setManualAuthorValue([]);
     setManualAuthorAutoCompleteInputValue('');
-    //setUploadedByValue([]);
-    //setUploadedByAutoCompleteInputValue('');
     handleFileDelete();
     handleExternalFileDelete();
     setExternalFileLink('');
@@ -283,79 +261,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setDesignDate(dayjs());
   };
 
-  // Clean up the URL when component unmounts or new file is selected
   React.useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl, isOpen]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (file) {
-      if (!file.type.includes('svg')) {
-        alert('Please upload an SVG file');
-        return;
-      }
-
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-
-      setFile(file);
-    }
-  };
-
-  const handleExternalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (file) {
-      if (!file.type.includes('webp')) {
-        alert('Please upload an SVG file');
-        return;
-      }
-
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewExternalUrl(url);
-
-      setExternalFile(file);
-    }
-  };
-
   const handleFileDelete = () => {
-    // Revoke the object URL to free memory
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    // Clear state
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(undefined);
-
-    // Reset the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   const handleExternalFileDelete = () => {
-    // Revoke the object URL to free memory
-    if (previewExternalUrl) {
-      URL.revokeObjectURL(previewExternalUrl);
-    }
-
-    // Clear state
+    if (previewExternalUrl) URL.revokeObjectURL(previewExternalUrl);
     setPreviewExternalUrl(null);
     setExternalFile(undefined);
-
-    // Reset the file input
-    if (externalFileInputRef.current) {
-      externalFileInputRef.current.value = '';
-    }
   };
 
   const handleSave = async () => {
@@ -364,13 +285,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     try {
       const filteredTags =
         tagValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) || [];
-
       const filteredAuthors = authorValue || [];
-
       const filteredManualAuthors =
         manualAuthorValue?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) || [];
-
-      //const filteredUploadedBy = uploadedByValue?.filter((item) => item !== 'undefined') || [];
 
       const payload: TypePatternCreatePayload = {
         name,
@@ -389,44 +306,34 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         design_date: designDate,
       };
 
-      // If a pattern has already been uploaded, don't reset the `uploaded_by` property
       if (!props?.uploaded_by) {
         payload.uploaded_by = authData?.name || 'Missing Name';
       }
 
-      // This will determine if it's a POST or a PUT
       if (props?.id) {
         payload.id = props.id;
       }
 
-      // Will attach a file if a new one exists
       if (file && previewUrl) {
         payload.pattern_file = await sanitizeSvgFile(file);
       }
 
-      // Will attach a file if a new one exists
       if (externalFile && previewExternalUrl) {
         payload.pattern_file_external = externalFile;
       }
 
-      // Updates the link if it was changed
       if (externalFileLink) {
         payload.pattern_file_external_link = externalFileLink;
       }
 
       const savedPattern = await savePattern.mutateAsync(payload);
 
-      // Generate the opengraph image and save it back to pocketbase
       if (file && previewUrl) {
         try {
           const svgUrl = generatePbImage(savedPattern);
           const ogImage = await generateOpengraphImage({ type: 'svg', url: svgUrl }, name);
-
-          await pocketbase.collection('patterns').update(savedPattern.id, {
-            opengraph_image: ogImage,
-          });
+          await pocketbase.collection('patterns').update(savedPattern.id, { opengraph_image: ogImage });
         } catch (err) {
-          // Non-fatal — pattern is saved, OG image just won't exist yet
           console.warn('OG image generation failed', err);
         }
       }
@@ -435,12 +342,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         try {
           const fileUrl = generatePbImageExternalFile(savedPattern);
           const ogImage = await generateOpengraphImage({ type: 'webp', url: fileUrl }, name);
-
-          await pocketbase.collection('patterns').update(savedPattern.id, {
-            opengraph_image: ogImage,
-          });
+          await pocketbase.collection('patterns').update(savedPattern.id, { opengraph_image: ogImage });
         } catch (err) {
-          // Non-fatal: pattern is saved, OG image just won't exist yet
           console.warn('OG image generation failed', err);
         }
       }
@@ -448,11 +351,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       await refetchPatterns();
       await refetchTags();
       await refetchManualAuthors();
-      //await refetchUploadedBy();
       await refetchTagManagementStats();
       handleClose();
 
-      // Make sure to clear out the modal on save
       if (props.mode === 'add') {
         handleFormReset();
       } else {
@@ -469,32 +370,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const handleDelete = async () => {
     const confirmDelete = window.confirm('Are you sure you want to delete this pattern? This action cannot be undone.');
-
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     setIsButtonLoading(true);
-
     try {
-      await deletePattern.mutateAsync({
-        id: props.id,
-        isDeleted: true,
-      });
+      await deletePattern.mutateAsync({ id: props.id, isDeleted: true });
       await refetchPatterns();
       handleClose();
     } catch (error: any) {
       console.warn('Error', error);
       enqueueSnackbar(`Unable to delete... Refresh and try again. Error: ${error?.message}`, { variant: 'error' });
     }
-
     setIsButtonLoading(false);
   };
 
   const handleDeletePatternKey = async (fullPath: string) => {
-    setPatternKeyObject((prev) => {
-      return prev.filter((item) => item.fullPath !== fullPath);
-    });
+    setPatternKeyObject((prev) => prev.filter((item) => item.fullPath !== fullPath));
   };
 
   const handleClickQuickAddKeyCollection = () => {
@@ -503,13 +394,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setQuickAddKeyCollection('');
   };
 
-  if (isLoading) {
-    return <FullScreenLoader />;
-  }
+  if (isLoading) return <FullScreenLoader />;
+  if (isError) return <>Couldn't fetch the tags for some reason. Refresh and try again</>;
 
-  if (isError) {
-    return <>Couldn't fetch the tags for some reason. Refresh and try again</>;
-  }
+  // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -525,18 +413,32 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         </Button>
       )}
 
-      <Dialog
-        fullWidth
-        maxWidth="md"
-        open={isOpen}
-        onClose={handleClose}
-        aria-labelledby="edit-item-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="edit-item-title">Editing {props.name}</DialogTitle>
+      <Dialog fullWidth maxWidth="md" open={isOpen} onClose={handleClose}>
+        {/* Title */}
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={600} lineHeight={1.2}>
+              {props.mode === 'add' ? 'Add Pattern' : 'Edit Pattern'}
+            </Typography>
+            {props.mode !== 'add' && props.name && (
+              <Typography variant="caption" color="text.secondary">
+                {props.name}
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={handleClose} size="small" sx={{ mt: 0.25 }}>
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
 
-        <DialogContent>
-          <Stack spacing={3} sx={{ py: 2 }}>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ py: 1 }}>
+
+            {/* ── Info ── */}
+            <FormSection label="Pattern Info" />
+
             <TextField
               fullWidth
               variant="filled"
@@ -562,10 +464,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                       ? `Description is too long: ${description?.length}/2000`
                       : `${description?.length}/2000`}
                   </Typography>
-
                   <Typography variant="caption">
-                    Description supports{' '}
-                    <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+                    Supports{' '}
+                    <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
                       Markdown
                     </a>
                   </Typography>
@@ -578,9 +479,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
             <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
 
-            <Divider />
+            {/* ── Pattern File ── */}
+            <FormSection label="Pattern File" />
 
-            <Box sx={{ width: '100%', typography: 'body1' }}>
+            <Box sx={{ width: '100%' }}>
               <TabContext value={tabValue}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <TabList onChange={handleTabChange} aria-label="Pattern upload type">
@@ -589,127 +491,310 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   </TabList>
                 </Box>
 
-                <TabPanel value="1">
+                {/* SVG tab */}
+                <TabPanel value="1" sx={{ px: 0, pt: 2, pb: 0 }}>
                   {file && previewUrl ? (
-                    <Grid container>
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Box sx={{ p: 2 }}>
-                          <Typography>Old</Typography>
-
+                    <>
+                      <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                            Current
+                          </Typography>
                           {props.pattern_file ? (
-                            <img
+                            <Box
+                              component="img"
                               src={generatePbImage(props)}
-                              alt={`pattern template for ${props.name}`}
-                              style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                              alt={`current pattern for ${props.name}`}
+                              sx={{
+                                width: '100%',
+                                height: 'auto',
+                                aspectRatio: '1/1',
+                                objectFit: 'contain',
+                                borderRadius: 1.5,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'grey.50',
+                                p: 1,
+                              }}
                             />
                           ) : (
-                            <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                            <Box
+                              sx={{
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1.5,
+                                p: 4,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                              }}
+                            >
+                              <Typography variant="body2" color="text.disabled">
+                                No current file
+                              </Typography>
+                            </Box>
                           )}
-                        </Box>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Box sx={{ position: 'relative' }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={600}
+                              display="block"
+                              mb={0.75}
+                            >
+                              New
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={handleFileDelete}
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                right: 0,
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '&:hover': { color: 'error.main' },
+                              }}
+                            >
+                              <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
+                            <Box
+                              component="img"
+                              src={previewUrl}
+                              alt="New pattern preview"
+                              sx={{
+                                width: '100%',
+                                height: 'auto',
+                                aspectRatio: '1/1',
+                                objectFit: 'contain',
+                                borderRadius: 1.5,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'grey.50',
+                                p: 1,
+                              }}
+                            />
+                          </Box>
+                        </Grid>
                       </Grid>
 
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Box sx={{ p: 2, position: 'relative' }}>
-                          <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
-                            <IconButton size="small" onClick={handleFileDelete}>
-                              <DeleteRoundedIcon fontSize="inherit" />
-                            </IconButton>
-                          </Box>
-
-                          <Typography>New</Typography>
-
-                          <img
-                            src={previewUrl}
-                            alt={`New pattern template for ${props.name}`}
-                            style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        onClick={handleFileDelete}
+                        sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+                      >
+                        Remove & re-upload
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {props.pattern_file && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                            display="block"
+                            mb={0.75}
+                          >
+                            Current pattern
+                          </Typography>
+                          <Box
+                            component="img"
+                            src={generatePbImage(props)}
+                            alt={`current pattern for ${props.name}`}
+                            sx={{
+                              width: '100%',
+                              maxWidth: 280,
+                              height: 'auto',
+                              borderRadius: 1.5,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: 'grey.50',
+                              p: 1,
+                            }}
                           />
                         </Box>
-                      </Grid>
-                    </Grid>
-                  ) : (
-                    <Box sx={{ p: 2 }}>
-                      {props.pattern_file ? (
-                        <img
-                          src={generatePbImage(props)}
-                          alt={`pattern template for ${props.name}`}
-                          style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                        />
-                      ) : (
-                        <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
                       )}
-                    </Box>
-                  )}
 
-                  <Button
-                    fullWidth
-                    component="label"
-                    role={undefined}
-                    variant="contained"
-                    tabIndex={-1}
-                    startIcon={<CloudUploadRoundedIcon />}
-                  >
-                    Upload SVG
-                    <VisuallyHiddenInput
-                      type="file"
-                      ref={fileInputRef}
-                      accept=".svg,image/svg+xml"
-                      onChange={handleFileChange}
-                    />
-                  </Button>
+                      <SvgDropZone
+                        accept=".svg,image/svg+xml"
+                        acceptLabel=".svg only"
+                        label={
+                          props.pattern_file
+                            ? 'Drop a new SVG to replace, or click to browse'
+                            : 'Drop SVG here or click to browse'
+                        }
+                        onFile={(f) => {
+                          if (!f.type.includes('svg')) {
+                            alert('Please upload an SVG file');
+                            return;
+                          }
+                          setPreviewUrl(URL.createObjectURL(f));
+                          setFile(f);
+                        }}
+                      />
+                    </>
+                  )}
                 </TabPanel>
 
-                <TabPanel value="2">
+                {/* External pattern tab */}
+                <TabPanel value="2" sx={{ px: 0, pt: 2, pb: 0 }}>
                   {externalFile && previewExternalUrl ? (
-                    <Grid container>
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Box sx={{ p: 2 }}>
-                          <Typography>Old</Typography>
-
+                    <>
+                      <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                            Current
+                          </Typography>
                           {props.pattern_file_external ? (
-                            <img
+                            <Box
+                              component="img"
                               src={generatePbImage(props)}
-                              alt={`pattern template for ${props.name}`}
-                              style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                              alt={`current pattern for ${props.name}`}
+                              sx={{
+                                width: '100%',
+                                height: 'auto',
+                                aspectRatio: '1/1',
+                                objectFit: 'contain',
+                                borderRadius: 1.5,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'grey.50',
+                                p: 1,
+                              }}
                             />
                           ) : (
-                            <Typography sx={{ border: '1px solid #eee', p: 4 }}>None</Typography>
+                            <Box
+                              sx={{
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1.5,
+                                p: 4,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                              }}
+                            >
+                              <Typography variant="body2" color="text.disabled">
+                                No current file
+                              </Typography>
+                            </Box>
                           )}
-                        </Box>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Box sx={{ position: 'relative' }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={600}
+                              display="block"
+                              mb={0.75}
+                            >
+                              New
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={handleExternalFileDelete}
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                right: 0,
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '&:hover': { color: 'error.main' },
+                              }}
+                            >
+                              <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
+                            <Box
+                              component="img"
+                              src={previewExternalUrl}
+                              alt="New external pattern preview"
+                              sx={{
+                                width: '100%',
+                                height: 'auto',
+                                aspectRatio: '1/1',
+                                objectFit: 'contain',
+                                borderRadius: 1.5,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'grey.50',
+                                p: 1,
+                              }}
+                            />
+                          </Box>
+                        </Grid>
                       </Grid>
 
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Box sx={{ p: 2, position: 'relative' }}>
-                          <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
-                            <IconButton size="small" onClick={handleExternalFileDelete}>
-                              <DeleteRoundedIcon fontSize="inherit" />
-                            </IconButton>
-                          </Box>
-
-                          <Typography>New</Typography>
-
-                          <img
-                            src={previewExternalUrl}
-                            alt={`New external pattern template for ${props.name}`}
-                            style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        onClick={handleExternalFileDelete}
+                        sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+                      >
+                        Remove & re-upload
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {props.pattern_file_external && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                            display="block"
+                            mb={0.75}
+                          >
+                            Current image
+                          </Typography>
+                          <Box
+                            component="img"
+                            src={generatePbImage(props)}
+                            alt={`current external pattern for ${props.name}`}
+                            sx={{
+                              width: '100%',
+                              maxWidth: 280,
+                              height: 'auto',
+                              borderRadius: 1.5,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: 'grey.50',
+                              p: 1,
+                            }}
                           />
                         </Box>
-                      </Grid>
-                    </Grid>
-                  ) : (
-                    <Box sx={{ p: 2 }}>
-                      {props.pattern_file_external ? (
-                        <img
-                          src={generatePbImage(props)}
-                          alt={`pattern template for ${props.name}`}
-                          style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
-                        />
-                      ) : (
-                        <Typography sx={{ border: '1px solid #eee', p: 4 }}>Add an image to see a preview</Typography>
                       )}
-                    </Box>
+
+                      <SvgDropZone
+                        accept=".webp,image/webp"
+                        acceptLabel=".webp only"
+                        label={
+                          props.pattern_file_external
+                            ? 'Drop a new WebP to replace, or click to browse'
+                            : 'Drop WebP image here or click to browse'
+                        }
+                        onFile={(f) => {
+                          if (!f.type.includes('webp')) {
+                            alert('Please upload a WebP file');
+                            return;
+                          }
+                          setPreviewExternalUrl(URL.createObjectURL(f));
+                          setExternalFile(f);
+                        }}
+                      />
+                    </>
                   )}
 
-                  <Box sx={{ mb: 2 }}>
+                  <Box sx={{ mt: 2 }}>
                     <TextField
                       label="External Pattern Link"
                       variant="filled"
@@ -718,28 +803,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                       onChange={(e) => setExternalFileLink(e.target.value)}
                     />
                   </Box>
-
-                  <Button
-                    fullWidth
-                    component="label"
-                    role={undefined}
-                    variant="contained"
-                    tabIndex={-1}
-                    startIcon={<CloudUploadRoundedIcon />}
-                  >
-                    Upload WebP Image
-                    <VisuallyHiddenInput
-                      type="file"
-                      ref={externalFileInputRef}
-                      accept=".webp,image/webp"
-                      onChange={handleExternalFileChange}
-                    />
-                  </Button>
                 </TabPanel>
               </TabContext>
             </Box>
 
-            <Divider />
+            {/* ── Measurements ── */}
+            <FormSection label="Measurements" />
 
             <TextField
               fullWidth
@@ -761,7 +830,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   onChange={(e) => setLineWidth(e.target.value)}
                 />
               </Grid>
-
               <UnitOfMeasurementSelect label="Line Width Unit" value={lineWidthUnit} onChange={setLineWidthUnit} />
             </Grid>
 
@@ -776,12 +844,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   onChange={(e) => setDesignWidth(e.target.value)}
                 />
               </Grid>
-
-              <UnitOfMeasurementSelect
-                label="Design Width Unit"
-                value={designWidthUnit}
-                onChange={setDesignWidthUnit}
-              />
+              <UnitOfMeasurementSelect label="Design Width Unit" value={designWidthUnit} onChange={setDesignWidthUnit} />
             </Grid>
 
             <Grid container spacing={2}>
@@ -795,7 +858,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   onChange={(e) => setDesignHeight(e.target.value)}
                 />
               </Grid>
-
               <UnitOfMeasurementSelect
                 label="Design Height Unit"
                 value={designHeightUnit}
@@ -803,7 +865,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               />
             </Grid>
 
-            <Divider />
+            {/* ── Metadata ── */}
+            <FormSection label="Metadata" />
 
             <FancyAutocomplete
               label="Tags"
@@ -815,7 +878,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               onInputChange={setAutoCompleteInputValue}
             />
 
-            <Typography variant="body2">Total Tags Used: {allTagsData?.length}/500</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Total Tags Used: {allTagsData?.length}/500
+            </Typography>
 
             <FancyAutocompleteAuthors
               label="Author"
@@ -836,32 +901,25 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               onInputChange={setManualAuthorAutoCompleteInputValue}
             />
 
-            {/*<FancyAutocomplete
-              label="Uploaded By"
-              data={allUploadedByData}
-              value={uploadedByValue}
-              onChange={setUploadedByValue}
-              inputValue={uploadedByAutoCompleteInputValue}
-              onInputChange={setUploadedByAutoCompleteInputValue}
-            />*/}
-
-            {/*<Typography variant="body2">Total Uploaded By Used: {allUploadedByData?.length}/500</Typography>*/}
-
-            <Divider />
-
+            {/* ── Pattern Key Builder ── */}
             {!props.pattern_file_external_link && (
               <>
+                <FormSection label="Pattern Key" />
+
                 <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
                   <Box sx={{ mr: 'auto' }}>
-                    <Typography>Pattern Key Builder</Typography>
-
-                    <Typography variant="caption">Add a new key to the legend</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      Pattern Key Builder
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Add key images to the legend
+                    </Typography>
                   </Box>
 
                   <TextField
                     select
                     size="small"
-                    label="Key Collection"
+                    label="Quick-add collection"
                     sx={{ minWidth: 200 }}
                     value={quickAddKeyCollection}
                     onChange={(e) => setQuickAddKeyCollection(e.target.value)}
@@ -879,15 +937,15 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     onClick={handleClickQuickAddKeyCollection}
                     disabled={!quickAddKeyCollection}
                   >
-                    Add
+                    Apply
                   </Button>
                 </Stack>
 
-                {isPendingPatternKeys && <CircularProgress />}
+                {isPendingPatternKeys && <CircularProgress size={20} />}
 
                 {isErrorPatternKeys && (
                   <Alert severity="error">
-                    Unable to load the pattern keys... that's probably not good. Try refreshing.
+                    Unable to load the pattern keys… that's probably not good. Try refreshing.
                   </Alert>
                 )}
 
@@ -910,11 +968,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                         onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
                       >
                         {patternKeys.map((item) => (
-                          <MenuItem value={generatePbImagePatternKeyRef(item)}>
-                            <img
+                          <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
+                            <Box
+                              component="img"
                               src={generatePbImagePatternKeyRef(item)}
                               alt={`pattern-key-img-${item.id}`}
-                              style={{ width: '100%', height: 'auto', maxHeight: 100 }}
+                              sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
                             />
                           </MenuItem>
                         ))}
@@ -922,72 +981,78 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <Box sx={{ mb: 2 }}>
-                        <TextField
-                          fullWidth
-                          variant="filled"
-                          label="Name"
-                          value={newPatternKey.name}
-                          onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
-                        />
-                      </Box>
-
+                      <TextField
+                        fullWidth
+                        variant="filled"
+                        label="Key Name"
+                        value={newPatternKey.name}
+                        onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
+                        sx={{ mb: 2 }}
+                      />
                       <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
                         <Button variant="outlined" color="error" onClick={handleResetChangePatternKey}>
                           Reset
                         </Button>
-
                         <Button variant="outlined" color="success" onClick={() => handleAddPatternKey(newPatternKey)}>
-                          Add this key
+                          Add key
                         </Button>
                       </Stack>
                     </Grid>
                   </Grid>
                 )}
 
-                <Typography>Current Assigned Pattern Keys</Typography>
+                <Box>
+                  <Typography variant="body2" fontWeight={600} mb={0.5}>
+                    Assigned Keys
+                  </Typography>
 
-                {!patternKeyObject?.length ? (
-                  <Alert severity="warning">No keys have been assigned to this pattern yet.</Alert>
-                ) : (
-                  <List>
-                    {patternKeyObject.map((item, index) => (
-                      <ListItem
-                        key={item.fullPath}
-                        disableGutters
-                        secondaryAction={
-                          <IconButton
-                            aria-label="delete this pattern key"
-                            onClick={() => handleDeletePatternKey(item?.fullPath || '')}
-                          >
-                            <DeleteRoundedIcon />
-                          </IconButton>
-                        }
-                      >
-                        <ListItemText
-                          primary={item.name}
-                          secondary={
-                            <img
-                              src={item.fullPath}
-                              alt={`pattern-key-img-added-${item.name}`}
-                              style={{ width: '100%', maxWidth: 200, height: 'auto' }}
-                              width={200}
-                              height={150}
-                            />
+                  {!patternKeyObject?.length ? (
+                    <Alert severity="warning" variant="outlined">
+                      No keys have been assigned to this pattern yet.
+                    </Alert>
+                  ) : (
+                    <List disablePadding>
+                      {patternKeyObject.map((item) => (
+                        <ListItem
+                          key={item.fullPath}
+                          disableGutters
+                          divider
+                          secondaryAction={
+                            <IconButton
+                              aria-label="remove this pattern key"
+                              size="small"
+                              onClick={() => handleDeletePatternKey(item?.fullPath || '')}
+                            >
+                              <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
                           }
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
+                        >
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" fontWeight={500}>
+                                {item.name}
+                              </Typography>
+                            }
+                            secondary={
+                              <Box
+                                component="img"
+                                src={item.fullPath}
+                                alt={`pattern-key-img-added-${item.name}`}
+                                sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}
+                              />
+                            }
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </Box>
               </>
             )}
-
-            <Divider />
           </Stack>
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{ px: 3, py: 1.5 }}>
           <Button
             color="error"
             disabled={!canDelete}
@@ -999,7 +1064,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             Delete
           </Button>
 
-          <Button onClick={handleClose} loading={isButtonLoading}>
+          <Button onClick={handleClose} loading={isButtonLoading} color="inherit">
             Cancel
           </Button>
 
@@ -1012,17 +1077,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   );
 };
 
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const unitOfMeasurementOptions = ['in', 'cm', 'mm'];
 
@@ -1040,7 +1095,6 @@ const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
         select
         variant="filled"
         label={props.label}
-        type="number"
         value={props.value && props.value !== 'undefined' ? props.value : 'in'}
         onChange={(e) => props.onChange(e.target.value)}
       >
