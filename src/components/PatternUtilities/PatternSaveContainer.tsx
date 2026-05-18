@@ -2,6 +2,7 @@ import React from 'react';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { PatternFavoriteButton } from '@/components/PatternUtilities/PatternFavoriteButton';
 import { PatternDownButton } from '@/components/PatternUtilities/PatternDownButton';
+import { PatternAddToCollectionButton } from '@/components/PatternUtilities/PatternAddToCollectionButton';
 import type { TypeViewData } from '@/functions/types/types';
 
 import { Alert, Box, Grid } from '@mui/material';
@@ -27,6 +28,10 @@ export const PatternSaveContainer = (props: TypeViewData) => {
 
       <Grid size={{ xs: 6 }}>
         <PatternDownButton viewData={viewData} />
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <PatternAddToCollectionButton viewData={viewData} />
       </Grid>
     </Grid>
   );

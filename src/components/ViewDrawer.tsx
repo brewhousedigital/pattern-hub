@@ -90,14 +90,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               )}
             </BorderedCard>
 
-            {/*{!viewData?.pattern_file_external && <ExportPatternToDownload viewData={viewData} />}*/}
-            {/*{!viewData?.pattern_file_external && (
-              <ExportPatternToDownloadV2 viewData={viewData} key={'download' + viewData?.id} />
-            )}*/}
-            {/*{!viewData?.pattern_file_external && (
-              <ExportPatternToDownloadV3 ctx={exportPatternContext} key={'download' + viewData?.id} />
-            )}*/}
-
             {!viewData?.pattern_file_external && (
               <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
             )}

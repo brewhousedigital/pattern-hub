@@ -14,6 +14,9 @@ import { useQueryGetUserById } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useQueryGetUserGallery, type TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
+import { useQueryGetUserCollections } from '@/functions/database/collections';
+import { CollectionCard } from '@/components/collections/CollectionCard';
+import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 
@@ -117,6 +120,7 @@ const ProfileContent = (props: ProfileContentProps) => {
   const [markedDonePagination, setMarkedDonePagination] = React.useState(1);
   const [ratingsPagination, setRatingsPagination] = React.useState(1);
   const [galleryPagination, setGalleryPagination] = React.useState(1);
+  const [collectionsPagination, setCollectionsPagination] = React.useState(1);
 
   const {
     isPending: isPendingFavorite,
@@ -149,8 +153,16 @@ const ProfileContent = (props: ProfileContentProps) => {
   const galleryItems = galleryData?.items ?? [];
   const galleryTotal = galleryData?.totalItems ?? 0;
 
+  const {
+    isPending: isPendingCollections,
+    isError: isErrorCollections,
+    data: collectionsData,
+    refetch: refetchCollections,
+  } = useQueryGetUserCollections(thisAuthData?.id || '', collectionsPagination);
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<TypeGalleryResponse | null>(null);
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [tab, setTab] = useState(0);
 
   const tabConfig = [
@@ -158,7 +170,7 @@ const ProfileContent = (props: ProfileContentProps) => {
     { label: 'Completed', icon: <TaskAltOutlinedIcon fontSize="small" /> },
     { label: 'Rated', icon: <StarOutlinedIcon fontSize="small" /> },
     { label: 'Gallery', icon: <PhotoLibraryOutlinedIcon fontSize="small" /> },
-    { label: 'Collections', icon: <BookmarksOutlinedIcon fontSize="small" />, disabled: true, soon: true },
+    { label: 'Collections', icon: <BookmarksOutlinedIcon fontSize="small" /> },
   ] as const;
 
   async function handleShare() {
@@ -210,6 +222,11 @@ const ProfileContent = (props: ProfileContentProps) => {
       icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />,
       value: galleryTotal,
       label: 'Photos',
+    },
+    {
+      icon: <BookmarksOutlinedIcon sx={{ fontSize: 18, color: 'secondary.main' }} />,
+      value: collectionsData?.totalItems ?? 0,
+      label: 'Collections',
     },
   ];
 
@@ -375,8 +392,8 @@ const ProfileContent = (props: ProfileContentProps) => {
                   iconPosition="start"
                   label={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      {t.label}
-                      {'soon' in t && t.soon && (
+                      <>{t.label}</>
+                      {'soon' in t && t.soon ? (
                         <Chip
                           label="Soon"
                           size="small"
@@ -387,7 +404,7 @@ const ProfileContent = (props: ProfileContentProps) => {
                             opacity: 0.65,
                           }}
                         />
-                      )}
+                      ) : null}
                     </Box>
                   }
                 />
@@ -444,6 +461,59 @@ const ProfileContent = (props: ProfileContentProps) => {
               </>
             )}
 
+            {/* Tab: Collections */}
+            {tab === 4 && (
+              <Box>
+                {!isPublicView && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button
+                      startIcon={<BookmarksOutlinedIcon />}
+                      variant="contained"
+                      onClick={() => setCreateCollectionOpen(true)}
+                    >
+                      New Collection
+                    </Button>
+                  </Box>
+                )}
+
+                {isPendingCollections ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : isErrorCollections ? (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    Unable to load collections.
+                  </Alert>
+                ) : !collectionsData || collectionsData.items.length === 0 ? (
+                  <EmptyState
+                    icon={<BookmarksOutlinedIcon />}
+                    message={isPublicView ? 'No collections yet.' : 'No collections yet. Create one to get started!'}
+                  />
+                ) : (
+                  <>
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      {collectionsData.items.map((collection) => (
+                        <Grid key={collection.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <CollectionCard
+                            collection={collection}
+                            isOwner={!isPublicView}
+                            onDeleted={() => void refetchCollections()}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                    {collectionsData.totalItems > 0 && (
+                      <PaginationBox
+                        data={collectionsData}
+                        value={collectionsPagination}
+                        setter={setCollectionsPagination}
+                      />
+                    )}
+                  </>
+                )}
+              </Box>
+            )}
+
             {/* Tab: Gallery */}
             {tab === 3 && (
               <Box>
@@ -483,6 +553,15 @@ const ProfileContent = (props: ProfileContentProps) => {
       </Container>
 
       {/* ─── Dialogs ─── */}
+      <CreateCollectionDialog
+        open={createCollectionOpen}
+        onClose={() => setCreateCollectionOpen(false)}
+        onSuccess={() => {
+          void refetchCollections();
+          setCreateCollectionOpen(false);
+        }}
+      />
+
       <GalleryLightbox
         photo={selectedPhoto}
         photos={galleryItems}
