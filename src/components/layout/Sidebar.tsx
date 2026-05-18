@@ -10,17 +10,14 @@ import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import {
   Box,
   Skeleton,
-  List,
-  ListItem,
-  ListItemText,
   Typography,
   Stack,
   IconButton,
+  Tooltip,
   Alert,
   useTheme,
   useMediaQuery,
   Drawer,
-  SwipeableDrawer,
 } from '@mui/material';
 
 type SidebarListProps = {
@@ -76,11 +73,12 @@ export const SidebarList = (props: SidebarListProps) => {
     .sort((a, b) => b.count - a.count);
 
   return (
-    <List
-      disablePadding
+    <Box
       sx={{
         minWidth: 250,
         maxWidth: isMediumSizeAndUp ? '100%' : 250,
+        px: 1,
+        pb: 2,
       }}
     >
       {isPending && <SkeletonLink />}
@@ -97,7 +95,7 @@ export const SidebarList = (props: SidebarListProps) => {
         passThroughDataTagCounts?.map((thisTag) => {
           return <TagListItem data={thisTag} key={`sidebar-link-${thisTag.tag}`} handleClose={props.handleClose} />;
         })}
-    </List>
+    </Box>
   );
 };
 
@@ -111,7 +109,6 @@ const TagListItem = (props: TagListItemProps) => {
 
   const handleAddTag = (tag: string) => {
     addTag(tag);
-
     if (props?.handleClose) {
       setPatternId(undefined);
       props?.handleClose();
@@ -120,7 +117,6 @@ const TagListItem = (props: TagListItemProps) => {
 
   const handleRemoveTag = (tag: string) => {
     addTag(tag, true);
-
     if (props?.handleClose) {
       setPatternId(undefined);
       props?.handleClose();
@@ -128,30 +124,81 @@ const TagListItem = (props: TagListItemProps) => {
   };
 
   return (
-    <ListItem
-      sx={{ textTransform: 'capitalize', paddingRight: '94px' }}
-      secondaryAction={
-        <Stack direction="row" sx={{ alignItems: 'center' }}>
-          <Box>
-            <IconButton size="small" onClick={() => handleAddTag(props.data.tag)}>
-              <AddRoundedIcon />
-            </IconButton>
-          </Box>
-
-          <Box>
-            <IconButton size="small" onClick={() => handleRemoveTag(props.data.tag)}>
-              <RemoveRoundedIcon />
-            </IconButton>
-          </Box>
-        </Stack>
-      }
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        px: 1,
+        py: 0.25,
+        borderRadius: 2,
+        transition: 'background-color 0.14s',
+        '&:hover': { bgcolor: 'action.hover' },
+      }}
     >
-      {props.data.count ? (
-        <ListItemText primary={`${props.data.tag} (${props.data.count})`} />
-      ) : (
-        <ListItemText primary={`${props.data.tag}`} />
-      )}
-    </ListItem>
+      {/* Tag label */}
+      <Box
+        component="button"
+        onClick={() => handleAddTag(props.data.tag)}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          background: 'none',
+          border: 'none',
+          p: 0,
+          cursor: 'pointer',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 0.75,
+        }}
+      >
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{ textTransform: 'capitalize', fontSize: '0.8125rem', fontWeight: 500, color: 'text.primary' }}
+        >
+          {props.data.tag}
+        </Typography>
+
+        {!!props.data.count && (
+          <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+            {props.data.count}
+          </Typography>
+        )}
+      </Box>
+
+      {/* Include / Exclude buttons */}
+      <Stack direction="row" sx={{ flexShrink: 0, gap: 0.25 }}>
+        <Tooltip title={`Include "${props.data.tag}"`} arrow>
+          <IconButton
+            size="small"
+            onClick={() => handleAddTag(props.data.tag)}
+            sx={{
+              p: { xs: 1.5, md: 0.5 },
+              color: 'success.main',
+              '&:hover': { bgcolor: 'success.main', color: 'success.contrastText' },
+            }}
+          >
+            <AddRoundedIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title={`Exclude "${props.data.tag}"`} arrow>
+          <IconButton
+            size="small"
+            onClick={() => handleRemoveTag(props.data.tag)}
+            sx={{
+              p: { xs: 1.5, md: 0.5 },
+              color: 'error.main',
+              '&:hover': { bgcolor: 'error.main', color: 'error.contrastText' },
+            }}
+          >
+            <RemoveRoundedIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Box>
   );
 };
 
@@ -176,28 +223,41 @@ type SidebarCategoryTitleProps = {
 
 export const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
   return (
-    <Stack
-      direction="row"
-      sx={{
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px',
-      }}
-    >
-      <Typography color="primary" sx={{ fontWeight: 600 }}>
+    <Box sx={{ px: 2, pt: 2.5, pb: 1 }}>
+      <Typography
+        variant="overline"
+        sx={{
+          fontSize: '0.6875rem',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          color: 'text.disabled',
+          lineHeight: 1,
+        }}
+      >
         {props.title}
       </Typography>
-    </Stack>
+    </Box>
   );
 };
 
+// 56 px = approximate sticky header height; sidebar scrolls independently below it
+const HEADER_HEIGHT = 0;
+
 const sidebarBlockStyles = {
-  height: '100%',
-  maxHeight: '100svh',
   overflowY: 'auto',
   position: 'sticky',
-  top: 0,
+  top: HEADER_HEIGHT,
+  height: `calc(100svh - ${HEADER_HEIGHT}px)`,
   scrollbarWidth: 'none',
+  '&::-webkit-scrollbar': { display: 'none' },
+};
+
+// Used inside drawers where there is no sticky app header to account for
+const drawerSidebarBlockStyles = {
+  overflowY: 'auto',
+  height: '100%',
+  scrollbarWidth: 'none',
+  '&::-webkit-scrollbar': { display: 'none' },
 };
 
 export const SidebarBlock = () => {
@@ -212,15 +272,10 @@ export const SidebarBlock = () => {
 
 export const MobileSidebarBlock = () => {
   // Sidebar
-  const { isSidebarOpen, handleOpenMobileSidebar, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
+  const { isSidebarOpen, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
 
   return (
-    <Drawer
-      anchor="right"
-      open={isSidebarOpen}
-      onClose={handleCloseMobileSidebar}
-      /*onOpen={handleOpenMobileSidebar}*/
-    >
+    <Drawer anchor="right" open={isSidebarOpen} onClose={handleCloseMobileSidebar}>
       <SidebarBlock />
     </Drawer>
   );
@@ -228,7 +283,7 @@ export const MobileSidebarBlock = () => {
 
 export const ViewDrawerPatternSidebar = (props: SidebarListProps) => {
   return (
-    <Box sx={sidebarBlockStyles}>
+    <Box sx={drawerSidebarBlockStyles}>
       <SidebarCategoryTitle title="Current Pattern Tags" />
 
       <SidebarList tagList={props.tagList} handleClose={props.handleClose} />

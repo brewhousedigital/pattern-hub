@@ -78,21 +78,31 @@ export const Logo = () => {
 };
 
 const ExtraLinks = () => {
+  const { location } = useRouterState();
+
+  const activeLinkStyles = (path: string) => {
+    const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+    return {
+      ...subLinkStyles,
+      ...(isActive ? { color: PRIMARY_COLOR, fontWeight: 700, textDecoration: 'none' } : {}),
+    };
+  };
+
   return (
-    <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-      <MuiLink component={Link} to="/" sx={subLinkStyles}>
+    <Stack direction="row" spacing={2.5} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+      <MuiLink component={Link} to="/" sx={activeLinkStyles('/')}>
         Home
       </MuiLink>
 
-      {/*<MuiLink component={Link} to="/collections" sx={subLinkStyles}>
+      {/*<MuiLink component={Link} to="/collections" sx={activeLinkStyles('/collections')}>
         Collections
       </MuiLink>*/}
 
-      {/*<MuiLink component={Link} to="/guides" sx={subLinkStyles}>
+      {/*<MuiLink component={Link} to="/guides" sx={activeLinkStyles('/guides')}>
         Guides
       </MuiLink>*/}
 
-      <MuiLink component={Link} to="/help/faq" sx={subLinkStyles}>
+      <MuiLink component={Link} to="/help/faq" sx={activeLinkStyles('/help/faq')}>
         FAQ
       </MuiLink>
     </Stack>

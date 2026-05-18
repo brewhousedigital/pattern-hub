@@ -6,6 +6,7 @@ import { useQueryGetAllPatternsByPagination } from '@/functions/database/pattern
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 export const MainPageContent = () => {
   // Get the pattern data
@@ -43,22 +44,40 @@ export const MainPageContent = () => {
                 component={Link}
                 to={`/pattern/${pattern.id}`}
                 onClick={(e) => handleClick(e, pattern)}
-                style={{ textDecoration: 'none' }}
+                style={{ textDecoration: 'none', display: 'block' }}
               >
-                <Card elevation={0}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: (t) => `0 8px 28px ${alpha(t.palette.common.black, 0.14)}`,
+                      borderColor: 'transparent',
+                    },
+                  }}
+                >
                   {pattern.pattern_file_external ? (
                     <Box sx={{ p: 2, position: 'relative' }}>
                       <Box
                         sx={{
                           aspectRatio: '1/1',
-                          borderRadius: 4,
+                          borderRadius: 3,
                           backgroundImage: `url("${generatePbImage(pattern)}")`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                         }}
                       />
-
-                      <Chip label="External Pattern" color="primary" sx={{ position: 'absolute', top: 8, right: 8 }} />
+                      <Chip
+                        label="External"
+                        color="primary"
+                        size="small"
+                        sx={{ position: 'absolute', top: 4, right: 4, fontWeight: 600, border: '2px solid #fff' }}
+                      />
                     </Box>
                   ) : (
                     <Box sx={{ p: 2 }}>
