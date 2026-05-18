@@ -203,3 +203,27 @@ export const useMutationResendVerificationCode = () => {
     },
   });
 };
+
+export const useMutationRequestPasswordReset = () => {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      return await pocketbase.collection('users').requestPasswordReset(email);
+    },
+  });
+};
+
+export const useMutationConfirmPasswordReset = () => {
+  return useMutation({
+    mutationFn: async ({
+      token,
+      password,
+      passwordConfirm,
+    }: {
+      token: string;
+      password: string;
+      passwordConfirm: string;
+    }) => {
+      return await pocketbase.collection('users').confirmPasswordReset(token, password, passwordConfirm);
+    },
+  });
+};

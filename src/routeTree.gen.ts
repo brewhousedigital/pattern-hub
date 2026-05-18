@@ -30,8 +30,10 @@ import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-pol
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
 import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpAboutRouteImport } from './routes/help/about'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
 import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
 import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
@@ -147,6 +149,11 @@ const HelpAboutRoute = HelpAboutRouteImport.update({
   path: '/help/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
@@ -155,6 +162,11 @@ const AuthRegisterRoute = AuthRegisterRouteImport.update({
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
   path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WikiCategorySlugIndexRoute = WikiCategorySlugIndexRouteImport.update({
@@ -207,8 +219,10 @@ const ProfileCollectionsCollectionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -239,8 +253,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -273,8 +289,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -308,8 +326,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/space-command'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -340,8 +360,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -373,8 +395,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/space-command'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -407,8 +431,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SpaceCommandRouteRoute: typeof SpaceCommandRouteRouteWithChildren
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   HelpAboutRoute: typeof HelpAboutRoute
   HelpContactRoute: typeof HelpContactRoute
   HelpFaqRoute: typeof HelpFaqRoute
@@ -573,6 +599,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
@@ -585,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login'
       preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wiki/$categorySlug/': {
@@ -686,8 +726,10 @@ const SpaceCommandRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SpaceCommandRouteRoute: SpaceCommandRouteRouteWithChildren,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   HelpAboutRoute: HelpAboutRoute,
   HelpContactRoute: HelpContactRoute,
   HelpFaqRoute: HelpFaqRoute,
