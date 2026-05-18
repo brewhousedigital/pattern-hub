@@ -14,7 +14,7 @@ import { useQueryGetUserById } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useQueryGetUserGallery, type TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
-import { useQueryGetUserCollections } from '@/functions/database/collections';
+import { useQueryGetUserCollections, useQueryGetUserFollowedCollections } from '@/functions/database/collections';
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { pocketbase } from '@/functions/database/authentication-setup';
@@ -77,34 +77,34 @@ export const Route = createFileRoute('/profile/')({
 });
 
 function RouteComponent() {
+  return (
+    <GeneralLayout>
+      <PageContent />
+    </GeneralLayout>
+  );
+}
+
+type PageContentProps = {
+  id?: string | undefined;
+};
+
+const PageContent = (props: PageContentProps) => {
   const { id } = Route.useSearch();
+
   const { authData } = useGlobalAuthData();
 
   const { isPending, isError, data, refetch } = useQueryGetUserById(id);
 
   if (id && id !== authData?.id) {
-    if (isPending)
-      return (
-        <GeneralLayout>
-          <ProfileSkeleton />
-        </GeneralLayout>
-      );
+    if (isPending) return <ProfileSkeleton />;
 
     if (isError) return <ProfileError onRetry={refetch} />;
 
-    return (
-      <GeneralLayout>
-        <ProfileContent userData={data} />
-      </GeneralLayout>
-    );
+    return <ProfileContent userData={data} />;
   }
 
-  return (
-    <GeneralLayout>
-      <ProfileContent />
-    </GeneralLayout>
-  );
-}
+  return <ProfileContent />;
+};
 
 type ProfileContentProps = {
   userData?: TypeAuthData;
@@ -160,6 +160,11 @@ const ProfileContent = (props: ProfileContentProps) => {
     refetch: refetchCollections,
   } = useQueryGetUserCollections(thisAuthData?.id || '', collectionsPagination);
 
+  // Only fetch followed collections on own profile — this data is private
+  const { data: followedCollectionsData = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
+    !isPublicView ? thisAuthData?.id || '' : '',
+  );
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<TypeGalleryResponse | null>(null);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
@@ -199,7 +204,7 @@ const ProfileContent = (props: ProfileContentProps) => {
 
   if (!thisAuthData) return <ProfileSkeleton />;
 
-  const displayName = thisAuthData?.name || 'New User';
+  const displayName = (thisAuthData?.name?.startsWith('NewUser_') ? 'New User' : thisAuthData?.name) || 'New User';
   const initial = displayName[0].toUpperCase();
 
   const stats = [
@@ -509,6 +514,33 @@ const ProfileContent = (props: ProfileContentProps) => {
                         setter={setCollectionsPagination}
                       />
                     )}
+                  </>
+                )}
+
+                {/* ─── Followed collections — own profile only ─── */}
+                {!isPublicView && followedCollectionsData.length > 0 && (
+                  <>
+                    <Divider sx={{ my: 3 }} />
+                    <Typography
+                      variant="subtitle2"
+                      fontWeight={700}
+                      color="text.secondary"
+                      sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em' }}
+                    >
+                      Collections You Follow
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {followedCollectionsData.map((followRecord) => {
+                        const col = followRecord.expand?.collection_id;
+                        if (!col) return null;
+                        const hasUpdate = new Date(col.updated) > new Date(followRecord.last_checked_updated);
+                        return (
+                          <Grid key={followRecord.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <CollectionCard collection={col} isOwner={false} hasUpdate={hasUpdate} />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
                   </>
                 )}
               </Box>

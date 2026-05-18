@@ -1,7 +1,13 @@
 import React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
-import { useQueryGetCollectionById } from '@/functions/database/collections';
+import { useGlobalAuthData } from '@/data/auth-data';
+import {
+  useQueryGetCollectionById,
+  useQueryGetUserFollowedCollections,
+  useMutationFollowCollection,
+  useMutationUnfollowCollection,
+} from '@/functions/database/collections';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -14,6 +20,8 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
+import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -50,8 +58,37 @@ export const Route = createFileRoute('/profile/collections/$collectionId')({
 
 function RouteComponent() {
   const { collectionId } = Route.useParams();
+  const { authData } = useGlobalAuthData();
 
   const { isPending, isError, data: collection } = useQueryGetCollectionById(collectionId);
+
+  // Follow state
+  const isOwner = !!authData && !!collection && authData.id === collection.owner_id;
+  const canFollow = !!authData && !isOwner;
+
+  const { data: followedCollections = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
+    authData?.id || '',
+  );
+  const followRecord = followedCollections.find((f) => f.collection_id === collectionId);
+  const isFollowing = !!followRecord;
+
+  const followMutation = useMutationFollowCollection();
+  const unfollowMutation = useMutationUnfollowCollection();
+  const followLoading = followMutation.isPending || unfollowMutation.isPending;
+
+  const handleFollowToggle = async () => {
+    if (!collection) return;
+    try {
+      if (isFollowing && followRecord) {
+        await unfollowMutation.mutateAsync(followRecord.id);
+      } else {
+        await followMutation.mutateAsync({ collectionId, collectionUpdated: collection.updated });
+      }
+      await refetchFollowed();
+    } catch {
+      // notistack not imported here — silent; user can retry
+    }
+  };
 
   return (
     <GeneralLayout>
@@ -66,7 +103,11 @@ function RouteComponent() {
           <>
             {/* ─── Header ─── */}
             <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 2.5, md: 4 }, mb: 3 }}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={2}
+                sx={{ alignItems: { xs: 'center', md: 'flex-start' } }}
+              >
                 <Box
                   sx={{
                     width: 52,
@@ -83,26 +124,55 @@ function RouteComponent() {
                 </Box>
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.4px', mb: 0.5 }}>
-                    {collection.name}
-                  </Typography>
+                  <Grid
+                    container
+                    spacing={2}
+                    sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 4, md: 0 } }}
+                  >
+                    <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                      <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.4px', mb: 0.5 }}>
+                        {collection.name}
+                      </Typography>
 
-                  {collection.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                      {collection.description}
-                    </Typography>
-                  )}
+                      {collection.description && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                          {collection.description}
+                        </Typography>
+                      )}
 
-                  {collection.expand?.owner_id && (
-                    <Typography sx={{ mb: 2 }}>
-                      By:{' '}
-                      <Link to="/profile" search={{ id: collection.owner_id }}>
-                        {collection.expand.owner_id.name || 'Unknown'}
-                      </Link>
-                    </Typography>
-                  )}
+                      {collection.expand?.owner_id && (
+                        <Typography sx={{ mb: 2 }}>
+                          By:{' '}
+                          <Link to="/profile" search={{ id: collection.owner_id }}>
+                            {collection.expand.owner_id.name || 'Unknown'}
+                          </Link>
+                        </Typography>
+                      )}
+                    </Grid>
 
-                  <Stack direction="row" sx={{ flexWrap: 'wrap', width: '100%', gap: 2.5 }}>
+                    <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'right' } }}>
+                      {canFollow && (
+                        <Button
+                          size="small"
+                          variant={isFollowing ? 'contained' : 'outlined'}
+                          loading={followLoading}
+                          onClick={handleFollowToggle}
+                          startIcon={
+                            isFollowing ? (
+                              <NotificationsActiveRoundedIcon fontSize="small" />
+                            ) : (
+                              <NotificationsNoneRoundedIcon fontSize="small" />
+                            )
+                          }
+                          sx={{ ml: 'auto' }}
+                        >
+                          {isFollowing ? 'Following' : 'Follow'}
+                        </Button>
+                      )}
+                    </Grid>
+                  </Grid>
+
+                  <Stack direction="row" sx={{ flexWrap: 'wrap', width: '100%', gap: 2.5, alignItems: 'center' }}>
                     <Typography
                       variant="body2"
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem' }}

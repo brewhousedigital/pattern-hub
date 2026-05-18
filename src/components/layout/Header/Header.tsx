@@ -27,6 +27,7 @@ export const Header = () => {
           <Logo />
 
           <NotificationBell />
+
           <HeaderProfileMenu />
 
           {showTagMobileSidebar && (
@@ -78,7 +79,7 @@ export const Logo = () => {
 
 const ExtraLinks = () => {
   return (
-    <Stack direction="row" spacing={2}>
+    <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
       <MuiLink component={Link} to="/" sx={subLinkStyles}>
         Home
       </MuiLink>
@@ -113,10 +114,10 @@ const mobileNavbarContainerStyles = {
 };
 
 const mobileNavbarStyles = {
-  display: 'grid',
-  gridTemplateColumns: '1fr auto',
-  gap: 4,
+  display: 'flex',
+  gap: 1,
   alignItems: 'center',
+  mb: 2,
 };
 
 const mobileHomepageNavbarStyles = {
@@ -126,10 +127,14 @@ const mobileHomepageNavbarStyles = {
 const logoLinkStyles = {
   textDecoration: 'none',
   color: PRIMARY_COLOR,
+  marginRight: 'auto',
 };
 
 const logoStyles = {
-  fontSize: 28,
+  fontSize: {
+    xs: 20,
+    md: 28,
+  },
   fontWeight: 700,
   textDecoration: 'none',
 };

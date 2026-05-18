@@ -88,7 +88,7 @@ export const useQueryGetUserFollowedCollections = (userId: string) => {
     queryFn: async (): Promise<TypeFollowedCollectionResponse[]> => {
       return await pocketbase.collection('user_followed_collections').getFullList({
         filter: `owner_id = "${userId}"`,
-        expand: 'collection_id',
+        expand: 'collection_id,collection_id.owner_id',
         sort: '-created',
       });
     },

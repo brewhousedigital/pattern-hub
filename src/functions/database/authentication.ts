@@ -122,6 +122,7 @@ type AuthUserDataType = Promise<TypeAuthData>;
 type CreateUserPayload = {
   email: string;
   password: string;
+  name: string;
 };
 
 export const authSignOut = () => {
@@ -166,6 +167,7 @@ export const useMutationAuthCreateUser = () => {
     mutationFn: (payload: CreateUserPayload): AuthCreationType => {
       return pocketbase.collection('users').create({
         email: payload.email,
+        name: payload.name,
         password: payload.password,
         passwordConfirm: payload.password,
       });

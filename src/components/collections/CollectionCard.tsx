@@ -30,9 +30,10 @@ type CollectionCardProps = {
   collection: TypeCollectionResponse;
   isOwner: boolean;
   onDeleted?: () => void;
+  hasUpdate?: boolean;
 };
 
-export const CollectionCard = ({ collection, isOwner, onDeleted }: CollectionCardProps) => {
+export const CollectionCard = ({ collection, isOwner, onDeleted, hasUpdate }: CollectionCardProps) => {
   const [deleteAnchor, setDeleteAnchor] = React.useState<HTMLButtonElement | null>(null);
   const deleteCollection = useMutationDeleteCollection();
 
@@ -65,17 +66,22 @@ export const CollectionCard = ({ collection, isOwner, onDeleted }: CollectionCar
           <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', mb: 0.75 }}>
             <BookmarksOutlinedIcon fontSize="small" color="primary" sx={{ mt: 0.25, flexShrink: 0 }} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="subtitle2"
-                fontWeight={700}
-                sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {collection.name}
-              </Typography>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={700}
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {collection.name}
+                </Typography>
+                {hasUpdate && (
+                  <Chip label="Updated" size="small" color="primary" sx={{ height: 18, fontSize: '0.65rem', '& .MuiChip-label': { px: 0.75 } }} />
+                )}
+              </Stack>
             </Box>
             {isOwner && (
               <Tooltip title="Delete collection">

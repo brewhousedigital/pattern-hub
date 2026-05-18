@@ -27,8 +27,10 @@ export const useQueryGetUserById = (id?: string) => {
 
 export const useMutationValidateUsername = () => {
   return useMutation({
-    mutationFn: async (name: string): Promise<TypePaginationDatabaseResponse<TypeAuthData>> => {
-      return await pocketbase.collection('users').getFirstListItem(`name="${name}"`, {
+    mutationFn: async (name: string): Promise<TypeAuthData[]> => {
+      const filter = pocketbase.filter('name~{:name}', { name });
+      return await pocketbase.collection('users').getFullList({
+        filter: filter,
         fields: 'name',
       });
     },

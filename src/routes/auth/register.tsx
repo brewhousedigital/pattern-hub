@@ -64,7 +64,11 @@ function RouteComponent() {
 
     try {
       // Create the user object and get the ID out so we can create the private user data next
-      await createUser.mutateAsync({ email, password });
+      await createUser.mutateAsync({
+        email,
+        password,
+        name: `NewUser_${Date.now()}`,
+      });
 
       // Sign in the newly created user so we have a valid token
       await signIn.mutateAsync({ email, password });

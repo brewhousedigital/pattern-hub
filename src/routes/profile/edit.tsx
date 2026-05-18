@@ -57,6 +57,8 @@ function RouteComponent() {
     site_color_secondary: '',
   });
 
+  const hasMetMinLength = form?.username?.length >= 4;
+
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,6 +97,8 @@ function RouteComponent() {
     (field: keyof ProfileFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       let value = e.target.value;
 
+      setIsUserNameAvailable(undefined);
+
       // Auto-prepend # for hex fields
       if ((field === 'site_color' || field === 'site_color_secondary') && value && !value.startsWith('#')) {
         value = `#${value}`;
@@ -110,8 +114,17 @@ function RouteComponent() {
     }
 
     try {
-      await verifyUsername.mutateAsync(form?.username);
-      setIsUserNameAvailable(false);
+      const results = await verifyUsername.mutateAsync(form?.username);
+
+      const foundAMatch = results.find(
+        (item) => item.name?.trim()?.toLowerCase() === form.username.trim().toLowerCase(),
+      );
+
+      if (foundAMatch) {
+        setIsUserNameAvailable(false);
+      } else {
+        setIsUserNameAvailable(true);
+      }
       return false;
     } catch (error: any) {
       setIsUserNameAvailable(true);
@@ -183,7 +196,7 @@ function RouteComponent() {
                   value={form.username}
                   onChange={handleChange('username')}
                   error={!!errors.username}
-                  helperText="You can only use letters, numbers, and underscores."
+                  helperText="You can only use letters, numbers, and underscores. Must be 4 or more characters."
                   slotProps={{
                     input: {
                       endAdornment: (
@@ -196,6 +209,7 @@ function RouteComponent() {
                     },
                     htmlInput: {
                       maxLength: 32,
+                      minLength: 4,
                       pattern: '^[a-zA-Z0-9_]+$',
                     },
                   }}
@@ -220,6 +234,7 @@ function RouteComponent() {
 
                   <Grid size={{ xs: 6 }} sx={{ textAlign: 'right' }}>
                     <Button
+                      disabled={!hasMetMinLength}
                       variant="outlined"
                       loading={verifyUsername.isPending}
                       onClick={handleUsernameVerification}
