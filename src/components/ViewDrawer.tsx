@@ -101,6 +101,34 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
 
             {!viewData?.pattern_file_external && (
+              <BorderedCard>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Color Planner
+                    </Typography>
+                    <Chip label="Beta" size="small" color="info" sx={{ height: 18, fontSize: '0.65rem' }} />
+                  </Box>
+                  <Button
+                    size="small"
+                    variant={viewer3DOpen ? 'contained' : 'outlined'}
+                    onClick={() => setViewer3DOpen((v) => !v)}
+                    startIcon={<ViewInArIcon fontSize="small" />}
+                    sx={{ borderRadius: 2, flexShrink: 0 }}
+                  >
+                    {viewer3DOpen ? 'Close Planner' : 'Open Planner'}
+                  </Button>
+                </Box>
+
+                {viewer3DOpen && (
+                  <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ mt: 2, borderRadius: 2 }} />}>
+                    <PatternViewer3DLazy viewData={viewData} />
+                  </Suspense>
+                )}
+              </BorderedCard>
+            )}
+
+            {!viewData?.pattern_file_external && (
               <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
             )}
           </Box>
