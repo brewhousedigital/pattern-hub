@@ -11,6 +11,7 @@ import {
   MenuItem,
   ToggleButton,
   ToggleButtonGroup,
+  Stack,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -62,7 +63,10 @@ export const ColorControls = ({
       }}
     >
       {/* Header row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5, gap: { xs: 2, sm: 1 } }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
           <Box
             sx={{
@@ -80,7 +84,7 @@ export const ColorControls = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 3, sm: 1 }, alignItems: 'center' }}>
           <Tooltip title="Fill all regions with a color">
             <Button
               size="small"
@@ -110,7 +114,7 @@ export const ColorControls = ({
             </IconButton>
           </Tooltip>
         </Box>
-      </Box>
+      </Stack>
 
       <Divider sx={{ mb: 1.5 }} />
 
