@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
 import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
@@ -17,9 +17,11 @@ import { useGlobalIsViewOpen } from '@/data/view';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
 import { BorderedCard } from '@/components/cards/BorderedCard';
+import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Typography, Stack, Container, Button, Tooltip } from '@mui/material';
+import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import { Box, Typography, Stack, Container, Button, Tooltip, Chip, Skeleton } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -32,6 +34,8 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const { handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   const { patternId } = usePatternSearch();
+
+  const [viewer3DOpen, setViewer3DOpen] = useState(false);
 
   const svgImageUrl = generatePbImage(viewData);
 
