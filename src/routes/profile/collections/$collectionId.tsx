@@ -216,14 +216,13 @@ function RouteComponent() {
                 </Typography>
               </Box>
             ) : (
-              <Stack spacing={2}>
+              <Grid container spacing={2}>
                 {collection.expand.patterns.map((pattern, index) => (
-                  <React.Fragment key={pattern.id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pattern.id}>
                     <CollectionPatternRow pattern={pattern} />
-                    {index < (collection.expand?.patterns?.length ?? 0) - 1 && <Divider />}
-                  </React.Fragment>
+                  </Grid>
                 ))}
-              </Stack>
+              </Grid>
             )}
           </>
         )}
@@ -249,26 +248,20 @@ const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
 
   return (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          gap: { xs: 2, sm: 3 },
-          alignItems: 'flex-start',
-          py: 1,
-        }}
-      >
+      <Box>
         {/* Thumbnail */}
         <Box
+          component={Link as any}
+          to="/"
+          search={{ id: [pattern.id], patternId: pattern.id }}
           sx={{
             backgroundColor: '#fff',
-            flexShrink: 0,
-            width: { xs: 72, sm: 100 },
-            height: { xs: 72, sm: 100 },
             borderRadius: 2,
             overflow: 'hidden',
             border: '1px solid',
             borderColor: 'divider',
             display: 'block',
+            p: 2,
           }}
         >
           <Box
@@ -276,44 +269,45 @@ const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
             loading="lazy"
             src={imageSrc}
             alt={pattern.name}
-            sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', p: 1 }}
+            sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', aspectRatio: '1/1' }}
           />
         </Box>
 
         {/* Info */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{ mb: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          >
-            {pattern.name}
-          </Typography>
-
-          {authorName && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              by {authorName}
-            </Typography>
-          )}
-
-          {pattern.description && (
+        <Stack direction={{ xs: 'column', md: 'row' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                fontSize: '0.8rem',
-                mb: 0.75,
-              }}
+              variant="subtitle1"
+              fontWeight={700}
+              sx={{ mb: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             >
-              {pattern.description}
+              {pattern.name}
             </Typography>
-          )}
 
-          {visibleTags.length > 0 && (
+            {authorName && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                by {authorName}
+              </Typography>
+            )}
+
+            {pattern.description && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  fontSize: '0.8rem',
+                  mb: 0.75,
+                }}
+              >
+                {pattern.description}
+              </Typography>
+            )}
+
+            {/*{visibleTags.length > 0 && (
             <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
               <LocalOfferOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled', mt: '3px' }} />
               {visibleTags.map((tag) => (
@@ -334,11 +328,22 @@ const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
                 />
               )}
             </Stack>
-          )}
-        </Box>
+          )}*/}
+          </Box>
+
+          <Button
+            component={Link as any}
+            to="/"
+            search={{ id: [pattern.id], patternId: pattern.id }}
+            size="small"
+            variant="text"
+          >
+            View
+          </Button>
+        </Stack>
 
         {/* Actions */}
-        <Stack spacing={1} sx={{ flexShrink: 0, alignSelf: 'center' }}>
+        {/*<Stack spacing={1} sx={{ flexShrink: 0, alignSelf: 'center' }}>
           {pattern.pattern_file && (
             <Button
               size="small"
@@ -357,7 +362,7 @@ const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
               View
             </Button>
           )}
-        </Stack>
+        </Stack>*/}
       </Box>
 
       <Collapse in={isVisible}>

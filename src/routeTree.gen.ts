@@ -16,7 +16,6 @@ import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/in
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
-import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
@@ -78,11 +77,6 @@ const ProfileIndexRoute = ProfileIndexRouteImport.update({
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
   id: '/guides/',
   path: '/guides/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
-  id: '/collections/',
-  path: '/collections/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
@@ -251,7 +245,6 @@ export interface FileRoutesByFullPath {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -287,7 +280,6 @@ export interface FileRoutesByTo {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/collections': typeof CollectionsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
@@ -325,7 +317,6 @@ export interface FileRoutesById {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
-  '/collections/': typeof CollectionsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -364,7 +355,6 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/collections/'
     | '/guides/'
     | '/profile/'
     | '/space-command/'
@@ -400,7 +390,6 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/collections'
     | '/guides'
     | '/profile'
     | '/space-command'
@@ -437,7 +426,6 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
-    | '/collections/'
     | '/guides/'
     | '/profile/'
     | '/space-command/'
@@ -466,7 +454,6 @@ export interface RootRouteChildren {
   HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   ProfileEditRoute: typeof ProfileEditRoute
-  CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   StoreLocatorIndexRoute: typeof StoreLocatorIndexRoute
@@ -525,13 +512,6 @@ declare module '@tanstack/react-router' {
       path: '/guides'
       fullPath: '/guides/'
       preLoaderRoute: typeof GuidesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/collections/': {
-      id: '/collections/'
-      path: '/collections'
-      fullPath: '/collections/'
-      preLoaderRoute: typeof CollectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/space-command/users': {
@@ -778,7 +758,6 @@ const rootRouteChildren: RootRouteChildren = {
   HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   ProfileEditRoute: ProfileEditRoute,
-  CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   StoreLocatorIndexRoute: StoreLocatorIndexRoute,
