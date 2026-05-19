@@ -169,6 +169,7 @@ type SceneProps = {
   usedColors: Map<string, string>;
   onColorUsed: (hex: string, label: string) => void;
   onColorsCleared: () => void;
+  onUndoStackChange: (canUndo: boolean) => void;
 };
 
 const Scene = ({
@@ -188,6 +189,7 @@ const Scene = ({
   usedColors,
   onColorUsed,
   onColorsCleared,
+  onUndoStackChange,
 }: SceneProps) => (
   <>
     {/* HDR environment — acts as both background and ambient light.
@@ -211,6 +213,7 @@ const Scene = ({
       planeHeight={planeHeight}
       onColorUsed={onColorUsed}
       onColorsCleared={onColorsCleared}
+      onUndoStackChange={onUndoStackChange}
     />
 
     {/* Camera orbit — disabled pan, limited polar range so glass stays upright */}
@@ -239,13 +242,15 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
   const [paintColor, setPaintColor] = useState<string>(STAINED_GLASS_COLORS[0].hex);
   const [usedColors, setUsedColors] = useState<Map<string, string>>(new Map());
   const [bgPreset, setBgPreset] = useState<EnvPreset>('apartment');
+  const [canUndo, setCanUndo] = useState<boolean>(false);
 
   const glassRef = useRef<StainedGlassHandle>(null);
   const exportRef = useRef<(() => void) | null>(null);
 
-  // Reset used-colors when the pattern changes
+  // Reset used-colors and undo stack when the pattern changes
   React.useEffect(() => {
     setUsedColors(new Map());
+    setCanUndo(false);
   }, [viewData?.id]);
 
   const handleColorUsed = useCallback((hex: string, label: string) => {
@@ -268,6 +273,14 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
 
   const handleExport = useCallback(() => {
     exportRef.current?.();
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    glassRef.current?.undo();
+  }, []);
+
+  const handleUndoStackChange = useCallback((available: boolean) => {
+    setCanUndo(available);
   }, []);
 
   // ── Derive world-space plane dimensions ───────────────────────────────────
@@ -326,6 +339,7 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
               usedColors={usedColors}
               onColorUsed={handleColorUsed}
               onColorsCleared={handleColorsCleared}
+              onUndoStackChange={handleUndoStackChange}
             />
           </Suspense>
         </Canvas>
@@ -341,6 +355,8 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
         usedColors={usedColors}
         bgPreset={bgPreset}
         onBgPresetChange={setBgPreset}
+        canUndo={canUndo}
+        onUndo={handleUndo}
       />
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>

@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import LandscapeIcon from '@mui/icons-material/Landscape';
@@ -28,6 +29,8 @@ type ColorControlsProps = {
   usedColors: Map<string, string>;
   bgPreset: EnvPreset;
   onBgPresetChange: (preset: EnvPreset) => void;
+  canUndo: boolean;
+  onUndo: () => void;
 };
 
 export const ColorControls = ({
@@ -39,6 +42,8 @@ export const ColorControls = ({
   usedColors,
   bgPreset,
   onBgPresetChange,
+  canUndo,
+  onUndo,
 }: ColorControlsProps) => {
   const [fillAllAnchor, setFillAllAnchor] = React.useState<null | HTMLElement>(null);
   const [envTab, setEnvTab] = React.useState<'outdoor' | 'indoor'>('indoor');
@@ -75,7 +80,7 @@ export const ColorControls = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Tooltip title="Fill all regions with a color">
             <Button
               size="small"
@@ -86,6 +91,13 @@ export const ColorControls = ({
             >
               Fill All
             </Button>
+          </Tooltip>
+          <Tooltip title="Undo last fill">
+            <span>
+              <IconButton size="small" onClick={onUndo} disabled={!canUndo} sx={{ color: 'text.secondary' }}>
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
           <Tooltip title="Clear all filled regions">
             <IconButton size="small" onClick={onClearAll} sx={{ color: 'text.secondary' }}>
