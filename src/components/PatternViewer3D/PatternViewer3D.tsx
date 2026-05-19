@@ -133,6 +133,7 @@ const ExportWirer = ({ exportRef, patternName, usedColors }: ExportWirerProps) =
       ctx.drawImage(src, 0, 0);
 
       // Composite legend bottom-left
+      // TODO: Swap this out for the Pattern Legend found in `render-legend.ts`
       drawLegend(ctx, w, h, usedColors);
 
       const a = document.createElement('a');

@@ -100,7 +100,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
 
-            {!viewData?.pattern_file_external && false && (
+            {!viewData?.pattern_file_external && (
               <BorderedCard key={'3d-' + viewData?.id}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
