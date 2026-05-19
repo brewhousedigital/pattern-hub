@@ -3,10 +3,10 @@ import type { AuthRecord, RecordAuthResponse } from 'pocketbase';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 // Base Permissions for the database:
-// ["PATTERN_AR", "TAG_AR", "FAQ_AR", "MAP_AR", "USERS_AR", "COMPLAINTS_AR"]
+// ["PATTERN_AR", "TAG_AR", "FAQ_AR", "USERS_AR", "COMPLAINTS_AR"]
 
 // Normal Admin
-// ["PATTERN_AC", "PATTERN_AR", "PATTERN_AU", "PATTERN_AD", "TAG_AC", "TAG_AR", "TAG_AU", "TAG_AD", "FAQ_AC", "FAQ_AR", "FAQ_AU", "FAQ_AD", "MAP_AC", "MAP_AR", "MAP_AU", "MAP_AD", "COMPLAINTS_AC", "COMPLAINTS_AR", "COMPLAINTS_AU", "COMPLAINTS_AD", "USERS_AC", "USERS_AR", "USERS_AU", "USERS_AD", "ADMINS_AC", "ADMINS_AR", "ADMINS_AU", "ADMINS_AD"]
+// ["PATTERN_AC", "PATTERN_AR", "PATTERN_AU", "PATTERN_AD", "TAG_AC", "TAG_AR", "TAG_AU", "TAG_AD", "FAQ_AC", "FAQ_AR", "FAQ_AU", "FAQ_AD", "COMPLAINTS_AC", "COMPLAINTS_AR", "COMPLAINTS_AU", "COMPLAINTS_AD", "USERS_AC", "USERS_AR", "USERS_AU", "USERS_AD", "ADMINS_AC", "ADMINS_AR", "ADMINS_AU", "ADMINS_AD"]
 
 // Super Admin
 // ["ADMINS_AC", "ADMINS_AR", "ADMINS_AU", "ADMINS_AD"]
@@ -32,10 +32,6 @@ export type TypeLevelsAdmin =
   | 'WIKI_AR'
   | 'WIKI_AU'
   | 'WIKI_AD'
-  | 'MAP_AC'
-  | 'MAP_AR'
-  | 'MAP_AU'
-  | 'MAP_AD'
   | 'COMPLAINTS_AC'
   | 'COMPLAINTS_AR'
   | 'COMPLAINTS_AU'
@@ -51,7 +47,11 @@ export type TypeLevelsAdmin =
   | 'ADMINS_AC'
   | 'ADMINS_AR'
   | 'ADMINS_AU'
-  | 'ADMINS_AD';
+  | 'ADMINS_AD'
+  | 'STORE_LOC_AC'
+  | 'STORE_LOC_AR'
+  | 'STORE_LOC_AU'
+  | 'STORE_LOC_AD';
 
 // NAME_TYPE_CRUD
 // A - Admin
@@ -78,10 +78,6 @@ export const EnumLevelsAdmin = {
   WIKI_AR: 'WIKI_AR',
   WIKI_AU: 'WIKI_AU',
   WIKI_AD: 'WIKI_AD',
-  MAP_AC: 'MAP_AC',
-  MAP_AR: 'MAP_AR',
-  MAP_AU: 'MAP_AU',
-  MAP_AD: 'MAP_AD',
   USERS_AC: 'USERS_AC',
   USERS_AR: 'USERS_AR',
   USERS_AU: 'USERS_AU',
@@ -98,6 +94,10 @@ export const EnumLevelsAdmin = {
   CONTACT_AR: 'CONTACT_AR',
   CONTACT_AU: 'CONTACT_AU',
   CONTACT_AD: 'CONTACT_AD',
+  STORE_LOC_AC: 'STORE_LOC_AC',
+  STORE_LOC_AR: 'STORE_LOC_AR',
+  STORE_LOC_AU: 'STORE_LOC_AU',
+  STORE_LOC_AD: 'STORE_LOC_AD',
 } as const;
 
 // This is the data from the pocketbase user and admin table

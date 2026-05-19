@@ -112,10 +112,10 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           view: EnumLevelsAdmin.WIKI_AR,
         },
         {
-          label: 'Map Control',
-          href: '/space-command/map',
+          label: 'Store Locator',
+          href: '/space-command/store-locator',
           icon: <LocationOnRoundedIcon fontSize="small" />,
-          view: EnumLevelsAdmin.MAP_AR,
+          view: EnumLevelsAdmin.STORE_LOC_AR,
         },
         {
           label: 'Tags',

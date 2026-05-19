@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
+import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/index'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
@@ -19,6 +20,7 @@ import { Route as CollectionsIndexRouteImport } from './routes/collections/index
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
+import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
 import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-command/pattern-key-mgmt'
 import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
@@ -58,6 +60,11 @@ const WikiIndexRoute = WikiIndexRouteImport.update({
   path: '/wiki/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreLocatorIndexRoute = StoreLocatorIndexRouteImport.update({
+  id: '/store-locator/',
+  path: '/store-locator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -93,6 +100,12 @@ const SpaceCommandTagsRoute = SpaceCommandTagsRouteImport.update({
   path: '/tags',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandStoreLocatorRoute =
+  SpaceCommandStoreLocatorRouteImport.update({
+    id: '/store-locator',
+    path: '/store-locator',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandPatternsRoute = SpaceCommandPatternsRouteImport.update({
   id: '/patterns',
   path: '/patterns',
@@ -234,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
+  '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
@@ -241,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
+  '/store-locator/': typeof StoreLocatorIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
@@ -268,6 +283,7 @@ export interface FileRoutesByTo {
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
+  '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
@@ -275,6 +291,7 @@ export interface FileRoutesByTo {
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
+  '/store-locator': typeof StoreLocatorIndexRoute
   '/wiki': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
@@ -304,6 +321,7 @@ export interface FileRoutesById {
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
+  '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
@@ -311,6 +329,7 @@ export interface FileRoutesById {
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
+  '/store-locator/': typeof StoreLocatorIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
@@ -341,6 +360,7 @@ export interface FileRouteTypes {
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
+    | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
@@ -348,6 +368,7 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/profile/'
     | '/space-command/'
+    | '/store-locator/'
     | '/wiki/'
     | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
@@ -375,6 +396,7 @@ export interface FileRouteTypes {
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
+    | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
@@ -382,6 +404,7 @@ export interface FileRouteTypes {
     | '/guides'
     | '/profile'
     | '/space-command'
+    | '/store-locator'
     | '/wiki'
     | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
@@ -410,6 +433,7 @@ export interface FileRouteTypes {
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
+    | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/test'
     | '/space-command/users'
@@ -417,6 +441,7 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/profile/'
     | '/space-command/'
+    | '/store-locator/'
     | '/wiki/'
     | '/profile/collections/$collectionId'
     | '/space-command/complaints/reviewed'
@@ -444,6 +469,7 @@ export interface RootRouteChildren {
   CollectionsIndexRoute: typeof CollectionsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
+  StoreLocatorIndexRoute: typeof StoreLocatorIndexRoute
   WikiIndexRoute: typeof WikiIndexRoute
   ProfileCollectionsCollectionIdRoute: typeof ProfileCollectionsCollectionIdRoute
   WikiCategorySlugPageSlugRoute: typeof WikiCategorySlugPageSlugRoute
@@ -471,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/wiki'
       fullPath: '/wiki/'
       preLoaderRoute: typeof WikiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store-locator/': {
+      id: '/store-locator/'
+      path: '/store-locator'
+      fullPath: '/store-locator/'
+      preLoaderRoute: typeof StoreLocatorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/space-command/': {
@@ -520,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/tags'
       fullPath: '/space-command/tags'
       preLoaderRoute: typeof SpaceCommandTagsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/store-locator': {
+      id: '/space-command/store-locator'
+      path: '/store-locator'
+      fullPath: '/space-command/store-locator'
+      preLoaderRoute: typeof SpaceCommandStoreLocatorRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/patterns': {
@@ -692,6 +732,7 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandMapRoute: typeof SpaceCommandMapRoute
   SpaceCommandPatternKeyMgmtRoute: typeof SpaceCommandPatternKeyMgmtRoute
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
+  SpaceCommandStoreLocatorRoute: typeof SpaceCommandStoreLocatorRoute
   SpaceCommandTagsRoute: typeof SpaceCommandTagsRoute
   SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
@@ -709,6 +750,7 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandMapRoute: SpaceCommandMapRoute,
   SpaceCommandPatternKeyMgmtRoute: SpaceCommandPatternKeyMgmtRoute,
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
+  SpaceCommandStoreLocatorRoute: SpaceCommandStoreLocatorRoute,
   SpaceCommandTagsRoute: SpaceCommandTagsRoute,
   SpaceCommandTestRoute: SpaceCommandTestRoute,
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
@@ -739,6 +781,7 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsIndexRoute: CollectionsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
+  StoreLocatorIndexRoute: StoreLocatorIndexRoute,
   WikiIndexRoute: WikiIndexRoute,
   ProfileCollectionsCollectionIdRoute: ProfileCollectionsCollectionIdRoute,
   WikiCategorySlugPageSlugRoute: WikiCategorySlugPageSlugRoute,
