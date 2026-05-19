@@ -33,63 +33,32 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { Box, Alert, Skeleton, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { StainedGlassPlane, type StainedGlassHandle } from './StainedGlassPlane';
 import { usePatternRasterizer } from './usePatternRasterizer';
 import { ColorControls } from './ColorControls';
 import { STAINED_GLASS_COLORS, ENV_OPTIONS, type EnvPreset } from './ColorPalette';
+import { buildLegend } from '../PatternExport/render-legend';
 import type { TypePatternResponse } from '@/functions/database/patterns.ts';
 
-// ─── Legend drawing helper ─────────────────────────────────────────────────────
+// ─── SVG → HTMLImageElement helper ────────────────────────────────────────────
 
-const LEGEND_PAD = 16;
-const SWATCH_R = 8;
-const SWATCH_GAP = 7;
-const ITEM_H = 26;
-const ITEM_W = 140;
-
-function drawLegend(ctx: CanvasRenderingContext2D, w: number, h: number, usedColors: Map<string, string>): void {
-  const entries = Array.from(usedColors.entries());
-  if (entries.length === 0) return;
-
-  const cols = Math.max(1, Math.floor((w * 0.55) / ITEM_W)); // use left 55% of width
-  const rows = Math.ceil(entries.length / cols);
-  const boxW = Math.min(w - LEGEND_PAD * 2, cols * ITEM_W + LEGEND_PAD * 2);
-  const boxH = LEGEND_PAD * 2 + 22 + rows * ITEM_H; // header + rows
-  const boxX = LEGEND_PAD;
-  const boxY = h - boxH - LEGEND_PAD;
-
-  // Semi-transparent background panel
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
-  ctx.fill();
-
-  // Heading
-  ctx.font = 'bold 12px Arial, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText('Colors Used', boxX + LEGEND_PAD, boxY + LEGEND_PAD + 12);
-
-  // Swatches + labels
-  entries.forEach(([hex, label], i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = boxX + LEGEND_PAD + col * ITEM_W;
-    const y = boxY + LEGEND_PAD + 22 + row * ITEM_H;
-
-    // Filled swatch
-    ctx.fillStyle = hex;
-    ctx.beginPath();
-    ctx.arc(x + SWATCH_R, y + SWATCH_R, SWATCH_R, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Label
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '11px Arial, sans-serif';
-    ctx.fillText(label, x + SWATCH_R * 2 + SWATCH_GAP, y + SWATCH_R + 4);
+/** Converts an SVG string to a loaded HTMLImageElement via a temporary Blob URL. */
+function svgStringToImage(svgText: string): Promise<HTMLImageElement> {
+  const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
   });
 }
 
@@ -110,16 +79,16 @@ const GroundPlane = ({ bgPreset }: { bgPreset: EnvPreset }) => {
 // ─── Export wirer (inside Canvas so it has useThree access) ───────────────────
 
 type ExportWirerProps = {
-  exportRef: React.MutableRefObject<(() => void) | null>;
-  patternName?: string;
-  usedColors: Map<string, string>;
+  exportRef: React.MutableRefObject<(() => Promise<void>) | null>;
+  viewData: TypePatternResponse | undefined;
 };
 
-const ExportWirer = ({ exportRef, patternName, usedColors }: ExportWirerProps) => {
+const ExportWirer = ({ exportRef, viewData }: ExportWirerProps) => {
   const { gl } = useThree();
+  const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    exportRef.current = () => {
+    exportRef.current = async () => {
       const src = gl.domElement;
       const w = src.width;
       const h = src.height;
@@ -132,20 +101,47 @@ const ExportWirer = ({ exportRef, patternName, usedColors }: ExportWirerProps) =
       // Draw the current 3D scene
       ctx.drawImage(src, 0, 0);
 
-      // Composite legend bottom-left
-      // TODO: Swap this out for the Pattern Legend found in `render-legend.ts`
-      drawLegend(ctx, w, h, usedColors);
+      // Composite the same legend card used by SVG / print exports
+      if (viewData) {
+        const authorLine = [...(viewData.expand?.authors?.map((a) => a.name) ?? []), ...(viewData.author_manual ?? [])]
+          .filter(Boolean)
+          .join(', ');
+
+        const projectSizeLabel = `${viewData.design_width}${viewData.design_width_unit} x ${viewData.design_height}${viewData.design_height_unit}`;
+        const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+        const designDate = viewData.design_date ? new Date(viewData.design_date as unknown as string) : null;
+
+        try {
+          const legend = await buildLegend({
+            patternName: viewData.name ?? '',
+            authorLine,
+            projectSizeLabel,
+            pieces: viewData.pieces ?? 0,
+            lineWidthLabel,
+            designDate,
+            keys: [],
+            queryClient,
+            isSmall: true,
+          });
+
+          const legendImg = await svgStringToImage(legend.svg);
+          const MARGIN = 16;
+          ctx.drawImage(legendImg, MARGIN, h - legend.height - MARGIN, legend.width, legend.height);
+        } catch {
+          // Legend build failed — export scene without it
+        }
+      }
 
       const a = document.createElement('a');
       a.href = exportCanvas.toDataURL('image/png');
-      a.download = `${patternName ?? 'pattern'}-stained-glass.png`;
+      a.download = `${viewData?.name ?? 'pattern'}-stained-glass.png`;
       a.click();
     };
 
     return () => {
       exportRef.current = null;
     };
-  }, [gl, patternName, usedColors, exportRef]);
+  }, [gl, viewData, queryClient, exportRef]);
 
   return null;
 };
@@ -164,9 +160,8 @@ type SceneProps = {
   planeHeight: number;
   bgPreset: EnvPreset;
   glassRef: React.Ref<StainedGlassHandle>;
-  exportRef: React.MutableRefObject<(() => void) | null>;
-  patternName?: string;
-  usedColors: Map<string, string>;
+  exportRef: React.MutableRefObject<(() => Promise<void>) | null>;
+  viewData: TypePatternResponse | undefined;
   onColorUsed: (hex: string, label: string) => void;
   onColorsCleared: () => void;
   onUndoStackChange: (canUndo: boolean) => void;
@@ -185,8 +180,7 @@ const Scene = ({
   bgPreset,
   glassRef,
   exportRef,
-  patternName,
-  usedColors,
+  viewData,
   onColorUsed,
   onColorsCleared,
   onUndoStackChange,
@@ -225,7 +219,7 @@ const Scene = ({
       maxPolarAngle={(5 * Math.PI) / 6}
     />
 
-    <ExportWirer exportRef={exportRef} patternName={patternName} usedColors={usedColors} />
+    <ExportWirer exportRef={exportRef} viewData={viewData} />
   </>
 );
 
@@ -245,7 +239,7 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
   const [canUndo, setCanUndo] = useState<boolean>(false);
 
   const glassRef = useRef<StainedGlassHandle>(null);
-  const exportRef = useRef<(() => void) | null>(null);
+  const exportRef = useRef<(() => Promise<void>) | null>(null);
 
   // Reset used-colors and undo stack when the pattern changes
   React.useEffect(() => {
@@ -335,8 +329,7 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
               bgPreset={bgPreset}
               glassRef={glassRef}
               exportRef={exportRef}
-              patternName={viewData?.name}
-              usedColors={usedColors}
+              viewData={viewData}
               onColorUsed={handleColorUsed}
               onColorsCleared={handleColorsCleared}
               onUndoStackChange={handleUndoStackChange}

@@ -24,6 +24,7 @@ export interface LegendInput {
   designDate: Date | null;
   keys: TypePatternKeyReferenceObject[];
   queryClient: QueryClient;
+  isSmall?: boolean;
 }
 
 export interface LegendOutput {
@@ -37,24 +38,25 @@ const WIDTH = 320;
 const HEADER_H = 32;
 const SUB_H = 22;
 const STAT_ROW_H = 20;
-const STAT_COUNT = 4; // size, pieces, line width, date
 const DIVIDER_H = 16;
 const KEY_ROW_H = 32;
 const KEY_ICON = 24;
 
 export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
+  const STAT_COUNT = input.isSmall ? 3 : 4; // size, pieces, line width, date
+
   const dateStr = input.designDate ? dayjs(input.designDate).format('MM-DD-YYYY') : '—';
 
   const statsBlockH = STAT_COUNT * STAT_ROW_H;
   const keysBlockH = input.keys.length * KEY_ROW_H;
-  const height = PAD + HEADER_H + SUB_H + 6 + statsBlockH + DIVIDER_H + keysBlockH + PAD;
+  let height = 100;
 
-  // Convert remote key icons to data URIs so the SVG is self-contained when
-  // serialized → rasterized. Without this, <image href="https://..."> fails to
-  // load inside an <img> wrapping the SVG (CORS / async race).
-  const iconDataUris = await Promise.all(
-    input.keys.map((k) => fetchAsDataUri(k?.fullPath || '', input.queryClient).catch(() => '')),
-  );
+  // Recalculate height based on content
+  if (input.isSmall) {
+    height = PAD + HEADER_H + SUB_H + 6 + statsBlockH + PAD;
+  } else {
+    height = PAD + HEADER_H + SUB_H + 6 + statsBlockH + DIVIDER_H + keysBlockH + PAD;
+  }
 
   let y = PAD;
   const rows: string[] = [];
@@ -76,12 +78,23 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   y += SUB_H + 6;
 
   // Stats — label : value pairs aligned in two columns
-  const stats: [string, string][] = [
-    ['Project Size', input.projectSizeLabel],
-    ['Pieces', String(input.pieces)],
-    ['Line Width', input.lineWidthLabel],
-    ['Design Date', dateStr],
-  ];
+  let stats: [string, string][] = [];
+
+  if (input.isSmall) {
+    stats = [
+      ['Project Size', input.projectSizeLabel],
+      ['Pieces', String(input.pieces)],
+      ['Design Date', dateStr],
+    ];
+  } else {
+    stats = [
+      ['Project Size', input.projectSizeLabel],
+      ['Pieces', String(input.pieces)],
+      ['Line Width', input.lineWidthLabel],
+      ['Design Date', dateStr],
+    ];
+  }
+
   for (const [label, val] of stats) {
     rows.push(
       `<text x="${PAD}" y="${y + 14}" font-family="Roboto, Arial, sans-serif" font-size="12" font-weight="600" fill="#2e7d32">${label}</text>` +
@@ -91,23 +104,34 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   }
 
   // Divider
-  y += 4;
-  rows.push(`<line x1="${PAD}" y1="${y}" x2="${WIDTH - PAD}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`);
-  y += DIVIDER_H - 4;
+  if (!input.isSmall) {
+    y += 4;
+    rows.push(`<line x1="${PAD}" y1="${y}" x2="${WIDTH - PAD}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`);
+    y += DIVIDER_H - 4;
+  }
 
   // Keys
-  for (let i = 0; i < input.keys.length; i++) {
-    const k = input.keys[i];
-    const dataUri = iconDataUris[i];
-    if (dataUri) {
-      rows.push(
-        `<image x="${PAD}" y="${y + (KEY_ROW_H - KEY_ICON) / 2}" width="${KEY_ICON}" height="${KEY_ICON}" href="${dataUri}" preserveAspectRatio="xMidYMid meet"/>`,
-      );
-    }
-    rows.push(
-      `<text x="${PAD + KEY_ICON + 10}" y="${y + KEY_ROW_H / 2 + 4}" font-family="Roboto, Arial, sans-serif" font-size="13" fill="#1a1a1a">${escapeXml(k.name)}</text>`,
+  if (!input.isSmall) {
+    // Convert remote key icons to data URIs so the SVG is self-contained when
+    // serialized → rasterized. Without this, <image href="https://..."> fails to
+    // load inside an <img> wrapping the SVG (CORS / async race).
+    const iconDataUris = await Promise.all(
+      input.keys.map((k) => fetchAsDataUri(k?.fullPath || '', input.queryClient).catch(() => '')),
     );
-    y += KEY_ROW_H;
+
+    for (let i = 0; i < input.keys.length; i++) {
+      const k = input.keys[i];
+      const dataUri = iconDataUris[i];
+      if (dataUri) {
+        rows.push(
+          `<image x="${PAD}" y="${y + (KEY_ROW_H - KEY_ICON) / 2}" width="${KEY_ICON}" height="${KEY_ICON}" href="${dataUri}" preserveAspectRatio="xMidYMid meet"/>`,
+        );
+      }
+      rows.push(
+        `<text x="${PAD + KEY_ICON + 10}" y="${y + KEY_ROW_H / 2 + 4}" font-family="Roboto, Arial, sans-serif" font-size="13" fill="#1a1a1a">${escapeXml(k.name)}</text>`,
+      );
+      y += KEY_ROW_H;
+    }
   }
 
   // White card with green accent border + soft shadow (drawn via filter).
