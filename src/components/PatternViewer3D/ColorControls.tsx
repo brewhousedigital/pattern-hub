@@ -41,7 +41,7 @@ export const ColorControls = ({
   onBgPresetChange,
 }: ColorControlsProps) => {
   const [fillAllAnchor, setFillAllAnchor] = React.useState<null | HTMLElement>(null);
-  const [envTab, setEnvTab] = React.useState<'outdoor' | 'indoor'>('outdoor');
+  const [envTab, setEnvTab] = React.useState<'outdoor' | 'indoor'>('indoor');
 
   const filteredEnv = ENV_OPTIONS.filter((e) => (envTab === 'outdoor' ? e.outdoor : !e.outdoor));
 

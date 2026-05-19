@@ -102,7 +102,7 @@ const GroundPlane = ({ bgPreset }: { bgPreset: EnvPreset }) => {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.2, 0]} receiveShadow>
       <planeGeometry args={[60, 60]} />
-      <meshStandardMaterial color="#3a4530" roughness={1} metalness={0} envMapIntensity={0.4} />
+      <meshStandardMaterial color="#3a4530" roughness={1} metalness={1} envMapIntensity={0.4} />
     </mesh>
   );
 };
@@ -191,7 +191,7 @@ const Scene = ({
   <>
     {/* HDR environment — acts as both background and ambient light.
         The bright sky shines through the transparent glass regions. */}
-    <Environment preset={bgPreset} background />
+    <Environment preset={bgPreset} background backgroundRotation={[0, 6.5 / 2, 0]} />
 
     {/* Optional ground plane for outdoor environments */}
     <GroundPlane bgPreset={bgPreset} />
@@ -237,7 +237,7 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
 
   const [paintColor, setPaintColor] = useState<string>(STAINED_GLASS_COLORS[0].hex);
   const [usedColors, setUsedColors] = useState<Map<string, string>>(new Map());
-  const [bgPreset, setBgPreset] = useState<EnvPreset>('sunset');
+  const [bgPreset, setBgPreset] = useState<EnvPreset>('apartment');
 
   const glassRef = useRef<StainedGlassHandle>(null);
   const exportRef = useRef<(() => void) | null>(null);
@@ -343,7 +343,7 @@ export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
       />
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
-        Click any region to fill it · Drag to orbit · Scroll to zoom · Export PNG includes color legend
+        Click any region to fill it · Drag to orbit · Scroll to zoom
       </Typography>
     </Box>
   );
