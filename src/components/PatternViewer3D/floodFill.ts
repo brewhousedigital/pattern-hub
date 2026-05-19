@@ -105,7 +105,7 @@ export function floodFill(
   const imgData = ctx.getImageData(0, 0, w, h);
   const d = imgData.data;
   const [r, g, b] = hexToRgb(paintColor);
-  const a = Math.round(0.9 * 255);
+  const a = Math.round(0.8 * 255);
 
   const visited = new Uint8Array(w * h);
   const filled: number[] = [];
