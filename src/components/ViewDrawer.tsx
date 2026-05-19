@@ -107,7 +107,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                     <Typography variant="subtitle2" fontWeight={700}>
                       Color Planner
                     </Typography>
-                    <Chip label="Beta" size="small" color="info" sx={{ height: 18, fontSize: '0.65rem' }} />
                   </Box>
                   <Button
                     size="small"
