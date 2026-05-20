@@ -1,6 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MetaRow, ThinDivider, SectionLabel, DecorativeTitle } from '@/components/ViewHelpers';
+import { DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
 import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
 import { createPrettyDate } from '@/functions/utilities/dates';
@@ -21,7 +21,7 @@ import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
-import { Box, Typography, Stack, Container, Button, Tooltip, Chip, Skeleton } from '@mui/material';
+import { Box, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -53,25 +53,28 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
-      <Container maxWidth={false} sx={{ py: 3, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ py: 3, position: 'relative', zIndex: 1 }}>
         <PatternDrawerTopNavigation handleClose={props.handleClose} />
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '250px 1fr 500px', xl: '250px 750px 500px' },
-            gap: 4,
-            alignItems: 'start',
-            justifyContent: 'center',
-          }}
-        >
-          <Box sx={{ order: { xs: 3, lg: 1 } }}>
-            <Box sx={sidebarBlockStyles}>
-              <ViewDrawerPatternSidebar tagList={viewData?.tags || []} handleClose={props.handleClose} />
-            </Box>
-          </Box>
+        <Grid container spacing={2}>
+          <Grid
+            size={{ xs: 12, lg: 'auto' }}
+            order={{ xs: 3, lg: 1 }}
+            sx={{
+              width: { lg: 250 },
+              flexShrink: 0,
+            }}
+          >
+            <ViewDrawerPatternSidebar tagList={viewData?.tags || []} handleClose={props.handleClose} />
+          </Grid>
 
-          <Box sx={{ order: { xs: 1, lg: 2 } }}>
+          <Grid
+            size={{ xs: 12, lg: 'grow' }}
+            order={{ xs: 1, lg: 2 }}
+            sx={{
+              minWidth: 0, // allows shrinking below content width
+            }}
+          >
             <BorderedCard>
               {viewData?.pattern_file_external ? (
                 <img
@@ -108,6 +111,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                       Color Planner
                     </Typography>
                   </Box>
+
                   <Button
                     size="small"
                     variant={viewer3DOpen ? 'contained' : 'outlined'}
@@ -130,37 +134,50 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             {!viewData?.pattern_file_external && (
               <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
             )}
-          </Box>
+          </Grid>
 
-          <Box sx={{ order: { xs: 2, lg: 3 } }}>
-            <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+          <Grid
+            size={{ xs: 12, lg: 'auto' }}
+            order={{ xs: 2, lg: 3 }}
+            sx={{
+              width: { lg: 300 },
+              flexShrink: 0,
+            }}
+          >
+            <Box>
+              {/* ── Name & ID ─────────────────────────────────────── */}
+              <Box sx={{ mb: 2 }}>
                 <Typography
                   variant="h3"
                   sx={{
                     wordBreak: 'break-word',
-                    fontSize: { xs: '2rem', md: '3rem' },
-                    lineHeight: 1.1,
+                    fontSize: { xs: '1.5rem', sm: '2.4rem' },
+                    fontWeight: 700,
+                    lineHeight: 1.2,
                     color: 'text.primary',
                     mb: 0.5,
                   }}
                 >
                   {viewData?.name}
                 </Typography>
+
+                <Tooltip title="Copy ID" arrow>
+                  <Typography
+                    onClick={handleCopyId}
+                    variant="caption"
+                    sx={{ color: 'text.disabled', letterSpacing: '0.08em', cursor: 'pointer', fontSize: '0.7rem' }}
+                  >
+                    {viewData?.id}
+                  </Typography>
+                </Tooltip>
               </Box>
 
-              <Tooltip title="Copy ID" arrow>
-                <Typography
-                  onClick={handleCopyId}
-                  variant="caption"
-                  sx={{ color: 'text.secondary', letterSpacing: '0.1em', cursor: 'pointer' }}
-                >
-                  ID: {viewData?.id}
-                </Typography>
-              </Tooltip>
+              <Box sx={{ mb: 3 }}>
+                <PatternSaveContainer viewData={viewData} />
+              </Box>
 
               {viewData?.pattern_file_external && (
-                <Box sx={{ pt: 4 }}>
+                <Box sx={{ px: 1, pt: 1, pb: 0.5 }}>
                   <Button
                     variant="contained"
                     fullWidth
@@ -173,110 +190,114 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   </Button>
                 </Box>
               )}
-            </Box>
 
-            {viewData?.description && (
-              <Box sx={{ mb: 2.5 }}>
-                <MarkdownWrapper>{viewData.description}</MarkdownWrapper>
-              </Box>
-            )}
+              {viewData?.description && (
+                <Box sx={{ px: 1, pt: 0.5, pb: 1 }}>
+                  <MarkdownWrapper>{viewData.description}</MarkdownWrapper>
+                </Box>
+              )}
 
-            <ThinDivider />
+              <PatternRatings viewData={viewData} />
 
-            <PatternSaveContainer viewData={viewData} />
+              {/* ── Details ───────────────────────────────────────── */}
+              <PanelSectionTitle>Details</PanelSectionTitle>
 
-            <PatternRatings viewData={viewData} />
+              <CompactRow label="Width">
+                {viewData?.design_width != null ? `${viewData.design_width}${viewData.design_width_unit ?? ''}` : '—'}
+              </CompactRow>
 
-            <ThinDivider />
+              <CompactRow label="Height">
+                {viewData?.design_height != null
+                  ? `${viewData.design_height}${viewData.design_height_unit ?? ''}`
+                  : '—'}
+              </CompactRow>
 
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 0,
-                rowGap: 0,
-              }}
-            >
-              <MetaRow label="Width" value={viewData?.design_width} unit={viewData?.design_width_unit} />
-              <MetaRow label="Height" value={viewData?.design_height} unit={viewData?.design_height_unit} />
-              <MetaRow label="Line Width" value={viewData?.line_width} unit={viewData?.line_width_unit} />
-              <MetaRow label="Pieces" value={viewData?.pieces?.toLocaleString()} />
-            </Box>
+              <CompactRow label="Line Width">
+                {viewData?.line_width != null ? `${viewData.line_width}${viewData.line_width_unit ?? ''}` : '—'}
+              </CompactRow>
 
-            <ThinDivider />
+              <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '—'}</CompactRow>
 
-            <Stack spacing={2} sx={{ mb: 2.5 }}>
-              <Box>
-                <SectionLabel>Designed by</SectionLabel>
+              {/* ── Attribution ───────────────────────────────────── */}
+              <PanelSectionTitle>Attribution</PanelSectionTitle>
 
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
-                  {viewData?.expand?.authors?.map((author, index) => (
-                    <Link
-                      key={`designed-by-list-${index}`}
-                      to={`/profile`}
-                      search={{
-                        id: author?.id,
-                      }}
-                    >
-                      <Typography variant="body1" key={`author-name-${index}`}>
-                        {author?.name || 'Not Listed'}
+              <CompactRow label="Designed by">
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+                  {viewData?.expand?.authors?.map((author, i) => (
+                    <Link key={i} to="/profile" search={{ id: author.id }}>
+                      <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
+                        {author.name || 'Not Listed'}
                       </Typography>
                     </Link>
                   ))}
 
-                  {viewData?.author_manual?.map((author, index) => (
-                    <Typography variant="body1" key={`author-name-${index}`}>
+                  {viewData?.author_manual?.map((author, i) => (
+                    <Typography key={`manual-${i}`} sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500 }}>
                       {author || 'Not Listed'}
                     </Typography>
                   ))}
                 </Box>
+              </CompactRow>
+
+              <CompactRow label="Design Date">{createPrettyDate(viewData?.design_date || '') || '—'}</CompactRow>
+              <CompactRow label="Uploaded by">{viewData?.uploaded_by || 'Not Listed'}</CompactRow>
+              <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '—'}</CompactRow>
+              <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '—'}</CompactRow>
+
+              <Box sx={{ px: 1, pt: 2, pb: 1 }}>
+                <PatternReportIssue viewData={viewData} key={patternId} />
               </Box>
-
-              <Box>
-                <MetaRow label="Design Date" value={createPrettyDate(viewData?.design_date || '')} />
-              </Box>
-
-              <Box>
-                <SectionLabel>Uploaded by</SectionLabel>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body1">{viewData?.uploaded_by || 'Not Listed'}</Typography>
-                </Box>
-              </Box>
-            </Stack>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 0,
-                rowGap: 0,
-              }}
-            >
-              <MetaRow label="Uploaded On" value={createPrettyDate(viewData?.created || '')} />
-              <MetaRow label="Last Update" value={createPrettyDate(viewData?.updated || '')} />
             </Box>
-
-            <ThinDivider />
-
-            <PatternReportIssue viewData={viewData} key={patternId} />
-
-            <ThinDivider />
-          </Box>
-        </Box>
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );
 };
 
-const sidebarBlockStyles = {
-  height: '100%',
-  maxHeight: '100svh',
-  overflowY: 'auto',
-  position: 'sticky',
-  top: 0,
-  scrollbarWidth: 'none',
-};
+// ─── Right-panel compact layout helpers ──────────────────────────────────────
+
+/** Overline section heading matching the left sidebar category style. */
+const PanelSectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <Typography
+    variant="overline"
+    sx={{
+      display: 'block',
+      fontSize: '0.6875rem',
+      fontWeight: 700,
+      letterSpacing: '0.08em',
+      color: 'text.disabled',
+      px: 1,
+      pt: 2,
+      pb: 0.5,
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+/** Inline label / value row matching the left sidebar item density. */
+const CompactRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      gap: 1,
+      px: 1,
+      py: 0.4,
+      borderRadius: 1,
+      '&:hover': { bgcolor: 'action.hover' },
+    }}
+  >
+    <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontWeight: 500, flexShrink: 0 }}>
+      {label}
+    </Typography>
+    <Typography sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500, textAlign: 'right' }}>
+      {children}
+    </Typography>
+  </Box>
+);
 
 const PatternLegendCard = ({ viewData }: TypeViewData) => {
   if (!viewData) return null;

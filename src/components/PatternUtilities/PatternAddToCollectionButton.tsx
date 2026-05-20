@@ -6,7 +6,7 @@ import type { TypeViewData } from '@/functions/types/types';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
 
-import { Button } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 
 export const PatternAddToCollectionButton = (props: TypeViewData) => {
   const viewData = props.viewData;
@@ -26,23 +26,14 @@ export const PatternAddToCollectionButton = (props: TypeViewData) => {
 
   return (
     <>
-      <Button
-        onClick={handleClick}
-        size="small"
-        disableElevation
-        variant="outlined"
-        fullWidth
-        startIcon={<BookmarksOutlinedIcon />}
-      >
-        Add to Collection
-      </Button>
+      <Tooltip title="Add to collection">
+        <IconButton onClick={handleClick}>
+          <BookmarksOutlinedIcon color="primary" />
+        </IconButton>
+      </Tooltip>
 
       {viewData?.id && (
-        <AddToCollectionDialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          patternId={viewData.id}
-        />
+        <AddToCollectionDialog open={dialogOpen} onClose={() => setDialogOpen(false)} patternId={viewData.id} />
       )}
     </>
   );

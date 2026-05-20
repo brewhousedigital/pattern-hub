@@ -1,11 +1,11 @@
 import React from 'react';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { PatternFavoriteButton } from '@/components/PatternUtilities/PatternFavoriteButton';
-import { PatternDownButton } from '@/components/PatternUtilities/PatternDownButton';
+import { PatternCompletedButton } from './PatternCompletedButton';
 import { PatternAddToCollectionButton } from '@/components/PatternUtilities/PatternAddToCollectionButton';
 import type { TypeViewData } from '@/functions/types/types';
 
-import { Alert, Box, Grid } from '@mui/material';
+import { Alert, Box, Grid, Stack } from '@mui/material';
 
 export const PatternSaveContainer = (props: TypeViewData) => {
   const viewData = props.viewData;
@@ -13,26 +13,16 @@ export const PatternSaveContainer = (props: TypeViewData) => {
   const { authData } = useGlobalAuthData();
 
   if (!authData) {
-    return (
-      <Box sx={{ mb: 2.5 }}>
-        <Alert severity="info">Log in to favorite the patterns you like</Alert>
-      </Box>
-    );
+    return <></>;
   }
 
   return (
-    <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
-      <Grid size={{ xs: 6 }}>
-        <PatternFavoriteButton viewData={viewData} />
-      </Grid>
+    <Stack direction="row" sx={{ gap: 1 }}>
+      <PatternFavoriteButton viewData={viewData} />
 
-      <Grid size={{ xs: 6 }}>
-        <PatternDownButton viewData={viewData} />
-      </Grid>
+      <PatternCompletedButton viewData={viewData} />
 
-      <Grid size={{ xs: 12 }}>
-        <PatternAddToCollectionButton viewData={viewData} />
-      </Grid>
-    </Grid>
+      <PatternAddToCollectionButton viewData={viewData} />
+    </Stack>
   );
 };

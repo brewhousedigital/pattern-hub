@@ -650,6 +650,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             <CropFreeIcon fontSize="small" />
             Single Page
           </ToggleButton>
+
           <ToggleButton value="tiled">
             <GridOnIcon fontSize="small" />
             Tiled (8.5 × 11)
@@ -716,8 +717,6 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
       {/* Single page: paper options */}
       <Collapse in={mode === 'single'}>
         <Box sx={{ mb: 2.5 }}>
-          <SectionLabel>Paper Size</SectionLabel>
-
           <Box
             sx={{
               display: 'grid',
@@ -727,30 +726,35 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
               alignItems: 'center',
             }}
           >
-            <TextField
-              select
-              size="small"
-              variant="filled"
-              label="Common Sizes"
-              fullWidth
-              value={paperPreset}
-              onChange={(e) => {
-                setPaperPreset(e.target.value as PaperPreset);
-                setCustomPageW('');
-                setCustomPageH('');
-              }}
-            >
-              <MenuItem value="">Custom Size</MenuItem>
+            <Box>
+              <SectionLabel>Paper Size</SectionLabel>
 
-              {PAPER_PRESETS.map((p) => (
-                <MenuItem key={p.name} value={p.name}>
-                  {`${p.name} — ${p.wIn}" × ${p.hIn}"`}
-                </MenuItem>
-              ))}
-            </TextField>
+              <TextField
+                select
+                size="small"
+                variant="filled"
+                label="Common Sizes"
+                fullWidth
+                value={paperPreset}
+                onChange={(e) => {
+                  setPaperPreset(e.target.value as PaperPreset);
+                  setCustomPageW('');
+                  setCustomPageH('');
+                }}
+              >
+                <MenuItem value="">Custom Size</MenuItem>
+
+                {PAPER_PRESETS.map((p) => (
+                  <MenuItem key={p.name} value={p.name}>
+                    {`${p.name} — ${p.wIn}" × ${p.hIn}"`}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
 
             <Box>
               <SectionLabel>Orientation</SectionLabel>
+
               <ToggleButtonGroup
                 value={orientation}
                 exclusive

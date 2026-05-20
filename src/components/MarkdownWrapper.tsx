@@ -31,6 +31,7 @@ export const MarkdownWrapper = (props: MarkdownWrapperProps) => {
 const StyledMarkdownWrapper = styled(Box)(({ theme }) => ({
   color: theme.palette.text.secondary,
   lineHeight: 1.8,
+  wordBreak: 'break-word',
 
   '& h1, & h2, & h3, & h4, & h5, & h6': {
     color: theme.palette.text.primary,

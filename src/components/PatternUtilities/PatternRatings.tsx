@@ -75,10 +75,10 @@ export const PatternRatings = (props: TypeViewData) => {
   };
 
   return (
-    <Box sx={{ mb: 2.5 }}>
+    <Box>
       <SectionLabel>Community Rating</SectionLabel>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, justifyContent: 'space-between' }}>
         <Rating
           disabled
           precision={0.1}
@@ -95,9 +95,7 @@ export const PatternRatings = (props: TypeViewData) => {
             {communityRating?.total_ratings} ratings
           </Typography>
         ) : (
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            This pattern hasn't been rated yet
-          </Typography>
+          <></>
         )}
       </Box>
 

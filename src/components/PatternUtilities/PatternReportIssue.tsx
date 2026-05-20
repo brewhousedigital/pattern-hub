@@ -26,6 +26,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
 
   // Track when the form is opened for the timing guard
   const formOpenTime = React.useRef<number>(0);
+
   React.useEffect(() => {
     if (isOpen) formOpenTime.current = Date.now();
   }, [isOpen]);
@@ -100,6 +101,10 @@ export const PatternReportIssue = (props: TypeViewData) => {
     setIsLoading(false);
   };
 
+  const handleCloseSubmitIssue = () => {
+    setIsOpen(false);
+  };
+
   return (
     <>
       <Collapse in={!isDone && !isInCooldown}>
@@ -168,11 +173,13 @@ export const PatternReportIssue = (props: TypeViewData) => {
             onExpire={() => setTurnstileToken(null)}
           />
 
-          <Box>
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 3 }}>
             <Button variant="outlined" type="submit" loading={isLoading} disabled={!turnstileToken}>
               Submit
             </Button>
-          </Box>
+
+            <Button onClick={handleCloseSubmitIssue}>Cancel</Button>
+          </Stack>
         </Stack>
       </Collapse>
 

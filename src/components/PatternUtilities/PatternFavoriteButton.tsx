@@ -11,7 +11,7 @@ import { enqueueSnackbar } from 'notistack';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
-import { Button } from '@mui/material';
+import { Button, IconButton, Tooltip } from '@mui/material';
 
 export const PatternFavoriteButton = (props: TypeViewData) => {
   const viewData = props.viewData;
@@ -54,16 +54,10 @@ export const PatternFavoriteButton = (props: TypeViewData) => {
   };
 
   return (
-    <Button
-      loading={isLoading}
-      onClick={handleFavorite}
-      size="small"
-      disableElevation
-      variant={isFavorite ? 'contained' : 'outlined'}
-      fullWidth
-      startIcon={isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-    >
-      Favorite
-    </Button>
+    <Tooltip title={isFavorite ? 'Remove from favorites' : 'Add to favorites'} arrow>
+      <IconButton loading={isLoading} onClick={handleFavorite}>
+        {isFavorite ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon color="error" />}
+      </IconButton>
+    </Tooltip>
   );
 };
