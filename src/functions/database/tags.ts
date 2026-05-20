@@ -45,9 +45,11 @@ async function fetchAllPatternTags(): Promise<TypePatternRecord[]> {
   return records;
 }
 
+export const ADMIN_TAG_STATS_QUERY_KEY = ['AdminTagStats'] as const;
+
 export const useQueryAdminTagStats = () => {
   return useQuery({
-    queryKey: ['AdminTagStats'],
+    queryKey: ADMIN_TAG_STATS_QUERY_KEY,
     queryFn: async (): Promise<TypeTagStat[]> => {
       const records = await fetchAllPatternTags();
 
@@ -65,5 +67,45 @@ export const useQueryAdminTagStats = () => {
         .sort((a, b) => b.count - a.count);
     },
     staleTime: 1000 * 60 * 2,
+  });
+};
+
+// ─── Paginated tag stats (backed by the `tags` collection) ────────────────────
+//
+// Replaces the "All Tags" table usage of useQueryAdminTagStats, which scanned
+// every pattern record and was hitting PocketBase request limits.  The `tags`
+// collection already stores pre-computed counts so this is a simple getList call.
+
+export const ADMIN_TAG_STATS_PAGINATED_QUERY_KEY = ['AdminTagStatsPaginated'] as const;
+
+export interface TypeAdminTagStatsPaginatedParams {
+  /** 0-indexed page (MUI DataGrid convention; +1 before sending to PocketBase). */
+  page: number;
+  pageSize: number;
+  /** Free-text filter: tag ~ "value" — sanitised before sending. */
+  search: string;
+  sortField: 'tag' | 'count';
+  sortDir: 'asc' | 'desc';
+}
+
+export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
+  return useQuery({
+    queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],
+    queryFn: async (): Promise<{ items: TypeReadOnlyDatabaseItem[]; totalItems: number }> => {
+      const safeSearch = params.search.trim().replace(/"/g, '\\"');
+      const filter = safeSearch ? `tag ~ "${safeSearch}"` : '';
+      const sort = `${params.sortDir === 'desc' ? '-' : ''}${params.sortField}`;
+
+      const result = await pocketbase
+        .collection('tags')
+        .getList<TypeReadOnlyDatabaseItem>(params.page + 1, params.pageSize, {
+          sort,
+          ...(filter ? { filter } : {}),
+        });
+
+      return { items: result.items, totalItems: result.totalItems };
+    },
+    staleTime: 1000 * 60 * 2,
+    placeholderData: (prev) => prev, // keep previous page visible while next page loads
   });
 };

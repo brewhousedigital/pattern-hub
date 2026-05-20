@@ -915,9 +915,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                 onInputChange={setAutoCompleteInputValue}
               />
 
-              <Typography variant="body2" color="text.secondary">
+              {/*<Typography variant="body2" color="text.secondary">
                 Total Tags Used: {allTagsData?.length}/500
-              </Typography>
+              </Typography>*/}
 
               <FancyAutocompleteAuthors
                 label="Author"

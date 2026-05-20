@@ -1,11 +1,20 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
 import { useAtom, atom } from 'jotai';
-import { useQueryAdminTagStats, type TypeTagStat, type TypePatternRecord } from '@/functions/database/tags';
+import {
+  useQueryAdminTagStats,
+  useQueryAdminTagStatsPaginated,
+  ADMIN_TAG_STATS_QUERY_KEY,
+  ADMIN_TAG_STATS_PAGINATED_QUERY_KEY,
+  type TypeTagStat,
+  type TypePatternRecord,
+} from '@/functions/database/tags';
+import { useDebounce } from '@/functions/hooks/useDebounce';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
+import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 import SearchIcon from '@mui/icons-material/Search';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -28,7 +37,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -40,11 +48,11 @@ import {
   IconButton,
   Tabs,
   Tab,
-  Badge,
   Checkbox,
   Snackbar,
   Divider,
 } from '@mui/material';
+import { DataGrid, type GridColDef, type GridSortModel } from '@mui/x-data-grid';
 
 export const Route = createFileRoute('/space-command/tags')({
   component: RouteComponent,
@@ -63,8 +71,6 @@ function RouteComponent() {
   return <TagManagementPage />;
 }
 
-type SortField = 'tag' | 'count';
-type SortDir = 'asc' | 'desc';
 type OperationType = 'rename' | 'delete' | 'merge';
 
 const BATCH_DELAY_MS = 3000;
@@ -428,14 +434,36 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
 
 const TagManagementPage = () => {
   const queryClient = useQueryClient();
-  const { data: tagStats = [], isLoading, error, refetch } = useQueryAdminTagStats();
+
+  // Full tag list — used by panels, header stats, and rename/merge validation.
+  const { data: tagStats = [] } = useQueryAdminTagStats();
 
   const { setIsFetchingPatterns } = useGlobalIsFetchingPatterns();
 
-  // Table state
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('count');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  // ── All Tags table: server-side paginated search + sort ────────────────────
+  const [tagSearch, setTagSearch] = useState('');
+  const debouncedSearch = useDebounce(tagSearch, 400);
+  const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
+  const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
+
+  // Reset to first page whenever the search changes.
+  useEffect(() => {
+    setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
+  }, [debouncedSearch]);
+
+  const sortItem = tagSortModel[0];
+  const {
+    data: tagPageData,
+    isFetching: tagPageFetching,
+    error: tagPageError,
+    refetch: refetchTagPage,
+  } = useQueryAdminTagStatsPaginated({
+    page: tagPaginationModel.page,
+    pageSize: tagPaginationModel.pageSize,
+    search: debouncedSearch,
+    sortField: (sortItem?.field as 'tag' | 'count') ?? 'count',
+    sortDir: (sortItem?.sort as 'asc' | 'desc') ?? 'desc',
+  });
 
   // Operation state
   const [pendingOp, setPendingOp] = useState<{
@@ -455,24 +483,6 @@ const TagManagementPage = () => {
   }>({ open: false, title: '', completed: 0, total: 0, done: false });
 
   const [toast, setToast] = useState<string | null>(null);
-
-  // Sorted & filtered tag list
-  const displayedTags = useMemo(() => {
-    const filtered = tagStats.filter((t) => t.tag.toLowerCase().includes(search.toLowerCase()));
-    return filtered.sort((a, b) => {
-      const mul = sortDir === 'asc' ? 1 : -1;
-      if (sortField === 'tag') return mul * a.tag.localeCompare(b.tag);
-      return mul * (a.count - b.count);
-    });
-  }, [tagStats, search, sortField, sortDir]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortField(field);
-      setSortDir(field === 'count' ? 'desc' : 'asc');
-    }
-  };
 
   // Core operation executor
   const executeOperation = useCallback(
@@ -526,7 +536,8 @@ const TagManagementPage = () => {
         );
 
         setProgress((p) => ({ ...p, done: true }));
-        queryClient.invalidateQueries({ queryKey: ['tag-stats'] });
+        queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setProgress((p) => ({ ...p, error: msg }));
@@ -611,7 +622,8 @@ const TagManagementPage = () => {
           setProgress((p) => ({ ...p, completed, total: tags.length }));
         }
         setProgress((p) => ({ ...p, done: true }));
-        queryClient.invalidateQueries({ queryKey: ['tag-stats'] });
+        queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setProgress((p) => ({ ...p, error: msg }));
@@ -627,6 +639,52 @@ const TagManagementPage = () => {
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);
+
+  // ── All Tags DataGrid column definitions ──────────────────────────────────
+  const tagColumns: GridColDef<TypeReadOnlyDatabaseItem>[] = [
+    {
+      field: 'tag',
+      headerName: 'Tag',
+      flex: 1,
+      sortable: true,
+      disableColumnMenu: true,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          variant={params.row.count === 1 ? 'outlined' : 'filled'}
+          color={params.row.count === 1 ? 'warning' : 'default'}
+          sx={{ fontFamily: 'monospace' }}
+        />
+      ),
+    },
+    {
+      field: 'count',
+      headerName: 'Patterns',
+      width: 110,
+      sortable: true,
+      disableColumnMenu: true,
+      align: 'right',
+      headerAlign: 'right',
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 80,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      align: 'right',
+      headerAlign: 'right',
+      renderCell: (params) => (
+        <Tooltip title="Delete this tag globally">
+          <IconButton size="small" onClick={() => startOp('delete', params.row.tag)} color="error">
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -675,7 +733,7 @@ const TagManagementPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Tag Browser Table */}
+      {/* All Tags — server-side paginated DataGrid */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
           All Tags
@@ -683,114 +741,54 @@ const TagManagementPage = () => {
 
         <TextField
           placeholder="Search tags…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={tagSearch}
+          onChange={(e) => setTagSearch(e.target.value)}
           size="small"
           sx={{ width: 260 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
           }}
         />
 
-        <Button size="small" onClick={() => refetch()} variant="outlined" color="inherit">
+        <Button size="small" onClick={() => refetchTagPage()} variant="outlined" color="inherit">
           Refresh
         </Button>
       </Box>
 
-      {isLoading && <LinearProgress sx={{ mb: 2 }} />}
-
-      {error && (
+      {tagPageError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Failed to load tags. Check your PocketBase connection.
         </Alert>
       )}
 
-      <Paper variant="outlined">
-        <TableContainer sx={{ maxHeight: 520 }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'tag'}
-                    direction={sortField === 'tag' ? sortDir : 'asc'}
-                    onClick={() => handleSort('tag')}
-                  >
-                    Tag
-                  </TableSortLabel>
-                </TableCell>
-
-                <TableCell align="right" sx={{ width: 100 }}>
-                  <TableSortLabel
-                    active={sortField === 'count'}
-                    direction={sortField === 'count' ? sortDir : 'desc'}
-                    onClick={() => handleSort('count')}
-                  >
-                    Patterns
-                  </TableSortLabel>
-                </TableCell>
-
-                <TableCell align="right" sx={{ width: 140 }}>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {displayedTags.map(({ tag, count }) => (
-                <TableRow key={tag} hover>
-                  <TableCell>
-                    <Chip
-                      label={tag}
-                      size="small"
-                      variant={count === 1 ? 'outlined' : 'filled'}
-                      color={count === 1 ? 'warning' : 'default'}
-                      sx={{ fontFamily: 'monospace' }}
-                    />
-                  </TableCell>
-
-                  <TableCell align="right">
-                    <Typography variant="body2">{count}</Typography>
-                  </TableCell>
-
-                  <TableCell align="right">
-                    {/*<Tooltip title="Rename this tag">
-                      <IconButton size="small" onClick={() => startOp('rename', tag)} color="primary">
-                        <DriveFileRenameOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>*/}
-
-                    {/*<Tooltip title="Merge into another tag">
-                      <IconButton size="small" onClick={() => startOp('merge', tag)} color="secondary">
-                        <MergeIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>*/}
-
-                    <Tooltip title="Delete this tag globally">
-                      <IconButton size="small" onClick={() => startOp('delete', tag)} color="error">
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-
-              {!isLoading && displayedTags.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {search ? `No tags matching "${search}"` : 'No tags found'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      <Paper variant="outlined" sx={{ height: 560 }}>
+        <DataGrid
+          loading={tagPageFetching}
+          rows={tagPageData?.items ?? []}
+          columns={tagColumns}
+          rowCount={tagPageData?.totalItems ?? 0}
+          paginationMode="server"
+          sortingMode="server"
+          filterMode="server"
+          pagination
+          paginationModel={tagPaginationModel}
+          onPaginationModelChange={setTagPaginationModel}
+          sortModel={tagSortModel}
+          onSortModelChange={(model) => {
+            setTagSortModel(model.length ? model : [{ field: 'count', sort: 'desc' }]);
+            setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
+          }}
+          pageSizeOptions={[25, 50, 100]}
+          disableRowSelectionOnClick
+          density="compact"
+          sx={{ border: 'none' }}
+        />
       </Paper>
 
       {/* Confirm Dialog */}
