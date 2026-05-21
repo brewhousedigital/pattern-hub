@@ -980,13 +980,13 @@ const TagManagementPage = () => {
     });
 
     if (needsUpdate.length === 0) {
-      setToast('All patterns already have up-to-date ancestor tags.');
+      setToast('All patterns already have up-to-date parent tags.');
       return;
     }
 
     setProgress({
       open: true,
-      title: `Syncing ancestor tags across ${needsUpdate.length} patterns…`,
+      title: `Syncing parent tags across ${needsUpdate.length} patterns…`,
       completed: 0,
       total: needsUpdate.length,
       done: false,
@@ -1191,7 +1191,7 @@ const TagManagementPage = () => {
           </Button>
         )}
 
-        {/*<Tooltip title="Walk all patterns and add any missing ancestor tags based on the current hierarchy. Safe to run multiple times.">
+        {/*<Tooltip title="Walk all patterns and add any missing parent tags based on the current hierarchy. Safe to run multiple times.">
           <Button
             size="small"
             variant="outlined"
@@ -1199,7 +1199,7 @@ const TagManagementPage = () => {
             startIcon={<SyncIcon fontSize="small" />}
             onClick={() => setSyncConfirmOpen(true)}
           >
-            Sync Ancestor Tags
+            Sync Parent Tags
           </Button>
         </Tooltip>*/}
       </Box>
@@ -1262,12 +1262,12 @@ const TagManagementPage = () => {
       <Dialog open={syncConfirmOpen} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SyncIcon color="info" />
-          Sync Ancestor Tags
+          Sync Parent Tags
         </DialogTitle>
         <DialogContent>
           <Alert severity="info">
             This will scan the database for all patterns, and automatically add any missing parent tags based on the
-            current tag list. Existing tags are not removed. Only missing ancestors are added.
+            current tag list. Existing tags are not removed. Only missing parents are added.
           </Alert>
         </DialogContent>
         <DialogActions>

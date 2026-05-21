@@ -37,13 +37,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       filterOptions={props.serverSide ? (x) => x : undefined}
       loading={props.loading}
       loadingText="Searching…"
-      noOptionsText={
-        props.serverSide
-          ? props.inputValue
-            ? 'No tags found'
-            : 'Type to search tags'
-          : undefined
-      }
+      noOptionsText={props.serverSide ? (props.inputValue ? 'No tags found' : 'Type to search tags') : undefined}
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
         props.onChange(newValue);
@@ -79,7 +73,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
             />
           );
           return isInherited ? (
-            <Tooltip key={key} title={`Auto-added ancestor tag`} placement="top">
+            <Tooltip key={key} title={`Auto-added parent tag`} placement="top">
               {chip}
             </Tooltip>
           ) : (
