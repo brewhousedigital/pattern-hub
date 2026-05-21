@@ -264,18 +264,18 @@ interface SetParentDialogProps {
   open: boolean;
   /** The tag whose parent is being set (from the tags view). */
   tag: TypeReadOnlyDatabaseItem | null;
-  /** All known tag names for the autocomplete option list. */
-  allTagNames: string[];
   /** Current hierarchy records — used for descendants guard and current-parent lookup. */
   hierarchy: TypeTagHierarchyRecord[];
   onClose: () => void;
   onSaved: () => void;
 }
 
-function SetParentDialog({ open, tag, allTagNames, hierarchy, onClose, onSaved }: SetParentDialogProps) {
+function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDialogProps) {
   const [selectedParent, setSelectedParent] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const debouncedSearch = useDebounce(inputValue, 400);
 
   // Current parent from the hierarchy table
   const currentParent = useMemo(
@@ -283,17 +283,29 @@ function SetParentDialog({ open, tag, allTagNames, hierarchy, onClose, onSaved }
     [tag, hierarchy],
   );
 
-  // Options: all tag names except self + descendants
+  // Fetch tags matching the search text (server-side, no 500-item cap)
+  const { data: searchData, isFetching: searchFetching } = useQueryAdminTagStatsPaginated({
+    page: 0,
+    pageSize: 50,
+    search: debouncedSearch,
+    sortField: 'count',
+    sortDir: 'desc',
+  });
+
+  // Options: search results minus self + descendants (circular-ref guard)
   const options = useMemo(() => {
     if (!tag) return [];
     const descendants = new Set(getDescendants(tag.tag, hierarchy));
-    return allTagNames.filter((name) => name !== tag.tag && !descendants.has(name));
-  }, [tag, allTagNames, hierarchy]);
+    return (searchData?.items ?? [])
+      .map((item) => item.tag)
+      .filter((name) => name !== tag.tag && !descendants.has(name));
+  }, [tag, searchData, hierarchy]);
 
   // Pre-fill with current parent when dialog opens
   useEffect(() => {
     if (open) {
       setSelectedParent(currentParent);
+      setInputValue(currentParent ?? '');
       setError(null);
     }
   }, [open, currentParent]);
@@ -340,6 +352,12 @@ function SetParentDialog({ open, tag, allTagNames, hierarchy, onClose, onSaved }
             options={options}
             value={selectedParent}
             onChange={(_, v) => setSelectedParent(v)}
+            inputValue={inputValue}
+            onInputChange={(_, v) => setInputValue(v)}
+            filterOptions={(x) => x}
+            loading={searchFetching}
+            loadingText="Searching…"
+            noOptionsText={debouncedSearch ? 'No tags found' : 'Type to search tags'}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -756,9 +774,6 @@ const TagManagementPage = () => {
 
   // ── Set Parent dialog ──────────────────────────────────────────────────────
   const [setParentRow, setSetParentRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
-
-  // All known tag names (for the autocomplete options in SetParentDialog)
-  const allTagNames = useMemo(() => tagStats.map((t) => t.tag), [tagStats]);
 
   const handleSetParentSaved = useCallback(() => {
     refetchHierarchy();
@@ -1238,7 +1253,6 @@ const TagManagementPage = () => {
       <SetParentDialog
         open={!!setParentRow}
         tag={setParentRow}
-        allTagNames={allTagNames}
         hierarchy={hierarchy}
         onClose={() => setSetParentRow(null)}
         onSaved={handleSetParentSaved}
