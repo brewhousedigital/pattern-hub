@@ -14,6 +14,7 @@ import {
 import { useGlobalAuthData } from '@/data/auth-data';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { sanitizePhoneNumber } from '@/functions/utilities/phone';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { alpha } from '@mui/material/styles';
 
@@ -577,6 +578,7 @@ function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance
                 href={`https://www.google.com/maps/dir/?api=1&destination=${store.street_address}&dir_action=navigate`}
                 target="_blank"
                 rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
               >
                 <Typography variant="caption" color="text.secondary">
                   {store.street_address}
@@ -587,9 +589,11 @@ function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance
           {store.phone && (
             <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
               <PhoneOutlinedIcon sx={{ fontSize: 13, color: 'text.disabled', flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary">
-                {store.phone}
-              </Typography>
+              <a href={`tel:${sanitizePhoneNumber(store.phone)}`} style={{ textDecoration: 'none' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {store.phone}
+                </Typography>
+              </a>
             </Stack>
           )}
           {store.website && (
@@ -601,7 +605,7 @@ function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance
                 href={store.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ color: 'primary.main' }}
+                sx={{ color: 'primary.main', textDecoration: 'none' }}
               >
                 {store.website.replace(/^https?:\/\//, '')}
               </Typography>
