@@ -145,7 +145,7 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
 
       props.handleCloseModal();
 
-      enqueueSnackbar(`Permissions saved. Have the user refresh and they'll be good to go.`, { variant: 'error' });
+      enqueueSnackbar(`Permissions saved. Have the user refresh and they'll be good to go.`, { variant: 'success' });
     } catch (error) {
       enqueueSnackbar('Unable to save the permissions. Give it a few minutes and try again.', { variant: 'error' });
     }
