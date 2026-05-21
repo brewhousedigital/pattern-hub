@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  useQueryGetAllStores,
-  useMutationDeleteStore,
-  type TypeStoreLocation,
-} from '@/functions/database/stores';
+import { useQueryGetAllStores, useMutationDeleteStore, type TypeStoreLocation } from '@/functions/database/stores';
 import { AdminStoreEditorModal } from '@/components/admin/AdminStoreEditorModal';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
@@ -18,18 +14,7 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 
-import {
-  Alert,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Skeleton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Card, CardContent, Chip, IconButton, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/space-command/store-locator')({
   component: RouteComponent,
@@ -142,11 +127,13 @@ function StoreCard({ store, canEdit, canDelete, onEdit, onDelete, isDeleting }: 
         <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
           <Box>
             <Typography fontWeight={600}>{store.name}</Typography>
-            {store.description && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, maxWidth: 560 }}>
-                {store.description}
-              </Typography>
-            )}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption">{store.id}</Typography>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 560, mb: 2 }}>
+              {store.description ? store.description : 'No description found'}
+            </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0, ml: 2 }}>
@@ -159,12 +146,7 @@ function StoreCard({ store, canEdit, canDelete, onEdit, onDelete, isDeleting }: 
             </Tooltip>
             <Tooltip title="Delete">
               <span>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={onDelete}
-                  disabled={isDeleting || !canDelete}
-                >
+                <IconButton size="small" color="error" onClick={onDelete} disabled={isDeleting || !canDelete}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </span>
@@ -185,7 +167,9 @@ function StoreCard({ store, canEdit, canDelete, onEdit, onDelete, isDeleting }: 
           {store.phone && (
             <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
               <PhoneOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-              <Typography variant="caption" color="text.secondary">{store.phone}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {store.phone}
+              </Typography>
             </Stack>
           )}
           {store.website && (

@@ -571,11 +571,17 @@ function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance
 
         <Stack spacing={0.5} sx={{ mb: 1 }}>
           {store.street_address && (
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'flex-start' }}>
-              <PlaceIcon sx={{ fontSize: 13, color: 'text.disabled', mt: '2px', flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary">
-                {store.street_address}
-              </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+              <PlaceIcon sx={{ fontSize: 13, color: 'text.disabled', flexShrink: 0 }} />
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${store.street_address}&dir_action=navigate`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Typography variant="caption" color="text.secondary">
+                  {store.street_address}
+                </Typography>
+              </a>
             </Stack>
           )}
           {store.phone && (

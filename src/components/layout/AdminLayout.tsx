@@ -3,6 +3,10 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
 import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { useQueryGetComplaints } from '@/functions/database/complaints';
+import { useQueryGetPendingContactSubmissions } from '@/functions/database/contact';
+import { useQueryGetContentReports } from '@/functions/database/content-reports';
+
 import { alpha } from '@mui/material/styles';
 
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -41,8 +45,6 @@ import {
   AppBar as MuiAppBar,
   Tooltip,
 } from '@mui/material';
-import { useQueryGetComplaints } from '@/functions/database/complaints.ts';
-import { useQueryGetPendingContactSubmissions } from '@/functions/database/contact';
 
 type SidebarLinkType = {
   label: string;
@@ -61,7 +63,10 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
 
   const { data: complaintsData } = useQueryGetComplaints();
+  const { data: contentReportsData } = useQueryGetContentReports();
   const { data: contactData } = useQueryGetPendingContactSubmissions();
+
+  const reportsTotal = (complaintsData?.length || 0) + (contentReportsData?.length || 0);
 
   const navGroups: NavGroup[] = [
     {
@@ -90,7 +95,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/complaints',
           icon: <FeedbackIcon fontSize="small" />,
           view: EnumLevelsAdmin.COMPLAINTS_AR,
-          badge: complaintsData?.length,
+          badge: reportsTotal,
         },
         {
           label: 'Contact',
