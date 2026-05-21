@@ -71,3 +71,23 @@ export const useGlobalAdminPaginationContact = () => {
   const [paginationModel, setPaginationModel] = useAtom(globalAdminPaginationContact);
   return { paginationModel, setPaginationModel };
 };
+
+// ─── Content reports (store / wiki / faq / other) ─────────────────────────────
+
+const globalAdminFilterContentReports = atom<GridFilterModel>();
+
+export const useGlobalAdminFilterContentReports = () => {
+  const [filterModel, setFilterModel] = useAtom(globalAdminFilterContentReports);
+  const searchResult = filterModel?.quickFilterValues?.join(' ') || '';
+  return { filterModel, setFilterModel, searchResult };
+};
+
+const globalAdminPaginationContentReports = atom({
+  page: 1,
+  pageSize: 25,
+});
+
+export const useGlobalAdminPaginationContentReports = () => {
+  const [paginationModel, setPaginationModel] = useAtom(globalAdminPaginationContentReports);
+  return { paginationModel, setPaginationModel };
+};

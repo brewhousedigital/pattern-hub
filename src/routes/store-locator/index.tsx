@@ -26,6 +26,8 @@ import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ClearIcon from '@mui/icons-material/Clear';
 
+import { StoreReportIssue } from '@/components/StoreReportIssue';
+
 import {
   Alert,
   Box,
@@ -547,15 +549,18 @@ function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance
       }}
     >
       <CardContent sx={{ pb: '12px !important' }}>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 0.5 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
           <Typography variant="body2" fontWeight={700}>
             {store.name}
           </Typography>
-          {distance && (
-            <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600, flexShrink: 0, ml: 1 }}>
-              {distance}
-            </Typography>
-          )}
+          <Stack direction="row" sx={{ alignItems: 'center', gap: 0.75, flexShrink: 0, ml: 1 }}>
+            {distance && (
+              <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600 }}>
+                {distance}
+              </Typography>
+            )}
+            <StoreReportIssue store={store} />
+          </Stack>
         </Stack>
 
         {store.description && (
