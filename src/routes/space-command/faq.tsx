@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetAllFAQ, useMutationDeleteFAQ, type TypeFAQItem } from '@/functions/database/faq';
 import { AdminFAQEditorModal } from '@/components/admin/AdminFAQEditorModal';
@@ -13,6 +13,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import { Box, Typography, Card, CardContent, IconButton, Tooltip, Skeleton, Alert, Stack } from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
+import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/faq')({
   component: RouteComponent,
@@ -28,7 +29,9 @@ function RouteComponent() {
   const canEdit = checkAccess(EnumLevelsAdmin.FAQ_AU);
   const canDelete = checkAccess(EnumLevelsAdmin.FAQ_AD);
 
-  const { data: faqs, isLoading, isError } = useQueryGetAllFAQ();
+  const [isDeleteLoading, setIsDeleteLoading] = React.useState(false);
+
+  const { data: faqs, isPending, isError, refetch } = useQueryGetAllFAQ();
   const deleteFaq = useMutationDeleteFAQ();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -44,11 +47,19 @@ function RouteComponent() {
     setDialogOpen(true);
   }
 
-  function handleDelete(id: string, title: string) {
+  const handleDelete = async (id: string, title: string) => {
     if (confirm(`Delete '${title}'?`)) {
-      deleteFaq.mutate(id);
+      try {
+        setIsDeleteLoading(true);
+        await deleteFaq.mutateAsync(id);
+        await refetch();
+      } catch (error: any) {
+        enqueueSnackbar(`Unable to delete FAQ item: ${error.message}`, { variant: 'error' });
+      }
+
+      setIsDeleteLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -79,7 +90,7 @@ function RouteComponent() {
         </Alert>
       )}
 
-      {isLoading ? (
+      {isPending ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} variant="rounded" height={80} />
@@ -102,6 +113,7 @@ function RouteComponent() {
 
                     <Tooltip title="Delete">
                       <IconButton
+                        loading={isDeleteLoading}
                         size="small"
                         color="error"
                         onClick={() => handleDelete(faq.id, faq.title)}
