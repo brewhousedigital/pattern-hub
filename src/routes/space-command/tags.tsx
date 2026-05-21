@@ -7,10 +7,17 @@ import { useAtom, atom } from 'jotai';
 import {
   useQueryAdminTagStats,
   useQueryAdminTagStatsPaginated,
+  useQueryGetTagHierarchy,
+  TAG_HIERARCHY_QUERY_KEY,
   ADMIN_TAG_STATS_QUERY_KEY,
   ADMIN_TAG_STATS_PAGINATED_QUERY_KEY,
+  setTagParent,
+  clearTagParent,
+  getAncestors,
+  getDescendants,
   type TypeTagStat,
   type TypePatternRecord,
+  type TypeTagHierarchyRecord,
 } from '@/functions/database/tags';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
@@ -23,6 +30,10 @@ import MergeIcon from '@mui/icons-material/Merge';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ListIcon from '@mui/icons-material/List';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import SyncIcon from '@mui/icons-material/Sync';
 
 import {
   Box,
@@ -51,6 +62,10 @@ import {
   Checkbox,
   Snackbar,
   Divider,
+  Collapse,
+  ToggleButton,
+  ToggleButtonGroup,
+  Autocomplete,
 } from '@mui/material';
 import { DataGrid, type GridColDef, type GridSortModel } from '@mui/x-data-grid';
 
@@ -118,6 +133,8 @@ async function processSequentially<T>(
   }
 }
 
+// ─── Progress Dialog ──────────────────────────────────────────────────────────
+
 interface ProgressDialogProps {
   open: boolean;
   title: string;
@@ -134,7 +151,6 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
-
       <DialogContent>
         {error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -149,16 +165,13 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Processing {completed} of {total} records…
             </Typography>
-
             <LinearProgress variant="determinate" value={pct} sx={{ height: 8, borderRadius: 4 }} />
-
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
               {pct}% — records are sent one after the other to avoid overloading the server
             </Typography>
           </>
         )}
       </DialogContent>
-
       <DialogActions>
         <Button onClick={onClose} disabled={!done && !error}>
           {done || error ? 'Close' : 'Running…'}
@@ -168,12 +181,15 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
   );
 }
 
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+
 interface ConfirmDialogProps {
   open: boolean;
   type: OperationType;
   tag: string;
   newTag?: string;
   affectedCount: number;
+  childTags?: string[];
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -184,14 +200,14 @@ const operationMeta: Record<OperationType, { color: 'error' | 'warning' | 'info'
   merge: { color: 'info', verb: 'Merge' },
 };
 
-function ConfirmDialog({ open, type, tag, newTag, affectedCount, onConfirm, onCancel }: ConfirmDialogProps) {
+function ConfirmDialog({ open, type, tag, newTag, affectedCount, childTags, onConfirm, onCancel }: ConfirmDialogProps) {
   const meta = operationMeta[type];
 
   const description = {
     delete: (
       <>
-        Remove <strong>"{tag}"</strong> from {affectedCount} pattern
-        {affectedCount !== 1 ? 's' : ''}. This cannot be undone.
+        Remove <strong>"{tag}"</strong> from {affectedCount} pattern{affectedCount !== 1 ? 's' : ''}. This cannot be
+        undone.
       </>
     ),
     rename: (
@@ -214,16 +230,26 @@ function ConfirmDialog({ open, type, tag, newTag, affectedCount, onConfirm, onCa
         <WarningAmberIcon color={meta.color} />
         Confirm {meta.verb}
       </DialogTitle>
-
       <DialogContent>
-        <Alert severity={meta.color} sx={{ mb: 0 }}>
+        <Alert severity={meta.color} sx={{ mb: childTags && childTags.length > 0 ? 1.5 : 0 }}>
           {description}
         </Alert>
-      </DialogContent>
 
+        {childTags && childTags.length > 0 && (
+          <Alert severity="warning" icon={<AccountTreeIcon />}>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+              {childTags.length} child tag{childTags.length !== 1 ? 's' : ''} will become orphaned:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {childTags.map((t) => (
+                <Chip key={t} label={t} size="small" variant="outlined" sx={{ fontFamily: 'monospace' }} />
+              ))}
+            </Box>
+          </Alert>
+        )}
+      </DialogContent>
       <DialogActions>
         <Button onClick={onCancel}>Cancel</Button>
-
         <Button onClick={onConfirm} variant="contained" color={meta.color} autoFocus>
           {meta.verb}
         </Button>
@@ -231,6 +257,277 @@ function ConfirmDialog({ open, type, tag, newTag, affectedCount, onConfirm, onCa
     </Dialog>
   );
 }
+
+// ─── Set Parent Dialog ────────────────────────────────────────────────────────
+
+interface SetParentDialogProps {
+  open: boolean;
+  /** The tag whose parent is being set (from the tags view). */
+  tag: TypeReadOnlyDatabaseItem | null;
+  /** All known tag names for the autocomplete option list. */
+  allTagNames: string[];
+  /** Current hierarchy records — used for descendants guard and current-parent lookup. */
+  hierarchy: TypeTagHierarchyRecord[];
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function SetParentDialog({ open, tag, allTagNames, hierarchy, onClose, onSaved }: SetParentDialogProps) {
+  const [selectedParent, setSelectedParent] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Current parent from the hierarchy table
+  const currentParent = useMemo(
+    () => (tag ? (hierarchy.find((h) => h.tag === tag.tag)?.parent_tag ?? null) : null),
+    [tag, hierarchy],
+  );
+
+  // Options: all tag names except self + descendants
+  const options = useMemo(() => {
+    if (!tag) return [];
+    const descendants = new Set(getDescendants(tag.tag, hierarchy));
+    return allTagNames.filter((name) => name !== tag.tag && !descendants.has(name));
+  }, [tag, allTagNames, hierarchy]);
+
+  // Pre-fill with current parent when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedParent(currentParent);
+      setError(null);
+    }
+  }, [open, currentParent]);
+
+  const handleSave = async () => {
+    if (!tag) return;
+    setSaving(true);
+    setError(null);
+    try {
+      if (selectedParent) {
+        await setTagParent(tag.tag, selectedParent);
+      } else {
+        await clearTagParent(tag.tag);
+      }
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <AccountTreeOutlinedIcon color="primary" fontSize="small" />
+        Set Parent for "{tag?.tag}"
+      </DialogTitle>
+      <DialogContent>
+        {currentParent && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Current parent: <strong>{currentParent}</strong>
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ py: 2 }}>
+          <Autocomplete<string>
+            options={options}
+            value={selectedParent}
+            onChange={(_, v) => setSelectedParent(v)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Parent tag (leave blank to make this a root tag)"
+                size="small"
+                placeholder="Search tags…"
+              />
+            )}
+            sx={{ mt: 0.5 }}
+          />
+        </Box>
+
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Descendants of "{tag?.tag}" are excluded to prevent circular references.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        {currentParent && (
+          <Button
+            color="warning"
+            onClick={async () => {
+              setSelectedParent(null);
+              setSaving(true);
+              setError(null);
+              try {
+                await clearTagParent(tag!.tag);
+                onSaved();
+                onClose();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : String(e));
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            Clear Parent
+          </Button>
+        )}
+        <Button onClick={handleSave} variant="contained" loading={saving}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Tree View ────────────────────────────────────────────────────────────────
+
+interface TreeNodeProps {
+  tagName: string;
+  count: number;
+  hierarchy: TypeTagHierarchyRecord[];
+  allTagStats: Map<string, number>;
+  depth?: number;
+  onSetParent: (tagName: string) => void;
+}
+
+function TreeNode({ tagName, count, hierarchy, allTagStats, depth = 0, onSetParent }: TreeNodeProps) {
+  const [open, setOpen] = useState(depth < 2);
+  const children = hierarchy.filter((h) => h.parent_tag === tagName);
+
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          py: 0.5,
+          px: 1,
+          ml: depth * 3,
+          borderRadius: 1,
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        {children.length > 0 ? (
+          <IconButton size="small" onClick={() => setOpen((v) => !v)} sx={{ p: 0.25 }}>
+            <AccountTreeIcon fontSize="small" color={open ? 'primary' : 'action'} />
+          </IconButton>
+        ) : (
+          <Box sx={{ width: 28 }} />
+        )}
+
+        <Chip label={tagName} size="small" variant="outlined" sx={{ fontFamily: 'monospace' }} />
+
+        <Typography variant="caption" color="text.secondary">
+          {count} pattern{count !== 1 ? 's' : ''}
+        </Typography>
+
+        {children.length > 0 && (
+          <Typography variant="caption" color="text.disabled">
+            · {children.length} child{children.length !== 1 ? 'ren' : ''}
+          </Typography>
+        )}
+
+        <Box sx={{ flex: 1 }} />
+
+        <Tooltip title="Set parent tag">
+          <IconButton size="small" onClick={() => onSetParent(tagName)}>
+            <AccountTreeOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      {children.length > 0 && (
+        <Collapse in={open}>
+          {children.map((child) => (
+            <TreeNode
+              key={child.tag}
+              tagName={child.tag}
+              count={allTagStats.get(child.tag) ?? 0}
+              hierarchy={hierarchy}
+              allTagStats={allTagStats}
+              depth={depth + 1}
+              onSetParent={onSetParent}
+            />
+          ))}
+        </Collapse>
+      )}
+    </Box>
+  );
+}
+
+function TagTreeView({
+  hierarchy,
+  tagStats,
+  onSetParent,
+}: {
+  hierarchy: TypeTagHierarchyRecord[];
+  tagStats: TypeTagStat[];
+  onSetParent: (tagName: string) => void;
+}) {
+  const childTagNames = new Set(hierarchy.map((h) => h.tag));
+  const allTagStatsMap = useMemo(() => new Map(tagStats.map((t) => [t.tag, t.count])), [tagStats]);
+
+  // Tags that appear in hierarchy as children but whose parent_tag exists in tag stats
+  const roots = tagStats.filter((t) => !childTagNames.has(t.tag));
+
+  // Orphaned: in hierarchy as a child but their parent_tag doesn't exist in tag stats
+  const allTagNames = new Set(tagStats.map((t) => t.tag));
+  const orphans = hierarchy.filter((h) => !allTagNames.has(h.parent_tag));
+
+  if (hierarchy.length === 0) {
+    return (
+      <Alert severity="info">
+        No parent/child relationships defined yet. Use "Set Parent" on any tag to start building the hierarchy.
+      </Alert>
+    );
+  }
+
+  return (
+    <Box>
+      {roots.map((root) => (
+        <TreeNode
+          key={root.tag}
+          tagName={root.tag}
+          count={root.count}
+          hierarchy={hierarchy}
+          allTagStats={allTagStatsMap}
+          depth={0}
+          onSetParent={onSetParent}
+        />
+      ))}
+
+      {orphans.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="caption" color="warning.main" fontWeight={600} sx={{ px: 1, display: 'block', mb: 0.5 }}>
+            Orphaned — parent tag no longer exists
+          </Typography>
+          {orphans.map((h) => (
+            <TreeNode
+              key={h.tag}
+              tagName={h.tag}
+              count={allTagStatsMap.get(h.tag) ?? 0}
+              hierarchy={hierarchy}
+              allTagStats={allTagStatsMap}
+              depth={0}
+              onSetParent={onSetParent}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+// ─── Rename / Merge Panel ─────────────────────────────────────────────────────
 
 interface RenameOrMergePanelProps {
   tagStats: TypeTagStat[];
@@ -242,12 +539,10 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
   const [fromTag, setFromTag] = useState('');
   const [toTag, setToTag] = useState('');
   const [mode, setMode] = useState<'rename' | 'merge'>('rename');
-
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
 
   const fromExists = tagStats.some((t) => t.tag === fromTag.trim());
   const toExists = tagStats.some((t) => t.tag === toTag.trim());
-
   const canSubmit = fromTag.trim() && toTag.trim() && fromTag.trim() !== toTag.trim() && fromExists;
 
   return (
@@ -296,14 +591,14 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {mode === 'rename'
-          ? 'Replaces the tag name across all patterns. The tag must already exist.'
+          ? 'Replaces the tag name across all patterns. Child relationships in the hierarchy are keyed on tag name — rename will update them automatically.'
           : 'Adds the target tag to all patterns that have the source tag, then removes the source tag.'}
       </Typography>
     </Paper>
   );
 }
 
-// Low-Use Cleanup Panel
+// ─── Low-Use Cleanup Panel ────────────────────────────────────────────────────
 
 interface CleanupPanelProps {
   tagStats: TypeTagStat[];
@@ -312,10 +607,8 @@ interface CleanupPanelProps {
 
 function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
-
   const [threshold, setThreshold] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-
   const candidates = tagStats.filter((t) => t.count <= threshold);
 
   const toggleAll = () => {
@@ -341,9 +634,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
         <Typography variant="subtitle1" fontWeight={600}>
           Low-Use Tag Cleanup
         </Typography>
-
         <Box sx={{ flex: 1 }} />
-
         <TextField
           label="Used ≤ N times"
           type="number"
@@ -365,8 +656,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
       ) : (
         <>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Found <strong>{candidates.length}</strong> tag
-            {candidates.length !== 1 ? 's' : ''} used {threshold} time
+            Found <strong>{candidates.length}</strong> tag{candidates.length !== 1 ? 's' : ''} used {threshold} time
             {threshold !== 1 ? 's or fewer' : ''}.
           </Alert>
 
@@ -420,8 +710,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
               disabled={selected.size === 0}
               onClick={() => onDeleteMany(Array.from(selected))}
             >
-              Delete {selected.size} selected tag
-              {selected.size !== 1 ? 's' : ''}
+              Delete {selected.size} selected tag{selected.size !== 1 ? 's' : ''}
             </Button>
           </Box>
         </>
@@ -430,23 +719,23 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
   );
 }
 
-// Main Page
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TagManagementPage = () => {
   const queryClient = useQueryClient();
 
-  // Full tag list — used by panels, header stats, and rename/merge validation.
   const { data: tagStats = [] } = useQueryAdminTagStats();
+  const { data: hierarchy = [], refetch: refetchHierarchy } = useQueryGetTagHierarchy();
 
   const { setIsFetchingPatterns } = useGlobalIsFetchingPatterns();
 
-  // ── All Tags table: server-side paginated search + sort ────────────────────
+  // ── All Tags table ─────────────────────────────────────────────────────────
   const [tagSearch, setTagSearch] = useState('');
   const debouncedSearch = useDebounce(tagSearch, 400);
   const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
+  const [tagViewMode, setTagViewMode] = useState<'list' | 'tree'>('list');
 
-  // Reset to first page whenever the search changes.
   useEffect(() => {
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
   }, [debouncedSearch]);
@@ -465,12 +754,24 @@ const TagManagementPage = () => {
     sortDir: (sortItem?.sort as 'asc' | 'desc') ?? 'desc',
   });
 
-  // Operation state
+  // ── Set Parent dialog ──────────────────────────────────────────────────────
+  const [setParentRow, setSetParentRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
+
+  // All known tag names (for the autocomplete options in SetParentDialog)
+  const allTagNames = useMemo(() => tagStats.map((t) => t.tag), [tagStats]);
+
+  const handleSetParentSaved = useCallback(() => {
+    refetchHierarchy();
+    queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
+  }, [refetchHierarchy, queryClient]);
+
+  // ── Operation state ────────────────────────────────────────────────────────
   const [pendingOp, setPendingOp] = useState<{
     type: OperationType;
     tag: string;
     newTag?: string;
     affectedCount: number;
+    childTags?: string[];
   } | null>(null);
 
   const [progress, setProgress] = useState<{
@@ -484,7 +785,6 @@ const TagManagementPage = () => {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  // Core operation executor
   const executeOperation = useCallback(
     async (op: { type: OperationType; tag: string; newTag?: string }) => {
       const { type, tag, newTag } = op;
@@ -503,7 +803,6 @@ const TagManagementPage = () => {
       });
 
       try {
-        // Start the spinner
         setIsFetchingPatterns(true);
 
         const records = await fetchPatternsWithTag(tag);
@@ -530,10 +829,26 @@ const TagManagementPage = () => {
             await pocketbase.collection('patterns').update(record.id, { tags: updatedTags });
             await sleep(BATCH_DELAY_MS);
           },
-          (completed, total) => {
-            setProgress((p) => ({ ...p, completed, total }));
-          },
+          (completed, total) => setProgress((p) => ({ ...p, completed, total })),
         );
+
+        // If renaming, also update the hierarchy table so parent_tag references stay correct
+        if (type === 'rename' && newTag) {
+          const childRecord = hierarchy.find((h) => h.tag === tag);
+          const parentRecord = hierarchy.find((h) => h.parent_tag === tag);
+          if (childRecord) {
+            await pocketbase.collection('tag_hierarchy').update(childRecord.id, { tag: newTag });
+          }
+          if (parentRecord) {
+            // Update all children that referenced the old name as their parent
+            const childrenOfRenamed = hierarchy.filter((h) => h.parent_tag === tag);
+            for (const c of childrenOfRenamed) {
+              await pocketbase.collection('tag_hierarchy').update(c.id, { parent_tag: newTag });
+              await sleep(500);
+            }
+          }
+          refetchHierarchy();
+        }
 
         setProgress((p) => ({ ...p, done: true }));
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
@@ -543,27 +858,29 @@ const TagManagementPage = () => {
         setProgress((p) => ({ ...p, error: msg }));
       }
 
-      // Re-enable the button
       setIsFetchingPatterns(false);
     },
-    [queryClient],
+    [queryClient, hierarchy, refetchHierarchy],
   );
 
-  // Initiate operations (show preview count first)
-  const startOp = useCallback(async (type: OperationType, tag: string, newTag?: string) => {
-    setIsFetchingPatterns(true);
+  const startOp = useCallback(
+    async (type: OperationType, tag: string, newTag?: string) => {
+      setIsFetchingPatterns(true);
 
-    const records = await fetchPatternsWithTag(tag);
+      const records = await fetchPatternsWithTag(tag);
 
-    setPendingOp({ type, tag, newTag, affectedCount: records.length });
+      // For delete: warn about direct children that will become orphaned
+      const childTags = type === 'delete' ? hierarchy.filter((h) => h.parent_tag === tag).map((h) => h.tag) : [];
 
-    setIsFetchingPatterns(false);
-  }, []);
+      setPendingOp({ type, tag, newTag, affectedCount: records.length, childTags });
+      setIsFetchingPatterns(false);
+    },
+    [hierarchy],
+  );
 
   const startDeleteMany = useCallback(async (tags: string[]) => {
     // For bulk cleanup, sum affected records — fetched one at a time
     let total = 0;
-
     setIsFetchingPatterns(true);
 
     for (const t of tags) {
@@ -572,15 +889,8 @@ const TagManagementPage = () => {
       await sleep(BATCH_DELAY_MS);
     }
 
-    setPendingOp({
-      type: 'delete',
-      tag: `${tags.length} tags`,
-      affectedCount: total,
-      newTag: undefined,
-    });
-    // Store tags for later execution
+    setPendingOp({ type: 'delete', tag: `${tags.length} tags`, affectedCount: total });
     (window as any).__pendingDeleteTags = tags;
-
     setIsFetchingPatterns(false);
   }, []);
 
@@ -590,7 +900,6 @@ const TagManagementPage = () => {
     setPendingOp(null);
 
     if (op.tag.endsWith(' tags') && (window as any).__pendingDeleteTags) {
-      // Bulk cleanup path
       const tags: string[] = (window as any).__pendingDeleteTags;
       delete (window as any).__pendingDeleteTags;
 
@@ -609,15 +918,11 @@ const TagManagementPage = () => {
           await processSequentially(
             records,
             async (r) => {
-              await pocketbase.collection('patterns').update(r.id, {
-                tags: r.tags.filter((t) => t !== tag),
-              });
+              await pocketbase.collection('patterns').update(r.id, { tags: r.tags.filter((t) => t !== tag) });
             },
             () => {},
           );
-
           await sleep(BATCH_DELAY_MS);
-
           completed++;
           setProgress((p) => ({ ...p, completed, total: tags.length }));
         }
@@ -629,66 +934,156 @@ const TagManagementPage = () => {
         setProgress((p) => ({ ...p, error: msg }));
       }
     } else {
-      await executeOperation({
-        type: op.type,
-        tag: op.tag,
-        newTag: op.newTag,
-      });
+      await executeOperation({ type: op.type, tag: op.tag, newTag: op.newTag });
     }
   }, [pendingOp, executeOperation, queryClient]);
+
+  // ── Sync Ancestor Tags ─────────────────────────────────────────────────────
+  const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
+
+  const runSyncAncestors = useCallback(async () => {
+    setSyncConfirmOpen(false);
+
+    const allPatterns: TypePatternRecord[] = [];
+    let page = 1;
+    while (true) {
+      const result = await pocketbase
+        .collection('patterns')
+        .getList<TypePatternRecord>(page, 500, { fields: 'id,tags' });
+      allPatterns.push(...result.items);
+      if (allPatterns.length >= result.totalItems) break;
+      page++;
+    }
+
+    const needsUpdate = allPatterns.filter((p) => {
+      if (!Array.isArray(p.tags)) return false;
+      for (const tag of p.tags) {
+        const ancestors = getAncestors(tag, hierarchy);
+        if (ancestors.some((a) => !p.tags.includes(a))) return true;
+      }
+      return false;
+    });
+
+    if (needsUpdate.length === 0) {
+      setToast('All patterns already have up-to-date ancestor tags.');
+      return;
+    }
+
+    setProgress({
+      open: true,
+      title: `Syncing ancestor tags across ${needsUpdate.length} patterns…`,
+      completed: 0,
+      total: needsUpdate.length,
+      done: false,
+    });
+
+    try {
+      setIsFetchingPatterns(true);
+
+      await processSequentially(
+        needsUpdate,
+        async (pattern) => {
+          const newTags = [...pattern.tags];
+          for (const tag of [...pattern.tags]) {
+            for (const a of getAncestors(tag, hierarchy)) {
+              if (!newTags.includes(a)) newTags.push(a);
+            }
+          }
+          await pocketbase.collection('patterns').update(pattern.id, { tags: newTags });
+          await sleep(BATCH_DELAY_MS);
+        },
+        (completed, total) => setProgress((p) => ({ ...p, completed, total })),
+      );
+
+      setProgress((p) => ({ ...p, done: true }));
+      queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setProgress((p) => ({ ...p, error: msg }));
+    } finally {
+      setIsFetchingPatterns(false);
+    }
+  }, [hierarchy, queryClient]);
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);
 
-  // ── All Tags DataGrid column definitions ──────────────────────────────────
-  const tagColumns: GridColDef<TypeReadOnlyDatabaseItem>[] = [
-    {
-      field: 'tag',
-      headerName: 'Tag',
-      flex: 1,
-      sortable: true,
-      disableColumnMenu: true,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          variant={params.row.count === 1 ? 'outlined' : 'filled'}
-          color={params.row.count === 1 ? 'warning' : 'default'}
-          sx={{ fontFamily: 'monospace' }}
-        />
-      ),
-    },
-    {
-      field: 'count',
-      headerName: 'Patterns',
-      width: 110,
-      sortable: true,
-      disableColumnMenu: true,
-      align: 'right',
-      headerAlign: 'right',
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 80,
-      sortable: false,
-      filterable: false,
-      disableColumnMenu: true,
-      align: 'right',
-      headerAlign: 'right',
-      renderCell: (params) => (
-        <Tooltip title="Delete this tag globally">
-          <IconButton size="small" onClick={() => startOp('delete', params.row.tag)} color="error">
-            <DeleteOutlineIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      ),
-    },
-  ];
+  // ── DataGrid column definitions ────────────────────────────────────────────
+  const tagColumns: GridColDef<TypeReadOnlyDatabaseItem>[] = useMemo(
+    () => [
+      {
+        field: 'tag',
+        headerName: 'Tag',
+        flex: 1,
+        sortable: true,
+        disableColumnMenu: true,
+        renderCell: (params) => (
+          <Chip
+            label={params.value}
+            size="small"
+            variant={params.row.count === 1 ? 'outlined' : 'filled'}
+            color={params.row.count === 1 ? 'warning' : 'default'}
+            sx={{ fontFamily: 'monospace' }}
+          />
+        ),
+      },
+      {
+        field: 'parent',
+        headerName: 'Parent',
+        width: 160,
+        sortable: false,
+        disableColumnMenu: true,
+        renderCell: (params) => {
+          const parentName = hierarchy.find((h) => h.tag === params.row.tag)?.parent_tag;
+          return parentName ? (
+            <Chip label={parentName} size="small" variant="outlined" color="primary" sx={{ fontFamily: 'monospace' }} />
+          ) : (
+            <Typography variant="caption" color="text.disabled">
+              —
+            </Typography>
+          );
+        },
+      },
+      {
+        field: 'count',
+        headerName: 'Patterns',
+        width: 110,
+        sortable: true,
+        disableColumnMenu: true,
+        align: 'right',
+        headerAlign: 'right',
+      },
+      {
+        field: 'actions',
+        headerName: 'Actions',
+        width: 110,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        align: 'right',
+        headerAlign: 'right',
+        renderCell: (params) => (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Set parent tag">
+              <IconButton size="small" onClick={() => setSetParentRow(params.row)}>
+                <AccountTreeOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete this tag globally">
+              <IconButton size="small" onClick={() => startOp('delete', params.row.tag)} color="error">
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ),
+      },
+    ],
+    [hierarchy, startOp],
+  );
 
   return (
     <>
-      {/* Header */}
       <AdminHeaderContainer
         title="Tag Management"
         subtitle={
@@ -697,7 +1092,6 @@ const TagManagementPage = () => {
               Manage tags across all patterns. Operations are processed one after the other to protect server
               performance.
             </Typography>
-
             <Box sx={{ mt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
               <Chip
                 label={`${uniqueTagCount.toLocaleString()} unique tags`}
@@ -712,12 +1106,18 @@ const TagManagementPage = () => {
                 variant="outlined"
                 size="small"
               />
+              <Chip
+                label={`${hierarchy.length} hierarchy relationships`}
+                color="info"
+                variant="outlined"
+                size="small"
+                icon={<AccountTreeIcon fontSize="small" />}
+              />
             </Box>
           </>
         }
       />
 
-      {/* Rename / Merge Panel */}
       <Box sx={{ mb: 3 }}>
         <RenameOrMergePanel
           tagStats={tagStats}
@@ -726,72 +1126,144 @@ const TagManagementPage = () => {
         />
       </Box>
 
-      {/* Cleanup Panel */}
       <Box sx={{ mb: 3 }}>
         <CleanupPanel tagStats={tagStats} onDeleteMany={startDeleteMany} />
       </Box>
 
       <Divider sx={{ my: 3 }} />
 
-      {/* All Tags — server-side paginated DataGrid */}
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
+      {/* All Tags header row */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1, minWidth: 120 }}>
           All Tags
         </Typography>
 
-        <TextField
-          placeholder="Search tags…"
-          value={tagSearch}
-          onChange={(e) => setTagSearch(e.target.value)}
-          size="small"
-          sx={{ width: 260 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        {tagViewMode === 'list' && (
+          <TextField
+            placeholder="Search tags…"
+            value={tagSearch}
+            onChange={(e) => setTagSearch(e.target.value)}
+            size="small"
+            sx={{ width: 260 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        )}
 
-        <Button size="small" onClick={() => refetchTagPage()} variant="outlined" color="inherit">
-          Refresh
-        </Button>
+        <ToggleButtonGroup value={tagViewMode} exclusive onChange={(_, v) => v && setTagViewMode(v)} size="small">
+          <ToggleButton value="list">
+            <Tooltip title="List view">
+              <ListIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value="tree">
+            <Tooltip title="Tree view">
+              <AccountTreeIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
+
+        {tagViewMode === 'list' && (
+          <Button size="small" onClick={() => refetchTagPage()} variant="outlined" color="inherit">
+            Refresh
+          </Button>
+        )}
+
+        {/*<Tooltip title="Walk all patterns and add any missing ancestor tags based on the current hierarchy. Safe to run multiple times.">
+          <Button
+            size="small"
+            variant="outlined"
+            color="info"
+            startIcon={<SyncIcon fontSize="small" />}
+            onClick={() => setSyncConfirmOpen(true)}
+          >
+            Sync Ancestor Tags
+          </Button>
+        </Tooltip>*/}
       </Box>
 
-      {tagPageError && (
+      {tagPageError && tagViewMode === 'list' && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Failed to load tags. Check your PocketBase connection.
         </Alert>
       )}
 
-      <Paper variant="outlined" sx={{ height: 560 }}>
-        <DataGrid
-          loading={tagPageFetching}
-          rows={tagPageData?.items ?? []}
-          columns={tagColumns}
-          rowCount={tagPageData?.totalItems ?? 0}
-          paginationMode="server"
-          sortingMode="server"
-          filterMode="server"
-          pagination
-          paginationModel={tagPaginationModel}
-          onPaginationModelChange={setTagPaginationModel}
-          sortModel={tagSortModel}
-          onSortModelChange={(model) => {
-            setTagSortModel(model.length ? model : [{ field: 'count', sort: 'desc' }]);
-            setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
-          }}
-          pageSizeOptions={[25, 50, 100]}
-          disableRowSelectionOnClick
-          density="compact"
-          sx={{ border: 'none' }}
-        />
-      </Paper>
+      {tagViewMode === 'list' && (
+        <Paper variant="outlined" sx={{ height: 560 }}>
+          <DataGrid
+            loading={tagPageFetching}
+            rows={tagPageData?.items ?? []}
+            columns={tagColumns}
+            rowCount={tagPageData?.totalItems ?? 0}
+            paginationMode="server"
+            sortingMode="server"
+            filterMode="server"
+            pagination
+            paginationModel={tagPaginationModel}
+            onPaginationModelChange={setTagPaginationModel}
+            sortModel={tagSortModel}
+            onSortModelChange={(model) => {
+              setTagSortModel(model.length ? model : [{ field: 'count', sort: 'desc' }]);
+              setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
+            }}
+            pageSizeOptions={[25, 50, 100]}
+            disableRowSelectionOnClick
+            density="compact"
+            sx={{ border: 'none' }}
+          />
+        </Paper>
+      )}
 
-      {/* Confirm Dialog */}
+      {tagViewMode === 'tree' && (
+        <Paper variant="outlined" sx={{ p: 2, minHeight: 200, maxHeight: 600, overflowY: 'auto' }}>
+          <TagTreeView
+            hierarchy={hierarchy}
+            tagStats={tagStats}
+            onSetParent={(name) => {
+              const row = tagPageData?.items.find((r) => r.tag === name) ?? { id: name, tag: name, count: 0 };
+              setSetParentRow(row as TypeReadOnlyDatabaseItem);
+            }}
+          />
+        </Paper>
+      )}
+
+      {/* Set Parent Dialog */}
+      <SetParentDialog
+        open={!!setParentRow}
+        tag={setParentRow}
+        allTagNames={allTagNames}
+        hierarchy={hierarchy}
+        onClose={() => setSetParentRow(null)}
+        onSaved={handleSetParentSaved}
+      />
+
+      {/* Sync Ancestor Tags confirmation */}
+      <Dialog open={syncConfirmOpen} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SyncIcon color="info" />
+          Sync Ancestor Tags
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="info">
+            This will scan the database for all patterns, and automatically add any missing parent tags based on the
+            current tag list. Existing tags are not removed. Only missing ancestors are added.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSyncConfirmOpen(false)}>Cancel</Button>
+          <Button onClick={runSyncAncestors} variant="contained" color="info" startIcon={<SyncIcon />}>
+            Run Sync
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {pendingOp && (
         <ConfirmDialog
           open={true}
@@ -799,12 +1271,12 @@ const TagManagementPage = () => {
           tag={pendingOp.tag}
           newTag={pendingOp.newTag}
           affectedCount={pendingOp.affectedCount}
+          childTags={pendingOp.childTags}
           onConfirm={confirmOp}
           onCancel={() => setPendingOp(null)}
         />
       )}
 
-      {/* Progress Dialog */}
       <ProgressDialog
         open={progress.open}
         title={progress.title}
@@ -812,18 +1284,9 @@ const TagManagementPage = () => {
         total={progress.total}
         done={progress.done}
         error={progress.error}
-        onClose={() =>
-          setProgress({
-            open: false,
-            title: '',
-            completed: 0,
-            total: 0,
-            done: false,
-          })
-        }
+        onClose={() => setProgress({ open: false, title: '', completed: 0, total: 0, done: false })}
       />
 
-      {/* Toast */}
       <Snackbar
         open={!!toast}
         autoHideDuration={3500}

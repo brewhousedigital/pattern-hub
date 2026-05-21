@@ -1,5 +1,5 @@
 import React from 'react';
-import { Autocomplete, Chip, TextField } from '@mui/material';
+import { Autocomplete, Chip, TextField, Tooltip } from '@mui/material';
 
 type FancyAutocompleteProps = {
   label: string;
@@ -9,6 +9,12 @@ type FancyAutocompleteProps = {
   inputValue: string;
   onInputChange: (newInputValue: string) => void;
   freeSolo?: boolean;
+  /**
+   * Set of tag names that were auto-added as ancestors of a primary tag.
+   * These chips are rendered as outlined + dimmed with a ↑ prefix to indicate
+   * they are inherited and not directly chosen.
+   */
+  inheritedValues?: Set<string>;
 };
 
 export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
@@ -45,7 +51,23 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       renderValue={(value: readonly string[], getItemProps) =>
         value.map((option: string, index: number) => {
           const { key, ...itemProps } = getItemProps({ index });
-          return <Chip variant="outlined" label={option} key={key} {...itemProps} />;
+          const isInherited = props.inheritedValues?.has(option) ?? false;
+          const chip = (
+            <Chip
+              variant={isInherited ? 'outlined' : 'filled'}
+              label={isInherited ? `↑ ${option}` : option}
+              key={key}
+              sx={isInherited ? { opacity: 0.65, fontStyle: 'italic' } : undefined}
+              {...itemProps}
+            />
+          );
+          return isInherited ? (
+            <Tooltip key={key} title={`Auto-added ancestor tag`} placement="top">
+              {chip}
+            </Tooltip>
+          ) : (
+            chip
+          );
         })
       }
       renderInput={(params) => <TextField {...params} variant="filled" label={props.label} />}

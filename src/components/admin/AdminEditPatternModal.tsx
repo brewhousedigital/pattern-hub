@@ -6,7 +6,7 @@ import {
   generatePbImagePatternKeyRef,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { useQueryAdminTagStats, useQueryGetAllTags } from '@/functions/database/tags';
+import { useQueryAdminTagStats, useQueryGetAllTags, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
@@ -126,6 +126,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const { refetch: refetchTagManagementStats } = useQueryAdminTagStats();
 
+  const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
+
   const { searchResult } = useGlobalAdminFilter();
   const { paginationModel } = useGlobalAdminPagination();
 
@@ -163,8 +165,77 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [designHeightUnit, setDesignHeightUnit] = React.useState(String(props?.design_height_unit) || 'in');
 
   // Tags
-  const [tagValue, setTagValue] = React.useState<string[] | undefined>(props?.tags || []);
+  const [tagValue, setTagValue] = React.useState<string[]>(props?.tags || []);
   const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
+
+  /**
+   * Set of tag names that were auto-added as ancestors of a primary tag.
+   * Used to render inherited chips differently and to clean them up when their
+   * primary tag is removed.
+   */
+  const [inheritedTags, setInheritedTags] = React.useState<Set<string>>(new Set());
+
+  // Once the hierarchy loads, mark which existing pattern tags are ancestors of
+  // other tags already in the set so they render as inherited chips.
+  React.useEffect(() => {
+    const current = props?.tags ?? [];
+    if (current.length === 0) return;
+    const inherited = new Set<string>();
+    for (const tag of current) {
+      for (const ancestor of getAncestors(tag, hierarchyData)) {
+        if (current.includes(ancestor)) inherited.add(ancestor);
+      }
+    }
+    setInheritedTags(inherited);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hierarchyData.length]);
+
+  /**
+   * Smart tag change handler.
+   * When a new tag is added, its full ancestor chain is auto-added as inherited tags.
+   * When a primary tag is removed, its orphaned ancestors are cleaned up.
+   */
+  const handleTagChange = React.useCallback(
+    (newValue: string[]) => {
+      const added = newValue.filter((t) => !tagValue.includes(t));
+      const removed = tagValue.filter((t) => !newValue.includes(t));
+
+      let result = [...newValue];
+      const newInherited = new Set(inheritedTags);
+
+      // Auto-add ancestors for any newly added tags
+      for (const tag of added) {
+        newInherited.delete(tag); // Explicitly added → promote to primary
+        for (const ancestor of getAncestors(tag, hierarchyData)) {
+          if (!result.includes(ancestor)) {
+            result.push(ancestor);
+            newInherited.add(ancestor);
+          }
+        }
+      }
+
+      // When a primary tag is removed, clean up orphaned inherited ancestors
+      for (const tag of removed) {
+        if (!newInherited.has(tag)) {
+          // It was primary — check each of its ancestors
+          for (const ancestor of getAncestors(tag, hierarchyData)) {
+            const stillNeeded = result
+              .filter((t) => !newInherited.has(t) && t !== tag)
+              .some((primary) => getAncestors(primary, hierarchyData).includes(ancestor));
+            if (!stillNeeded) {
+              result = result.filter((t) => t !== ancestor);
+              newInherited.delete(ancestor);
+            }
+          }
+        }
+        newInherited.delete(tag);
+      }
+
+      setTagValue(result);
+      setInheritedTags(newInherited);
+    },
+    [tagValue, inheritedTags, hierarchyData],
+  );
 
   // Authors
   const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
@@ -910,9 +981,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                 freeSolo
                 data={allTagsData}
                 value={tagValue}
-                onChange={setTagValue}
+                onChange={handleTagChange}
                 inputValue={autoCompleteInputValue}
                 onInputChange={setAutoCompleteInputValue}
+                inheritedValues={inheritedTags}
               />
 
               {/*<Typography variant="body2" color="text.secondary">
