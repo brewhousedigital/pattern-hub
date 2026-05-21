@@ -91,3 +91,15 @@ export const useGlobalAdminPaginationContentReports = () => {
   const [paginationModel, setPaginationModel] = useAtom(globalAdminPaginationContentReports);
   return { paginationModel, setPaginationModel };
 };
+
+// ─── Store locator admin ──────────────────────────────────────────────────────
+
+const globalAdminPaginationStoreLocator = atom({
+  page: 0,
+  pageSize: 25,
+});
+
+export const useGlobalAdminPaginationStoreLocator = () => {
+  const [paginationModel, setPaginationModel] = useAtom(globalAdminPaginationStoreLocator);
+  return { paginationModel, setPaginationModel };
+};

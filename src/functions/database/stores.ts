@@ -46,6 +46,38 @@ export const useQueryGetAllStores = () => {
   });
 };
 
+export type TypeStoreAdminQueryParams = {
+  /** 0-indexed page (MUI DataGrid convention; +1 before sending to PocketBase). */
+  page: number;
+  pageSize: number;
+  nameSearch: string;
+  addressSearch: string;
+  phoneSearch: string;
+};
+
+export const useQueryGetStoresByPagination = (params: TypeStoreAdminQueryParams) => {
+  return useQuery({
+    queryKey: ['GetStoresByPagination', params],
+    queryFn: async (): Promise<{ items: TypeStoreLocation[]; totalItems: number }> => {
+      const safe = (v: string) => v.trim().replace(/"/g, '\\"');
+      const filters: string[] = [];
+      if (params.nameSearch.trim()) filters.push(`name ~ "${safe(params.nameSearch)}"`);
+      if (params.addressSearch.trim()) filters.push(`street_address ~ "${safe(params.addressSearch)}"`);
+      if (params.phoneSearch.trim()) filters.push(`phone ~ "${safe(params.phoneSearch)}"`);
+
+      const result = await pocketbase
+        .collection('store_locations')
+        .getList<TypeStoreLocation>(params.page + 1, params.pageSize, {
+          sort: 'name',
+          ...(filters.length ? { filter: filters.join(' && ') } : {}),
+        });
+
+      return { items: result.items, totalItems: result.totalItems };
+    },
+    placeholderData: (prev) => prev,
+  });
+};
+
 // ─── Admin mutations ──────────────────────────────────────────────────────────
 
 export const useMutationCreateStore = () => {
