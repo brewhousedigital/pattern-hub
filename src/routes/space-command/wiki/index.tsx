@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   useQueryGetAllWikiCategories,
   useQueryGetAllWikiPages,
@@ -14,6 +14,7 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { generateSEO } from '@/functions/utilities/seo';
 
+import FileOpenIcon from '@mui/icons-material/FileOpen';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -300,6 +301,17 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
                   <Chip label={page.slug} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 18 }} />
 
                   <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
+                    <Tooltip title="View page">
+                      <IconButton
+                        size="small"
+                        component={Link as any}
+                        to={`/wiki/${cat.slug}/${page.slug}`}
+                        target="_blank"
+                      >
+                        <FileOpenIcon sx={{ fontSize: '0.9rem' }} />
+                      </IconButton>
+                    </Tooltip>
+
                     <Tooltip title="Edit page">
                       <span>
                         <IconButton size="small" disabled={!props.canEdit} onClick={() => props.onEditPage(page)}>
@@ -334,6 +346,12 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
         sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '10px !important', height: 'auto', p: 1 }}
       >
         <Box sx={{ display: 'flex', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="View Category">
+            <IconButton size="small" component={Link as any} to={`/wiki/${cat.slug}`} target="_blank">
+              <FileOpenIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Add page to this category">
             <span>
               <IconButton size="small" disabled={!props.canAdd} onClick={props.onAddPage}>
