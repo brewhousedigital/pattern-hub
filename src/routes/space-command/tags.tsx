@@ -417,7 +417,7 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ tagName, count, hierarchy, allTagStats, depth = 0, onSetParent }: TreeNodeProps) {
-  const [open, setOpen] = useState(depth < 2);
+  const [open, setOpen] = useState(true);
   const children = hierarchy.filter((h) => h.parent_tag === tagName);
 
   return (
