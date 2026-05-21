@@ -154,15 +154,12 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700 }}>
-        {isEdit ? 'Edit Store' : 'Add Store'}
-      </DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700 }}>{isEdit ? 'Edit Store' : 'Add Store'}</DialogTitle>
 
       <Divider />
 
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 3 }}>
-
           {/* Name */}
           <TextField
             label="Store Name"
@@ -208,9 +205,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                           edge="end"
                           size="small"
                         >
-                          {geocodeLoading
-                            ? <CircularProgress size={16} />
-                            : <SearchIcon fontSize="small" />}
+                          {geocodeLoading ? <CircularProgress size={16} /> : <SearchIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </InputAdornment>
@@ -257,7 +252,15 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                 fullWidth
                 variant="filled"
                 inputProps={{ step: 'any' }}
-                slotProps={{ input: { startAdornment: <InputAdornment position="start"><MyLocationIcon sx={{ fontSize: 16, color: 'text.disabled' }} /></InputAdornment> } }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <MyLocationIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 6 }}>
@@ -303,12 +306,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
             onChange={(_, newValue) => setTags(newValue as string[])}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
-                <Chip
-                  label={option}
-                  size="small"
-                  {...getTagProps({ index })}
-                  key={option}
-                />
+                <Chip label={option} size="small" {...getTagProps({ index })} key={option} />
               ))
             }
             renderInput={(params) => (
@@ -317,7 +315,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                 variant="filled"
                 label="Product Tags"
                 placeholder="Type a tag and press Enter"
-                helperText='e.g. "yarn", "fabric", "glass", "quilting"'
+                helperText='e.g. "supplies", "restoration", "classes"'
               />
             )}
           />
