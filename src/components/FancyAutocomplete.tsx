@@ -15,6 +15,13 @@ type FancyAutocompleteProps = {
    * they are inherited and not directly chosen.
    */
   inheritedValues?: Set<string>;
+  /** Shows a loading spinner inside the dropdown while fetching. */
+  loading?: boolean;
+  /**
+   * Disables MUI's built-in client-side filter and sets context-aware
+   * noOptionsText. Use when options come from a server-side search query.
+   */
+  serverSide?: boolean;
 };
 
 export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
@@ -27,6 +34,16 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       options={props.data?.map((option) => option.tag)}
       getOptionLabel={(option) => String(option)}
       freeSolo={props.freeSolo}
+      filterOptions={props.serverSide ? (x) => x : undefined}
+      loading={props.loading}
+      loadingText="Searching…"
+      noOptionsText={
+        props.serverSide
+          ? props.inputValue
+            ? 'No tags found'
+            : 'Type to search tags'
+          : undefined
+      }
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
         props.onChange(newValue);

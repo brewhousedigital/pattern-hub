@@ -6,7 +6,7 @@ import {
   generatePbImagePatternKeyRef,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { useQueryAdminTagStats, useQueryGetAllTags, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
+import { useQueryAdminTagStats, useQueryAdminTagStatsPaginated, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
@@ -111,12 +111,18 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const canEdit = checkAccess(EnumLevelsAdmin.PATTERN_AU);
   const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_AD);
 
-  const {
-    isPending: isPendingTags,
-    isError: isErrorTags,
-    data: allTagsData,
-    refetch: refetchTags,
-  } = useQueryGetAllTags();
+  // Tag autocomplete input — declared here so the debounced value can drive the
+  // server-side search query below (hook call order must stay consistent).
+  const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
+  const debouncedTagSearch = useDebounce(autoCompleteInputValue, 400);
+
+  const { data: tagSearchData, isFetching: tagSearchFetching } = useQueryAdminTagStatsPaginated({
+    page: 0,
+    pageSize: 50,
+    search: debouncedTagSearch,
+    sortField: 'count',
+    sortDir: 'desc',
+  });
   const {
     isPending: isPendingManualAuthors,
     isError: isErrorManualAuthors,
@@ -166,7 +172,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   // Tags
   const [tagValue, setTagValue] = React.useState<string[]>(props?.tags || []);
-  const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
 
   /**
    * Set of tag names that were auto-added as ancestors of a primary tag.
@@ -257,8 +262,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     data: authorData,
   } = useQueryUsersByPagination(1, debouncedAuthorSearch);
 
-  const isLoading = isPendingTags || isPendingManualAuthors || isPendingAuthorData;
-  const isError = isErrorTags || isErrorManualAuthors || isErrorAuthorData;
+  const isLoading = isPendingManualAuthors || isPendingAuthorData;
+  const isError = isErrorManualAuthors || isErrorAuthorData;
 
   // SVG Upload
   const [file, setFile] = React.useState<File | undefined>();
@@ -423,7 +428,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       }
 
       await refetchPatterns();
-      await refetchTags();
       await refetchManualAuthors();
       await refetchTagManagementStats();
       handleClose();
@@ -979,12 +983,14 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               <FancyAutocomplete
                 label="Tags"
                 freeSolo
-                data={allTagsData}
+                serverSide
+                data={tagSearchData?.items ?? []}
                 value={tagValue}
                 onChange={handleTagChange}
                 inputValue={autoCompleteInputValue}
                 onInputChange={setAutoCompleteInputValue}
                 inheritedValues={inheritedTags}
+                loading={tagSearchFetching}
               />
 
               {/*<Typography variant="body2" color="text.secondary">
