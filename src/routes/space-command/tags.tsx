@@ -1133,20 +1133,6 @@ const TagManagementPage = () => {
         }
       />
 
-      <Box sx={{ mb: 3 }}>
-        <RenameOrMergePanel
-          tagStats={tagStats}
-          onRename={(from, to) => startOp('rename', from, to)}
-          onMerge={(from, into) => startOp('merge', from, into)}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <CleanupPanel tagStats={tagStats} onDeleteMany={startDeleteMany} />
-      </Box>
-
-      <Divider sx={{ my: 3 }} />
-
       {/* All Tags header row */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1, minWidth: 120 }}>
@@ -1308,6 +1294,18 @@ const TagManagementPage = () => {
         message={toast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+
+      <Box sx={{ mb: 3, mt: 3 }}>
+        <RenameOrMergePanel
+          tagStats={tagStats}
+          onRename={(from, to) => startOp('rename', from, to)}
+          onMerge={(from, into) => startOp('merge', from, into)}
+        />
+      </Box>
+
+      <Box sx={{ mb: 3 }}>
+        <CleanupPanel tagStats={tagStats} onDeleteMany={startDeleteMany} />
+      </Box>
     </>
   );
 };
