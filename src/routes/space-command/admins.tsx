@@ -95,7 +95,7 @@ function RouteComponent() {
         actionNode={<AddAdminModel />}
       />
 
-      <Box sx={{ height: 400, width: '100%' }}>
+      <Box sx={{ height: 'calc(100svh - 200px)', width: '100%' }}>
         <DataGrid
           autosizeOnMount
           loading={isPending || isFetching}
