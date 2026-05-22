@@ -23,6 +23,7 @@ import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-com
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
 import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-command/pattern-key-mgmt'
 import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
+import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
@@ -114,6 +115,11 @@ const SpaceCommandPatternKeyMgmtRoute =
 const SpaceCommandMapRoute = SpaceCommandMapRouteImport.update({
   id: '/map',
   path: '/map',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const SpaceCommandKanbanRoute = SpaceCommandKanbanRouteImport.update({
+  id: '/kanban',
+  path: '/kanban',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/profile/edit': typeof ProfileEditRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/profile/edit': typeof ProfileEditRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/profile/edit': typeof ProfileEditRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
+  '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/space-command/admins'
     | '/space-command/faq'
+    | '/space-command/kanban'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/space-command/admins'
     | '/space-command/faq'
+    | '/space-command/kanban'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/space-command/admins'
     | '/space-command/faq'
+    | '/space-command/kanban'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -561,6 +573,13 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/space-command/map'
       preLoaderRoute: typeof SpaceCommandMapRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/kanban': {
+      id: '/space-command/kanban'
+      path: '/kanban'
+      fullPath: '/space-command/kanban'
+      preLoaderRoute: typeof SpaceCommandKanbanRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/faq': {
@@ -709,6 +728,7 @@ declare module '@tanstack/react-router' {
 interface SpaceCommandRouteRouteChildren {
   SpaceCommandAdminsRoute: typeof SpaceCommandAdminsRoute
   SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
+  SpaceCommandKanbanRoute: typeof SpaceCommandKanbanRoute
   SpaceCommandMapRoute: typeof SpaceCommandMapRoute
   SpaceCommandPatternKeyMgmtRoute: typeof SpaceCommandPatternKeyMgmtRoute
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
@@ -727,6 +747,7 @@ interface SpaceCommandRouteRouteChildren {
 const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandAdminsRoute: SpaceCommandAdminsRoute,
   SpaceCommandFaqRoute: SpaceCommandFaqRoute,
+  SpaceCommandKanbanRoute: SpaceCommandKanbanRoute,
   SpaceCommandMapRoute: SpaceCommandMapRoute,
   SpaceCommandPatternKeyMgmtRoute: SpaceCommandPatternKeyMgmtRoute,
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,

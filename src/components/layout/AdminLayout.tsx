@@ -25,6 +25,7 @@ import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded';
 
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import {
@@ -127,6 +128,17 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/tags',
           icon: <LocalOfferRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.TAG_AR,
+        },
+      ],
+    },
+    {
+      groupLabel: 'Tools',
+      links: [
+        {
+          label: 'Project Planning',
+          href: '/space-command/kanban',
+          icon: <ViewKanbanRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.KANBAN_AR,
         },
       ],
     },
