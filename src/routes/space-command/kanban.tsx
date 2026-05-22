@@ -10,6 +10,7 @@ import {
   type DragStartEvent,
   type DragOverEvent,
   type DragEndEvent,
+  type DraggableAttributes,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -114,8 +115,18 @@ function RouteComponent() {
   const canDelete = checkAccess(EnumLevelsAdmin.KANBAN_AD);
 
   // ── Server data ────────────────────────────────────────────────────────────
-  const { data: rawColumns = [], isLoading: loadingCols, isError: errorCols, refetch: refetchColumns } = useQueryGetKanbanColumns();
-  const { data: rawItems = [], isLoading: loadingItems, isError: errorItems, refetch: refetchItems } = useQueryGetAllKanbanItems();
+  const {
+    data: rawColumns = [],
+    isLoading: loadingCols,
+    isError: errorCols,
+    refetch: refetchColumns,
+  } = useQueryGetKanbanColumns();
+  const {
+    data: rawItems = [],
+    isLoading: loadingItems,
+    isError: errorItems,
+    refetch: refetchItems,
+  } = useQueryGetAllKanbanItems();
 
   // ── Local state (for optimistic updates) ──────────────────────────────────
   const [columns, setColumns] = useState<TypeKanbanColumn[]>([]);
@@ -187,13 +198,9 @@ function RouteComponent() {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
 
-  const activeDragType = activeDragId
-    ? columns.some((c) => c.id === activeDragId)
-      ? 'column'
-      : 'item'
-    : null;
-  const activeDragItem = activeDragType === 'item' ? items.find((i) => i.id === activeDragId) ?? null : null;
-  const activeDragColumn = activeDragType === 'column' ? columns.find((c) => c.id === activeDragId) ?? null : null;
+  const activeDragType = activeDragId ? (columns.some((c) => c.id === activeDragId) ? 'column' : 'item') : null;
+  const activeDragItem = activeDragType === 'item' ? (items.find((i) => i.id === activeDragId) ?? null) : null;
+  const activeDragColumn = activeDragType === 'column' ? (columns.find((c) => c.id === activeDragId) ?? null) : null;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -278,7 +285,9 @@ function RouteComponent() {
     }
 
     const snapshot = [...items];
-    setItems((prev) => prev.map((i) => (i.id === activeIdStr ? { ...i, position: newPos, column_id: targetColId } : i)));
+    setItems((prev) =>
+      prev.map((i) => (i.id === activeIdStr ? { ...i, position: newPos, column_id: targetColId } : i)),
+    );
     setLoadingItemIds((prev) => new Set(prev).add(activeIdStr));
 
     updateItemMut.mutate(
@@ -373,7 +382,8 @@ function RouteComponent() {
         subtitle={
           columns.length > 0 ? (
             <Typography variant="body2" color="text.secondary">
-              {columns.length} column{columns.length !== 1 ? 's' : ''} · {items.length} item{items.length !== 1 ? 's' : ''}
+              {columns.length} column{columns.length !== 1 ? 's' : ''} · {items.length} item
+              {items.length !== 1 ? 's' : ''}
             </Typography>
           ) : undefined
         }
@@ -506,9 +516,7 @@ function RouteComponent() {
 
           {/* Drag overlay */}
           <DragOverlay>
-            {activeDragItem && (
-              <KanbanCardStatic item={activeDragItem} isLoading={false} onClick={() => {}} />
-            )}
+            {activeDragItem && <KanbanCardStatic item={activeDragItem} isLoading={false} onClick={() => {}} />}
             {activeDragColumn && (
               <KanbanColumnStatic
                 column={activeDragColumn}
@@ -668,7 +676,11 @@ function KanbanColumn({
           {/* Column menu */}
           {(canEdit || canDelete) && (
             <>
-              <IconButton size="small" sx={{ p: 0.25, color: 'text.disabled' }} onClick={(e) => setMenuAnchor(e.currentTarget)}>
+              <IconButton
+                size="small"
+                sx={{ p: 0.25, color: 'text.disabled' }}
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+              >
                 <MoreVertIcon fontSize="small" />
               </IconButton>
               <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
@@ -804,16 +816,15 @@ type KanbanCardStaticProps = {
   item: TypeKanbanItem;
   isLoading: boolean;
   onClick: () => void;
-  dragProps?: { attributes: Record<string, unknown>; listeners: Record<string, unknown> | undefined };
+  //dragProps?: { attributes: Record<string, unknown>; listeners: Record<string, unknown> | undefined };
+  dragProps?: { attributes: DraggableAttributes; listeners: Record<string, unknown> | undefined };
 };
 
 function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardStaticProps) {
   const priorityColor = PRIORITY_COLORS[item.priority ?? 'none'];
   const labels = Array.isArray(item.labels) ? item.labels : [];
   const isOverdue = item.due_date ? new Date(item.due_date) < new Date(new Date().toDateString()) : false;
-  const isDueToday = item.due_date
-    ? new Date(item.due_date).toDateString() === new Date().toDateString()
-    : false;
+  const isDueToday = item.due_date ? new Date(item.due_date).toDateString() === new Date().toDateString() : false;
 
   return (
     <Paper
@@ -838,7 +849,7 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
             <IconButton
               size="small"
               sx={{ cursor: 'grab', color: 'text.disabled', p: 0.25, '&:active': { cursor: 'grabbing' } }}
-              {...(dragProps.attributes as Record<string, unknown>)}
+              {...dragProps.attributes}
               {...(dragProps.listeners as Record<string, unknown>)}
             >
               <DragIndicatorIcon sx={{ fontSize: 14 }} />
@@ -894,9 +905,7 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
             )}
             {item.priority !== 'none' && (
               <Tooltip title={`Priority: ${PRIORITY_LABELS[item.priority ?? 'none']}`} disableInteractive>
-                <Box
-                  sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: priorityColor, flexShrink: 0 }}
-                />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: priorityColor, flexShrink: 0 }} />
               </Tooltip>
             )}
             {isLoading && <CircularProgress size={12} thickness={5} />}
@@ -948,7 +957,13 @@ function KanbanColumnStatic({ column, items, rawCount }: KanbanColumnStaticProps
           <Chip
             label={rawCount}
             size="small"
-            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, bgcolor: 'action.hover', '.MuiChip-label': { px: 0.75 } }}
+            sx={{
+              height: 18,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              bgcolor: 'action.hover',
+              '.MuiChip-label': { px: 0.75 },
+            }}
           />
         </Box>
         <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
