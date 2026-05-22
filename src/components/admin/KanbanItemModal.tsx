@@ -190,21 +190,6 @@ export const KanbanItemModal = ({
   // ── View mode ──────────────────────────────────────────────────────────────
   const viewContent = (
     <DialogContent sx={{ pt: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Labels */}
-      {labels.length > 0 && (
-        <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-          {labels.map((l) => (
-            <Chip
-              key={l}
-              label={l}
-              size="small"
-              variant="outlined"
-              sx={{ textTransform: 'capitalize', fontSize: '0.7rem' }}
-            />
-          ))}
-        </Stack>
-      )}
-
       {/* Meta row */}
       <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap' }}>
         {dueDate && (
@@ -402,11 +387,28 @@ export const KanbanItemModal = ({
             {isCreate ? 'New Item' : editMode ? 'Edit Item' : (item?.title ?? 'Item')}
           </span>
 
-          {!isCreate && !editMode && (
-            <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
-              Priority: {PRIORITY_LABELS[priority]}
-            </Typography>
-          )}
+          <Stack direction="row" sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            {!isCreate && !editMode && (
+              <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
+                Priority: {PRIORITY_LABELS[priority]}
+              </Typography>
+            )}
+
+            {/* Labels */}
+            {labels.length > 0 && (
+              <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                {labels.map((l) => (
+                  <Chip
+                    key={l}
+                    label={l}
+                    size="small"
+                    variant="outlined"
+                    sx={{ textTransform: 'capitalize', fontSize: '0.7rem' }}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
         </Box>
 
         {!isCreate && !editMode && canEdit && (
