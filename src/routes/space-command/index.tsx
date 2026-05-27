@@ -1,6 +1,5 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { AdminTagsTable } from '@/components/admin/AdminTagsTable';
 import { AdminAuthorsTable } from '@/components/admin/AdminAuthorsTable';
 import { AdminDashboardUsersCard } from '@/components/admin/AdminDashboardUsersCard';
 import { AdminDashboardComplaintsCard } from '@/components/admin/AdminDashboardComplaintsCard';
@@ -8,6 +7,7 @@ import { AdminDashboardPatternsCard } from '@/components/admin/AdminDashboardPat
 import { AdminDashboardFAQCard } from '@/components/admin/AdminDashboardFAQCard';
 import { AdminDashboardWikiCard } from '@/components/admin/AdminDashboardWikiCard';
 import { AdminDashboardMapCard } from '@/components/admin/AdminDashboardMapCard';
+import { AdminDashboardTagsCard } from '@/components/admin/AdminDashboardTagsCard';
 
 import { Box, Divider, Grid, Typography } from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
@@ -18,22 +18,6 @@ export const Route = createFileRoute('/space-command/')({
     meta: generateSEO('Admin', '', match.pathname),
   }),
 });
-
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <Typography
-    sx={{
-      fontSize: '0.68rem',
-      fontWeight: 700,
-      letterSpacing: '0.09em',
-      textTransform: 'uppercase',
-      color: 'text.disabled',
-      mb: 1.25,
-      display: 'block',
-    }}
-  >
-    {children}
-  </Typography>
-);
 
 function RouteComponent() {
   return (
@@ -59,6 +43,10 @@ function RouteComponent() {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <AdminDashboardTagsCard />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AdminDashboardComplaintsCard />
         </Grid>
 
@@ -79,11 +67,7 @@ function RouteComponent() {
 
       {/* Data tables */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <AdminTagsTable />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 12 }}>
           <AdminAuthorsTable />
         </Grid>
       </Grid>

@@ -17,7 +17,6 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
-import { Route as SpaceCommandTestRouteImport } from './routes/space-command/test'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
 import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
@@ -83,11 +82,6 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
 const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
   id: '/users',
   path: '/users',
-  getParentRoute: () => SpaceCommandRouteRoute,
-} as any)
-const SpaceCommandTestRoute = SpaceCommandTestRouteImport.update({
-  id: '/test',
-  path: '/test',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const SpaceCommandTagsRoute = SpaceCommandTagsRouteImport.update({
@@ -250,7 +244,6 @@ export interface FileRoutesByFullPath {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
-  '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -286,7 +279,6 @@ export interface FileRoutesByTo {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
-  '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides': typeof GuidesIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -324,7 +316,6 @@ export interface FileRoutesById {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
-  '/space-command/test': typeof SpaceCommandTestRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides/': typeof GuidesIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -363,7 +354,6 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/store-locator'
     | '/space-command/tags'
-    | '/space-command/test'
     | '/space-command/users'
     | '/guides/'
     | '/profile/'
@@ -399,7 +389,6 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/store-locator'
     | '/space-command/tags'
-    | '/space-command/test'
     | '/space-command/users'
     | '/guides'
     | '/profile'
@@ -436,7 +425,6 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/store-locator'
     | '/space-command/tags'
-    | '/space-command/test'
     | '/space-command/users'
     | '/guides/'
     | '/profile/'
@@ -531,13 +519,6 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/space-command/users'
       preLoaderRoute: typeof SpaceCommandUsersRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/test': {
-      id: '/space-command/test'
-      path: '/test'
-      fullPath: '/space-command/test'
-      preLoaderRoute: typeof SpaceCommandTestRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/tags': {
@@ -734,7 +715,6 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
   SpaceCommandStoreLocatorRoute: typeof SpaceCommandStoreLocatorRoute
   SpaceCommandTagsRoute: typeof SpaceCommandTagsRoute
-  SpaceCommandTestRoute: typeof SpaceCommandTestRoute
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
   SpaceCommandComplaintsReviewedRoute: typeof SpaceCommandComplaintsReviewedRoute
@@ -753,7 +733,6 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
   SpaceCommandStoreLocatorRoute: SpaceCommandStoreLocatorRoute,
   SpaceCommandTagsRoute: SpaceCommandTagsRoute,
-  SpaceCommandTestRoute: SpaceCommandTestRoute,
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
   SpaceCommandComplaintsReviewedRoute: SpaceCommandComplaintsReviewedRoute,
