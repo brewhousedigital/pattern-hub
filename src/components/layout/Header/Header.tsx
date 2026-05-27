@@ -94,6 +94,10 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
+      {/*<MuiLink component={Link} to="/sets" sx={activeLinkStyles('/sets')}>
+        Sets
+      </MuiLink>*/}
+
       {/*<MuiLink component={Link} to="/collections" sx={activeLinkStyles('/collections')}>
         Collections
       </MuiLink>*/}

@@ -8,6 +8,7 @@ import { AdminDashboardFAQCard } from '@/components/admin/AdminDashboardFAQCard'
 import { AdminDashboardWikiCard } from '@/components/admin/AdminDashboardWikiCard';
 import { AdminDashboardMapCard } from '@/components/admin/AdminDashboardMapCard';
 import { AdminDashboardTagsCard } from '@/components/admin/AdminDashboardTagsCard';
+import { AdminDashboardSetsCard } from '@/components/admin/AdminDashboardSetsCard';
 
 import { Box, Divider, Grid, Typography } from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
@@ -60,6 +61,10 @@ function RouteComponent() {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AdminDashboardMapCard />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <AdminDashboardSetsCard />
         </Grid>
       </Grid>
 

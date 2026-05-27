@@ -55,7 +55,11 @@ export type TypeLevelsAdmin =
   | 'KANBAN_AC'
   | 'KANBAN_AR'
   | 'KANBAN_AU'
-  | 'KANBAN_AD';
+  | 'KANBAN_AD'
+  | 'SETS_AC'
+  | 'SETS_AR'
+  | 'SETS_AU'
+  | 'SETS_AD';
 
 // NAME_TYPE_CRUD
 // A - Admin
@@ -106,6 +110,10 @@ export const EnumLevelsAdmin = {
   KANBAN_AR: 'KANBAN_AR',
   KANBAN_AU: 'KANBAN_AU',
   KANBAN_AD: 'KANBAN_AD',
+  SETS_AC: 'SETS_AC',
+  SETS_AR: 'SETS_AR',
+  SETS_AU: 'SETS_AU',
+  SETS_AD: 'SETS_AD',
 } as const;
 
 // This is the data from the pocketbase user and admin table
