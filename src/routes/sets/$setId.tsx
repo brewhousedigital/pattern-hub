@@ -10,18 +10,7 @@ import { alpha } from '@mui/material/styles';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 
-import {
-  Alert,
-  Box,
-  Card,
-  Chip,
-  Container,
-  Grid,
-  Link as MuiLink,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Card, Chip, Container, Grid, Link as MuiLink, Skeleton, Stack, Typography } from '@mui/material';
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -143,10 +132,17 @@ function RouteComponent() {
 // ─── SetPatternCard ───────────────────────────────────────────────────────────
 
 function SetPatternCard({ pattern }: { pattern: TypePatternResponse }) {
-  const authors = pattern.expand?.authors?.map((a) => a.name).filter(Boolean).join(', ');
+  const authors = pattern.expand?.authors
+    ?.map((a) => a.name)
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    <Link to="/" search={{ patternId: pattern.id }} style={{ textDecoration: 'none', display: 'block' }}>
+    <Link
+      to="/"
+      search={{ id: [pattern.id], patternId: pattern.id }}
+      style={{ textDecoration: 'none', display: 'block' }}
+    >
       <Card
         elevation={0}
         sx={{
