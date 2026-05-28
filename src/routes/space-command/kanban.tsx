@@ -725,6 +725,25 @@ function KanbanColumn({
           </Box>
         )}
 
+        {canAdd && !column.is_done && (
+          <>
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => onAddItem(column.id)}
+              sx={{
+                m: 1,
+                mb: -0.25,
+                py: 0.75,
+                color: 'text.disabled',
+                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+              }}
+            >
+              Add item
+            </Button>
+          </>
+        )}
+
         {/* Items */}
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 0.75, flex: 1 }}>
