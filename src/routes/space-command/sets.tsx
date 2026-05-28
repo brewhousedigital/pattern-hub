@@ -588,7 +588,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
       </Typography>
 
       {selected.length === 0 ? (
-        <Typography variant="body2" color="text.disabled" sx={{ mb: 2, fontStyle: 'italic' }}>
+        <Typography variant="body2" color="text.disabled" sx={{ mb: 2, fontStyle: 'italic', height: 220 }}>
           No patterns added yet. Search below to add some.
         </Typography>
       ) : (
@@ -597,7 +597,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
           disablePadding
           sx={{
             mb: 2,
-            maxHeight: 220,
+            height: 220,
             overflowY: 'auto',
             borderRadius: 1,
             border: '1px solid',
