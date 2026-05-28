@@ -40,6 +40,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/wiki/')({
   component: RouteComponent,
@@ -102,15 +103,29 @@ function RouteComponent() {
     const pagesInCat = pages.filter((p) => p.category === cat.id);
     const warning = pagesInCat.length > 0 ? ` This will also delete ${pagesInCat.length} page(s) inside it.` : '';
     if (!confirm(`Delete category "${cat.name}"?${warning}`)) return;
-    await deleteCategory.mutateAsync(cat.id);
-    refetchCats();
-    refetchPages();
+
+    try {
+      await deleteCategory.mutateAsync(cat.id);
+      await refetchCats();
+      await refetchPages();
+    } catch (error: any) {
+      enqueueSnackbar(`Unable to delete the category: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+        variant: 'error',
+      });
+    }
   }
 
   async function handleDeletePage(page: TypeWikiPage) {
     if (!confirm(`Delete page "${page.title}"?`)) return;
-    await deletePage.mutateAsync(page.id);
-    refetchPages();
+
+    try {
+      await deletePage.mutateAsync(page.id);
+      await refetchPages();
+    } catch (error) {
+      enqueueSnackbar(`Unable to delete the page: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+        variant: 'error',
+      });
+    }
   }
 
   const isLoading = catsLoading || pagesLoading;
