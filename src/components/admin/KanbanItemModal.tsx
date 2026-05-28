@@ -335,6 +335,17 @@ export const KanbanItemModal = ({
           )}
         />
 
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          Tips on writing good feature specifications:{' '}
+          <a
+            href="https://remimercier.com/how-to-write-better-specifications/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            https://remimercier.com/how-to-write-better-specifications/
+          </a>
+        </Typography>
+
         {/* Description */}
         <GenericMarkdownEditor content={description} setContent={setDescription} characterLimit={5000} />
       </DialogContent>
