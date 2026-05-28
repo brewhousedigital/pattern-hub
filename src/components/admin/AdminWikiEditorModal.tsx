@@ -287,7 +287,8 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
 
         {/* Internal link syntax hint */}
         <Alert severity="info" sx={{ fontSize: '0.8rem', py: 0.5, '& .MuiAlert-message': { py: 0.5 } }}>
-          <strong>Internal links:</strong> use{' '}
+          <strong>Internal links:</strong>
+          <br /> use{' '}
           <Box
             component="code"
             sx={{
@@ -298,6 +299,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
               bgcolor: alpha('#1976d2', 0.08),
             }}
           >
+            {'[[category-slug]]'} or {` `}
             {'[[category-slug/page-slug]]'}
           </Box>{' '}
           in the content to link to another wiki page.
