@@ -41,12 +41,19 @@ export function slugifyHeading(text: string): string {
  * ReactMarkdown can handle it via the custom `a` renderer.
  */
 function resolveWikiLinks(markdown: string, wikiPages: TypeWikiPage[]): string {
-  return markdown.replace(/\[\[([^\]/\]]+)\/([^\]]+)\]\]/g, (_, catSlug, pageSlug) => {
-    const page = wikiPages.find(
-      (p) => p.expand?.category?.slug === catSlug && p.slug === pageSlug.trim(),
-    );
-    const label = page?.title ?? `${catSlug}/${pageSlug.trim()}`;
-    return `[${label}](/wiki/${catSlug}/${pageSlug.trim()})`;
+  return markdown.replace(/\[\[([^\]/]+)(?:\/([^\]]+))?\]\]/g, (_, catSlug, pageSlug) => {
+    if (pageSlug !== undefined) {
+      const slug = pageSlug.trim();
+      const page = wikiPages.find((p) => p.expand?.category?.slug === catSlug && p.slug === slug);
+      const label = page?.title ?? `${catSlug}/${slug}`;
+      return `[${label}](/wiki/${catSlug}/${slug})`;
+    }
+
+    // category-only link
+    const cat = catSlug.trim();
+    const page = wikiPages.find((p) => p.expand?.category?.slug === cat);
+    const label = page?.expand?.category?.name ?? cat;
+    return `[${label}](/wiki/${cat})`;
   });
 }
 
@@ -68,10 +75,7 @@ export const WikiMarkdownWrapper = ({ children, wikiPages = [] }: WikiMarkdownWr
               if (parts.length === 3) {
                 const [, categorySlug, pageSlug] = parts;
                 return (
-                  <Link
-                    to="/wiki/$categorySlug/$pageSlug"
-                    params={{ categorySlug, pageSlug }}
-                  >
+                  <Link to="/wiki/$categorySlug/$pageSlug" params={{ categorySlug, pageSlug }}>
                     {linkChildren}
                   </Link>
                 );
