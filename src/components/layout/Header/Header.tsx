@@ -110,6 +110,10 @@ const ExtraLinks = () => {
         FAQ
       </MuiLink>
 
+      <MuiLink component={Link} to="/wiki" sx={activeLinkStyles('/wiki')}>
+        Wiki
+      </MuiLink>
+
       {/*<MuiLink component={Link} to="/store-locator" sx={activeLinkStyles('/store-locator')}>
         Store Locator
       </MuiLink>*/}

@@ -6,7 +6,12 @@ import {
   generatePbImagePatternKeyRef,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { useQueryAdminTagStats, useQueryAdminTagStatsPaginated, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
+import {
+  useQueryAdminTagStats,
+  useQueryAdminTagStatsPaginated,
+  useQueryGetTagHierarchy,
+  getAncestors,
+} from '@/functions/database/tags';
 import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
 import { useQueryUsersByPagination } from '@/functions/database/users';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
@@ -394,7 +399,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       }
 
       if (file && previewUrl) {
-        payload.pattern_file = await sanitizeSvgFile(file);
+        const sanitizedFile = await sanitizeSvgFile(file);
+        payload.pattern_file = sanitizedFile;
+        payload.pattern_file_size = sanitizedFile.size;
       }
 
       if (externalFile && previewExternalUrl) {

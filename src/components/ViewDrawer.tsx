@@ -18,6 +18,7 @@ import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
 import { BorderedCard } from '@/components/cards/BorderedCard';
 import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
+import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
@@ -243,6 +244,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <CompactRow label="Uploaded by">{viewData?.uploaded_by || 'Not Listed'}</CompactRow>
               <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '—'}</CompactRow>
               <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '—'}</CompactRow>
+
+              {viewData?.pattern_file_size && (
+                <CompactRow label="File size">{formatByteSize(viewData?.pattern_file_size)}</CompactRow>
+              )}
 
               <Box sx={{ px: 1, pt: 2, pb: 1 }}>
                 <PatternReportIssue viewData={viewData} key={patternId} />
