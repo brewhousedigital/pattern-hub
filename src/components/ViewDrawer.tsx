@@ -245,8 +245,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '—'}</CompactRow>
               <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '—'}</CompactRow>
 
-              {viewData?.pattern_file_size && (
+              {viewData?.pattern_file_size ? (
                 <CompactRow label="File size">{formatByteSize(viewData?.pattern_file_size)}</CompactRow>
+              ) : (
+                <></>
               )}
 
               <Box sx={{ px: 1, pt: 2, pb: 1 }}>
