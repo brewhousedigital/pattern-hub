@@ -120,6 +120,7 @@ export const HomepageSearchV3 = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const suppressNextFocusRef = useRef(false);
 
   const { mode, searchTerm } = useMemo(() => detectPrefixMode(inputValue), [inputValue]);
 
@@ -246,8 +247,16 @@ export const HomepageSearchV3 = ({
         setIsDropdownOpen(false);
       }
     }
+    function handleWindowBlur() {
+      suppressNextFocusRef.current = true;
+      setIsDropdownOpen(false);
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('blur', handleWindowBlur);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
   }, []);
 
   const handleBarClick = useCallback(() => {
@@ -255,6 +264,10 @@ export const HomepageSearchV3 = ({
   }, []);
 
   const handleFocus = useCallback(() => {
+    if (suppressNextFocusRef.current) {
+      suppressNextFocusRef.current = false;
+      return;
+    }
     setIsDropdownOpen(true);
   }, []);
 
