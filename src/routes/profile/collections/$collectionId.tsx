@@ -62,6 +62,9 @@ function RouteComponent() {
 
   const { isPending, isError, data: collection } = useQueryGetCollectionById(collectionId);
 
+  const patterns = collection?.expand?.patterns ?? [];
+  const patternIdArray = patterns.map((item) => item.id);
+
   // Follow state
   const isOwner = !!authData && !!collection && authData.id === collection.owner_id;
   const canFollow = !!authData && !isOwner;
@@ -200,7 +203,7 @@ function RouteComponent() {
             </Paper>
 
             {/* ─── Pattern list ─── */}
-            {!collection.expand?.patterns || collection.expand.patterns.length === 0 ? (
+            {!patterns || patterns.length === 0 ? (
               <Box
                 sx={{
                   py: 8,
@@ -217,9 +220,9 @@ function RouteComponent() {
               </Box>
             ) : (
               <Grid container spacing={2}>
-                {collection.expand.patterns.map((pattern, index) => (
+                {patterns.map((pattern) => (
                   <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pattern.id}>
-                    <CollectionPatternRow pattern={pattern} />
+                    <CollectionPatternRow pattern={pattern} patternIdArray={patternIdArray} />
                   </Grid>
                 ))}
               </Grid>
@@ -235,9 +238,10 @@ function RouteComponent() {
 
 type CollectionPatternRowProps = {
   pattern: TypePatternResponse;
+  patternIdArray: string[];
 };
 
-const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
+const CollectionPatternRow = ({ pattern, patternIdArray }: CollectionPatternRowProps) => {
   const imageSrc = generatePbImage(pattern);
   const svgDownloadSrc = generatePbImageSVG(pattern);
   const authorName = pattern.expand?.authors?.map((a) => a.name).join(', ') || pattern.author_manual?.join(', ') || '';
@@ -253,7 +257,7 @@ const CollectionPatternRow = ({ pattern }: CollectionPatternRowProps) => {
         <Box
           component={Link as any}
           to="/"
-          search={{ id: [pattern.id], patternId: pattern.id }}
+          search={{ id: patternIdArray, patternId: pattern.id }}
           sx={{
             backgroundColor: '#fff',
             borderRadius: 2,

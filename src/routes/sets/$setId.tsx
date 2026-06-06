@@ -28,6 +28,7 @@ function RouteComponent() {
   const { data: set, isPending, isError } = useQueryGetSetById(setId);
 
   const patterns = set?.expand?.patterns ?? [];
+  const patternIdArray = patterns.map((item) => item.id);
 
   return (
     <GeneralLayout>
@@ -117,7 +118,7 @@ function RouteComponent() {
               <Grid container spacing={2}>
                 {patterns.map((pattern) => (
                   <Grid key={pattern.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <SetPatternCard pattern={pattern} />
+                    <SetPatternCard pattern={pattern} patternIdArray={patternIdArray} />
                   </Grid>
                 ))}
               </Grid>
@@ -131,7 +132,7 @@ function RouteComponent() {
 
 // ─── SetPatternCard ───────────────────────────────────────────────────────────
 
-function SetPatternCard({ pattern }: { pattern: TypePatternResponse }) {
+function SetPatternCard({ pattern, patternIdArray }: { pattern: TypePatternResponse; patternIdArray: string[] }) {
   const authors = pattern.expand?.authors
     ?.map((a) => a.name)
     .filter(Boolean)
@@ -140,7 +141,7 @@ function SetPatternCard({ pattern }: { pattern: TypePatternResponse }) {
   return (
     <Link
       to="/"
-      search={{ id: [pattern.id], patternId: pattern.id }}
+      search={{ id: patternIdArray, patternId: pattern.id }}
       style={{ textDecoration: 'none', display: 'block' }}
     >
       <Card
