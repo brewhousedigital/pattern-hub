@@ -19,6 +19,23 @@ export const useQueryGetAllTags = () => {
   });
 };
 
+export const useQuerySearchTags = (searchTerm: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['SearchTags', searchTerm],
+    queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
+      const safe = searchTerm.trim().replace(/"/g, '\\"');
+      const result = await pocketbase.collection('tags').getList<TypeReadOnlyDatabaseItem>(1, 100, {
+        sort: '-count',
+        ...(safe ? { filter: `tag ~ "${safe}"` } : {}),
+      });
+      return result.items;
+    },
+    enabled,
+    staleTime: 1000 * 60 * 2,
+    placeholderData: (prev) => prev,
+  });
+};
+
 // ─── Tag hierarchy (regular collection, fully writable) ──────────────────────
 //
 // A separate `tag_hierarchy` regular collection stores parent/child
@@ -156,7 +173,7 @@ export interface TypeTagStat {
 async function fetchAllPatternTags(): Promise<TypePatternRecord[]> {
   const records: TypePatternRecord[] = [];
   let page = 1;
-  const perPage = 500;
+  const perPage = 100;
 
   while (true) {
     const result = await pocketbase

@@ -1,10 +1,9 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect, type KeyboardEvent } from 'react';
-import Fuse from 'fuse.js';
-import type { IFuseOptions } from 'fuse.js';
 import { type Token } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { useQueryGetAllTags } from '@/functions/database/tags';
-import { useQueryGetAllAuthors } from '@/functions/database/authors';
+import { useQuerySearchTags } from '@/functions/database/tags';
+import { useQuerySearchAuthors } from '@/functions/database/authors';
+import { useDebounce } from '@/functions/hooks/useDebounce';
 
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -92,13 +91,6 @@ function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string
   return { mode: 'tag', searchTerm: input };
 }
 
-const FUSE_OPTIONS: IFuseOptions<TypeReadOnlyDatabaseItem> = {
-  keys: ['tag'],
-  threshold: 0.35, // tighter than default — feels more precise
-  minMatchCharLength: 1,
-  shouldSort: true,
-};
-
 type TokenizedSearchBarProps = {
   placeholder?: string;
   sx?: object;
@@ -109,9 +101,6 @@ export const HomepageSearchV3 = ({
   sx,
 }: TokenizedSearchBarProps) => {
   const { tokens, addRawInput, removeToken, removeLastToken, clearTokens } = usePatternSearch();
-
-  const { data: arrayOfTags } = useQueryGetAllTags();
-  const { data: arrayOfAuthors } = useQueryGetAllAuthors();
 
   const [inputValue, setInputValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -124,41 +113,23 @@ export const HomepageSearchV3 = ({
 
   const { mode, searchTerm } = useMemo(() => detectPrefixMode(inputValue), [inputValue]);
 
-  /**
-   * Pick the correct data source based on prefix mode.
-   * Sorted by count descending before being handed to Fuse.
-   */
-  const dataSource = useMemo((): TypeReadOnlyDatabaseItem[] => {
-    let raw: TypeReadOnlyDatabaseItem[] | undefined = [];
+  // No debounce delay when the field is empty so the top-100 list appears immediately on focus.
+  const debouncedSearchTerm = useDebounce(searchTerm, searchTerm ? 600 : 0);
 
-    if (mode === 'author') {
-      raw = arrayOfAuthors;
-    } else {
-      raw = arrayOfTags;
-    }
+  const { data: tagResults = [], isFetching: tagsFetching } = useQuerySearchTags(
+    debouncedSearchTerm,
+    isDropdownOpen && mode === 'tag',
+  );
+  const { data: authorResults = [], isFetching: authorsFetching } = useQuerySearchAuthors(
+    debouncedSearchTerm,
+    isDropdownOpen && mode === 'author',
+  );
 
-    if (!raw) return [];
-
-    return [...raw].sort((a, b) => b.count - a.count);
-  }, [mode, arrayOfTags, arrayOfAuthors]);
-
-  const fuse = useMemo(() => new Fuse(dataSource, FUSE_OPTIONS), [dataSource]);
-
-  const dropdownItems = useMemo((): TypeReadOnlyDatabaseItem[] => {
-    if (mode === 'suppress') return [];
-
-    // No search term yet — show full sorted list
-    if (!searchTerm.trim()) return dataSource;
-
-    return fuse.search(searchTerm).map((r) => r.item);
-  }, [mode, searchTerm, dataSource, fuse]);
+  const dropdownItems: TypeReadOnlyDatabaseItem[] =
+    mode === 'suppress' ? [] : mode === 'author' ? authorResults : tagResults;
+  const isFetchingDropdown = tagsFetching || authorsFetching;
 
   const showDropdown = isDropdownOpen && dropdownItems.length > 0;
-
-  // Reset highlight when results change
-  useEffect(() => {
-    //setHighlightedIndex(-1);
-  }, [dropdownItems]);
 
   const commitInput = useCallback(
     (overrideValue?: string) => {
@@ -393,8 +364,8 @@ export const HomepageSearchV3 = ({
           {/* Context label */}
           <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
             <Typography variant="caption" color="text.secondary">
-              {mode === 'author' ? 'Authors' : 'Tags'} — {dropdownItems.length} result
-              {dropdownItems.length !== 1 ? 's' : ''}
+              {mode === 'author' ? 'Authors' : 'Tags'} —{' '}
+              {isFetchingDropdown ? '…' : searchTerm ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}` : 'Newest'}
             </Typography>
           </Box>
 
