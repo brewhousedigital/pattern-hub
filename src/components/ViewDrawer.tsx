@@ -302,9 +302,7 @@ const CompactRow = ({ label, children }: { label: string; children: React.ReactN
     <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontWeight: 500, flexShrink: 0 }}>
       {label}
     </Typography>
-    <Typography sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500, textAlign: 'right' }}>
-      {children}
-    </Typography>
+    <Box sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500, textAlign: 'right' }}>{children}</Box>
   </Box>
 );
 
