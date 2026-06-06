@@ -223,21 +223,23 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <PanelSectionTitle>Attribution</PanelSectionTitle>
 
               <CompactRow label="Designed by">
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
-                  {viewData?.expand?.authors?.map((author, i) => (
-                    <Link key={i} to="/profile" search={{ id: author.id }}>
-                      <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
-                        {author.name || 'Not Listed'}
-                      </Typography>
-                    </Link>
-                  ))}
+                <Stack direction="row" divider={<>·</>} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+                  {viewData?.expand?.authors?.map((author, index) => {
+                    return (
+                      <Link key={`designed-by-${index}`} to="/profile" search={{ id: author.id }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
+                          {author.name || 'Not Listed'}
+                        </Typography>
+                      </Link>
+                    );
+                  })}
 
                   {viewData?.author_manual?.map((author, i) => (
                     <Typography key={`manual-${i}`} sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500 }}>
                       {author || 'Not Listed'}
                     </Typography>
                   ))}
-                </Box>
+                </Stack>
               </CompactRow>
 
               <CompactRow label="Design Date">{createPrettyDate(viewData?.design_date || '') || '—'}</CompactRow>
