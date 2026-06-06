@@ -241,11 +241,15 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       const vb = parseSvgViewBox(svgString);
       if (!vb) throw new Error('Pattern SVG is missing a viewBox — cannot composite.');
 
-      // Convert legend physical dimensions into pattern SVG user-unit space
+      // Convert legend physical dimensions into pattern SVG user-unit space.
+      // If the pattern is narrower than the legend, expand the output canvas so
+      // the legend is never clipped.
       const userUnitsPerInch = vb.vbW / patternWIn;
       const gapUU = LEGEND_GAP_IN * userUnitsPerInch;
       const legendWUU = LEGEND_W_IN * userUnitsPerInch;
       const legendHUU = resolvedLegendHIn * userUnitsPerInch;
+      const effectiveVbW = Math.max(vb.vbW, legendWUU);
+      const effectiveWIn = Math.max(patternWIn, LEGEND_W_IN);
 
       // Instructions: rendered as a rasterized PNG image block below the legend.
       // Width matches the pattern's full width; height scales from the canvas ratio.
@@ -287,8 +291,8 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
 
       const composite = [
         `<svg xmlns="http://www.w3.org/2000/svg"`,
-        ` viewBox="${vb.vbX} ${vb.vbY} ${vb.vbW} ${totalVbH}"`,
-        ` width="${r3(patternWIn)}in"`,
+        ` viewBox="${vb.vbX} ${vb.vbY} ${r3(effectiveVbW)} ${totalVbH}"`,
+        ` width="${r3(effectiveWIn)}in"`,
         ` height="${r3(totalHIn)}in"`,
         `>`,
         patternInner,
