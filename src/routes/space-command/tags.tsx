@@ -133,6 +133,56 @@ async function processSequentially<T>(
   }
 }
 
+// ─── Hierarchy updater ────────────────────────────────────────────────────────
+//
+// Always fetches fresh records from PocketBase so stale React Query cache
+// can never cause a missed update. Called after pattern processing for every
+// rename / merge / delete operation.
+//
+//   rename  — updates the tag's own name in its parent record and updates
+//             every child's parent_tag reference to the new name.
+//   merge   — removes the source tag's own parent record (it no longer exists)
+//             and re-parents its children to the merge target.
+//   delete  — removes the tag's own parent record and removes the parent
+//             records of any children (they become root tags).
+
+async function updateHierarchyForOp(type: OperationType, tag: string, newTag?: string) {
+  const safe = tag.toLowerCase().trim();
+
+  const [ownRecord, childRecords] = await Promise.all([
+    pocketbase
+      .collection('tag_hierarchy')
+      .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safe}"`)
+      .catch(() => null),
+    pocketbase.collection('tag_hierarchy').getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safe}"` }),
+  ]);
+
+  if (type === 'rename' && newTag) {
+    const safeNew = newTag.toLowerCase().trim();
+    if (ownRecord) {
+      await pocketbase.collection('tag_hierarchy').update(ownRecord.id, { tag: safeNew });
+    }
+    for (const child of childRecords) {
+      await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
+    }
+  } else if (type === 'merge' && newTag) {
+    const safeNew = newTag.toLowerCase().trim();
+    if (ownRecord) {
+      await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
+    }
+    for (const child of childRecords) {
+      await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
+    }
+  } else if (type === 'delete') {
+    if (ownRecord) {
+      await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
+    }
+    for (const child of childRecords) {
+      await pocketbase.collection('tag_hierarchy').delete(child.id);
+    }
+  }
+}
+
 // ─── Progress Dialog ──────────────────────────────────────────────────────────
 
 interface ProgressDialogProps {
@@ -822,50 +872,36 @@ const TagManagementPage = () => {
 
         const records = await fetchPatternsWithTag(tag);
 
-        if (records.length === 0) {
-          setProgress((p) => ({ ...p, done: true, total: 0, completed: 0 }));
-          return;
+        if (records.length > 0) {
+          setProgress((p) => ({ ...p, total: records.length }));
+
+          await processSequentially(
+            records,
+            async (record) => {
+              let updatedTags: string[];
+              if (type === 'delete') {
+                updatedTags = record.tags.filter((t) => t !== tag);
+              } else {
+                // rename or merge: replace the old tag with newTag
+                // for merge: also ensure no duplicates if record already had newTag
+                const without = record.tags.filter((t) => t !== tag);
+                updatedTags = newTag && !without.includes(newTag) ? [...without, newTag] : without;
+              }
+              await pocketbase.collection('patterns').update(record.id, { tags: updatedTags });
+              await sleep(BATCH_DELAY_MS);
+            },
+            (completed, total) => setProgress((p) => ({ ...p, completed, total })),
+          );
         }
 
-        setProgress((p) => ({ ...p, total: records.length }));
+        // Always update the hierarchy after pattern processing — runs even when
+        // the tag has 0 patterns, and uses a fresh PocketBase fetch so the
+        // React Query cache can never cause a missed update.
+        await updateHierarchyForOp(type, tag, newTag);
+        refetchHierarchy();
+        queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
 
-        await processSequentially(
-          records,
-          async (record) => {
-            let updatedTags: string[];
-            if (type === 'delete') {
-              updatedTags = record.tags.filter((t) => t !== tag);
-            } else {
-              // rename or merge: replace the old tag with newTag
-              // for merge: also ensure no duplicates if record already had newTag
-              const without = record.tags.filter((t) => t !== tag);
-              updatedTags = newTag && !without.includes(newTag) ? [...without, newTag] : without;
-            }
-            await pocketbase.collection('patterns').update(record.id, { tags: updatedTags });
-            await sleep(BATCH_DELAY_MS);
-          },
-          (completed, total) => setProgress((p) => ({ ...p, completed, total })),
-        );
-
-        // If renaming, also update the hierarchy table so parent_tag references stay correct
-        if (type === 'rename' && newTag) {
-          const childRecord = hierarchy.find((h) => h.tag === tag);
-          const parentRecord = hierarchy.find((h) => h.parent_tag === tag);
-          if (childRecord) {
-            await pocketbase.collection('tag_hierarchy').update(childRecord.id, { tag: newTag });
-          }
-          if (parentRecord) {
-            // Update all children that referenced the old name as their parent
-            const childrenOfRenamed = hierarchy.filter((h) => h.parent_tag === tag);
-            for (const c of childrenOfRenamed) {
-              await pocketbase.collection('tag_hierarchy').update(c.id, { parent_tag: newTag });
-              await sleep(500);
-            }
-          }
-          refetchHierarchy();
-        }
-
-        setProgress((p) => ({ ...p, done: true }));
+        setProgress((p) => ({ ...p, done: true, total: records.length, completed: records.length }));
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
       } catch (err) {
@@ -875,7 +911,7 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, hierarchy, refetchHierarchy],
+    [queryClient, refetchHierarchy],
   );
 
   const startOp = useCallback(
