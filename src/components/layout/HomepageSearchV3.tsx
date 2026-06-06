@@ -15,6 +15,7 @@ import {
   Chip,
   InputBase,
   IconButton,
+  LinearProgress,
   Paper,
   Tooltip,
   List,
@@ -365,11 +366,15 @@ export const HomepageSearchV3 = ({
           <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
             <Typography variant="caption" color="text.secondary">
               {mode === 'author' ? 'Authors' : 'Tags'} —{' '}
-              {isFetchingDropdown ? '…' : searchTerm ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}` : 'Newest'}
+              {isFetchingDropdown
+                ? 'Loading...'
+                : searchTerm
+                  ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}`
+                  : 'Newest'}
             </Typography>
           </Box>
 
-          <Divider />
+          {isFetchingDropdown && searchTerm ? <LinearProgress sx={{ height: 2 }} /> : <Divider />}
 
           <List dense disablePadding>
             {dropdownItems.map((item, index) => (
