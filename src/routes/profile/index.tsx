@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
@@ -62,13 +62,16 @@ import { generateSEO } from '@/functions/utilities/seo.ts';
 
 type UserSearch = {
   id?: string;
+  tab?: number;
 };
 
 export const Route = createFileRoute('/profile/')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): UserSearch => {
+    const tab = Number(search.tab);
     return {
       id: search.id as string | undefined,
+      tab: Number.isFinite(tab) && tab >= 0 && tab <= 4 ? tab : 0,
     };
   },
   head: ({ match }) => ({
@@ -168,7 +171,10 @@ const ProfileContent = (props: ProfileContentProps) => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<TypeGalleryResponse | null>(null);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
-  const [tab, setTab] = useState(0);
+
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: '/profile/' });
+  const setTab = (v: number) => void navigate({ search: (prev) => ({ ...prev, tab: v }), resetScroll: false });
 
   const tabConfig = [
     { label: 'Favorites', icon: <FavoriteBorderOutlinedIcon fontSize="small" /> },
