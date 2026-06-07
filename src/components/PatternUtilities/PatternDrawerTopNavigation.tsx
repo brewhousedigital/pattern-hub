@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -19,8 +19,32 @@ type TopNavigationProps = {
 export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
   const { data } = useQueryGetAllPatternsByPagination();
 
-  const { nextPattern, prevPattern, hasNext, hasPrev } = usePatternSearch();
-  const resultIds = data?.items.map((item) => item.id) || [];
+  const { patternId, nextPattern, prevPattern, hasNext, hasPrev } = usePatternSearch();
+
+  const resultIds = useMemo(
+    () => data?.items.map((item) => item.id) ?? [],
+    [data],
+  );
+
+  const currentIndex = patternId ? resultIds.indexOf(patternId) : -1;
+  const prevId = currentIndex > 0 ? resultIds[currentIndex - 1] : null;
+  const nextId = currentIndex >= 0 && currentIndex < resultIds.length - 1 ? resultIds[currentIndex + 1] : null;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      ) return;
+      if (e.key === 'ArrowLeft' && prevId) prevPattern(resultIds);
+      else if (e.key === 'ArrowRight' && nextId) nextPattern(resultIds);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [prevId, nextId, prevPattern, nextPattern, resultIds]);
 
   if (!data) return <></>;
 
