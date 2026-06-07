@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQueryGetAllFAQ } from '@/functions/database/faq';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -117,7 +117,8 @@ function RouteComponent() {
             ))}
 
           <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-            Can't find what you're looking for? Contact us and we'll get back to you shortly.
+            Can't find what you're looking for? <Link to="/help/contact">Contact us</Link> and we'll get back to you
+            shortly.
           </Typography>
         </Container>
       </PageWrapper>
