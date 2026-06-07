@@ -85,13 +85,13 @@ function MapController({
   const map = useMap();
   useEffect(() => {
     if (!target) return;
-    if (target.storeId) {
-      map.once('moveend', () => {
-        const marker = markerRefs.current.get(target.storeId!);
-        marker?.openPopup();
-      });
-    }
+    map.closePopup();
     map.setView(target.center, target.zoom, { animate: true });
+    if (!target.storeId) return;
+    const id = setTimeout(() => {
+      markerRefs.current.get(target.storeId!)?.openPopup();
+    }, 300);
+    return () => clearTimeout(id);
   }, [target]);
   return null;
 }
