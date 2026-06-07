@@ -5,6 +5,7 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import type { TypePatternResponse } from '@/functions/database/patterns';
+import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { alpha } from '@mui/material/styles';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
@@ -100,9 +101,9 @@ function RouteComponent() {
               </Stack>
 
               {set.description && (
-                <Typography variant="body1" color="text.secondary" maxWidth={600}>
-                  {set.description}
-                </Typography>
+                <Box sx={{ maxWidth: 700, mt: 1 }}>
+                  <MarkdownWrapper>{set.description}</MarkdownWrapper>
+                </Box>
               )}
             </Box>
 

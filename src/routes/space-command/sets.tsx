@@ -15,6 +15,7 @@ import {
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
+import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryClient } from '@tanstack/react-query';
@@ -472,15 +473,10 @@ function SetEditorDialog(props: SetEditorDialogProps) {
               />
             </Stack>
 
-            <TextField
-              label="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              fullWidth
-              variant="filled"
-              multiline
-              rows={2}
-              helperText="Brief summary shown on the public sets page"
+            <GenericMarkdownEditor
+              content={description}
+              setContent={setDescription}
+              characterLimit={2000}
             />
 
             {/* Accent color */}
