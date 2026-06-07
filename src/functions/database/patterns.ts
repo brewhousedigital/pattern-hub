@@ -53,7 +53,7 @@ export type TypePatternKeyTableResponse = {
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
-  const { filter, pageNumber } = usePatternSearch();
+  const { filter, pageNumber, sort } = usePatternSearch();
 
   let includeIsDeletedFilter = `isDeleted = false`;
 
@@ -62,12 +62,12 @@ export const useQueryGetAllPatternsByPagination = () => {
   }
 
   return useQuery({
-    queryKey: ['GetAllPatternsByPagination', filter, pageNumber],
+    queryKey: ['GetAllPatternsByPagination', filter, pageNumber, sort],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(pageNumber, 25, {
         filter: includeIsDeletedFilter,
         expand: 'authors',
-        sort: '-created',
+        sort,
       });
     },
     enabled: !!pageNumber,

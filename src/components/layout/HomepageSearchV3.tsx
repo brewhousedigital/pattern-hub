@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect, type KeyboardEvent } from 'react';
-import { type Token } from '@/functions/utilities/search-v2';
+import { type Token, SORT_OPTIONS, type SortValue } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQuerySearchTags } from '@/functions/database/tags';
 import { useQuerySearchAuthors } from '@/functions/database/authors';
@@ -9,6 +9,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import PersonIcon from '@mui/icons-material/Person';
 import LabelIcon from '@mui/icons-material/Label';
+import SortIcon from '@mui/icons-material/Sort';
 
 import {
   Box,
@@ -16,7 +17,9 @@ import {
   InputBase,
   IconButton,
   LinearProgress,
+  MenuItem,
   Paper,
+  Select,
   Tooltip,
   List,
   ListItemButton,
@@ -101,7 +104,7 @@ export const HomepageSearchV3 = ({
   placeholder = 'Search by tags like "animal" and press enter, or click a tag in the sidebar',
   sx,
 }: TokenizedSearchBarProps) => {
-  const { tokens, addRawInput, removeToken, removeLastToken, clearTokens } = usePatternSearch();
+  const { tokens, addRawInput, removeToken, removeLastToken, clearTokens, sort, setSort } = usePatternSearch();
 
   const [inputValue, setInputValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -255,149 +258,159 @@ export const HomepageSearchV3 = ({
   const hasContent = tokens.length > 0 || inputValue.length > 0;
 
   return (
-    <Box ref={containerRef} sx={{ position: 'relative', ...sx }}>
-      <Paper
-        elevation={0}
-        variant="outlined"
-        onClick={handleBarClick}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 0.5,
-          px: 1.5,
-          py: 0.75,
-          cursor: 'text',
-          borderRadius: showDropdown ? '16px 16px 0 0' : 8,
-          borderBottomColor: showDropdown ? 'transparent' : undefined,
-          '&:focus-within': {
-            borderColor: 'primary.main',
-          },
-        }}
-      >
-        <SearchIcon fontSize="small" sx={{ color: 'text.disabled', mr: 0.5, flexShrink: 0 }} />
-
-        {tokens.map((token, index) => {
-          const { color } = getTokenStyle(token);
-          return (
-            <Tooltip
-              key={index}
-              title={
-                token.exclude
-                  ? `Excluding "${token.value}"`
-                  : token.type === 'author'
-                    ? `Filtering by author "${token.value}"`
-                    : token.type === 'tag'
-                      ? `Filtering by tag "${token.value}"`
-                      : `Searching for "${token.value}"`
-              }
-              arrow
-            >
-              <Chip
-                size="small"
-                label={getTokenLabel(token)}
-                color={color}
-                onDelete={() => removeToken(index)}
-                onClick={(e) => e.stopPropagation()}
-                sx={{ maxWidth: 200 }}
-              />
-            </Tooltip>
-          );
-        })}
-
-        <InputBase
-          inputRef={inputRef}
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setIsDropdownOpen(true);
-          }}
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={tokens.length === 0 ? placeholder : ''}
-          inputProps={{ 'aria-label': 'Search patterns' }}
-          sx={{
-            minHeight: 30,
-            flex: 1,
-            minWidth: 120,
-            '& input': { p: 0, fontSize: '0.875rem' },
-          }}
-        />
-
-        {hasContent && (
-          <Tooltip title="Clear search" arrow>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                clearTokens();
-                setInputValue('');
-                inputRef.current?.focus();
-              }}
-              sx={{ ml: 'auto', flexShrink: 0, color: 'text.disabled' }}
-              aria-label="Clear search"
-            >
-              <ClearIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Paper>
-
-      {showDropdown && (
+    <Box
+      ref={containerRef}
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'center' },
+        gap: 0.75,
+        ...sx,
+      }}
+    >
+      <Box sx={{ position: 'relative', width: '100%' }}>
         <Paper
-          ref={dropdownRef}
-          elevation={3}
+          elevation={0}
+          variant="outlined"
+          onClick={handleBarClick}
           sx={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 1300,
-            maxHeight: 500,
-            overflowY: 'auto',
-            borderRadius: '0 0 8px 8px',
-            border: '1px solid',
-            borderColor: 'primary.main',
-            borderTop: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 0.5,
+            px: 1.5,
+            py: 0.75,
+            cursor: 'text',
+            borderRadius: showDropdown ? '16px 16px 0 0' : 8,
+            borderBottomColor: showDropdown ? 'transparent' : undefined,
+            '&:focus-within': {
+              borderColor: 'primary.main',
+            },
           }}
         >
-          {/* Context label */}
-          <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
-            <Typography variant="caption" color="text.secondary">
-              {mode === 'author' ? 'Authors' : 'Tags'} —{' '}
-              {isFetchingDropdown
-                ? 'Loading...'
-                : searchTerm
-                  ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}`
-                  : 'Newest'}
-            </Typography>
-          </Box>
+          <SearchIcon fontSize="small" sx={{ color: 'text.disabled', mr: 0.5, flexShrink: 0 }} />
 
-          {isFetchingDropdown && searchTerm ? <LinearProgress sx={{ height: 2 }} /> : <Divider />}
-
-          <List dense disablePadding>
-            {dropdownItems.map((item, index) => (
-              <ListItemButton
-                key={item.id}
-                selected={index === highlightedIndex}
-                onMouseDown={(e) => {
-                  // Prevent input blur from firing before click
-                  e.preventDefault();
-                  commitDropdownItem(item);
-                }}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&:hover': { backgroundColor: 'primary.dark' },
-                  },
-                }}
+          {tokens.map((token, index) => {
+            const { color } = getTokenStyle(token);
+            return (
+              <Tooltip
+                key={index}
+                title={
+                  token.exclude
+                    ? `Excluding "${token.value}"`
+                    : token.type === 'author'
+                      ? `Filtering by author "${token.value}"`
+                      : token.type === 'tag'
+                        ? `Filtering by tag "${token.value}"`
+                        : `Searching for "${token.value}"`
+                }
+                arrow
               >
-                <ListItemText primary={item.tag} primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                <Chip
+                  size="small"
+                  label={getTokenLabel(token)}
+                  color={color}
+                  onDelete={() => removeToken(index)}
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{ maxWidth: 200 }}
+                />
+              </Tooltip>
+            );
+          })}
 
-                {/*<ListItemSecondaryAction>
+          <InputBase
+            inputRef={inputRef}
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setIsDropdownOpen(true);
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={tokens.length === 0 ? placeholder : ''}
+            inputProps={{ 'aria-label': 'Search patterns' }}
+            sx={{
+              minHeight: 30,
+              flex: 1,
+              minWidth: 120,
+              '& input': { p: 0, fontSize: '0.875rem' },
+            }}
+          />
+
+          {hasContent && (
+            <Tooltip title="Clear search" arrow>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearTokens();
+                  setInputValue('');
+                  inputRef.current?.focus();
+                }}
+                sx={{ ml: 'auto', flexShrink: 0, color: 'text.disabled' }}
+                aria-label="Clear search"
+              >
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Paper>
+
+        {showDropdown && (
+          <Paper
+            ref={dropdownRef}
+            elevation={3}
+            sx={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 1300,
+              maxHeight: 500,
+              overflowY: 'auto',
+              borderRadius: '0 0 8px 8px',
+              border: '1px solid',
+              borderColor: 'primary.main',
+              borderTop: 'none',
+            }}
+          >
+            {/* Context label */}
+            <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
+              <Typography variant="caption" color="text.secondary">
+                {mode === 'author' ? 'Authors' : 'Tags'} —{' '}
+                {isFetchingDropdown
+                  ? 'Loading...'
+                  : searchTerm
+                    ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}`
+                    : 'Newest'}
+              </Typography>
+            </Box>
+
+            {isFetchingDropdown && searchTerm ? <LinearProgress sx={{ height: 2 }} /> : <Divider />}
+
+            <List dense disablePadding>
+              {dropdownItems.map((item, index) => (
+                <ListItemButton
+                  key={item.id}
+                  selected={index === highlightedIndex}
+                  onMouseDown={(e) => {
+                    // Prevent input blur from firing before click
+                    e.preventDefault();
+                    commitDropdownItem(item);
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  sx={{
+                    '&.Mui-selected': {
+                      backgroundColor: 'primary.main',
+                      color: 'primary.contrastText',
+                      '&:hover': { backgroundColor: 'primary.dark' },
+                    },
+                  }}
+                >
+                  <ListItemText primary={item.tag} primaryTypographyProps={{ fontSize: '0.875rem' }} />
+
+                  {/*<ListItemSecondaryAction>
                   <Typography
                     variant="caption"
                     sx={{
@@ -407,11 +420,30 @@ export const HomepageSearchV3 = ({
                     {item.count.toLocaleString()}
                   </Typography>
                 </ListItemSecondaryAction>*/}
-              </ListItemButton>
-            ))}
-          </List>
-        </Paper>
-      )}
+                </ListItemButton>
+              ))}
+            </List>
+          </Paper>
+        )}
+      </Box>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+        <SortIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+        <Select
+          size="small"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortValue)}
+          variant="standard"
+          disableUnderline
+          sx={{ fontSize: '0.8rem', color: 'text.secondary', '& .MuiSelect-select': { py: 0 } }}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: '0.8rem' }}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
     </Box>
   );
 };

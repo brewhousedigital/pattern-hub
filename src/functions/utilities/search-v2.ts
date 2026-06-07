@@ -39,6 +39,15 @@ export type DescriptionToken = {
 export type Token = TextToken | TagToken | AuthorToken | IdToken | TitleToken | DescriptionToken;
 
 // URL Search Params Schema
+export const SORT_OPTIONS = [
+  { value: '-created', label: 'Newest first' },
+  { value: 'created', label: 'Oldest first' },
+  { value: '-updated', label: 'Recently updated' },
+  { value: 'updated', label: 'Oldest updated' },
+] as const;
+
+export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
+
 export const patternSearchSchema = z.object({
   q: z.string().default(''),
   tags: z.array(z.string()).default([]),
@@ -46,6 +55,7 @@ export const patternSearchSchema = z.object({
   id: z.array(z.string()).default([]),
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
+  sort: z.enum(['-created', 'created', '-updated', 'updated']).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
 });
@@ -104,7 +114,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
 /**
  * Reconstruct the three URL params from a flat token list.
  */
-export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternId' | 'pageNumber'> {
+export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternId' | 'pageNumber' | 'sort'> {
   const q = tokens
     .filter((t): t is TextToken => t.type === 'text')
     .map((t) => (t.exclude ? `-${t.value}` : t.value))
