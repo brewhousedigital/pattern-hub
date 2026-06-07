@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
 import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
+import { ExportPatternForImage } from '@/components/PatternExport/ExportPatternForImage';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -103,6 +104,8 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             )}
 
             {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
+
+            {!viewData?.pattern_file_external && <ExportPatternForImage viewData={viewData} key={'image' + viewData?.id} />}
 
             {!viewData?.pattern_file_external && (
               <BorderedCard key={'3d-' + viewData?.id}>

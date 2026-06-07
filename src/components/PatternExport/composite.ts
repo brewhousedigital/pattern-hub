@@ -138,7 +138,12 @@ function stripSvgWrapper(svg: string): string {
 async function buildRasterBlob(scaledPatternSvg: string, input: TypeCompositeInput): Promise<Blob> {
   const { legendY, instructionsY, totalH, totalW } = computeLayout(input);
 
-  const SUPERSAMPLE = 3; // 2x = 4x pixels, big crispness gain. 3x for max.
+  // Pick the highest SUPERSAMPLE that keeps each drawImage destination ≤ 8192px
+  // per dimension. Above that, Chrome's GPU rasterizer silently produces blank
+  // output. At high DPI the output is already large enough that supersampling
+  // adds nothing — use 1× and paint 1:1.
+  const MAX_DIM = 8192;
+  const SUPERSAMPLE = Math.max(1, Math.min(3, Math.floor(MAX_DIM / Math.max(totalW, totalH))));
 
   const patternW = input.targetWidthPx;
   const patternH = input.targetHeightPx;
