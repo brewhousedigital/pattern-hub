@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
-import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
-import { BorderedCard } from '@/components/cards/BorderedCard';
+import { SectionLabel } from '@/components/ViewHelpers';
+import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
 
 import { alpha } from '@mui/material/styles';
@@ -318,8 +318,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
   }, [canExport, viewData, svgString, mode, patternWIn, patternHIn, lineWidthIn, legendHIn, includeInstructions, queryClient]);
 
   return (
-    <BorderedCard>
-      <DecorativeTitle>Export SVG</DecorativeTitle>
+    <CollapsibleCard title="Export SVG">
 
       {/* Export type */}
       <Box sx={{ mb: 2.5 }}>
@@ -432,7 +431,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       >
         {loading ? 'Generating SVG…' : 'Download SVG'}
       </Button>
-    </BorderedCard>
+    </CollapsibleCard>
   );
 };
 

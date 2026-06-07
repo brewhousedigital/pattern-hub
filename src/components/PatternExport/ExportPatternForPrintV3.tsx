@@ -4,8 +4,8 @@ import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
-import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
-import { BorderedCard } from '@/components/cards/BorderedCard';
+import { SectionLabel } from '@/components/ViewHelpers';
+import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
 
 import { alpha } from '@mui/material/styles';
@@ -632,8 +632,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   ]);
 
   return (
-    <BorderedCard>
-      <DecorativeTitle>Print Pattern</DecorativeTitle>
+    <CollapsibleCard title="Print Pattern">
 
       {/* Print mode */}
       <Box sx={{ mb: 2.5 }}>
@@ -908,7 +907,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             ? `Download Tiled PDF${tilePages > 0 ? ` (${tilePages} pages)` : ''}`
             : 'Download PDF'}
       </Button>
-    </BorderedCard>
+    </CollapsibleCard>
   );
 };
 

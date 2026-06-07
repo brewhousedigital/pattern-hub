@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useExportPattern, downloadBlob } from './useExportPattern';
-import { DecorativeTitle, SectionLabel } from '@/components/ViewHelpers';
-import { BorderedCard } from '@/components/cards/BorderedCard';
+import { SectionLabel } from '@/components/ViewHelpers';
+import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
 import type { JpgBackground } from './composite';
 
@@ -183,8 +183,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
   }, [viewData, canExport, format, jpgBackground, unit, dpi, widthInput, heightInput, widthIn, includeInstructions, runExport]);
 
   return (
-    <BorderedCard>
-      <DecorativeTitle>Export Image</DecorativeTitle>
+    <CollapsibleCard title="Export Image">
 
       {/* Format */}
       <Box sx={{ mb: 2.5 }}>
@@ -333,7 +332,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
       >
         {isExporting ? 'Generating image…' : `Download ${FORMAT_LABELS[format]}`}
       </Button>
-    </BorderedCard>
+    </CollapsibleCard>
   );
 };
 
