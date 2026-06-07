@@ -71,17 +71,28 @@ export const Route = createFileRoute('/store-locator/')({
   }),
 });
 
-// ─── Map pan helper (child component — has access to map context) ──────────
+// ─── Map controller (child component — has access to map context) ────────────
 
-type MapPannerProps = { center: [number, number] | null; zoom?: number };
+type PanTarget = { center: [number, number]; zoom: number; storeId: string | null };
 
-function MapPanner({ center, zoom = 12 }: MapPannerProps) {
+function MapController({
+  target,
+  markerRefs,
+}: {
+  target: PanTarget | null;
+  markerRefs: React.MutableRefObject<Map<string, L.Marker>>;
+}) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
-      map.setView(center, zoom, { animate: true });
+    if (!target) return;
+    if (target.storeId) {
+      map.once('moveend', () => {
+        const marker = markerRefs.current.get(target.storeId!);
+        marker?.openPopup();
+      });
     }
-  }, [center, zoom, map]);
+    map.setView(target.center, target.zoom, { animate: true });
+  }, [target]);
   return null;
 }
 
@@ -99,9 +110,9 @@ function RouteComponent() {
 
   const { data: stores = [], isLoading: storesLoading } = useQueryGetStoresCached();
 
-  // ── Map pan target ───────────────────────────────────────────────────────
-  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
-  const [mapZoom, setMapZoom] = useState<number>(12);
+  // ── Map pan target + selected store ─────────────────────────────────────
+  const [panTarget, setPanTarget] = useState<PanTarget | null>(null);
+  const markerRefs = React.useRef<Map<string, L.Marker>>(new Map());
 
   // ── Reference point for distance (user location OR geocoded address) ─────
   const [refPoint, setRefPoint] = useState<{ lat: number; lon: number } | null>(null);
@@ -188,8 +199,7 @@ function RouteComponent() {
     const lat = parseFloat(result.lat);
     const lon = parseFloat(result.lon);
     setRefPoint({ lat, lon });
-    setMapCenter([lat, lon]);
-    setMapZoom(12);
+    setPanTarget({ center: [lat, lon], zoom: 12, storeId: null });
     setSearchInput(result.display_name);
     setSearchResults([]);
   };
@@ -198,7 +208,7 @@ function RouteComponent() {
     setSearchInput('');
     setSearchResults([]);
     setRefPoint(null);
-    setMapCenter(null);
+    setPanTarget(null);
   };
 
   // ── "Use my location" handler (only on button click) ────────────────────
@@ -214,8 +224,7 @@ function RouteComponent() {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         setRefPoint({ lat, lon });
-        setMapCenter([lat, lon]);
-        setMapZoom(12);
+        setPanTarget({ center: [lat, lon], zoom: 12, storeId: null });
         setGeoLoading(false);
       },
       () => {
@@ -224,6 +233,12 @@ function RouteComponent() {
       },
       { timeout: 10000 },
     );
+  };
+
+  // ── Store card click → pan map + open popup ──────────────────────────────
+  const handleStoreSelect = (store: TypeStoreLocation) => {
+    if (!store.location?.lat || !store.location?.lon) return;
+    setPanTarget({ center: [store.location.lat, store.location.lon], zoom: 14, storeId: store.id });
   };
 
   // ─── Auth gate ────────────────────────────────────────────────────────────
@@ -450,13 +465,19 @@ function RouteComponent() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {/* Pan map when refPoint or search changes */}
-                <MapPanner center={mapCenter} zoom={mapZoom} />
+                <MapController target={panTarget} markerRefs={markerRefs} />
 
                 {filteredStores
                   .filter((s) => s.location?.lat != null && s.location?.lon != null)
                   .map((store) => (
-                    <Marker key={store.id} position={[store.location.lat, store.location.lon]}>
+                    <Marker
+                      key={store.id}
+                      position={[store.location.lat, store.location.lon]}
+                      ref={(m) => {
+                        if (m) markerRefs.current.set(store.id, m);
+                        else markerRefs.current.delete(store.id);
+                      }}
+                    >
                       <Popup minWidth={200} maxWidth={280}>
                         <Box sx={{ py: 0.5 }}>
                           <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
@@ -523,7 +544,12 @@ function RouteComponent() {
                   </Typography>
 
                   {filteredStores.map((store) => (
-                    <StoreListCard key={store.id} store={store} distance={distanceLabel(store)} />
+                    <StoreListCard
+                      key={store.id}
+                      store={store}
+                      distance={distanceLabel(store)}
+                      onClick={() => handleStoreSelect(store)}
+                    />
                   ))}
                 </>
               )}
@@ -537,15 +563,25 @@ function RouteComponent() {
 
 // ─── Store list card ──────────────────────────────────────────────────────────
 
-function StoreListCard({ store, distance }: { store: TypeStoreLocation; distance: string | null }) {
+function StoreListCard({
+  store,
+  distance,
+  onClick,
+}: {
+  store: TypeStoreLocation;
+  distance: string | null;
+  onClick?: () => void;
+}) {
   const tags = Array.isArray(store.tags) ? store.tags : [];
 
   return (
     <Card
       variant="outlined"
+      onClick={onClick}
       sx={{
         borderRadius: 2.5,
         transition: 'border-color 0.15s',
+        cursor: onClick ? 'pointer' : 'default',
         '&:hover': { borderColor: 'primary.main' },
       }}
     >
