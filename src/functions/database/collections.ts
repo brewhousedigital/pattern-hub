@@ -124,6 +124,28 @@ export const useMutationUpdateCollectionPatterns = () => {
   });
 };
 
+export const useMutationUpdateCollection = () => {
+  return useMutation({
+    mutationFn: async ({
+      collectionId,
+      name,
+      description,
+      patterns,
+    }: {
+      collectionId: string;
+      name: string;
+      description: string;
+      patterns?: string[];
+    }) => {
+      return await pocketbase.collection('user_collections').update(collectionId, {
+        name,
+        description,
+        ...(patterns !== undefined && { patterns }),
+      });
+    },
+  });
+};
+
 export const useMutationDeleteCollection = () => {
   return useMutation({
     mutationFn: async (collectionId: string) => {

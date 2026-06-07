@@ -1,14 +1,22 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import { createPrettyDate } from '@/functions/utilities/dates';
-import { useMutationDeleteCollection, type TypeCollectionResponse } from '@/functions/database/collections';
+import {
+  useMutationDeleteCollection,
+  useMutationUpdateCollection,
+  useQueryGetCollectionById,
+  type TypeCollectionResponse,
+} from '@/functions/database/collections';
+import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 import { enqueueSnackbar } from 'notistack';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
 
 import {
   Box,
@@ -16,12 +24,20 @@ import {
   Card,
   CardActions,
   CardContent,
-  Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
+  List,
+  ListItem,
+  ListItemText,
   Popover,
+  Skeleton,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -30,12 +46,37 @@ type CollectionCardProps = {
   collection: TypeCollectionResponse;
   isOwner: boolean;
   onDeleted?: () => void;
+  onEdited?: () => void;
   hasUpdate?: boolean;
 };
 
-export const CollectionCard = ({ collection, isOwner, onDeleted, hasUpdate }: CollectionCardProps) => {
+type PatternEntry = { id: string; name: string };
+
+export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUpdate }: CollectionCardProps) => {
   const [deleteAnchor, setDeleteAnchor] = React.useState<HTMLButtonElement | null>(null);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [editName, setEditName] = React.useState('');
+  const [editDescription, setEditDescription] = React.useState('');
+  const [editPatterns, setEditPatterns] = React.useState<PatternEntry[]>([]);
+
   const deleteCollection = useMutationDeleteCollection();
+  const updateCollection = useMutationUpdateCollection();
+
+  // Fetch full collection (with pattern names) only when the edit dialog is open
+  const {
+    data: fullCollection,
+    isFetching: fetchingFull,
+    refetch: refetchCollection,
+  } = useQueryGetCollectionById(editOpen ? collection.id : '');
+
+  // Sync pattern list from fetched data whenever the dialog opens
+  React.useEffect(() => {
+    if (!editOpen || !fullCollection) return;
+    const patterns =
+      fullCollection.expand?.patterns?.map((p) => ({ id: p.id, name: p.name })) ??
+      fullCollection.patterns.map((id) => ({ id, name: id }));
+    setEditPatterns(patterns);
+  }, [editOpen, fullCollection]);
 
   const handleDeleteConfirm = async () => {
     try {
@@ -46,6 +87,43 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, hasUpdate }: Co
     } catch {
       enqueueSnackbar('Could not delete the collection. Please try again.', { variant: 'error' });
     }
+  };
+
+  const handleEditOpen = () => {
+    setEditName(collection.name);
+    setEditDescription(collection.description ?? '');
+    setEditPatterns([]);
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    if (updateCollection.isPending) return;
+    setEditOpen(false);
+  };
+
+  const handleEditSave = async () => {
+    if (!editName.trim()) return;
+    try {
+      await updateCollection.mutateAsync({
+        collectionId: collection.id,
+        name: editName.trim(),
+        description: editDescription.trim(),
+        patterns: editPatterns.map((p) => p.id),
+      });
+
+      await refetchCollection();
+
+      enqueueSnackbar(`"${editName.trim()}" updated`, { variant: 'success' });
+
+      setEditOpen(false);
+      onEdited?.();
+    } catch {
+      enqueueSnackbar('Could not update the collection. Please try again.', { variant: 'error' });
+    }
+  };
+
+  const removePattern = (id: string) => {
+    setEditPatterns((prev) => prev.filter((p) => p.id !== id));
   };
 
   return (
@@ -70,29 +148,48 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, hasUpdate }: Co
                 <Typography
                   variant="subtitle2"
                   fontWeight={700}
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                  sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
                   {collection.name}
                 </Typography>
                 {hasUpdate && (
-                  <Chip label="Updated" size="small" color="primary" sx={{ height: 18, fontSize: '0.65rem', '& .MuiChip-label': { px: 0.75 } }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
+                      px: 0.75,
+                      borderRadius: 1,
+                      fontSize: '0.65rem',
+                      lineHeight: '18px',
+                    }}
+                  >
+                    Updated
+                  </Typography>
                 )}
               </Stack>
             </Box>
             {isOwner && (
-              <Tooltip title="Delete collection">
-                <IconButton
-                  size="small"
-                  onClick={(e) => setDeleteAnchor(e.currentTarget)}
-                  sx={{ mt: -0.25, mr: -0.5, color: 'text.disabled', '&:hover': { color: 'error.main' } }}
-                >
-                  <DeleteOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Stack direction="row" spacing={0.25} sx={{ mt: -0.25, mr: -0.5, flexShrink: 0 }}>
+                <Tooltip title="Edit collection">
+                  <IconButton
+                    size="small"
+                    onClick={handleEditOpen}
+                    sx={{ color: 'text.disabled', '&:hover': { color: 'primary.main' } }}
+                  >
+                    <EditRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete collection">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => setDeleteAnchor(e.currentTarget)}
+                    sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+                  >
+                    <DeleteOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             )}
           </Stack>
 
@@ -176,6 +273,107 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, hasUpdate }: Co
           </Button>
         </Stack>
       </Popover>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Edit Collection</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2.5 }}>
+          <TextField
+            label="Collection name"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value.slice(0, 100))}
+            inputProps={{ maxLength: 100 }}
+            helperText={`${editName.length}/100`}
+            variant="filled"
+            fullWidth
+            required
+            autoFocus
+            disabled={updateCollection.isPending}
+          />
+
+          <GenericMarkdownEditor content={editDescription} setContent={setEditDescription} characterLimit={2000} />
+
+          <Divider />
+
+          {/* Pattern list */}
+          <Box>
+            <Typography variant="subtitle2" fontWeight={700} mb={1}>
+              Patterns ({fetchingFull ? '…' : editPatterns.length})
+            </Typography>
+
+            {fetchingFull ? (
+              <Stack spacing={1}>
+                {Array.from({ length: Math.min(collection.patterns.length, 4) }).map((_, i) => (
+                  <Skeleton key={i} variant="rounded" height={40} />
+                ))}
+              </Stack>
+            ) : editPatterns.length === 0 ? (
+              <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                No patterns in this collection.
+              </Typography>
+            ) : (
+              <List
+                dense
+                disablePadding
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, maxHeight: 240, overflowY: 'auto' }}
+              >
+                {editPatterns.map((pattern) => (
+                  <ListItem
+                    key={pattern.id}
+                    secondaryAction={
+                      <Tooltip title="Remove from collection">
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => removePattern(pattern.id)}
+                          disabled={updateCollection.isPending}
+                          sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+                        >
+                          <RemoveCircleOutlineRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    }
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography fontSize={13} fontWeight={500}>
+                          {pattern.name}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+                          {pattern.id}
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button
+            onClick={handleEditClose}
+            variant="outlined"
+            disabled={updateCollection.isPending}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEditSave}
+            variant="contained"
+            loading={updateCollection.isPending}
+            disabled={!editName.trim()}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

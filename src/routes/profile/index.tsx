@@ -503,6 +503,7 @@ const ProfileContent = (props: ProfileContentProps) => {
                             collection={collection}
                             isOwner={!isPublicView}
                             onDeleted={() => void refetchCollections()}
+                            onEdited={() => void refetchCollections()}
                           />
                         </Grid>
                       ))}

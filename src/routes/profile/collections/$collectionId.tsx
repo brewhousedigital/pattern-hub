@@ -14,6 +14,7 @@ import { generateSEO } from '@/functions/utilities/seo';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { BorderedCard } from '@/components/cards/BorderedCard';
 import { DecorativeTitle } from '@/components/ViewHelpers';
+import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { alpha } from '@mui/material/styles';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
@@ -138,9 +139,9 @@ function RouteComponent() {
                       </Typography>
 
                       {collection.description && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                          {collection.description}
-                        </Typography>
+                        <Box sx={{ mb: 1.5 }}>
+                          <MarkdownWrapper>{collection.description}</MarkdownWrapper>
+                        </Box>
                       )}
 
                       {collection.expand?.owner_id && (
