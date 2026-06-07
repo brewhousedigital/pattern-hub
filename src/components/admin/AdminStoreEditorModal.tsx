@@ -193,8 +193,8 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
               }}
               fullWidth
               variant="filled"
-              helperText="Enter the full address, then click 🔍 to look up coordinates."
-              slotProps={{
+              //helperText="Enter the full address, then click 🔍 to look up coordinates."
+              /*slotProps={{
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
@@ -211,7 +211,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                     </InputAdornment>
                   ),
                 },
-              }}
+              }}*/
             />
 
             {/* Geocode dropdown results */}
