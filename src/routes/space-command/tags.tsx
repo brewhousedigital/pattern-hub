@@ -347,7 +347,7 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
     if (!tag) return [];
     const descendants = new Set(getDescendants(tag.tag, hierarchy));
     return (searchData?.items ?? [])
-      .map((item) => item.tag)
+      .map((item) => String(item.tag))
       .filter((name) => name !== tag.tag && !descendants.has(name));
   }, [tag, searchData, hierarchy]);
 
@@ -404,6 +404,7 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
             onChange={(_, v) => setSelectedParent(v)}
             inputValue={inputValue}
             onInputChange={(_, v) => setInputValue(v)}
+            getOptionLabel={(option) => String(option)}
             filterOptions={(x) => x}
             loading={searchFetching}
             loadingText="Searching…"
