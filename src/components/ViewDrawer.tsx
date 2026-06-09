@@ -105,7 +105,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
             {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
 
-            {!viewData?.pattern_file_external && <ExportPatternForImage viewData={viewData} key={'image' + viewData?.id} />}
+            {!viewData?.pattern_file_external && (
+              <ExportPatternForImage viewData={viewData} key={'image' + viewData?.id} />
+            )}
 
             {!viewData?.pattern_file_external && (
               <BorderedCard key={'3d-' + viewData?.id}>
@@ -299,7 +301,7 @@ const CompactRow = ({ label, children }: { label: string; children: React.ReactN
       px: 1,
       py: 0.4,
       borderRadius: 1,
-      '&:hover': { bgcolor: 'action.hover' },
+      '&:hover': { backgroundColor: 'action.hover' },
     }}
   >
     <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontWeight: 500, flexShrink: 0 }}>

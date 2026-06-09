@@ -130,7 +130,7 @@ function RouteComponent() {
               width: 30,
               height: 30,
               fontSize: '0.7rem',
-              bgcolor: 'secondary.main',
+              backgroundColor: 'secondary.main',
               flexShrink: 0,
             }}
           >

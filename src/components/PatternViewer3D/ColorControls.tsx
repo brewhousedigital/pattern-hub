@@ -59,7 +59,7 @@ export const ColorControls = ({
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
-        bgcolor: 'background.paper',
+        backgroundColor: 'background.paper',
       }}
     >
       {/* Header row */}
@@ -73,7 +73,7 @@ export const ColorControls = ({
               width: 22,
               height: 22,
               borderRadius: '50%',
-              bgcolor: paintColor,
+              backgroundColor: paintColor,
               border: '2px solid',
               borderColor: 'divider',
               flexShrink: 0,
@@ -133,7 +133,7 @@ export const ColorControls = ({
                 borderColor: paintColor === c.hex ? 'primary.main' : 'transparent',
                 outline: '1.5px solid',
                 outlineColor: (t) => alpha(t.palette.divider, 0.8),
-                bgcolor: c.hex,
+                backgroundColor: c.hex,
                 cursor: 'pointer',
                 p: 0,
                 transition: 'transform 0.1s',
@@ -162,7 +162,7 @@ export const ColorControls = ({
             borderColor: 'divider',
             borderRadius: 1,
             cursor: 'pointer',
-            bgcolor: 'transparent',
+            backgroundColor: 'transparent',
           }}
         />
         <Typography variant="caption" fontFamily="monospace" color="text.secondary">
@@ -192,9 +192,9 @@ export const ColorControls = ({
                     borderRadius: 10,
                     border: '1px solid',
                     borderColor: paintColor === hex ? 'primary.main' : 'divider',
-                    bgcolor: 'background.default',
+                    backgroundColor: 'background.default',
                     cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
+                    '&:hover': { backgroundColor: 'action.hover' },
                   }}
                 >
                   <Box
@@ -202,7 +202,7 @@ export const ColorControls = ({
                       width: 12,
                       height: 12,
                       borderRadius: '50%',
-                      bgcolor: hex,
+                      backgroundColor: hex,
                       border: '1px solid',
                       borderColor: 'divider',
                       flexShrink: 0,
@@ -275,7 +275,7 @@ export const ColorControls = ({
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                bgcolor: c.hex,
+                backgroundColor: c.hex,
                 border: '1px solid',
                 borderColor: 'divider',
                 flexShrink: 0,

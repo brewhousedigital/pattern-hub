@@ -404,12 +404,12 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
                 px: 1.25,
                 fontSize: '0.72rem',
                 '&.Mui-selected': {
-                  bgcolor: alpha('#C8A96E', 0.15),
+                  backgroundColor: alpha('#C8A96E', 0.15),
                   color: 'primary.main',
                   borderColor: alpha('#C8A96E', 0.5),
-                  '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+                  '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
                 },
-                '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+                '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
               },
             }}
           >
@@ -464,11 +464,11 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
                 px: 2,
                 fontSize: '0.8rem',
                 '&.Mui-selected': {
-                  bgcolor: alpha('#C8A96E', 0.15),
+                  backgroundColor: alpha('#C8A96E', 0.15),
                   color: 'primary.main',
                   borderColor: alpha('#C8A96E', 0.5),
                 },
-                '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+                '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
               },
             }}
           >

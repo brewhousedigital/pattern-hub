@@ -481,7 +481,7 @@ function TreeNode({ tagName, count, hierarchy, allTagStats, depth = 0, onSetPare
           px: 1,
           ml: depth * 3,
           borderRadius: 1,
-          '&:hover': { bgcolor: 'action.hover' },
+          '&:hover': { backgroundColor: 'action.hover' },
         }}
       >
         {children.length > 0 ? (

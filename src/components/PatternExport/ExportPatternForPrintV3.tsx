@@ -633,7 +633,6 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
   return (
     <CollapsibleCard title="Print Pattern">
-
       {/* Print mode */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Print Mode</SectionLabel>
@@ -849,7 +848,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             mb: 2.5,
             px: 2,
             py: 1.5,
-            bgcolor: alpha('#C8A96E', 0.06),
+            backgroundColor: alpha('#C8A96E', 0.06),
             border: `1px solid ${alpha('#C8A96E', 0.18)}`,
             borderRadius: 1,
           }}
@@ -922,11 +921,11 @@ const toggleGroupSx = {
     fontSize: '0.8rem',
     textTransform: 'none' as const,
     '&.Mui-selected': {
-      bgcolor: alpha('#C8A96E', 0.15),
+      backgroundColor: alpha('#C8A96E', 0.15),
       color: 'primary.main',
       borderColor: alpha('#C8A96E', 0.5),
-      '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+      '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
     },
-    '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+    '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
   },
 };

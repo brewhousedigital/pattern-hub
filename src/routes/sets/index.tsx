@@ -99,7 +99,7 @@ function RouteComponent() {
                   <Box
                     sx={{
                       height: 8,
-                      bgcolor: set.color || 'primary.main',
+                      backgroundColor: set.color || 'primary.main',
                       flexShrink: 0,
                     }}
                   />

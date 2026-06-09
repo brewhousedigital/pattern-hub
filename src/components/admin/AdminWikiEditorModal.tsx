@@ -296,7 +296,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
               px: 0.75,
               py: 0.25,
               borderRadius: 1,
-              bgcolor: alpha('#1976d2', 0.08),
+              backgroundColor: alpha('#1976d2', 0.08),
             }}
           >
             {'[[category-slug]]'} or {` `}

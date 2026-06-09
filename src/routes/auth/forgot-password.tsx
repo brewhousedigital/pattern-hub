@@ -9,16 +9,7 @@ import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Link as MuiLink,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, CircularProgress, Container, Link as MuiLink, Paper, TextField, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: RouteComponent,
@@ -58,9 +49,7 @@ function RouteComponent() {
           {sent ? (
             /* ─── Success state ─── */
             <Box sx={{ textAlign: 'center' }}>
-              <CheckCircleOutlineRoundedIcon
-                sx={{ fontSize: 52, color: 'success.main', mb: 2 }}
-              />
+              <CheckCircleOutlineRoundedIcon sx={{ fontSize: 52, color: 'success.main', mb: 2 }} />
               <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
                 Check your inbox
               </Typography>
@@ -87,7 +76,7 @@ function RouteComponent() {
                     width: 52,
                     height: 52,
                     borderRadius: '50%',
-                    bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+                    backgroundColor: (t) => alpha(t.palette.primary.main, 0.1),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

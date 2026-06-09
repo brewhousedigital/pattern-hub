@@ -141,7 +141,7 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
         <Stack direction="row" spacing={1.25} alignItems="center">
-          <Avatar sx={{ width: 30, height: 30, fontSize: '0.7rem', bgcolor: 'primary.main', flexShrink: 0 }}>
+          <Avatar sx={{ width: 30, height: 30, fontSize: '0.7rem', backgroundColor: 'primary.main', flexShrink: 0 }}>
             {initialsOf(params.row.name)}
           </Avatar>
           <Box>

@@ -723,9 +723,9 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               sx={{
                 position: 'absolute',
                 left: -3,
-                bgcolor: 'rgba(0,0,0,0.45)',
+                backgroundColor: 'rgba(0,0,0,0.45)',
                 color: 'white',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
               }}
             >
               <ChevronLeftRoundedIcon />
@@ -738,9 +738,9 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               sx={{
                 position: 'absolute',
                 right: -3,
-                bgcolor: 'rgba(0,0,0,0.45)',
+                backgroundColor: 'rgba(0,0,0,0.45)',
                 color: 'white',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
               }}
             >
               <ChevronRightRoundedIcon />
@@ -828,7 +828,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
             borderRadius: 2,
             overflow: 'hidden',
             cursor: 'pointer',
-            bgcolor: 'grey.100',
+            backgroundColor: 'grey.100',
             '&:hover img': { transform: 'scale(1.05)' },
             '&:hover .overlay': { opacity: 1 },
           }}

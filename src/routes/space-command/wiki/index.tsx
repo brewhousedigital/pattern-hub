@@ -304,7 +304,7 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
                     px: 1.5,
                     py: 0.75,
                     borderRadius: 1,
-                    '&:hover': { bgcolor: alpha('#C8A96E', 0.06) },
+                    '&:hover': { backgroundColor: alpha('#C8A96E', 0.06) },
                   }}
                 >
                   <ArticleIcon sx={{ color: 'text.disabled', fontSize: '0.9rem', flexShrink: 0 }} />

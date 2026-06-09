@@ -29,7 +29,8 @@ export const AdminDashboardComplaintsCard = () => {
               sx={{
                 p: 0.75,
                 borderRadius: 1.5,
-                bgcolor: total > 0 ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.text.disabled, 0.08),
+                backgroundColor:
+                  total > 0 ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.text.disabled, 0.08),
                 display: 'flex',
                 alignItems: 'center',
                 color: total > 0 ? 'error.main' : 'text.disabled',
@@ -39,7 +40,13 @@ export const AdminDashboardComplaintsCard = () => {
             </Box>
           </Box>
 
-          <Typography variant="h4" fontWeight={700} lineHeight={1} mb={0.75} color={total > 0 ? 'error.main' : 'text.primary'}>
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            lineHeight={1}
+            mb={0.75}
+            color={total > 0 ? 'error.main' : 'text.primary'}
+          >
             {total.toLocaleString()}
           </Typography>
 

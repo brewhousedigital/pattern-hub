@@ -42,7 +42,7 @@ export const ThinDivider = () => (
 export const DecorativeTitle = (props: TypeComponentWithChildrenProps) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-      <Box sx={{ height: '1px', flex: 1, bgcolor: alpha('#C8A96E', 0.2) }} />
+      <Box sx={{ height: '1px', flex: 1, backgroundColor: alpha('#C8A96E', 0.2) }} />
 
       <Typography
         variant="caption"
@@ -56,7 +56,7 @@ export const DecorativeTitle = (props: TypeComponentWithChildrenProps) => {
         {props.children}
       </Typography>
 
-      <Box sx={{ height: '1px', flex: 1, bgcolor: alpha('#C8A96E', 0.2) }} />
+      <Box sx={{ height: '1px', flex: 1, backgroundColor: alpha('#C8A96E', 0.2) }} />
     </Box>
   );
 };

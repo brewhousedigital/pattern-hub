@@ -65,8 +65,12 @@ function fromIn(valIn: number, unit: ImageUnit, dpi: number): number {
   return valIn;
 }
 
-function r2(n: number): number { return Math.round(n * 100) / 100; }
-function r3(n: number): number { return Math.round(n * 1000) / 1000; }
+function r2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+function r3(n: number): number {
+  return Math.round(n * 1000) / 1000;
+}
 
 function fmt(val: number, unit: ImageUnit): string {
   if (unit === 'px') return String(Math.round(val));
@@ -74,7 +78,10 @@ function fmt(val: number, unit: ImageUnit): string {
 }
 
 function slugify(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return s
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -136,9 +143,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
     if (!viewData || !canExport) return;
 
     const authorLine =
-      viewData.expand?.authors?.map((a) => a.name).join(', ') ||
-      viewData.author_manual?.join(', ') ||
-      '';
+      viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
 
     const widthVal = parseFloat(widthInput);
     const heightVal = parseFloat(heightInput);
@@ -173,18 +178,27 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
       );
 
       const sizeLabel =
-        unit === 'px'
-          ? `${Math.round(widthVal)}x${Math.round(heightVal)}px`
-          : `${r2(widthIn)}in-${dpi}dpi`;
+        unit === 'px' ? `${Math.round(widthVal)}x${Math.round(heightVal)}px` : `${r2(widthIn)}in-${dpi}dpi`;
       downloadBlob(blob, `${slugify(viewData.name)}-${sizeLabel}.${format}`);
     } catch {
       // error state managed by useExportPattern
     }
-  }, [viewData, canExport, format, jpgBackground, unit, dpi, widthInput, heightInput, widthIn, includeInstructions, runExport]);
+  }, [
+    viewData,
+    canExport,
+    format,
+    jpgBackground,
+    unit,
+    dpi,
+    widthInput,
+    heightInput,
+    widthIn,
+    includeInstructions,
+    runExport,
+  ]);
 
   return (
     <CollapsibleCard title="Export Image">
-
       {/* Format */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Format</SectionLabel>
@@ -347,11 +361,11 @@ const toggleGroupSx = {
     fontSize: '0.8rem',
     textTransform: 'none' as const,
     '&.Mui-selected': {
-      bgcolor: alpha('#C8A96E', 0.15),
+      backgroundColor: alpha('#C8A96E', 0.15),
       color: 'primary.main',
       borderColor: alpha('#C8A96E', 0.5),
-      '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+      '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
     },
-    '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+    '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
   },
 };

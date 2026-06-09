@@ -132,7 +132,7 @@ function RouteComponent() {
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
         <Stack direction="row" spacing={1.5} alignItems="center">
           {params.row.color && (
-            <Box sx={{ width: 4, height: 28, borderRadius: 1, bgcolor: params.row.color, flexShrink: 0 }} />
+            <Box sx={{ width: 4, height: 28, borderRadius: 1, backgroundColor: params.row.color, flexShrink: 0 }} />
           )}
           <Typography fontSize={13} fontWeight={600}>
             {params.row.title}
@@ -473,11 +473,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
               />
             </Stack>
 
-            <GenericMarkdownEditor
-              content={description}
-              setContent={setDescription}
-              characterLimit={2000}
-            />
+            <GenericMarkdownEditor content={description} setContent={setDescription} characterLimit={2000} />
 
             {/* Accent color */}
             <Box>
@@ -493,7 +489,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
                         width: 28,
                         height: 28,
                         borderRadius: '50%',
-                        bgcolor: c.value || 'action.disabledBackground',
+                        backgroundColor: c.value || 'action.disabledBackground',
                         border: '2px solid',
                         borderColor: color === c.value ? 'text.primary' : 'transparent',
                         cursor: 'pointer',
@@ -680,7 +676,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
                       backgroundImage: `url("${generatePbImage(p)}")`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      bgcolor: 'action.disabledBackground',
+                      backgroundColor: 'action.disabledBackground',
                     }}
                   />
                 </ListItemAvatar>

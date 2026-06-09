@@ -36,7 +36,9 @@ function RouteComponent() {
 
           {isLoading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={120} />)}
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} variant="rounded" height={120} />
+              ))}
             </Box>
           ) : categories.length === 0 ? (
             <Typography color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>
@@ -74,7 +76,7 @@ function RouteComponent() {
                                 py: 0.5,
                                 borderRadius: 1,
                                 color: 'text.secondary',
-                                '&:hover': { color: 'primary.main', bgcolor: alpha('#C8A96E', 0.07) },
+                                '&:hover': { color: 'primary.main', backgroundColor: alpha('#C8A96E', 0.07) },
                                 transition: 'color 0.15s, background-color 0.15s',
                               }}
                             >

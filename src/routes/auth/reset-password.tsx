@@ -79,11 +79,7 @@ function RouteComponent() {
 
   const strength = getPasswordStrength(password);
   const passwordMismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
-  const isValid =
-    !!token &&
-    password.length >= 8 &&
-    password === passwordConfirm &&
-    !loading;
+  const isValid = !!token && password.length >= 8 && password === passwordConfirm && !loading;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -151,7 +147,7 @@ function RouteComponent() {
                 width: 52,
                 height: 52,
                 borderRadius: '50%',
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+                backgroundColor: (t) => alpha(t.palette.primary.main, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -224,11 +220,14 @@ function RouteComponent() {
                       sx={{
                         height: 4,
                         borderRadius: 2,
-                        bgcolor: 'divider',
-                        '& .MuiLinearProgress-bar': { bgcolor: strength.color, transition: 'width 0.3s' },
+                        backgroundColor: 'divider',
+                        '& .MuiLinearProgress-bar': { backgroundColor: strength.color, transition: 'width 0.3s' },
                       }}
                     />
-                    <Typography variant="caption" sx={{ color: strength.color, fontWeight: 600, mt: 0.25, display: 'block' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: strength.color, fontWeight: 600, mt: 0.25, display: 'block' }}
+                    >
                       {strength.label}
                     </Typography>
                   </Box>

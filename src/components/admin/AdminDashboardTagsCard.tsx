@@ -33,7 +33,7 @@ export const AdminDashboardTagsCard = () => {
               sx={{
                 p: 0.75,
                 borderRadius: 1.5,
-                bgcolor: alpha(theme.palette.warning.main, 0.1),
+                backgroundColor: alpha(theme.palette.warning.main, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 color: 'warning.main',

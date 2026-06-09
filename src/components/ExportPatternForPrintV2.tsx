@@ -362,12 +362,12 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
               fontSize: '0.8rem',
               textTransform: 'none',
               '&.Mui-selected': {
-                bgcolor: alpha('#C8A96E', 0.15),
+                backgroundColor: alpha('#C8A96E', 0.15),
                 color: 'primary.main',
                 borderColor: alpha('#C8A96E', 0.5),
-                '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+                '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
               },
-              '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+              '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
             },
           }}
         >
@@ -470,12 +470,12 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
                     color: 'text.secondary',
                     px: 1.5,
                     '&.Mui-selected': {
-                      bgcolor: alpha('#C8A96E', 0.15),
+                      backgroundColor: alpha('#C8A96E', 0.15),
                       color: 'primary.main',
                       borderColor: alpha('#C8A96E', 0.5),
-                      '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+                      '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
                     },
-                    '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+                    '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
                   },
                 }}
               >
@@ -528,7 +528,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
               mb: 2.5,
               px: 2,
               py: 1.5,
-              bgcolor: alpha('#C8A96E', 0.06),
+              backgroundColor: alpha('#C8A96E', 0.06),
               border: `1px solid ${alpha('#C8A96E', 0.18)}`,
               borderRadius: 1,
             }}

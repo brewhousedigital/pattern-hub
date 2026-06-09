@@ -247,7 +247,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
       sx={{
         minHeight: '100svh',
         width: '100%',
-        bgcolor: '#f0fdf4',
+        backgroundColor: '#f0fdf4',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -335,7 +335,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                 borderLeft: '3px solid #4ade80',
                 pl: 2,
                 py: 0.5,
-                bgcolor: 'rgba(74,222,128,0.08)',
+                backgroundColor: 'rgba(74,222,128,0.08)',
                 borderRadius: '0 4px 4px 0',
               }}
             >
@@ -378,13 +378,13 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                   fontWeight: 700,
                   letterSpacing: '0.06em',
                   textTransform: 'none',
-                  bgcolor: '#16a34a',
+                  backgroundColor: '#16a34a',
                   color: '#f0fdf4',
                   px: 4,
                   py: 1.5,
                   borderRadius: '2px',
                   animation: `${pulse} 2.5s ease-in-out infinite`,
-                  '&:hover': { bgcolor: '#15803d' },
+                  '&:hover': { backgroundColor: '#15803d' },
                 }}
               >
                 Try again
@@ -404,7 +404,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                 px: 4,
                 py: 1.5,
                 borderRadius: '2px',
-                '&:hover': { bgcolor: 'rgba(22,163,74,0.08)', borderColor: '#15803d' },
+                '&:hover': { backgroundColor: 'rgba(22,163,74,0.08)', borderColor: '#15803d' },
               }}
             >
               Go home
@@ -421,7 +421,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                 color: '#4ade80',
                 px: 3,
                 py: 1.5,
-                '&:hover': { bgcolor: 'rgba(74,222,128,0.08)' },
+                '&:hover': { backgroundColor: 'rgba(74,222,128,0.08)' },
               }}
             >
               ← Go back

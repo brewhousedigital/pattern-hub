@@ -101,7 +101,7 @@ function RouteComponent() {
               width: 48,
               height: 48,
               borderRadius: 1.5,
-              bgcolor: '#5865f2',
+              backgroundColor: '#5865f2',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
@@ -132,7 +132,7 @@ function RouteComponent() {
               sx={{
                 borderColor: '#5865f2',
                 color: '#5865f2',
-                '&:hover': { borderColor: '#4752c4', bgcolor: '#f0f1ff' },
+                '&:hover': { borderColor: '#4752c4', backgroundColor: '#f0f1ff' },
               }}
             >
               Join the server

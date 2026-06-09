@@ -156,7 +156,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
                   <Typography
                     variant="caption"
                     sx={{
-                      bgcolor: 'primary.main',
+                      backgroundColor: 'primary.main',
                       color: 'primary.contrastText',
                       px: 0.75,
                       borderRadius: 1,

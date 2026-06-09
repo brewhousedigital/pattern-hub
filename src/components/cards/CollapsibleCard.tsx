@@ -35,11 +35,11 @@ export const CollapsibleCard = ({ title, defaultOpen = false, children }: Collap
           cursor: 'pointer',
           userSelect: 'none',
           '&:hover': {
-            bgcolor: alpha('#C8A96E', 0.04),
+            backgroundColor: alpha('#C8A96E', 0.04),
           },
         }}
       >
-        <Box sx={{ height: '1px', width: 20, flexShrink: 0, bgcolor: alpha('#C8A96E', 0.2) }} />
+        <Box sx={{ height: '1px', width: 20, flexShrink: 0, backgroundColor: alpha('#C8A96E', 0.2) }} />
 
         <Typography
           variant="caption"
@@ -54,7 +54,7 @@ export const CollapsibleCard = ({ title, defaultOpen = false, children }: Collap
           {title}
         </Typography>
 
-        <Box sx={{ height: '1px', flex: 1, bgcolor: alpha('#C8A96E', 0.2) }} />
+        <Box sx={{ height: '1px', flex: 1, backgroundColor: alpha('#C8A96E', 0.2) }} />
 
         <ExpandMoreIcon
           sx={{

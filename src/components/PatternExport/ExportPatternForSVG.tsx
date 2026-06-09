@@ -64,24 +64,42 @@ function dbToIn(value: number, unitStr: string): number {
   return value;
 }
 
-function r2(n: number): number { return Math.round(n * 100) / 100; }
-function r3(n: number): number { return Math.round(n * 1000) / 1000; }
+function r2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+function r3(n: number): number {
+  return Math.round(n * 1000) / 1000;
+}
 
 function slugify(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return s
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 // ─── Legend geometry — mirrors render-legend.ts height formula exactly ────────
 
 function legendPhysicalHeightIn(keyCount: number): number {
-  const PAD = 20, HEADER_H = 32, SUB_H = 22, STAT_H = 20, STATS = 4, DIV_H = 16, KEY_H = 32;
+  const PAD = 20,
+    HEADER_H = 32,
+    SUB_H = 22,
+    STAT_H = 20,
+    STATS = 4,
+    DIV_H = 16,
+    KEY_H = 32;
   const px = PAD + HEADER_H + SUB_H + 6 + STATS * STAT_H + DIV_H + keyCount * KEY_H + PAD;
   return px * (LEGEND_W_IN / LEGEND_SVG_PX);
 }
 
 // ─── SVG helpers ──────────────────────────────────────────────────────────────
 
-interface SvgViewBox { vbX: number; vbY: number; vbW: number; vbH: number; }
+interface SvgViewBox {
+  vbX: number;
+  vbY: number;
+  vbW: number;
+  vbH: number;
+}
 
 function parseSvgViewBox(svgStr: string): SvgViewBox | null {
   const m = svgStr.match(/viewBox=["']\s*([\d.-]+)\s+([\d.-]+)\s+([\d.]+)\s+([\d.]+)/i);
@@ -91,9 +109,7 @@ function parseSvgViewBox(svgStr: string): SvgViewBox | null {
 
 // Strips the outer <svg ...> and </svg> wrapper, leaving inner content only.
 function extractSvgInner(svgStr: string): string {
-  return svgStr
-    .replace(/<svg\b[^>]*>/i, '')
-    .replace(/<\/svg>\s*$/i, '');
+  return svgStr.replace(/<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
 }
 
 // Replaces all stroke-width values (CSS and attribute forms) with the correct
@@ -193,9 +209,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
 
     try {
       const authorLine =
-        viewData.expand?.authors?.map((a) => a.name).join(', ') ||
-        viewData.author_manual?.join(', ') ||
-        '';
+        viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
       const projectSizeLabel = `${r2(patternWIn)}in × ${r2(patternHIn)}in`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
 
@@ -222,7 +236,10 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
         canvas.width = canvasW;
         canvas.height = canvasH;
         const ctx = canvas.getContext('2d');
-        if (!ctx) { reject(new Error('Canvas 2D context unavailable')); return; }
+        if (!ctx) {
+          reject(new Error('Canvas 2D context unavailable'));
+          return;
+        }
         const svgBlob = new Blob([legendOutput.svg], { type: 'image/svg+xml;charset=utf-8' });
         const svgUrl = URL.createObjectURL(svgBlob);
         const img = new Image();
@@ -315,11 +332,21 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     } finally {
       setLoading(false);
     }
-  }, [canExport, viewData, svgString, mode, patternWIn, patternHIn, lineWidthIn, legendHIn, includeInstructions, queryClient]);
+  }, [
+    canExport,
+    viewData,
+    svgString,
+    mode,
+    patternWIn,
+    patternHIn,
+    lineWidthIn,
+    legendHIn,
+    includeInstructions,
+    queryClient,
+  ]);
 
   return (
     <CollapsibleCard title="Export SVG">
-
       {/* Export type */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Export Type</SectionLabel>
@@ -446,11 +473,11 @@ const toggleGroupSx = {
     fontSize: '0.8rem',
     textTransform: 'none' as const,
     '&.Mui-selected': {
-      bgcolor: alpha('#C8A96E', 0.15),
+      backgroundColor: alpha('#C8A96E', 0.15),
       color: 'primary.main',
       borderColor: alpha('#C8A96E', 0.5),
-      '&:hover': { bgcolor: alpha('#C8A96E', 0.2) },
+      '&:hover': { backgroundColor: alpha('#C8A96E', 0.2) },
     },
-    '&:hover': { bgcolor: alpha('#C8A96E', 0.07) },
+    '&:hover': { backgroundColor: alpha('#C8A96E', 0.07) },
   },
 };

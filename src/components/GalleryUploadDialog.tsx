@@ -206,7 +206,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
                 borderRadius: 2,
                 border: '1px solid',
                 borderColor: 'divider',
-                bgcolor: 'grey.50',
+                backgroundColor: 'grey.50',
               }}
             />
             <Button
@@ -237,11 +237,11 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
               alignItems: 'center',
               gap: 1,
               cursor: 'pointer',
-              bgcolor: alpha('#C8A96E', 0.03),
+              backgroundColor: alpha('#C8A96E', 0.03),
               transition: 'border-color 0.2s, background-color 0.2s',
               '&:hover': {
                 borderColor: 'primary.main',
-                bgcolor: alpha('#C8A96E', 0.07),
+                backgroundColor: alpha('#C8A96E', 0.07),
               },
             }}
           >

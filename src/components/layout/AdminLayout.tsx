@@ -178,7 +178,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const [open, setOpen] = React.useState(true);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: 'grey.50' }}>
       <AppBar position="fixed" open={open}>
         <Toolbar sx={{ minHeight: '56px !important' }}>
           <IconButton
@@ -206,7 +206,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
             border: 'none',
             borderRight: '1px solid',
             borderColor: 'divider',
-            bgcolor: 'background.paper',
+            backgroundColor: 'background.paper',
             display: 'flex',
             flexDirection: 'column',
           },
@@ -232,7 +232,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
                 width: 28,
                 height: 28,
                 borderRadius: 1,
-                bgcolor: 'primary.main',
+                backgroundColor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -300,10 +300,10 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
                             borderRadius: 1.5,
                             py: 0.7,
                             px: 1.25,
-                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                            backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                             color: isActive ? 'primary.main' : 'text.secondary',
                             '&:hover': {
-                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.14) : 'action.hover',
+                              backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.14) : 'action.hover',
                               color: isActive ? 'primary.main' : 'text.primary',
                             },
                             transition: 'background-color 0.15s, color 0.15s',
@@ -359,7 +359,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
               py: 0.7,
               px: 1.25,
               color: 'text.disabled',
-              '&:hover': { bgcolor: 'action.hover', color: 'text.secondary' },
+              '&:hover': { backgroundColor: 'action.hover', color: 'text.secondary' },
             }}
           >
             <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>

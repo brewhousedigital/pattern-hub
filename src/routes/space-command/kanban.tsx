@@ -631,7 +631,7 @@ function KanbanColumn({
             gap: 0.5,
             borderBottom: '1px solid',
             borderColor: 'divider',
-            bgcolor: accentColor ? alpha(accentColor, 0.08) : 'grey.50',
+            backgroundColor: accentColor ? alpha(accentColor, 0.08) : 'grey.50',
             borderTop: accentColor ? `3px solid ${accentColor}` : '3px solid transparent',
           }}
         >
@@ -667,7 +667,7 @@ function KanbanColumn({
               height: 18,
               fontSize: '0.65rem',
               fontWeight: 700,
-              bgcolor: wipExceeded ? 'error.main' : wipAtLimit ? 'warning.main' : 'action.hover',
+              backgroundColor: wipExceeded ? 'error.main' : wipAtLimit ? 'warning.main' : 'action.hover',
               color: wipExceeded || wipAtLimit ? 'white' : 'text.secondary',
               '.MuiChip-label': { px: 0.75 },
             }}
@@ -718,7 +718,9 @@ function KanbanColumn({
 
         {/* WIP warning */}
         {(wipExceeded || wipAtLimit) && (
-          <Box sx={{ px: 1.5, py: 0.5, bgcolor: wipExceeded ? alpha('#f44336', 0.08) : alpha('#ff9800', 0.08) }}>
+          <Box
+            sx={{ px: 1.5, py: 0.5, backgroundColor: wipExceeded ? alpha('#f44336', 0.08) : alpha('#ff9800', 0.08) }}
+          >
             <Typography variant="caption" color={wipExceeded ? 'error.main' : 'warning.main'} fontWeight={600}>
               {wipExceeded ? `Over WIP limit (${column.wip_limit})` : `At WIP limit (${column.wip_limit})`}
             </Typography>
@@ -736,7 +738,7 @@ function KanbanColumn({
                 mb: -0.25,
                 py: 0.75,
                 color: 'text.disabled',
-                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+                '&:hover': { color: 'text.primary', backgroundColor: 'action.hover' },
               }}
             >
               Add item
@@ -789,7 +791,7 @@ function KanbanColumn({
                 borderBottomRightRadius: 12,
                 py: 0.75,
                 color: 'text.disabled',
-                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+                '&:hover': { color: 'text.primary', backgroundColor: 'action.hover' },
               }}
             >
               Add item
@@ -917,14 +919,14 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
           <Stack direction="row" alignItems="center" spacing={0.5}>
             {item.assignee && (
               <Tooltip title={item.assignee} disableInteractive>
-                <Avatar sx={{ width: 18, height: 18, fontSize: '0.55rem', bgcolor: 'primary.main' }}>
+                <Avatar sx={{ width: 18, height: 18, fontSize: '0.55rem', backgroundColor: 'primary.main' }}>
                   {initialsOf(item.assignee)}
                 </Avatar>
               </Tooltip>
             )}
             {item.priority !== 'none' && (
               <Tooltip title={`Priority: ${PRIORITY_LABELS[item.priority ?? 'none']}`} disableInteractive>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: priorityColor, flexShrink: 0 }} />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: priorityColor, flexShrink: 0 }} />
               </Tooltip>
             )}
             {isLoading && <CircularProgress size={12} thickness={5} />}
@@ -966,7 +968,7 @@ function KanbanColumnStatic({ column, items, rawCount }: KanbanColumnStaticProps
             gap: 0.75,
             borderBottom: '1px solid',
             borderColor: 'divider',
-            bgcolor: accentColor ? alpha(accentColor, 0.08) : 'grey.50',
+            backgroundColor: accentColor ? alpha(accentColor, 0.08) : 'grey.50',
           }}
         >
           <DragIndicatorIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -980,7 +982,7 @@ function KanbanColumnStatic({ column, items, rawCount }: KanbanColumnStaticProps
               height: 18,
               fontSize: '0.65rem',
               fontWeight: 700,
-              bgcolor: 'action.hover',
+              backgroundColor: 'action.hover',
               '.MuiChip-label': { px: 0.75 },
             }}
           />
@@ -1132,7 +1134,7 @@ function EditColumnDialog({ open, column, onClose, onSave, loading }: EditColumn
                       width: 20,
                       height: 20,
                       borderRadius: '50%',
-                      bgcolor: preset || 'action.disabledBackground',
+                      backgroundColor: preset || 'action.disabledBackground',
                       border: color === preset ? '2px solid' : '1px solid',
                       borderColor: color === preset ? 'text.primary' : 'divider',
                       cursor: 'pointer',

@@ -262,7 +262,7 @@ function RouteComponent() {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+              backgroundColor: (t) => alpha(t.palette.primary.main, 0.1),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

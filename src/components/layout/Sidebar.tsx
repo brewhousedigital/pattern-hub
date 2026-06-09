@@ -133,7 +133,7 @@ const TagListItem = (props: TagListItemProps) => {
         py: 0.25,
         borderRadius: 2,
         transition: 'background-color 0.14s',
-        '&:hover': { bgcolor: 'action.hover' },
+        '&:hover': { backgroundColor: 'action.hover' },
       }}
     >
       {/* Tag label */}
@@ -177,7 +177,7 @@ const TagListItem = (props: TagListItemProps) => {
             sx={{
               p: { xs: 1.5, md: 0.5 },
               color: 'success.main',
-              '&:hover': { bgcolor: 'success.main', color: 'success.contrastText' },
+              '&:hover': { backgroundColor: 'success.main', color: 'success.contrastText' },
             }}
           >
             <AddRoundedIcon sx={{ fontSize: 14 }} />
@@ -191,7 +191,7 @@ const TagListItem = (props: TagListItemProps) => {
             sx={{
               p: { xs: 1.5, md: 0.5 },
               color: 'error.main',
-              '&:hover': { bgcolor: 'error.main', color: 'error.contrastText' },
+              '&:hover': { backgroundColor: 'error.main', color: 'error.contrastText' },
             }}
           >
             <RemoveRoundedIcon sx={{ fontSize: 14 }} />

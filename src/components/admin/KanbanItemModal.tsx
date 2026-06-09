@@ -237,7 +237,13 @@ export const KanbanItemModal = ({
             lineHeight: 1.7,
             '& h1,h2,h3,h4': { fontWeight: 500, mt: 1.5, mb: 0.5 },
             '& ul,ol': { pl: 2.5 },
-            '& code': { fontFamily: 'monospace', bgcolor: 'grey.100', px: 0.5, borderRadius: 0.5, fontSize: '0.9em' },
+            '& code': {
+              fontFamily: 'monospace',
+              backgroundColor: 'grey.100',
+              px: 0.5,
+              borderRadius: 0.5,
+              fontSize: '0.9em',
+            },
             '& a': { color: 'primary.main' },
           }}
         >
@@ -275,7 +281,13 @@ export const KanbanItemModal = ({
                 <MenuItem key={p} value={p}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Box
-                      sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: PRIORITY_COLORS[p], flexShrink: 0 }}
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: PRIORITY_COLORS[p],
+                        flexShrink: 0,
+                      }}
                     />
                     <span>{PRIORITY_LABELS[p]}</span>
                   </Stack>

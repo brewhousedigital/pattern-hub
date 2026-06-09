@@ -623,7 +623,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                       borderRadius: 1.5,
                                       border: '1px solid',
                                       borderColor: 'divider',
-                                      bgcolor: 'grey.50',
+                                      backgroundColor: 'grey.50',
                                       p: 1,
                                     }}
                                   />
@@ -637,7 +637,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   borderRadius: 1.5,
                                   p: 4,
                                   textAlign: 'center',
-                                  bgcolor: 'grey.50',
+                                  backgroundColor: 'grey.50',
                                 }}
                               >
                                 <Typography variant="body2" color="text.disabled">
@@ -666,7 +666,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   position: 'absolute',
                                   top: 0,
                                   right: 0,
-                                  bgcolor: 'background.paper',
+                                  backgroundColor: 'background.paper',
                                   border: '1px solid',
                                   borderColor: 'divider',
                                   '&:hover': { color: 'error.main' },
@@ -688,7 +688,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   borderRadius: 1.5,
                                   border: '1px solid',
                                   borderColor: 'divider',
-                                  bgcolor: 'grey.50',
+                                  backgroundColor: 'grey.50',
                                   p: 1,
                                 }}
                               />
@@ -727,7 +727,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                         borderRadius: 1.5,
                                         border: '1px solid',
                                         borderColor: 'divider',
-                                        bgcolor: 'grey.50',
+                                        backgroundColor: 'grey.50',
                                         p: 1,
                                       }}
                                     />
@@ -788,7 +788,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   borderRadius: 1.5,
                                   border: '1px solid',
                                   borderColor: 'divider',
-                                  bgcolor: 'grey.50',
+                                  backgroundColor: 'grey.50',
                                   p: 1,
                                 }}
                               />
@@ -800,7 +800,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   borderRadius: 1.5,
                                   p: 4,
                                   textAlign: 'center',
-                                  bgcolor: 'grey.50',
+                                  backgroundColor: 'grey.50',
                                 }}
                               >
                                 <Typography variant="body2" color="text.disabled">
@@ -828,7 +828,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   position: 'absolute',
                                   top: 0,
                                   right: 0,
-                                  bgcolor: 'background.paper',
+                                  backgroundColor: 'background.paper',
                                   border: '1px solid',
                                   borderColor: 'divider',
                                   '&:hover': { color: 'error.main' },
@@ -849,7 +849,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   borderRadius: 1.5,
                                   border: '1px solid',
                                   borderColor: 'divider',
-                                  bgcolor: 'grey.50',
+                                  backgroundColor: 'grey.50',
                                   p: 1,
                                 }}
                               />
@@ -882,7 +882,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                 borderRadius: 1.5,
                                 border: '1px solid',
                                 borderColor: 'divider',
-                                bgcolor: 'grey.50',
+                                backgroundColor: 'grey.50',
                                 p: 1,
                               }}
                             />

@@ -72,15 +72,15 @@ export const SvgDropZone = ({
         gap: 0.75,
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background-color 0.15s, border-color 0.15s',
-        bgcolor: dragOver ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
+        backgroundColor: dragOver ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
         opacity: disabled ? 0.5 : 1,
         userSelect: 'none',
-        '&:hover': disabled || isLoading ? {} : { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+        '&:hover': disabled || isLoading ? {} : { backgroundColor: alpha(theme.palette.primary.main, 0.04) },
       }}
     >
       <Avatar
         sx={{
-          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          backgroundColor: alpha(theme.palette.primary.main, 0.1),
           color: 'primary.main',
           width: 40,
           height: 40,
