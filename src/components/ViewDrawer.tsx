@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
 import { DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
@@ -18,11 +18,11 @@ import { useGlobalIsViewOpen } from '@/data/view';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
 import { BorderedCard } from '@/components/cards/BorderedCard';
+import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import { Box, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack } from '@mui/material';
 
 type ViewDrawerProps = {
@@ -36,8 +36,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const { handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
   const { patternId } = usePatternSearch();
-
-  const [viewer3DOpen, setViewer3DOpen] = useState(false);
 
   const svgImageUrl = generatePbImage(viewData);
 
@@ -110,31 +108,11 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             )}
 
             {!viewData?.pattern_file_external && (
-              <BorderedCard key={'3d-' + viewData?.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700}>
-                      Color Planner
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    size="small"
-                    variant={viewer3DOpen ? 'contained' : 'outlined'}
-                    onClick={() => setViewer3DOpen((v) => !v)}
-                    startIcon={<ViewInArIcon fontSize="small" />}
-                    sx={{ borderRadius: 2, flexShrink: 0 }}
-                  >
-                    {viewer3DOpen ? 'Close Planner' : 'Open Planner'}
-                  </Button>
-                </Box>
-
-                {viewer3DOpen && (
-                  <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ mt: 2, borderRadius: 2 }} />}>
-                    <PatternViewer3DLazy viewData={viewData} />
-                  </Suspense>
-                )}
-              </BorderedCard>
+              <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>
+                <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
+                  <PatternViewer3DLazy viewData={viewData} />
+                </Suspense>
+              </CollapsibleCard>
             )}
 
             {!viewData?.pattern_file_external && (
