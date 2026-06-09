@@ -1,4 +1,3 @@
-import React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
@@ -8,11 +7,10 @@ import {
   useMutationFollowCollection,
   useMutationUnfollowCollection,
 } from '@/functions/database/collections';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
-import type { TypePatternResponse } from '@/functions/database/patterns';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
+import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { alpha } from '@mui/material/styles';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
@@ -195,8 +193,8 @@ function RouteComponent() {
             ) : (
               <Grid container spacing={2}>
                 {patterns.map((pattern) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={pattern.id}>
-                    <CollectionPatternRow pattern={pattern} patternIdArray={patternIdArray} />
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={pattern.id}>
+                    <PatternTileCard pattern={pattern} patternIdArray={patternIdArray} />
                   </Grid>
                 ))}
               </Grid>
@@ -207,96 +205,6 @@ function RouteComponent() {
     </GeneralLayout>
   );
 }
-
-// ─── Pattern row ──────────────────────────────────────────────────────────────
-
-type CollectionPatternRowProps = {
-  pattern: TypePatternResponse;
-  patternIdArray: string[];
-};
-
-const CollectionPatternRow = ({ pattern, patternIdArray }: CollectionPatternRowProps) => {
-  const imageSrc = generatePbImage(pattern);
-  const linkedAuthors = pattern.expand?.authors?.map((a) => a.name).filter(Boolean) ?? [];
-  const manualAuthors = pattern.author_manual?.filter(Boolean) ?? [];
-  const authorName = [...linkedAuthors, ...manualAuthors].join(', ');
-
-  return (
-    <>
-      <Box>
-        {/* Thumbnail */}
-        <Box
-          component={Link as any}
-          to="/"
-          search={{ id: patternIdArray, patternId: pattern.id }}
-          sx={{
-            backgroundColor: '#fff',
-            borderRadius: 2,
-            overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'block',
-            p: 2,
-          }}
-        >
-          <Box
-            component="img"
-            loading="lazy"
-            src={imageSrc}
-            alt={pattern.name}
-            sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', aspectRatio: '1/1' }}
-          />
-        </Box>
-
-        {/* Info */}
-        <Stack direction={{ xs: 'column', md: 'row' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight={700}
-              sx={{ mb: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            >
-              {pattern.name}
-            </Typography>
-
-            {authorName && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                by {authorName}
-              </Typography>
-            )}
-
-            {pattern.description && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  fontSize: '0.8rem',
-                  mb: 0.75,
-                }}
-              >
-                {pattern.description}
-              </Typography>
-            )}
-          </Box>
-
-          <Button
-            component={Link as any}
-            to="/"
-            search={{ id: [pattern.id], patternId: pattern.id }}
-            size="small"
-            variant="text"
-          >
-            View
-          </Button>
-        </Stack>
-      </Box>
-    </>
-  );
-};
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
