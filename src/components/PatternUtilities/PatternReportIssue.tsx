@@ -154,6 +154,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
             <MenuItem value="incorrect size">Incorrect Size</MenuItem>
             <MenuItem value="duplicate upload">Duplicate Upload</MenuItem>
             <MenuItem value="Broken Link">Broken Link</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
           </TextField>
 
           <TextField
