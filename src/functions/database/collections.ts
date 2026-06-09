@@ -59,7 +59,7 @@ export const useQueryGetCollectionById = (collectionId: string) => {
     queryKey: ['GetCollectionById', collectionId],
     queryFn: async (): Promise<TypeCollectionResponse> => {
       return await pocketbase.collection('user_collections').getOne(collectionId, {
-        expand: 'patterns,owner_id',
+        expand: 'patterns,patterns.authors,owner_id',
       });
     },
     enabled: !!collectionId,
@@ -158,13 +158,7 @@ export const useMutationFollowCollection = () => {
   const { authData } = useGlobalAuthData();
 
   return useMutation({
-    mutationFn: async ({
-      collectionId,
-      collectionUpdated,
-    }: {
-      collectionId: string;
-      collectionUpdated: string;
-    }) => {
+    mutationFn: async ({ collectionId, collectionUpdated }: { collectionId: string; collectionUpdated: string }) => {
       return await pocketbase.collection('user_followed_collections').create({
         owner_id: authData?.id,
         collection_id: collectionId,

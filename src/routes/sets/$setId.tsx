@@ -134,10 +134,9 @@ function RouteComponent() {
 // ─── SetPatternCard ───────────────────────────────────────────────────────────
 
 function SetPatternCard({ pattern, patternIdArray }: { pattern: TypePatternResponse; patternIdArray: string[] }) {
-  const authors = pattern.expand?.authors
-    ?.map((a) => a.name)
-    .filter(Boolean)
-    .join(', ');
+  const linkedAuthors = pattern.expand?.authors?.map((a) => a.name).filter(Boolean) ?? [];
+  const manualAuthors = pattern.author_manual?.filter(Boolean) ?? [];
+  const authors = [...linkedAuthors, ...manualAuthors].join(', ');
 
   return (
     <Link

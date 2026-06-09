@@ -8,47 +8,20 @@ import {
   useMutationFollowCollection,
   useMutationUnfollowCollection,
 } from '@/functions/database/collections';
-import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
 import type { TypePatternResponse } from '@/functions/database/patterns';
-import { BorderedCard } from '@/components/cards/BorderedCard';
-import { DecorativeTitle } from '@/components/ViewHelpers';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { alpha } from '@mui/material/styles';
 
-import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
-import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
-import DownloadIcon from '@mui/icons-material/Download';
-import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 
-import {
-  Alert,
-  Box,
-  Button,
-  Collapse,
-  Chip,
-  CircularProgress,
-  Container,
-  Divider,
-  Paper,
-  Skeleton,
-  Stack,
-  Tooltip,
-  Typography,
-  Grid,
-} from '@mui/material';
-import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3.tsx';
-import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG.tsx';
+import { Alert, Box, Button, Container, Paper, Skeleton, Stack, Typography, Grid } from '@mui/material';
 
 export const Route = createFileRoute('/profile/collections/$collectionId')({
   component: RouteComponent,
@@ -244,12 +217,9 @@ type CollectionPatternRowProps = {
 
 const CollectionPatternRow = ({ pattern, patternIdArray }: CollectionPatternRowProps) => {
   const imageSrc = generatePbImage(pattern);
-  const svgDownloadSrc = generatePbImageSVG(pattern);
-  const authorName = pattern.expand?.authors?.map((a) => a.name).join(', ') || pattern.author_manual?.join(', ') || '';
-  const visibleTags = pattern.tags?.slice(0, 25) ?? [];
-  const extraTagCount = (pattern.tags?.length ?? 0) - visibleTags.length;
-
-  const [isVisible, setIsVisible] = React.useState(false);
+  const linkedAuthors = pattern.expand?.authors?.map((a) => a.name).filter(Boolean) ?? [];
+  const manualAuthors = pattern.author_manual?.filter(Boolean) ?? [];
+  const authorName = [...linkedAuthors, ...manualAuthors].join(', ');
 
   return (
     <>
@@ -311,29 +281,6 @@ const CollectionPatternRow = ({ pattern, patternIdArray }: CollectionPatternRowP
                 {pattern.description}
               </Typography>
             )}
-
-            {/*{visibleTags.length > 0 && (
-            <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
-              <LocalOfferOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled', mt: '3px' }} />
-              {visibleTags.map((tag) => (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.75 } }}
-                />
-              ))}
-              {extraTagCount > 0 && (
-                <Chip
-                  label={`+${extraTagCount}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.75 } }}
-                />
-              )}
-            </Stack>
-          )}*/}
           </Box>
 
           <Button
@@ -346,59 +293,7 @@ const CollectionPatternRow = ({ pattern, patternIdArray }: CollectionPatternRowP
             View
           </Button>
         </Stack>
-
-        {/* Actions */}
-        {/*<Stack spacing={1} sx={{ flexShrink: 0, alignSelf: 'center' }}>
-          {pattern.pattern_file && (
-            <Button
-              size="small"
-              variant="text"
-              onClick={() => setIsVisible(!isVisible)}
-              startIcon={
-                isVisible ? <ExpandLessRoundedIcon fontSize="small" /> : <ExpandMoreRoundedIcon fontSize="small" />
-              }
-            >
-              More Details
-            </Button>
-          )}
-
-          {pattern?.pattern_file_external && (
-            <Button size="small" variant="text" startIcon={<LaunchRoundedIcon fontSize="small" />}>
-              View
-            </Button>
-          )}
-        </Stack>*/}
       </Box>
-
-      <Collapse in={isVisible}>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <ExportPatternForPrintV3 viewData={pattern} key={'print' + pattern?.id} />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <ExportPatternForSVG viewData={pattern} key={'svg' + pattern?.id} />
-
-            <BorderedCard>
-              <DecorativeTitle>View</DecorativeTitle>
-
-              <Typography sx={{ mb: 3, textAlign: 'center' }}>
-                You can also view this pattern on it's standalone page
-              </Typography>
-
-              <Button
-                component={Link as any}
-                to={'/'}
-                search={{ id: [pattern.id], patternId: pattern.id }}
-                fullWidth
-                variant="contained"
-              >
-                View Pattern
-              </Button>
-            </BorderedCard>
-          </Grid>
-        </Grid>
-      </Collapse>
     </>
   );
 };
