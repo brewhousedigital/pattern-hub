@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
-import { DecorativeTitle } from '@/components/ViewHelpers';
 import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
 import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
 import { ExportPatternForImage } from '@/components/PatternExport/ExportPatternForImage';
@@ -98,6 +97,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             </BorderedCard>
 
             {!viewData?.pattern_file_external && (
+              <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
+            )}
+
+            {!viewData?.pattern_file_external && (
               <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
             )}
 
@@ -113,10 +116,6 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   <PatternViewer3DLazy viewData={viewData} />
                 </Suspense>
               </CollapsibleCard>
-            )}
-
-            {!viewData?.pattern_file_external && (
-              <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
             )}
           </Grid>
 
@@ -362,10 +361,8 @@ const PatternInstructions = (props: TypeViewData) => {
   if (!props.viewData?.instructions) return <></>;
 
   return (
-    <BorderedCard>
-      <DecorativeTitle>Pattern Instructions</DecorativeTitle>
-
+    <CollapsibleCard title="Pattern Instructions">
       <MarkdownWrapper>{props.viewData?.instructions}</MarkdownWrapper>
-    </BorderedCard>
+    </CollapsibleCard>
   );
 };
