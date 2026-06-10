@@ -49,8 +49,10 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
   const { refetch } = useQueryGetContentReports();
   const updateReport = useMutationUpdateContentReport();
 
-  const typeMeta =
-    CONTENT_TYPE_META[props.report?.content_type ?? ''] ?? { label: props.report?.content_type ?? 'Unknown', color: 'default' as const };
+  const typeMeta = CONTENT_TYPE_META[props.report?.content_type ?? ''] ?? {
+    label: props.report?.content_type ?? 'Unknown',
+    color: 'default' as const,
+  };
 
   async function handleSubmit() {
     if (!props.report) return;
@@ -100,11 +102,11 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
           </Box>
 
           <Typography fontWeight={500} fontSize={14}>
-            {props.report?.content_name || '—'}
+            {props.report?.content_name || '-'}
           </Typography>
 
           <Typography variant="body2" color="text.secondary" fontFamily="monospace" sx={{ mt: 0.25 }}>
-            ID: {props.report?.content_id || '—'}
+            ID: {props.report?.content_id || '-'}
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -112,7 +114,7 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            Submitted: {props.report ? new Date(props.report.created).toLocaleDateString() : '—'}
+            Submitted: {props.report ? new Date(props.report.created).toLocaleDateString() : '-'}
           </Typography>
 
           {props.report?.expand?.owner_id?.id && (

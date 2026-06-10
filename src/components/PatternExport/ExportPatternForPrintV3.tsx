@@ -158,7 +158,7 @@ async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<strin
 //   Fix: use regex to replace ALL stroke-width occurrences (both CSS and
 //   attribute) with the correct user-unit value derived from the viewBox.
 //   Formula: strokeUserUnits = lineWidthIn × (viewBoxWidth / patternWIn)
-//   This is unit-system-agnostic — works for mm, pt, px, or any other
+//   This is unit-system-agnostic - works for mm, pt, px, or any other
 //   coordinate space the SVG uses.
 function prepareSvgForPrint(
   svgString: string,
@@ -657,19 +657,19 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75 }}>
           {mode === 'single'
-            ? 'Fits the pattern onto one page — ideal for large-format printers or any custom size.'
+            ? 'Fits the pattern onto one page - ideal for large-format printers or any custom size.'
             : 'Splits the pattern across standard 8.5 × 11 sheets. Print and tape together to assemble.'}
         </Typography>
       </Box>
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2.5 }} />
 
-      {/* Pattern size — ratio-locked */}
+      {/* Pattern size - ratio-locked */}
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <SectionLabel>Pattern Size</SectionLabel>
           <Tooltip
-            title="Width and height are linked — changing either one updates the other to preserve the original aspect ratio."
+            title="Width and height are linked - changing either one updates the other to preserve the original aspect ratio."
             arrow
           >
             <LockIcon sx={{ fontSize: '0.8rem', color: 'text.secondary', mb: '2px', cursor: 'help' }} />
@@ -744,7 +744,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
                 {PAPER_PRESETS.map((p) => (
                   <MenuItem key={p.name} value={p.name}>
-                    {`${p.name} — ${p.wIn}" × ${p.hIn}"`}
+                    {`${p.name} - ${p.wIn}" × ${p.hIn}"`}
                   </MenuItem>
                 ))}
               </TextField>
@@ -857,7 +857,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
               {tilePages} sheet{tilePages !== 1 ? 's' : ''}
             </Box>{' '}
-            — {tileCols} column{tileCols !== 1 ? 's' : ''} × {tileRows} row{tileRows !== 1 ? 's' : ''} of 8.5 × 11
+            - {tileCols} column{tileCols !== 1 ? 's' : ''} × {tileRows} row{tileRows !== 1 ? 's' : ''} of 8.5 × 11
             paper. Each sheet has crop marks and a legend stamp. Align the crop marks and tape the sheets together to
             assemble the full-size pattern.
           </Typography>

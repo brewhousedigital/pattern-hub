@@ -54,7 +54,7 @@ export const AdminDashboardTagsCard = () => {
                 <strong>{topTag.tag}</strong> ({topTag.count.toLocaleString()})
               </>
             ) : (
-              '—'
+              '-'
             )}
           </Typography>
         </AdminCardWrapper>

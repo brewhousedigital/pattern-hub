@@ -1,11 +1,11 @@
-// This component is driving the export flow. Pure UI + form state — all heavy lifting is in useExportPattern.
+// This component is driving the export flow. Pure UI + form state - all heavy lifting is in useExportPattern.
 //
 // PROPS
-//   pattern                 — the TypePatternResponse row
-//   patternFileUrl          — resolved absolute URL of the SVG (caller computes
+//   pattern                 - the TypePatternResponse row
+//   patternFileUrl          - resolved absolute URL of the SVG (caller computes
 //                              from PocketBase file token)
-//   authorLine              — pre-joined "by X, Y" string
-//   patternKeys             — { fullPath, name }[] for the legend
+//   authorLine              - pre-joined "by X, Y" string
+//   patternKeys             - { fullPath, name }[] for the legend
 
 import { useMemo, useState } from 'react';
 import { BorderedCard } from '@/components/cards/BorderedCard';
@@ -39,10 +39,10 @@ import {
 } from '@mui/material';
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; mime: string }[] = [
-  { value: 'png', label: 'PNG  — best for Cricut / vinyl cutters', mime: 'image/png' },
-  { value: 'jpg', label: 'JPG  — smaller file, no transparency', mime: 'image/jpeg' },
-  { value: 'webp', label: 'WebP — modern web format', mime: 'image/webp' },
-  { value: 'svg', label: 'SVG  — vector', mime: 'image/svg+xml' },
+  { value: 'png', label: 'PNG  - best for Cricut / vinyl cutters', mime: 'image/png' },
+  { value: 'jpg', label: 'JPG  - smaller file, no transparency', mime: 'image/jpeg' },
+  { value: 'webp', label: 'WebP - modern web format', mime: 'image/webp' },
+  { value: 'svg', label: 'SVG  - vector', mime: 'image/svg+xml' },
 ];
 
 const UNIT_OPTIONS: TypePatternExportUnit[] = ['in', 'cm', 'mm', 'px'];
@@ -80,7 +80,7 @@ export function ExportPatternToDownloadV3({ ctx }: ExportPatternToDownloadV3Prop
 
   const { runExport, isExporting, error } = useExportPattern();
 
-  // DPI picker is irrelevant when the user is working in pixels — pixels are
+  // DPI picker is irrelevant when the user is working in pixels - pixels are
   // already an absolute output unit.
   const showDpi = form.unit !== 'px';
 

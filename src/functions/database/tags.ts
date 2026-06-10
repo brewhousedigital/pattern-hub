@@ -6,7 +6,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 //
 // The `tags` collection is a PocketBase View Collection generated from a SQL
 // SELECT that aggregates pattern tag counts.  It is read-only and its IDs are
-// random per-query — do NOT use its IDs as foreign keys.
+// random per-query - do NOT use its IDs as foreign keys.
 
 export const useQueryGetAllTags = () => {
   return useQuery({
@@ -39,7 +39,7 @@ export const useQuerySearchTags = (searchTerm: string, enabled = true) => {
 // ─── Tag hierarchy (regular collection, fully writable) ──────────────────────
 //
 // A separate `tag_hierarchy` regular collection stores parent/child
-// relationships keyed on lowercase tag name strings — avoiding any dependency
+// relationships keyed on lowercase tag name strings - avoiding any dependency
 // on the view's unstable per-query IDs.
 //
 //   tag_hierarchy: { id, tag: string, parent_tag: string }
@@ -109,7 +109,7 @@ export async function clearTagParent(childTag: string): Promise<void> {
  * @param hierarchy Full list from `useQueryGetTagHierarchy`.
  * @returns         e.g. `['lizard', 'creature']`
  *
- * Guards against circular references — stops after 20 hops.
+ * Guards against circular references - stops after 20 hops.
  */
 export function getAncestors(tagName: string, hierarchy: TypeTagHierarchyRecord[]): string[] {
   const ancestors: string[] = [];
@@ -220,7 +220,7 @@ export interface TypeAdminTagStatsPaginatedParams {
   /** 0-indexed page (MUI DataGrid convention; +1 before sending to PocketBase). */
   page: number;
   pageSize: number;
-  /** Free-text filter: tag ~ "value" — sanitised before sending. */
+  /** Free-text filter: tag ~ "value" - sanitised before sending. */
   search: string;
   sortField: 'tag' | 'count';
   sortDir: 'asc' | 'desc';

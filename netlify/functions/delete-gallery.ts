@@ -23,7 +23,7 @@ export default async (req: Request) => {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // 1. Verify PocketBase auth token — get userId
+  // 1. Verify PocketBase auth token - get userId
   const pbAuthResp = await fetch(`${PB_URL}/api/collections/users/auth-refresh`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${authToken}` },
@@ -34,7 +34,7 @@ export default async (req: Request) => {
   const pbAuthData = (await pbAuthResp.json()) as { record: { id: string } };
   const userId = pbAuthData.record.id;
 
-  // 2. Fetch the gallery record — verify ownership
+  // 2. Fetch the gallery record - verify ownership
   const recordResp = await fetch(`${PB_URL}/api/collections/gallery/records/${recordId}`, {
     headers: { Authorization: `Bearer ${authToken}` },
   });
@@ -47,7 +47,7 @@ export default async (req: Request) => {
     return Response.json({ error: 'Not authorised' }, { status: 403 });
   }
 
-  // 3. Delete from ImageKit (best-effort — don't fail the whole request if this errors)
+  // 3. Delete from ImageKit (best-effort - don't fail the whole request if this errors)
   if (record.imagekit_file_id) {
     try {
       await fetch(`${IK_API_URL}/${record.imagekit_file_id}`, {

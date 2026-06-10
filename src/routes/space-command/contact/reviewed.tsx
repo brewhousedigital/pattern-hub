@@ -88,7 +88,7 @@ function RouteComponent() {
       filterable: false,
       renderCell: (params) => {
         const admin = params.row.expand?.reviewed_by;
-        return admin?.name ?? '—';
+        return admin?.name ?? '-';
       },
     },
     {

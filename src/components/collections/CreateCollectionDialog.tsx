@@ -117,7 +117,7 @@ export const CreateCollectionDialog = ({ open, onClose, onSuccess, initialPatter
 
           <TextField
             label="Description"
-            placeholder="Optional — what is this collection about?"
+            placeholder="Optional - what is this collection about?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             size="small"

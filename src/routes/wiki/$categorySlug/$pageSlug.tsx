@@ -22,7 +22,7 @@ function RouteComponent() {
 
   const { data: page, isLoading, isError } = useQueryGetWikiPage(categorySlug, pageSlug);
 
-  // All pages are fetched for [[wiki-link]] resolution — cached by React Query
+  // All pages are fetched for [[wiki-link]] resolution - cached by React Query
   const { data: allPages = [] } = useQueryGetAllWikiPages();
 
   return (
@@ -30,7 +30,9 @@ function RouteComponent() {
       <PageWrapper>
         <Container maxWidth="lg">
           {/* Breadcrumb */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 4, color: 'text.disabled', fontSize: '0.85rem' }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 4, color: 'text.disabled', fontSize: '0.85rem' }}
+          >
             <Link to="/wiki" style={{ color: 'inherit', textDecoration: 'none' }}>
               Wiki
             </Link>
@@ -44,7 +46,9 @@ function RouteComponent() {
                 {page.expand?.category?.name ?? categorySlug}
               </Link>
             ) : (
-              <Typography variant="body2" color="text.disabled">{categorySlug}</Typography>
+              <Typography variant="body2" color="text.disabled">
+                {categorySlug}
+              </Typography>
             )}
             <ChevronRightIcon sx={{ fontSize: '0.9rem' }} />
             <Typography variant="body2" color="text.secondary">
@@ -52,9 +56,7 @@ function RouteComponent() {
             </Typography>
           </Box>
 
-          {isError && (
-            <Typography color="error.main">Page not found.</Typography>
-          )}
+          {isError && <Typography color="error.main">Page not found.</Typography>}
 
           {isLoading && (
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 6 }}>
@@ -80,12 +82,15 @@ function RouteComponent() {
                 </Typography>
 
                 <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 4 }}>
-                  Last updated {new Date(page.updated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  Last updated{' '}
+                  {new Date(page.updated).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
                 </Typography>
 
-                <WikiMarkdownWrapper wikiPages={allPages}>
-                  {page.content}
-                </WikiMarkdownWrapper>
+                <WikiMarkdownWrapper wikiPages={allPages}>{page.content}</WikiMarkdownWrapper>
               </Box>
 
               {/* Sticky TOC sidebar */}

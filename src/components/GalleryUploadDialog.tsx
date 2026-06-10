@@ -92,7 +92,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setFileError('File is too large — maximum 10 MB');
+      setFileError('File is too large - maximum 10 MB');
       return;
     }
     if (preview) URL.revokeObjectURL(preview);
@@ -123,7 +123,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
       return;
     }
     if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete — wait a moment and try again.', { variant: 'warning' });
+      enqueueSnackbar('Security check not complete - wait a moment and try again.', { variant: 'warning' });
       return;
     }
 
@@ -148,13 +148,13 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
     fd.append('ts', String(formOpenTime.current));
 
     try {
-      // No Content-Type header — browser sets multipart boundary automatically
+      // No Content-Type header - browser sets multipart boundary automatically
       const res = await fetch('/api/submit-gallery', { method: 'POST', body: fd });
       const data = (await res.json()) as { success?: boolean; error?: string };
 
       if (!res.ok) {
         setUploadState('error');
-        setUploadError(data.error ?? 'Upload failed — please try again.');
+        setUploadError(data.error ?? 'Upload failed - please try again.');
         return;
       }
 
@@ -162,7 +162,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
       props.onSuccess();
     } catch {
       setUploadState('error');
-      setUploadError('Something went wrong — please try again.');
+      setUploadError('Something went wrong - please try again.');
     }
   }
 
@@ -250,7 +250,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
               Drop an image here, or <strong>click to browse</strong>
             </Typography>
             <Typography variant="caption" color="text.disabled">
-              JPEG, PNG, WebP — max 10 MB
+              JPEG, PNG, WebP - max 10 MB
             </Typography>
           </Box>
         )}

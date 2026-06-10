@@ -66,7 +66,7 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
 
       enqueueSnackbar('Marked as reviewed', { variant: 'success' });
     } catch {
-      enqueueSnackbar('Something went wrong — try again in a few minutes', { variant: 'error' });
+      enqueueSnackbar('Something went wrong - try again in a few minutes', { variant: 'error' });
     }
 
     setIsLoading(false);
@@ -88,7 +88,7 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
         {/* Sender info */}
         <Box sx={{ p: 1.5, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography fontWeight={500} fontSize={14}>
-            {props.submission?.name ?? '—'}
+            {props.submission?.name ?? '-'}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
@@ -96,7 +96,7 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
           </Typography>
 
           <Typography variant="body2" color="text.disabled">
-            Submitted: {props.submission ? new Date(props.submission.created).toLocaleDateString() : '—'}
+            Submitted: {props.submission ? new Date(props.submission.created).toLocaleDateString() : '-'}
           </Typography>
         </Box>
 

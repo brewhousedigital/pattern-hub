@@ -82,7 +82,7 @@ const ACCENT_COLORS = [
 ];
 
 function formatDate(iso?: string): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
@@ -207,7 +207,7 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
         <Typography fontSize={12} color="text.secondary">
-          {params.row.position ?? '—'}
+          {params.row.position ?? '-'}
         </Typography>
       ),
     },
@@ -320,7 +320,7 @@ function RouteComponent() {
             Permanently delete <strong>{deleteTarget?.title || 'this set'}</strong>?
           </DialogContentText>
           <DialogContentText sx={{ mt: 1.5, color: 'error.main', fontSize: 13 }}>
-            The patterns themselves will not be deleted — only the set grouping.
+            The patterns themselves will not be deleted - only the set grouping.
           </DialogContentText>
         </DialogContent>
         <Divider />
@@ -515,7 +515,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
                   <Typography variant="caption" color="text.secondary">
                     {isPublished
                       ? 'Visible to everyone on the public Sets page'
-                      : 'Only visible to admins — not shown publicly'}
+                      : 'Only visible to admins - not shown publicly'}
                   </Typography>
                 </Stack>
               }

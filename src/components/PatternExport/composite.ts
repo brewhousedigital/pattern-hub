@@ -57,7 +57,7 @@ function computeLayout(input: TypeCompositeInput) {
 }
 
 export async function compositeExport(input: TypeCompositeInput): Promise<Blob> {
-  // SHORT-CIRCUIT: original SVG export — return source bytes untouched.
+  // SHORT-CIRCUIT: original SVG export - return source bytes untouched.
   if (input.format === 'svg' && input.svgVariant === 'original') {
     return new Blob([input.originalSvgText], { type: 'image/svg+xml' });
   }
@@ -141,7 +141,7 @@ async function buildRasterBlob(scaledPatternSvg: string, input: TypeCompositeInp
   // Pick the highest SUPERSAMPLE that keeps each drawImage destination ≤ 8192px
   // per dimension. Above that, Chrome's GPU rasterizer silently produces blank
   // output. At high DPI the output is already large enough that supersampling
-  // adds nothing — use 1× and paint 1:1.
+  // adds nothing - use 1× and paint 1:1.
   const MAX_DIM = 8192;
   const SUPERSAMPLE = Math.max(1, Math.min(3, Math.floor(MAX_DIM / Math.max(totalW, totalH))));
 

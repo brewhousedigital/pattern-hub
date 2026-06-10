@@ -1,6 +1,6 @@
 // units.ts
 // Convert any supported unit to absolute pixels at a given DPI.
-// 'px' is unit-less w.r.t. DPI — passes through.
+// 'px' is unit-less w.r.t. DPI - passes through.
 // 1 in = 2.54 cm = 25.4 mm. DPI = pixels per inch.
 
 export type TypePatternExportUnit = 'in' | 'cm' | 'mm' | 'px';

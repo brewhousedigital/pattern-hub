@@ -30,7 +30,7 @@ export type TypePatternSetPayload = {
 
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
-/** Admin — all sets including unpublished, sorted by position then title. */
+/** Admin - all sets including unpublished, sorted by position then title. */
 export const useQueryGetAllSets = () => {
   return useQuery({
     queryKey: [...PATTERN_SETS_QUERY_KEY, 'all'],
@@ -39,7 +39,7 @@ export const useQueryGetAllSets = () => {
   });
 };
 
-/** Public — only published sets, sorted by position then title. */
+/** Public - only published sets, sorted by position then title. */
 export const useQueryGetPublishedSets = () => {
   return useQuery({
     queryKey: [...PATTERN_SETS_QUERY_KEY, 'published'],
@@ -63,15 +63,13 @@ export const useQueryGetSetById = (id?: string) => {
   });
 };
 
-/** Pattern search for the admin pattern picker — max 20 results. */
+/** Pattern search for the admin pattern picker - max 20 results. */
 export const useQuerySearchPatternsForPicker = (search: string) => {
   return useQuery({
     queryKey: ['PatternPickerSearch', search],
     queryFn: async (): Promise<TypePatternResponse[]> => {
       const safe = search.trim().replace(/"/g, '\\"');
-      const filter = safe
-        ? `isDeleted=false && (name~"${safe}" || description~"${safe}")`
-        : 'isDeleted=false';
+      const filter = safe ? `isDeleted=false && (name~"${safe}" || description~"${safe}")` : 'isDeleted=false';
       const result = await pocketbase.collection('patterns').getList<TypePatternResponse>(1, 20, {
         filter,
         sort: 'name',
@@ -99,8 +97,7 @@ export const useMutationUpdateSet = () => {
     }: {
       id: string;
       payload: Partial<TypePatternSetPayload>;
-    }): Promise<TypePatternSet> =>
-      pocketbase.collection('pattern_sets').update<TypePatternSet>(id, payload),
+    }): Promise<TypePatternSet> => pocketbase.collection('pattern_sets').update<TypePatternSet>(id, payload),
   });
 };
 

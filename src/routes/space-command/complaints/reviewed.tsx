@@ -111,12 +111,7 @@ function PatternReportsGrid() {
         const pattern = params.row.expand?.pattern_id;
         const thumbUrl = generatePbImage(pattern);
         return (
-          <img
-            loading="lazy"
-            src={thumbUrl}
-            alt="pattern"
-            style={{ width: 75, height: 75, aspectRatio: '1/1' }}
-          />
+          <img loading="lazy" src={thumbUrl} alt="pattern" style={{ width: 75, height: 75, aspectRatio: '1/1' }} />
         );
       },
     },
@@ -217,9 +212,7 @@ function PatternReportsGrid() {
         sortingMode="server"
         filterMode="server"
         paginationMode="server"
-        onPaginationModelChange={(newModel) =>
-          setPaginationModel({ ...newModel, page: newModel.page + 1 })
-        }
+        onPaginationModelChange={(newModel) => setPaginationModel({ ...newModel, page: newModel.page + 1 })}
         onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
         initialState={{
           pagination: { paginationModel: { pageSize: 25 } },
@@ -301,7 +294,7 @@ function ContentReportsGrid() {
       width: 200,
       renderCell: (params) => (
         <>
-          <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{params.value || '—'}</Typography>
+          <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{params.value || '-'}</Typography>
           <Typography variant="body2" fontFamily="monospace" color="text.disabled">
             {params.row.content_id}
           </Typography>
@@ -386,9 +379,7 @@ function ContentReportsGrid() {
         sortingMode="server"
         filterMode="server"
         paginationMode="server"
-        onPaginationModelChange={(newModel) =>
-          setPaginationModel({ ...newModel, page: newModel.page + 1 })
-        }
+        onPaginationModelChange={(newModel) => setPaginationModel({ ...newModel, page: newModel.page + 1 })}
         onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
         initialState={{
           pagination: { paginationModel: { pageSize: 25 } },

@@ -19,7 +19,7 @@ export type TypeKanbanColumn = {
   position: number;
   /** Optional hex accent color for the column header (e.g. "#4caf50"). */
   color: string;
-  /** Marks the special Done column — items are capped to the 5 most-recently updated. */
+  /** Marks the special Done column - items are capped to the 5 most-recently updated. */
   is_done: boolean;
   /** Optional; column header turns amber / red when item count reaches / exceeds this. */
   wip_limit: number;

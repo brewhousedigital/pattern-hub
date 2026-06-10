@@ -17,7 +17,7 @@ export async function renderInstructions(
 ): Promise<{ canvas: HTMLCanvasElement; width: number; height: number }> {
   const html = await marked.parse(markdown);
 
-  // Hidden offscreen container — must be in the document (not detached) so
+  // Hidden offscreen container - must be in the document (not detached) so
   // html2canvas can measure layout. Position offscreen to keep invisible.
   const host = document.createElement('div');
   host.style.cssText = `
@@ -59,7 +59,7 @@ export async function renderInstructions(
       useCORS: true,
       logging: false,
     });
-    // Render at logical (1x) size — divide by scale used.
+    // Render at logical (1x) size - divide by scale used.
     return { canvas, width: canvas.width / 2, height: canvas.height / 2 };
   } finally {
     document.body.removeChild(host);

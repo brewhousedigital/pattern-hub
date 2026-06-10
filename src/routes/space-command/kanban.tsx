@@ -249,7 +249,7 @@ function RouteComponent() {
     const activeIdStr = String(active.id);
     const isCrossColumn = targetColId !== null && targetColId !== originalColId;
 
-    // ── Column reorder — always needs a valid over target ──────────────────
+    // ── Column reorder - always needs a valid over target ──────────────────
     const isActiveColumn = columns.some((c) => c.id === activeIdStr);
     if (isActiveColumn) {
       if (!over || active.id === over.id) return;
@@ -300,7 +300,7 @@ function RouteComponent() {
       const finalIdx = reordered.findIndex((i) => i.id === activeIdStr);
       newPos = midpoint(reordered[finalIdx - 1]?.position, reordered[finalIdx + 1]?.position);
     } else {
-      // Dropped on empty column space — append to end
+      // Dropped on empty column space - append to end
       const rest = colItems.filter((i) => i.id !== activeIdStr);
       newPos = (rest[rest.length - 1]?.position ?? 0) + 1;
     }
@@ -671,7 +671,7 @@ function KanbanColumn({
           {/* Title + done badge */}
           <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
             {column.is_done && (
-              <Tooltip title="Done column — shows last 5 items">
+              <Tooltip title="Done column - shows last 5 items">
                 <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main', flexShrink: 0 }} />
               </Tooltip>
             )}

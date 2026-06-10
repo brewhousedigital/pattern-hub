@@ -14,13 +14,13 @@
  *
  * Click-to-fill vs Fill All
  * ─────────────────────────
- * • floodFill (single click) — NO exterior mask.  Instead it aborts if the fill
+ * • floodFill (single click) - NO exterior mask.  Instead it aborts if the fill
  *   would cover > MAX_FILL_RATIO of the canvas.  Large connected regions are
  *   almost always the outer background; aborting them silently is safe UX.
  *   Using the exterior mask here caused "nothing happens" on many real patterns
  *   because anti-aliased gaps let the exterior flood leak into interior regions.
  *
- * • fillAllRegions — still uses the exterior mask so "Fill All" doesn't paint
+ * • fillAllRegions - still uses the exterior mask so "Fill All" doesn't paint
  *   the outer background margin.
  */
 
@@ -82,7 +82,7 @@ export function buildExteriorMask(hitData: Uint8ClampedArray, w: number, h: numb
 /**
  * 4-connected flood fill triggered by a single click.
  *
- * Does NOT use the exterior mask — see module comment for why.
+ * Does NOT use the exterior mask - see module comment for why.
  * Aborts (returns false, no canvas change) if the fill would exceed
  * MAX_FILL_RATIO of the total canvas area.  This silently ignores clicks on
  * the outer background without needing the exterior mask.
@@ -145,7 +145,7 @@ export function floodFill(
 
 /**
  * Fills every interior pixel (non-boundary, non-exterior) in one pass.
- * Used by the "Fill All" button — keeps the exterior mask so the outer
+ * Used by the "Fill All" button - keeps the exterior mask so the outer
  * background margin is not painted.
  */
 export function fillAllRegions(

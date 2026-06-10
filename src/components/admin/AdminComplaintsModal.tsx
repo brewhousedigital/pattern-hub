@@ -125,7 +125,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary">
-              Submitted: {props.complaint ? new Date(props.complaint.created).toLocaleDateString() : '—'}
+              Submitted: {props.complaint ? new Date(props.complaint.created).toLocaleDateString() : '-'}
             </Typography>
 
             {props.complaint?.expand?.owner_id?.id && (

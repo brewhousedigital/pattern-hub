@@ -4,14 +4,14 @@
  * Fetches the pattern SVG, scales it to RASTER_RES, and rasterises it into
  * three off-screen canvases:
  *
- *   hitCanvas        — white background + SVG.  Used for flood-fill boundary
+ *   hitCanvas        - white background + SVG.  Used for flood-fill boundary
  *                      detection (dark pixel = stroke = boundary).
  *
- *   svgOverlayCanvas — transparent background + SVG.  Drawn on top of fill
+ *   svgOverlayCanvas - transparent background + SVG.  Drawn on top of fill
  *                      colors in the CanvasTexture so stroke lines always
  *                      appear above the glass color regions.
  *
- *   colorCanvas      — blank canvas that receives user flood-fills.
+ *   colorCanvas      - blank canvas that receives user flood-fills.
  *
  * The exterior mask (pixels reachable from the image edges) is pre-computed
  * once so click-to-fill silently ignores the outer background.

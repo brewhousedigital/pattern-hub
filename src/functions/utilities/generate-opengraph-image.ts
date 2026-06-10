@@ -8,7 +8,7 @@ export const generateOpengraphImage = async (
   const WIDTH = 1200;
   const HEIGHT = 630;
 
-  // Load the preview image — SVG needs to be fetched and re-blobbed so it
+  // Load the preview image - SVG needs to be fetched and re-blobbed so it
   // renders correctly cross-origin; WebP (and other bitmaps) can be loaded
   // directly via a regular Image with crossOrigin set.
   const previewBitmap = await (source.type === 'svg' ? loadSvgAsImage(source.url) : loadBitmapImage(source.url));
@@ -49,7 +49,7 @@ export const generateOpengraphImage = async (
   ctx.font = '500 32px system-ui, sans-serif';
   ctx.fillText(siteName, 60, 80);
 
-  // Pattern name — wrap if long
+  // Pattern name - wrap if long
   ctx.fillStyle = '#1a1a1a';
   ctx.font = '600 52px system-ui, sans-serif';
   const maxWidth = imgX - 100;
@@ -69,7 +69,7 @@ export const generateOpengraphImage = async (
 };
 
 // SVG must be fetched and converted to a blob URL so the browser renders it
-// correctly — direct cross-origin SVG URLs are often blocked by canvas tainting.
+// correctly - direct cross-origin SVG URLs are often blocked by canvas tainting.
 async function loadSvgAsImage(url: string): Promise<HTMLImageElement> {
   const svgText = await fetch(url).then((r) => r.text());
   const blob = new Blob([svgText], { type: 'image/svg+xml' });

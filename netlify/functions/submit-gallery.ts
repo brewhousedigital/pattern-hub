@@ -66,7 +66,7 @@ export default async (req: Request) => {
   const hp = (formData.get('hp') as string | null) ?? '';
   const ts = Number(formData.get('ts') ?? 0);
 
-  // 1. Honeypot — silent success to avoid training bots
+  // 1. Honeypot - silent success to avoid training bots
   if (hp !== '') {
     return Response.json({ success: true });
   }
@@ -105,7 +105,7 @@ export default async (req: Request) => {
     return Response.json({ error: 'Security check failed' }, { status: 400 });
   }
 
-  // 5. Verify PocketBase auth token — get user ID
+  // 5. Verify PocketBase auth token - get user ID
   const pbAuthResp = await fetch(`${PB_URL}/api/collections/users/auth-refresh`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${authToken}` },
@@ -121,7 +121,7 @@ export default async (req: Request) => {
     return Response.json({ error: 'Only image files are allowed' }, { status: 400 });
   }
   if (file.size > MAX_FILE_SIZE) {
-    return Response.json({ error: 'File too large — maximum 10 MB' }, { status: 400 });
+    return Response.json({ error: 'File too large - maximum 10 MB' }, { status: 400 });
   }
 
   // 7. Convert to WebP and cap dimensions before uploading to ImageKit
@@ -141,7 +141,7 @@ export default async (req: Request) => {
   } catch (error: any) {
     console.log('>>>Error', JSON.stringify(error));
     return Response.json(
-      { error: 'Failed to process image — please try a different file.', message: error?.message || '' },
+      { error: 'Failed to process image - please try a different file.', message: error?.message || '' },
       { status: 400 },
     );
   }
@@ -164,7 +164,7 @@ export default async (req: Request) => {
   if (!ikUploadResp.ok) {
     const errText = await ikUploadResp.text();
     console.error('Image upload failed:', errText);
-    return Response.json({ error: 'Image upload failed — please try again' }, { status: 500 });
+    return Response.json({ error: 'Image upload failed - please try again' }, { status: 500 });
   }
 
   const ikData = (await ikUploadResp.json()) as {
@@ -182,10 +182,10 @@ export default async (req: Request) => {
   const uploadAiStatus = ikData.extensionStatus?.['ai-tasks'];
 
   if (uploadAiStatus === 'failed') {
-    // AI model refused to process the image — treat as NSFW
+    // AI model refused to process the image - treat as NSFW
     tags = ['nsfw-flagged'];
   } else if (uploadAiStatus !== 'success') {
-    // Status is 'pending' — poll until the AI task resolves
+    // Status is 'pending' - poll until the AI task resolves
     for (let i = 0; i < POLL_ATTEMPTS; i++) {
       await delay(POLL_DELAY_MS);
 
@@ -206,14 +206,14 @@ export default async (req: Request) => {
           break;
         }
 
-        // 'failed' means the AI model refused to process the image — a strong
+        // 'failed' means the AI model refused to process the image - a strong
         // signal that the content is explicitly NSFW. Block it.
         if (aiStatus === 'failed') {
           tags = ['nsfw-flagged'];
           break;
         }
 
-        // 'pending' — keep polling
+        // 'pending' - keep polling
       }
     }
   }
@@ -244,7 +244,7 @@ export default async (req: Request) => {
   if (!pbResp.ok) {
     // Clean up the uploaded image if PB save fails
     await deleteIkFile(fileId);
-    return Response.json({ error: 'Failed to save photo — please try again' }, { status: 500 });
+    return Response.json({ error: 'Failed to save photo - please try again' }, { status: 500 });
   }
 
   const pbData = (await pbResp.json()) as { id: string };

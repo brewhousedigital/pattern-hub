@@ -15,7 +15,7 @@ export const useQueryUsersByPagination = (pageNumber: number, filter?: string) =
   });
 };
 
-// ─── Admin users — rich paginated query for the Users admin page ───────────────
+// ─── Admin users - rich paginated query for the Users admin page ───────────────
 
 export type TypeAdminUsersPaginationParams = {
   /** 0-indexed page (MUI DataGrid convention; +1 before sending to PocketBase). */

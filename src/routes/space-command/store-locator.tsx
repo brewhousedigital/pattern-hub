@@ -18,17 +18,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 
-import {
-  Alert,
-  Box,
-  Chip,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Chip, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
 
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 
@@ -52,7 +42,7 @@ function RouteComponent() {
   // ── Pagination (persisted in Jotai) ────────────────────────────────────────
   const { paginationModel, setPaginationModel } = useGlobalAdminPaginationStoreLocator();
 
-  // ── Search state (local — three independent fields) ────────────────────────
+  // ── Search state (local - three independent fields) ────────────────────────
   const [nameSearch, setNameSearch] = useState('');
   const [addressSearch, setAddressSearch] = useState('');
   const [phoneSearch, setPhoneSearch] = useState('');
@@ -127,7 +117,7 @@ function RouteComponent() {
           </Typography>
         ) : (
           <Typography fontSize={12} color="text.disabled" fontStyle="italic">
-            —
+            -
           </Typography>
         ),
     },
@@ -144,7 +134,7 @@ function RouteComponent() {
           </Typography>
         ) : (
           <Typography fontSize={12} color="text.disabled" fontStyle="italic">
-            —
+            -
           </Typography>
         ),
     },
@@ -168,7 +158,7 @@ function RouteComponent() {
           </Typography>
         ) : (
           <Typography fontSize={12} color="text.disabled" fontStyle="italic">
-            —
+            -
           </Typography>
         ),
     },
@@ -181,7 +171,12 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) => {
         const tags = Array.isArray(params.row.tags) ? params.row.tags : [];
-        if (!tags.length) return <Typography fontSize={12} color="text.disabled" fontStyle="italic">—</Typography>;
+        if (!tags.length)
+          return (
+            <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+              -
+            </Typography>
+          );
         return (
           <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.4, py: 0.5 }}>
             {tags.map((tag) => (
@@ -210,7 +205,7 @@ function RouteComponent() {
           </Typography>
         ) : (
           <Typography fontSize={12} color="text.disabled" fontStyle="italic">
-            —
+            -
           </Typography>
         ),
     },
@@ -252,7 +247,11 @@ function RouteComponent() {
     <>
       <AdminHeaderContainer
         title="Store Locator"
-        subtitle={<>{data?.totalItems ?? 0} store{(data?.totalItems ?? 0) !== 1 ? 's' : ''}</>}
+        subtitle={
+          <>
+            {data?.totalItems ?? 0} store{(data?.totalItems ?? 0) !== 1 ? 's' : ''}
+          </>
+        }
         action={openCreate}
         actionText="Add Store"
         actionIcon={<AddIcon />}

@@ -1,6 +1,6 @@
 // renderLegend.ts
 // Builds the legend card as an SVG string. Reusable: image export AND print view
-// both consume this. Height is dynamic — depends on number of pattern keys.
+// both consume this. Height is dynamic - depends on number of pattern keys.
 //
 // Layout (top-down):
 //   Header:   pattern name (bold, 22px)
@@ -45,7 +45,7 @@ const KEY_ICON = 24;
 export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   const STAT_COUNT = input.isSmall ? 3 : 4; // size, pieces, line width, date
 
-  const dateStr = input.designDate ? dayjs(input.designDate).format('MM-DD-YYYY') : '—';
+  const dateStr = input.designDate ? dayjs(input.designDate).format('MM-DD-YYYY') : '-';
 
   const statsBlockH = STAT_COUNT * STAT_ROW_H;
   const keysBlockH = input.keys.length * KEY_ROW_H;
@@ -61,7 +61,7 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   let y = PAD;
   const rows: string[] = [];
 
-  // Header — pattern name
+  // Header - pattern name
   rows.push(
     `<text x="${PAD}" y="${y + 22}" font-family="Roboto, Arial, sans-serif" font-size="20" font-weight="700" fill="#1a1a1a">${escapeXml(
       input.patternName,
@@ -77,7 +77,7 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   );
   y += SUB_H + 6;
 
-  // Stats — label : value pairs aligned in two columns
+  // Stats - label : value pairs aligned in two columns
   let stats: [string, string][] = [];
 
   if (input.isSmall) {
@@ -160,7 +160,7 @@ async function fetchAsDataUri(url: string, queryClient: QueryClient): Promise<st
         r.readAsDataURL(blob);
       });
     },
-    staleTime: Infinity, // never refetch — pattern key icons immutable
+    staleTime: Infinity, // never refetch - pattern key icons immutable
     gcTime: 1000 * 60 * 60, // keep 1 hr after last use
   });
 }

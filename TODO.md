@@ -16,10 +16,10 @@ type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 type DpiOption = 72 | 96 | 150 | 300 | 600;
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; mime: string }[] = [
-{ value: 'png', label: 'PNG  — best for Cricut / vinyl cutters', mime: 'image/png' },
-{ value: 'jpg', label: 'JPG  — smaller file, no transparency', mime: 'image/jpeg' },
-{ value: 'webp', label: 'WebP — modern web format', mime: 'image/webp' },
-{ value: 'svg', label: 'SVG  — vector', mime: 'image/svg+xml' },
+{ value: 'png', label: 'PNG  - best for Cricut / vinyl cutters', mime: 'image/png' },
+{ value: 'jpg', label: 'JPG  - smaller file, no transparency', mime: 'image/jpeg' },
+{ value: 'webp', label: 'WebP - modern web format', mime: 'image/webp' },
+{ value: 'svg', label: 'SVG  - vector', mime: 'image/svg+xml' },
 ];
 
 The pattern export will have a "Target Pattern Size" option that has a MUI TextField component for the desired Width and Height. This should scale the pattern in the same ratio that the pattern exists in, while preserving the existing line width. This part is important because the line thickness should not change. Here is the pattern DTO where the original width and height of the pattern is stored:

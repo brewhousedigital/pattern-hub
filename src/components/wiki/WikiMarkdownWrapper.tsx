@@ -104,7 +104,7 @@ export const WikiMarkdownWrapper = ({ children, wikiPages = [] }: WikiMarkdownWr
   );
 };
 
-// ─── Styles (same as MarkdownWrapper — kept independent for future divergence) ─
+// ─── Styles (same as MarkdownWrapper - kept independent for future divergence) ─
 
 const StyledWikiMarkdown = styled(Box)(({ theme }) => ({
   color: theme.palette.text.secondary,

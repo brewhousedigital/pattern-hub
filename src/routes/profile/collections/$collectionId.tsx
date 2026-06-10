@@ -61,7 +61,7 @@ function RouteComponent() {
       }
       await refetchFollowed();
     } catch {
-      // notistack not imported here — silent; user can retry
+      // notistack not imported here - silent; user can retry
     }
   };
 

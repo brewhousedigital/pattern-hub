@@ -78,7 +78,7 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9-]/g, '');
 }
 
-// ─── Legend geometry — mirrors render-legend.ts height formula exactly ────────
+// ─── Legend geometry - mirrors render-legend.ts height formula exactly ────────
 
 function legendPhysicalHeightIn(keyCount: number): number {
   const PAD = 20,
@@ -114,7 +114,7 @@ function extractSvgInner(svgStr: string): string {
 
 // Replaces all stroke-width values (CSS and attribute forms) with the correct
 // user-unit value for the target physical size. Same formula as prepareSvgForPrint
-// in the print component — works regardless of SVG coordinate system units.
+// in the print component - works regardless of SVG coordinate system units.
 function normalizeSvgStrokes(svgString: string, patternWIn: number, lineWidthIn: number): string {
   const m = svgString.match(/viewBox=["']\s*[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+[\d.]+/i);
   if (!m) return svgString;
@@ -172,7 +172,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     setUnit(newUnit);
   };
 
-  // Bidirectional ratio-locked handlers — each updates only the OTHER field
+  // Bidirectional ratio-locked handlers - each updates only the OTHER field
   const handleWidthChange = (raw: string) => {
     setPatternWidthInput(raw);
     const n = parseFloat(raw);
@@ -189,7 +189,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     }
   };
 
-  // Derived dimensions — original mode always uses DB values
+  // Derived dimensions - original mode always uses DB values
   const patternWIn = (() => {
     if (mode === 'original') return baseWIn;
     const n = parseFloat(patternWidthInput);
@@ -256,7 +256,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       });
 
       const vb = parseSvgViewBox(svgString);
-      if (!vb) throw new Error('Pattern SVG is missing a viewBox — cannot composite.');
+      if (!vb) throw new Error('Pattern SVG is missing a viewBox - cannot composite.');
 
       // Convert legend physical dimensions into pattern SVG user-unit space.
       // If the pattern is narrower than the legend, expand the output canvas so

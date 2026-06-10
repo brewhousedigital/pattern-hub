@@ -71,7 +71,7 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
 
   const handleOpen = () => {
     if (isInCooldown) {
-      enqueueSnackbar('You recently submitted a report — please wait a moment before submitting another.', {
+      enqueueSnackbar('You recently submitted a report - please wait a moment before submitting another.', {
         variant: 'warning',
       });
       return;
@@ -90,17 +90,17 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
     e.preventDefault();
 
     if (reason.length < 25) {
-      enqueueSnackbar('Please be more descriptive — at least 25 characters.', { variant: 'warning' });
+      enqueueSnackbar('Please be more descriptive - at least 25 characters.', { variant: 'warning' });
       return;
     }
 
-    // Client-side bot guards (silent fails — don't reveal guard logic)
+    // Client-side bot guards (silent fails - don't reveal guard logic)
     if (honeypot) return;
     const elapsed = Date.now() - formOpenTime.current;
     if (elapsed < 2000) return;
 
     if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete yet — wait a moment and try again.', { variant: 'warning' });
+      enqueueSnackbar('Security check not complete yet - wait a moment and try again.', { variant: 'warning' });
       return;
     }
 
@@ -128,7 +128,7 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
 
       localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       handleClose();
-      enqueueSnackbar('Thanks for the heads-up — our team will review this shortly.', { variant: 'success' });
+      enqueueSnackbar('Thanks for the heads-up - our team will review this shortly.', { variant: 'success' });
     } catch {
       enqueueSnackbar("Couldn't submit your report right now. Try again in a few minutes.", { variant: 'error' });
     }
@@ -149,7 +149,9 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
       </Tooltip>
 
       <Dialog open={isOpen} onClose={handleClose} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}>
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
+        >
           <Box>
             <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
               Report Store Issue
@@ -165,7 +167,7 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
 
         <DialogContent dividers>
           <Stack component="form" id="store-report-form" onSubmit={handleSubmit} spacing={2} sx={{ pt: 0.5 }}>
-            {/* Honeypot — invisible to humans, traps bots that fill every field */}
+            {/* Honeypot - invisible to humans, traps bots that fill every field */}
             <input
               aria-hidden="true"
               tabIndex={-1}

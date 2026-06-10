@@ -348,7 +348,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           })}
         </Box>
 
-        {/* Footer — back to site */}
+        {/* Footer - back to site */}
         <Divider />
         <Box sx={{ p: 1 }}>
           <ListItemButton

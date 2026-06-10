@@ -166,7 +166,7 @@ async function buildSinglePdf(
  * Overlap of 0.25 in on each edge helps with alignment when taping sheets together.
  */
 async function buildTiledPdf(svgString: string, patternName: string, svgWIn: number, svgHIn: number): Promise<void> {
-  const OVERLAP = 0.25; // in — bleed/overlap for alignment
+  const OVERLAP = 0.25; // in - bleed/overlap for alignment
   const { cols, rows } = calcTileInfo(svgWIn, svgHIn);
 
   // Rasterize the full SVG at 150 DPI (enough for tiled assembly guides)
@@ -384,7 +384,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
 
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75 }}>
           {mode === 'single'
-            ? 'Fits the pattern onto one page — great for standard and large-format printers.'
+            ? 'Fits the pattern onto one page - great for standard and large-format printers.'
             : 'Splits the pattern across standard 8.5 × 11 sheets. Tape them together to assemble full size.'}
         </Typography>
       </Box>
@@ -396,7 +396,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
           <SectionLabel>Pattern Size on Paper</SectionLabel>
 
           <Tooltip
-            title="How large the pattern should be when printed. Defaults to the design's original size. You can override this — e.g. enter '24in' to print a 24-inch pattern."
+            title="How large the pattern should be when printed. Defaults to the design's original size. You can override this - e.g. enter '24in' to print a 24-inch pattern."
             placement="top"
             arrow
           >
@@ -537,7 +537,7 @@ export const ExportPatternForPrintV2 = (props: TypeViewData) => {
               <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
                 {tileInfo.pages} sheet{tileInfo.pages !== 1 ? 's' : ''}
               </Box>{' '}
-              — {tileInfo.cols} column{tileInfo.cols !== 1 ? 's' : ''} × {tileInfo.rows} row
+              - {tileInfo.cols} column{tileInfo.cols !== 1 ? 's' : ''} × {tileInfo.rows} row
               {tileInfo.rows !== 1 ? 's' : ''} of 8.5 × 11 paper. Each sheet has a {TILE_MARGIN_IN}" margin and crop
               marks to guide assembly. Tape pages together along the crop marks to assemble the full pattern.
             </Typography>
@@ -610,7 +610,7 @@ function normalizeStrokeWidths(svgString: string, svgWIn: number, targetStrokeCm
   const viewBoxWidth = parseFloat(vbMatch[3]); // 107.724 user units
 
   // User units per inch at the intended print size
-  // svgWIn is the print width in inches — viewBoxWidth spans that whole width
+  // svgWIn is the print width in inches - viewBoxWidth spans that whole width
   const userUnitsPerInch = viewBoxWidth / svgWIn;
 
   const targetStrokeIn = targetStrokeCm / 2.54;

@@ -123,7 +123,7 @@ export const AdminWikiCategoryModal = (props: AdminWikiCategoryModalProps) => {
           fullWidth
           size="small"
           required
-          helperText="URL-safe identifier — auto-generated from name, editable"
+          helperText="URL-safe identifier - auto-generated from name, editable"
           slotProps={{ htmlInput: { pattern: '[a-z0-9-]+' } }}
         />
 

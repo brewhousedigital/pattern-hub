@@ -279,7 +279,7 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
         <AccordionDetails sx={{ px: 2, pt: 0, pb: 1.5 }}>
           {pages.length === 0 ? (
             <Typography variant="body2" color="text.disabled" sx={{ py: 1, pl: 1 }}>
-              No pages yet —{' '}
+              No pages yet -{' '}
               <Box
                 component="span"
                 onClick={props.canAdd ? props.onAddPage : undefined}
@@ -355,7 +355,7 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Category actions — stop accordion toggle propagation */}
+      {/* Category actions - stop accordion toggle propagation */}
       <Paper
         elevation={0}
         sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '10px !important', height: 'auto', p: 1 }}

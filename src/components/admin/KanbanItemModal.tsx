@@ -219,7 +219,7 @@ export const KanbanItemModal = ({
               Column
             </Typography>
             <Typography variant="body2" fontWeight={600}>
-              {columns.find((c) => c.id === columnId)?.title ?? '—'}
+              {columns.find((c) => c.id === columnId)?.title ?? '-'}
             </Typography>
           </Box>
         )}

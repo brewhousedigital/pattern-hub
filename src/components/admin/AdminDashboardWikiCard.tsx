@@ -68,7 +68,7 @@ export const AdminDashboardWikiCard = () => {
 
           <Typography variant="caption" color="text.secondary">
             Last updated:{' '}
-            {mostRecentPage?.updated ? createPrettyDate(mostRecentPage.updated as unknown as string) : '—'}
+            {mostRecentPage?.updated ? createPrettyDate(mostRecentPage.updated as unknown as string) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

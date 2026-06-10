@@ -71,7 +71,7 @@ export const HomepageSearchV2 = ({
           // Commit on space UNLESS the input starts with "author:" since
           const trimmed = inputValue.trim();
           if (!trimmed) break;
-          // Don't commit mid-prefix — let the user finish typing "author:"
+          // Don't commit mid-prefix - let the user finish typing "author:"
           if (/^-?author:$/i.test(trimmed)) break;
           e.preventDefault();
           commitInput();
@@ -178,7 +178,7 @@ export const HomepageSearchV2 = ({
         }}
       />
 
-      {/* Clear all button — only visible when there is content */}
+      {/* Clear all button - only visible when there is content */}
       {hasContent && (
         <Tooltip title="Clear search" arrow>
           <IconButton

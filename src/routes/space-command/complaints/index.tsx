@@ -2,7 +2,11 @@ import React from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image.ts';
 import { useQueryGetComplaints, type TypeComplaintsResponse } from '@/functions/database/complaints.ts';
-import { useQueryGetContentReports, type TypeContentReportResponse, CONTENT_TYPE_META } from '@/functions/database/content-reports.ts';
+import {
+  useQueryGetContentReports,
+  type TypeContentReportResponse,
+  CONTENT_TYPE_META,
+} from '@/functions/database/content-reports.ts';
 import { AdminComplaintsModal } from '@/components/admin/AdminComplaintsModal.tsx';
 import { AdminContentReportModal } from '@/components/admin/AdminContentReportModal.tsx';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer.tsx';
@@ -148,7 +152,7 @@ function RouteComponent() {
                             <Box>
                               <a href={generatePatternLink(pattern?.id || '')} target="_blank">
                                 <Typography fontSize={13} fontWeight={500} lineHeight={1.3}>
-                                  {pattern?.name ?? '—'}
+                                  {pattern?.name ?? '-'}
                                 </Typography>
                               </a>
                               <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
@@ -239,9 +243,10 @@ function RouteComponent() {
                     </TableRow>
                   ))
                 : contentData?.map((report) => {
-                    const typeMeta =
-                      CONTENT_TYPE_META[report.content_type] ??
-                      { label: report.content_type, color: 'default' as const };
+                    const typeMeta = CONTENT_TYPE_META[report.content_type] ?? {
+                      label: report.content_type,
+                      color: 'default' as const,
+                    };
 
                     return (
                       <TableRow key={report.id} hover>
@@ -251,7 +256,7 @@ function RouteComponent() {
 
                         <TableCell sx={{ maxWidth: 200 }}>
                           <Typography fontSize={13} fontWeight={500} noWrap>
-                            {report.content_name || '—'}
+                            {report.content_name || '-'}
                           </Typography>
                           <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
                             {report.content_id}

@@ -9,15 +9,15 @@
  *    canvases (hit, svgOverlay, color) plus pre-computed hit/exterior data.
  *
  * 2. Inside an R3F Canvas:
- *    • <Environment preset background />  — HDR sky dome (no manual SkyDome
+ *    • <Environment preset background />  - HDR sky dome (no manual SkyDome
  *      needed).  Provides both the background image and ambient lighting.
  *      The bright sky shines through the transparent glass regions, creating
  *      the backlit stained-glass glow.
- *    • <StainedGlassPlane>  — flat plane with CanvasTexture.  Handles click-
+ *    • <StainedGlassPlane>  - flat plane with CanvasTexture.  Handles click-
  *      to-fill via UV raycasting.
- *    • <GroundPlane>  — subtle reflective ground for outdoor environments.
- *    • <OrbitControls>  — orbit / zoom the view.
- *    • <ExportWirer>  — wires up the export callback inside the GL context.
+ *    • <GroundPlane>  - subtle reflective ground for outdoor environments.
+ *    • <OrbitControls>  - orbit / zoom the view.
+ *    • <ExportWirer>  - wires up the export callback inside the GL context.
  *
  * 3. Below the canvas: ColorControls with palette, Fill All, Clear, Export,
  *    and background environment selector.
@@ -128,7 +128,7 @@ const ExportWirer = ({ exportRef, viewData }: ExportWirerProps) => {
           const MARGIN = 16;
           ctx.drawImage(legendImg, MARGIN, h - legend.height - MARGIN, legend.width, legend.height);
         } catch {
-          // Legend build failed — export scene without it
+          // Legend build failed - export scene without it
         }
       }
 
@@ -186,7 +186,7 @@ const Scene = ({
   onUndoStackChange,
 }: SceneProps) => (
   <>
-    {/* HDR environment — acts as both background and ambient light.
+    {/* HDR environment - acts as both background and ambient light.
         The bright sky shines through the transparent glass regions. */}
     <Environment preset={bgPreset} background backgroundRotation={[0, 6.5 / 2, 0]} />
 
@@ -210,7 +210,7 @@ const Scene = ({
       onUndoStackChange={onUndoStackChange}
     />
 
-    {/* Camera orbit — disabled pan, limited polar range so glass stays upright */}
+    {/* Camera orbit - disabled pan, limited polar range so glass stays upright */}
     <OrbitControls
       enablePan={false}
       minDistance={1.2}

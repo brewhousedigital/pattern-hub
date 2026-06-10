@@ -194,20 +194,20 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               <PanelSectionTitle>Details</PanelSectionTitle>
 
               <CompactRow label="Width">
-                {viewData?.design_width != null ? `${viewData.design_width}${viewData.design_width_unit ?? ''}` : '—'}
+                {viewData?.design_width != null ? `${viewData.design_width}${viewData.design_width_unit ?? ''}` : '-'}
               </CompactRow>
 
               <CompactRow label="Height">
                 {viewData?.design_height != null
                   ? `${viewData.design_height}${viewData.design_height_unit ?? ''}`
-                  : '—'}
+                  : '-'}
               </CompactRow>
 
               <CompactRow label="Line Width">
-                {viewData?.line_width != null ? `${viewData.line_width}${viewData.line_width_unit ?? ''}` : '—'}
+                {viewData?.line_width != null ? `${viewData.line_width}${viewData.line_width_unit ?? ''}` : '-'}
               </CompactRow>
 
-              <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '—'}</CompactRow>
+              <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '-'}</CompactRow>
 
               {/* ── Attribution ───────────────────────────────────── */}
               <PanelSectionTitle>Attribution</PanelSectionTitle>
@@ -232,10 +232,10 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 </Stack>
               </CompactRow>
 
-              <CompactRow label="Design Date">{createPrettyDate(viewData?.design_date || '') || '—'}</CompactRow>
+              <CompactRow label="Design Date">{createPrettyDate(viewData?.design_date || '') || '-'}</CompactRow>
               <CompactRow label="Uploaded by">{viewData?.uploaded_by || 'Not Listed'}</CompactRow>
-              <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '—'}</CompactRow>
-              <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '—'}</CompactRow>
+              <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '-'}</CompactRow>
+              <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '-'}</CompactRow>
 
               {viewData?.pattern_file_size ? (
                 <CompactRow label="File size">{formatByteSize(viewData?.pattern_file_size)}</CompactRow>

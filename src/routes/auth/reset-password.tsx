@@ -88,7 +88,7 @@ function RouteComponent() {
     setLoading(true);
     try {
       await confirmReset.mutateAsync({ token, password, passwordConfirm });
-      enqueueSnackbar('Password updated — please sign in with your new password.', { variant: 'success' });
+      enqueueSnackbar('Password updated - please sign in with your new password.', { variant: 'success' });
       void navigate({ to: '/auth/login' });
     } catch {
       setFormError('This reset link is invalid or has expired. Please request a new one.');
@@ -97,7 +97,7 @@ function RouteComponent() {
     }
   };
 
-  // No token in URL — the link is broken or already used
+  // No token in URL - the link is broken or already used
   if (!token) {
     return (
       <GeneralLayout>

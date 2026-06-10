@@ -12,7 +12,7 @@ export type TypeStoreLocation = {
   street_address: string;
   phone: string;
   website: string;
-  /** PocketBase geoPoint field — shape: { lat: number; lon: number; alt?: number } */
+  /** PocketBase geoPoint field - shape: { lat: number; lon: number; alt?: number } */
   location: { lat: number; lon: number; alt?: number };
   /** JSON array of tag strings stored in PocketBase as a JSON field */
   tags: string[];
@@ -132,7 +132,7 @@ export const useQueryGetStoresCached = () => {
       const data = await res.json();
       return data.items ?? [];
     },
-    staleTime: 60 * 60 * 1000, // 1 hour — matches CDN cache
+    staleTime: 60 * 60 * 1000, // 1 hour - matches CDN cache
   });
 };
 
@@ -154,18 +154,11 @@ export async function geocodeAddress(query: string): Promise<TypeNominatimResult
 
 // ─── Haversine distance (client-side, km) ────────────────────────────────────
 
-export function haversineKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
+export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

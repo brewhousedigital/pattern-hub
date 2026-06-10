@@ -4,7 +4,7 @@
  * Renders a flat plane mesh in the Three.js scene whose surface is a
  * CanvasTexture built by compositing the color-fill canvas (bottom) and the
  * SVG overlay canvas (top).  The material is transparent so the environment
- * background shines through unfilled and semi-filled regions — creating the
+ * background shines through unfilled and semi-filled regions - creating the
  * backlit stained-glass effect without needing explicit light sources.
  *
  * Click flow
@@ -23,9 +23,9 @@
  *
  * Imperative API (via forwardRef)
  * ─────────────────────────────────
- *   fillAll(color)  — fill every interior region in one pass
- *   clearAll()      — wipe all color fills
- *   undo()          — restore the previous canvas state
+ *   fillAll(color)  - fill every interior region in one pass
+ *   clearAll()      - wipe all color fills
+ *   undo()          - restore the previous canvas state
  */
 
 import React, { useEffect, useRef, useMemo, useImperativeHandle, useCallback } from 'react';
@@ -173,7 +173,17 @@ export const StainedGlassPlane = React.forwardRef<StainedGlassHandle, Props>(
           onUndoStackChange(undoStack.current.length > 0);
         },
       }),
-      [captureSnapshot, commitSnapshot, colorCanvas, hitData, exteriorMask, redrawDisplay, onColorUsed, onColorsCleared, onUndoStackChange],
+      [
+        captureSnapshot,
+        commitSnapshot,
+        colorCanvas,
+        hitData,
+        exteriorMask,
+        redrawDisplay,
+        onColorUsed,
+        onColorsCleared,
+        onUndoStackChange,
+      ],
     );
 
     // ── Click → flood fill ────────────────────────────────────────────────
@@ -188,14 +198,14 @@ export const StainedGlassPlane = React.forwardRef<StainedGlassHandle, Props>(
         const px = Math.min(canvasW - 1, Math.max(0, Math.round(e.uv.x * canvasW)));
         const py = Math.min(canvasH - 1, Math.max(0, Math.round((1 - e.uv.y) * canvasH)));
 
-        // Boundary check only — no exterior mask on click (see floodFill.ts comment).
+        // Boundary check only - no exterior mask on click (see floodFill.ts comment).
         // floodFill itself aborts if the region covers > 45% of the canvas.
         if (isBoundary(hitData, px, py, canvasW)) return;
 
         // Capture state before fill; discard snapshot if fill is aborted (outer bg click).
         const snapshot = captureSnapshot();
         const filled = floodFill(colorCanvas, hitData, px, py, paintColor);
-        if (!filled) return; // aborted — region was too large (outer background)
+        if (!filled) return; // aborted - region was too large (outer background)
 
         commitSnapshot(snapshot);
         redrawDisplay();

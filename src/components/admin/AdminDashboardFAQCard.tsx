@@ -45,7 +45,7 @@ export const AdminDashboardFAQCard = () => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Last updated: {mostRecent?.updated ? createPrettyDate(mostRecent.updated as unknown as string) : '—'}
+            Last updated: {mostRecent?.updated ? createPrettyDate(mostRecent.updated as unknown as string) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

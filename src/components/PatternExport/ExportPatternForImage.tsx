@@ -282,7 +282,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
         </Box>
       </Box>
 
-      {/* DPI — hidden when unit is px */}
+      {/* DPI - hidden when unit is px */}
       <Collapse in={unit !== 'px'}>
         <Box sx={{ mb: 2.5 }}>
           <SectionLabel>Resolution (DPI)</SectionLabel>
@@ -305,7 +305,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
             {dpi <= 96 && 'Good for screen display.'}
             {dpi === 150 && 'Good for general printing.'}
             {dpi === 300 && 'Standard print quality.'}
-            {dpi >= 600 && 'High-quality print — large file size.'}
+            {dpi >= 600 && 'High-quality print - large file size.'}
           </Typography>
         </Box>
       </Collapse>

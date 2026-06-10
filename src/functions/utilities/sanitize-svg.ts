@@ -16,7 +16,7 @@ export const sanitizeSvgFile = async (file: File): Promise<File> => {
   const clean = sanitizeSvg(raw);
 
   if (!clean || clean.trim().length === 0) {
-    throw new Error('SVG failed sanitization — file may be malformed or malicious');
+    throw new Error('SVG failed sanitization - file may be malformed or malicious');
   }
 
   const fixed = await normalizeSvgDimensions(clean);

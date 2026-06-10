@@ -35,7 +35,7 @@ function RouteComponent() {
       await requestReset.mutateAsync(email.trim());
     } catch {
       // PocketBase intentionally returns success even for unknown emails to prevent
-      // user enumeration — so we always show the "check your inbox" message.
+      // user enumeration - so we always show the "check your inbox" message.
     } finally {
       setLoading(false);
       setSent(true);
@@ -55,7 +55,7 @@ function RouteComponent() {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 If <strong>{email}</strong> is linked to an account, we've sent a password reset link. It may take a
-                minute to arrive — check your spam folder too.
+                minute to arrive - check your spam folder too.
               </Typography>
               <Button
                 component={Link}

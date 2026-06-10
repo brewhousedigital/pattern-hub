@@ -139,11 +139,11 @@ async function processSequentially<T>(
 // can never cause a missed update. Called after pattern processing for every
 // rename / merge / delete operation.
 //
-//   rename  — updates the tag's own name in its parent record and updates
+//   rename  - updates the tag's own name in its parent record and updates
 //             every child's parent_tag reference to the new name.
-//   merge   — removes the source tag's own parent record (it no longer exists)
+//   merge   - removes the source tag's own parent record (it no longer exists)
 //             and re-parents its children to the merge target.
-//   delete  — removes the tag's own parent record and removes the parent
+//   delete  - removes the tag's own parent record and removes the parent
 //             records of any children (they become root tags).
 
 async function updateHierarchyForOp(type: OperationType, tag: string, newTag?: string) {
@@ -208,7 +208,7 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
           </Alert>
         ) : done ? (
           <Alert severity="success" icon={<CheckCircleOutlineIcon />} sx={{ mb: 2 }}>
-            Operation complete — {completed} record{completed !== 1 ? 's' : ''} updated.
+            Operation complete - {completed} record{completed !== 1 ? 's' : ''} updated.
           </Alert>
         ) : (
           <>
@@ -217,7 +217,7 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
             </Typography>
             <LinearProgress variant="determinate" value={pct} sx={{ height: 8, borderRadius: 4 }} />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              {pct}% — records are sent one after the other to avoid overloading the server
+              {pct}% - records are sent one after the other to avoid overloading the server
             </Typography>
           </>
         )}
@@ -314,7 +314,7 @@ interface SetParentDialogProps {
   open: boolean;
   /** The tag whose parent is being set (from the tags view). */
   tag: TypeReadOnlyDatabaseItem | null;
-  /** Current hierarchy records — used for descendants guard and current-parent lookup. */
+  /** Current hierarchy records - used for descendants guard and current-parent lookup. */
   hierarchy: TypeTagHierarchyRecord[];
   onClose: () => void;
   onSaved: () => void;
@@ -577,7 +577,7 @@ function TagTreeView({
       {orphans.length > 0 && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="caption" color="warning.main" fontWeight={600} sx={{ px: 1, display: 'block', mb: 0.5 }}>
-            Orphaned — parent tag no longer exists
+            Orphaned - parent tag no longer exists
           </Typography>
           {orphans.map((h) => (
             <TreeNode
@@ -660,7 +660,7 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {mode === 'rename'
-          ? 'Replaces the tag name across all patterns. Child relationships in the hierarchy are keyed on tag name — rename will update them automatically.'
+          ? 'Replaces the tag name across all patterns. Child relationships in the hierarchy are keyed on tag name - rename will update them automatically.'
           : 'Adds the target tag to all patterns that have the source tag, then removes the source tag.'}
       </Typography>
     </Paper>
@@ -895,7 +895,7 @@ const TagManagementPage = () => {
           );
         }
 
-        // Always update the hierarchy after pattern processing — runs even when
+        // Always update the hierarchy after pattern processing - runs even when
         // the tag has 0 patterns, and uses a fresh PocketBase fetch so the
         // React Query cache can never cause a missed update.
         await updateHierarchyForOp(type, tag, newTag);
@@ -931,7 +931,7 @@ const TagManagementPage = () => {
   );
 
   const startDeleteMany = useCallback(async (tags: string[]) => {
-    // For bulk cleanup, sum affected records — fetched one at a time
+    // For bulk cleanup, sum affected records - fetched one at a time
     let total = 0;
     setIsFetchingPatterns(true);
 
@@ -1092,7 +1092,7 @@ const TagManagementPage = () => {
             <Chip label={parentName} size="small" variant="outlined" color="primary" sx={{ fontFamily: 'monospace' }} />
           ) : (
             <Typography variant="caption" color="text.disabled">
-              —
+              -
             </Typography>
           );
         },

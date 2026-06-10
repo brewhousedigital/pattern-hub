@@ -31,7 +31,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
     if (isOpen) formOpenTime.current = Date.now();
   }, [isOpen]);
 
-  // Check cooldown on mount — memoised so it only reads localStorage once
+  // Check cooldown on mount - memoised so it only reads localStorage once
   const isInCooldown = React.useMemo(() => {
     const last = localStorage.getItem(COOLDOWN_KEY);
     return !!(last && Date.now() - parseInt(last) < COOLDOWN_MS);
@@ -56,13 +56,13 @@ export const PatternReportIssue = (props: TypeViewData) => {
       return;
     }
 
-    // Client-side bot guards (silent fails — don't reveal guard logic)
+    // Client-side bot guards (silent fails - don't reveal guard logic)
     if (honeypot) return;
     const elapsed = Date.now() - formOpenTime.current;
     if (elapsed < 2000) return;
 
     if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete yet — wait a moment and try again.', { variant: 'warning' });
+      enqueueSnackbar('Security check not complete yet - wait a moment and try again.', { variant: 'warning' });
       return;
     }
 
@@ -122,7 +122,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
 
       <Collapse in={isOpen}>
         <Stack onSubmit={handleSubmit} gap={2} component="form">
-          {/* Honeypot — invisible to humans, traps bots that fill every field */}
+          {/* Honeypot - invisible to humans, traps bots that fill every field */}
           <input
             aria-hidden="true"
             tabIndex={-1}

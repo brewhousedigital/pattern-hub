@@ -53,7 +53,7 @@ function RouteComponent() {
     if (elapsed < 2000) return;
 
     if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete yet — wait a moment and try again.', { variant: 'warning' });
+      enqueueSnackbar('Security check not complete yet - wait a moment and try again.', { variant: 'warning' });
       return;
     }
 
@@ -157,7 +157,7 @@ function RouteComponent() {
               Message sent
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
-              Thanks for reaching out — we'll get back to you soon.
+              Thanks for reaching out - we'll get back to you soon.
             </Typography>
             <Button variant="outlined" color="success" onClick={() => setFormState('idle')}>
               Send another message
@@ -171,11 +171,11 @@ function RouteComponent() {
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {formState === 'error' && (
               <Alert severity="error" onClose={() => setFormState('idle')}>
-                Something went wrong — please try again or reach out on Discord.
+                Something went wrong - please try again or reach out on Discord.
               </Alert>
             )}
 
-            {/* Honeypot — invisible to humans, traps bots that fill every field */}
+            {/* Honeypot - invisible to humans, traps bots that fill every field */}
             <input
               aria-hidden="true"
               tabIndex={-1}

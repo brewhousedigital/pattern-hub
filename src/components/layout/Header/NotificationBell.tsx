@@ -49,7 +49,7 @@ export const NotificationBell = () => {
         });
         await refetch();
       } catch {
-        // Silent — navigation still proceeds
+        // Silent - navigation still proceeds
       }
     }
     void navigate({

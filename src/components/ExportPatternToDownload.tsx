@@ -28,10 +28,10 @@ type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 type DpiOption = 72 | 96 | 150 | 300 | 600;
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; mime: string }[] = [
-  { value: 'png', label: 'PNG  — best for Cricut / vinyl cutters', mime: 'image/png' },
-  { value: 'jpg', label: 'JPG  — smaller file, no transparency', mime: 'image/jpeg' },
-  { value: 'webp', label: 'WebP — modern web format', mime: 'image/webp' },
-  { value: 'svg', label: 'SVG  — vector', mime: 'image/svg+xml' },
+  { value: 'png', label: 'PNG  - best for Cricut / vinyl cutters', mime: 'image/png' },
+  { value: 'jpg', label: 'JPG  - smaller file, no transparency', mime: 'image/jpeg' },
+  { value: 'webp', label: 'WebP - modern web format', mime: 'image/webp' },
+  { value: 'svg', label: 'SVG  - vector', mime: 'image/svg+xml' },
 ];
 
 const DPI_OPTIONS: DpiOption[] = [72, 96, 150, 300, 600];
@@ -109,7 +109,7 @@ function scaleSvgWithFixedStrokes(svgString: string, targetWidthPx: number, targ
   }
 
   if (!originW || !originH) {
-    // Can't determine scale — return SVG unchanged with new dimensions set
+    // Can't determine scale - return SVG unchanged with new dimensions set
     svgEl.setAttribute('width', String(targetWidthPx));
     svgEl.setAttribute('height', String(targetHeightPx));
     return new XMLSerializer().serializeToString(doc);
@@ -249,7 +249,7 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
   const heightInches = parseToInches(heightVal, unit);
 
   // For SVG, use 96 DPI (screen resolution) to convert to px for coordinate math.
-  // The output file is vector so DPI doesn't affect quality — 96px/in is just used
+  // The output file is vector so DPI doesn't affect quality - 96px/in is just used
   // to derive the coordinate-space dimensions from the user's chosen physical size.
   const SVG_EXPORT_DPI = 96 as DpiOption;
 
@@ -261,10 +261,10 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
   const outputSummary = (() => {
     if (!widthPx || !heightPx) return null;
     if (isSvgExport) {
-      return `Output: ${widthVal} × ${heightVal} ${unit} — vector file with original line thickness preserved.`;
+      return `Output: ${widthVal} × ${heightVal} ${unit} - vector file with original line thickness preserved.`;
     }
     const mp = ((widthPx * heightPx) / 1_000_000).toFixed(1);
-    return `Output: ${widthPx} × ${heightPx} px  (${mp} MP) — ready for Cricut / vinyl cutters at ${dpi} DPI.`;
+    return `Output: ${widthPx} × ${heightPx} px  (${mp} MP) - ready for Cricut / vinyl cutters at ${dpi} DPI.`;
   })();
 
   const handleExport = async () => {
@@ -421,7 +421,7 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
           </ToggleButtonGroup>
         </Box>
 
-        {/* DPI — only relevant for raster formats */}
+        {/* DPI - only relevant for raster formats */}
         <Collapse in={isBitmapRasterExport}>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
@@ -439,7 +439,7 @@ export const ExportPatternToDownload = (props: TypeViewData) => {
               <Select value={dpi} onChange={(e) => setDpi(e.target.value as DpiOption)} sx={{ fontSize: '0.875rem' }}>
                 {DPI_OPTIONS.map((d) => (
                   <MenuItem key={d} value={d} sx={{ fontSize: '0.875rem' }}>
-                    {d} DPI{d === 300 ? ' — recommended' : d === 96 ? ' — screen' : ''}
+                    {d} DPI{d === 300 ? ' - recommended' : d === 96 ? ' - screen' : ''}
                   </MenuItem>
                 ))}
               </Select>

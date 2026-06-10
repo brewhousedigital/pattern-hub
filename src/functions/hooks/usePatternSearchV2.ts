@@ -36,7 +36,7 @@ export type UsePatternSearchReturn = {
   removeLastToken: () => void;
   clearTokens: () => void;
 
-  // Tag toggle — handles add/remove in one call (used by sidebar)
+  // Tag toggle - handles add/remove in one call (used by sidebar)
   toggleTag: (tag: string) => void;
   isTagActive: (tag: string) => boolean;
 
@@ -149,7 +149,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
     updateTokens(tokens.filter((_, i) => i !== index));
   }
 
-  /** Remove the last token — wired to Backspace on empty input. */
+  /** Remove the last token - wired to Backspace on empty input. */
   function removeLastToken() {
     if (tokens.length === 0) return;
     updateTokens(tokens.slice(0, -1));
@@ -187,7 +187,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
   /**
    * Open the drawer for a specific pattern, providing the full ordered result
    * list so prev/next can be computed. This is the primary way to open a
-   * pattern from the grid — pass in the flat ordered array of result IDs.
+   * pattern from the grid - pass in the flat ordered array of result IDs.
    */
   function navigateToPattern(id: string, resultIds: string[]) {
     // Guard: if the id isn't in the result set, just open it anyway

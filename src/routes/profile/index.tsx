@@ -163,7 +163,7 @@ const ProfileContent = (props: ProfileContentProps) => {
     refetch: refetchCollections,
   } = useQueryGetUserCollections(thisAuthData?.id || '', collectionsPagination);
 
-  // Only fetch followed collections on own profile — this data is private
+  // Only fetch followed collections on own profile - this data is private
   const { data: followedCollectionsData = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
     !isPublicView ? thisAuthData?.id || '' : '',
   );
@@ -195,7 +195,7 @@ const ProfileContent = (props: ProfileContentProps) => {
           url: shareUrl,
         });
       } catch {
-        // User cancelled — silent
+        // User cancelled - silent
       }
       return;
     }
@@ -204,7 +204,7 @@ const ProfileContent = (props: ProfileContentProps) => {
       await navigator.clipboard.writeText(shareUrl);
       enqueueSnackbar('Profile link copied to clipboard!', { variant: 'success' });
     } catch {
-      enqueueSnackbar('Unable to copy — please copy the URL manually', { variant: 'error' });
+      enqueueSnackbar('Unable to copy - please copy the URL manually', { variant: 'error' });
     }
   }
 
@@ -336,7 +336,7 @@ const ProfileContent = (props: ProfileContentProps) => {
 
         {/* ─── Body ─── */}
         <Grid container spacing={3}>
-          {/* Sidebar — appears below tabs on mobile, left on desktop */}
+          {/* Sidebar - appears below tabs on mobile, left on desktop */}
           <Grid size={{ xs: 12, md: 3 }} sx={{ order: { xs: 2, md: 1 } }}>
             <SidebarSection elevation={0}>
               {thisAuthData?.about ? (
@@ -524,7 +524,7 @@ const ProfileContent = (props: ProfileContentProps) => {
                   </>
                 )}
 
-                {/* ─── Followed collections — own profile only ─── */}
+                {/* ─── Followed collections - own profile only ─── */}
                 {!isPublicView && followedCollectionsData.length > 0 && (
                   <>
                     <Divider sx={{ my: 3 }} />
@@ -671,13 +671,13 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setDeleteError(data.error ?? 'Delete failed — please try again.');
+        setDeleteError(data.error ?? 'Delete failed - please try again.');
         return;
       }
       enqueueSnackbar('Photo deleted.', { variant: 'success' });
       onDeleteSuccess();
     } catch {
-      setDeleteError('Something went wrong — please try again.');
+      setDeleteError('Something went wrong - please try again.');
     } finally {
       setDeleting(false);
     }

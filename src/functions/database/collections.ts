@@ -66,7 +66,7 @@ export const useQueryGetCollectionById = (collectionId: string) => {
   });
 };
 
-/** Fetch all collections that the logged-in user owns — lightweight, no expand. */
+/** Fetch all collections that the logged-in user owns - lightweight, no expand. */
 export const useQueryGetUserCollectionsAll = (userId: string) => {
   return useQuery({
     queryKey: ['GetUserCollectionsAll', userId],

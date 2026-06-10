@@ -71,7 +71,7 @@ export const Route = createFileRoute('/store-locator/')({
   }),
 });
 
-// ─── Map controller (child component — has access to map context) ────────────
+// ─── Map controller (child component - has access to map context) ────────────
 
 type PanTarget = { center: [number, number]; zoom: number; storeId: string | null };
 
@@ -96,7 +96,7 @@ function MapController({
   return null;
 }
 
-// ─── USA geographic center — default map view ─────────────────────────────
+// ─── USA geographic center - default map view ─────────────────────────────
 
 const USA_CENTER: [number, number] = [39.5, -98.35];
 const USA_ZOOM = 4;
@@ -189,7 +189,7 @@ function RouteComponent() {
       const results = await geocodeAddress(searchInput.trim());
       setSearchResults(results.slice(0, 5));
     } catch {
-      // silent — show empty results
+      // silent - show empty results
     } finally {
       setSearchLoading(false);
     }
@@ -275,7 +275,7 @@ function RouteComponent() {
               Sign in to use the Store Locator
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mb: 3 }}>
-              The store locator is available to registered members. Find craft supply stores near you — yarn shops, fabric stores, glass studios, and more.
+              The store locator is available to registered members. Find craft supply stores near you - yarn shops, fabric stores, glass studios, and more.
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center">
               <Button component={Link} to="/auth/login" variant="contained" sx={{ borderRadius: 2, fontWeight: 700 }}>

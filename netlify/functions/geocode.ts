@@ -6,7 +6,7 @@
  *  - 7-day CDN cache (same address always returns same result, safe to cache aggressively)
  *
  * Nominatim policy: https://operations.osmfoundation.org/policies/nominatim/
- * - Max 1 req/s from a single IP — Netlify CDN caching means repeated queries
+ * - Max 1 req/s from a single IP - Netlify CDN caching means repeated queries
  *   for the same address never reach Nominatim.
  * - Must identify application via User-Agent.
  */
@@ -46,7 +46,7 @@ export default async (req: Request) => {
 
     return Response.json(data, {
       headers: {
-        // 7 days — same address string always returns the same geocoding result
+        // 7 days - same address string always returns the same geocoding result
         'Cache-Control': 'public, s-maxage=604800',
       },
     });

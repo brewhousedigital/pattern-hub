@@ -46,7 +46,7 @@ Links:
 ### Design system conventions
 - **Color scheme**: clean white background with green as primary accent. Soft neutrals for secondary text, subtle dividers, and generous whitespace.
 - **Typography**: MUI default variants (`h1`–`h6`, `body1`, `body2`, `caption`) with weight adjustments for emphasis. Titles often use `fontWeight={600}` or `700`.
-- **Radii**: rounded — cards/inputs typically `borderRadius: 2–3` (MUI theme spacing), images/tiles around `12–14px`.
+- **Radii**: rounded - cards/inputs typically `borderRadius: 2–3` (MUI theme spacing), images/tiles around `12–14px`.
 - **Elevation**: prefer flat `elevation={0}` with subtle borders over heavy drop shadows.
 - **Spacing**: MUI `spacing` scale, containers generally `maxWidth="lg"` with `px: { xs: 2, md: 4 }` padding.
 
@@ -66,7 +66,7 @@ Primary collection holding both self-hosted and external patterns.
 | `uploaded_by`                | relation to `users`                      |                                                         |
 | `tags`                       | JSON array of strings                    | Flat tag array, no separate tags table                  |
 | `pattern_file`               | file (SVG or WebP)                       | Self-hosted pattern asset                               |
-| `pattern_file_external`      | text                                     | Boolean flag — is this an external pattern              |
+| `pattern_file_external`      | text                                     | Boolean flag - is this an external pattern              |
 | `pattern_file_external_link` | text                                     | URL to external source if external                      |
 | `opengraph_image`            | file                                     | Generated 1200×630 OG image for social sharing          |
 | `pieces`                     | number                                   | Number of glass pieces                                  |
@@ -114,7 +114,7 @@ Standard PB auth fields + custom:
 | `created`    | datetime |
 
 ### `user_done`
-Same shape as `user_favorites` — records that a user has completed a pattern.
+Same shape as `user_favorites` - records that a user has completed a pattern.
 
 ### `user_ratings`
 
@@ -179,7 +179,7 @@ File-based TanStack Router. Search params are validated with Zod schemas.
 
 | Path              | Purpose                                                                                                |
 |-------------------|--------------------------------------------------------------------------------------------------------|
-| `/`               | Homepage — pattern search and grid. Side drawer shows a pattern's detail when `?patternId=xxx` is set. |
+| `/`               | Homepage - pattern search and grid. Side drawer shows a pattern's detail when `?patternId=xxx` is set. |
 | `/pattern/$id`    | Full-page pattern detail view (SEO-friendly canonical URL).                                            |
 | `/profile`        | Current user's profile (if authed).                                                                    |
 | `/profile?id=xxx` | Public read-only view of any user.                                                                     |
@@ -194,7 +194,7 @@ File-based TanStack Router. Search params are validated with Zod schemas.
 
 | Path                                                 | Purpose                                                         |
 |------------------------------------------------------|-----------------------------------------------------------------|
-| `/admin`                                             | Dashboard — 6 stat cards + top-5 patterns table.                |
+| `/admin`                                             | Dashboard - 6 stat cards + top-5 patterns table.                |
 | `/admin/patterns`                                    | DataGrid of all patterns with CRUD.                             |
 | `/admin/patterns/new` and `/admin/patterns/$id/edit` | Pattern form.                                                   |
 | `/admin/tags`                                        | Tag management (bulk rename, delete, merge).                    |
@@ -203,7 +203,7 @@ File-based TanStack Router. Search params are validated with Zod schemas.
 | `/admin/users`                                       | User table with ban/unban, role toggle, per-user stats.         |
 | `/admin/admins`                                      | Admin roster with Transfer List for permissions.                |
 | `/admin/complaints`                                  | Queue of submitted reports.                                     |
-| `/admin/map`                                         | (Future / optional) — geographic feature.                       |
+| `/admin/map`                                         | (Future / optional) - geographic feature.                       |
 
 ### Homepage search schema (`/`)
 
@@ -228,8 +228,8 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
 **Layout**: standard top nav, centered column.
 
 **Components (top to bottom)**:
-1. **Hero section** — wordmark, short tagline, optional decorative SVG flourish. Not oversized; modest hero to keep archive above the fold on larger screens.
-2. **Tokenized search bar** — single focusable element that visually combines:
+1. **Hero section** - wordmark, short tagline, optional decorative SVG flourish. Not oversized; modest hero to keep archive above the fold on larger screens.
+2. **Tokenized search bar** - single focusable element that visually combines:
   - Free-text terms (e.g. `horse`, `-dog` for exclusion)
   - Tag chips (e.g. `[Sun Catcher ×]`) rendered as pills with a remove button
   - Author chips prefixed `author:` when typed
@@ -238,7 +238,7 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
   - Tag list with counts, clickable to toggle as tag tokens
   - Author list with counts
   - Difficulty filter (chips)
-4. **Results grid** — responsive card grid. Each card:
+4. **Results grid** - responsive card grid. Each card:
   - Thumbnail (SVG render or OG image for external patterns)
   - Name (truncated)
   - Author(s)
@@ -246,8 +246,8 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
   - Difficulty chip (colored)
   - Star rating (average)
   - "External" badge if `pattern_file_external` is true
-5. **Pagination** — MUI `Pagination` at bottom, URL-synced via `page` param.
-6. **Detail drawer** — right-side drawer opens when `patternId` set. Shows abbreviated detail with a "Full page" link to `/pattern/$id`.
+5. **Pagination** - MUI `Pagination` at bottom, URL-synced via `page` param.
+6. **Detail drawer** - right-side drawer opens when `patternId` set. Shows abbreviated detail with a "Full page" link to `/pattern/$id`.
 
 **Empty / loading / error states**:
 - Empty: illustration + "No patterns match your filters. Clear filters."
@@ -268,7 +268,7 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
   - Landscape / Portrait toggle
   - Output mode toggle: **Single-page PDF** (poster) vs **Tiled 8.5×11 sheets**
   - Live summary: e.g. "Your 10×20in pattern will export as 12×28in image (includes ruler). Line thickness preserved."
-  - For tiled: live sheet count ("6 sheets — 2 columns × 3 rows")
+  - For tiled: live sheet count ("6 sheets - 2 columns × 3 rows")
   - Big green "Download" CTA
 - For external patterns: Export panel is replaced by a prominent "View on {source_site_name} →" button; no download.
 
@@ -278,36 +278,36 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
 - Pattern ID (muted, copy-on-click)
 - Favorite button with count; toggles filled/outlined heart
 - "Mark as done" button with count
-- MUI `Rating` component — current user's rating + average display
+- MUI `Rating` component - current user's rating + average display
 - Report button (opens modal)
 - Metadata list:
   - Line width (with unit)
   - Design width × height (with units)
   - Pieces count
   - Difficulty chip
-- Author(s) — clickable chips linking to filtered homepage
-- Uploaded by — avatar + username linking to their profile
-- Tags — clickable chips
+- Author(s) - clickable chips linking to filtered homepage
+- Uploaded by - avatar + username linking to their profile
+- Tags - clickable chips
 
 ### Profile (`/profile`, `/profile?id=xxx`)
 
-**Hero banner** — decorative green gradient band, ~200px tall.
+**Hero banner** - decorative green gradient band, ~200px tall.
 
-**Profile card** — overlaps bottom of hero by ~60px:
+**Profile card** - overlaps bottom of hero by ~60px:
 - Avatar (96px circular)
 - Username, joined-date
 - About text
 - Interests as chips
-- Stat tiles (favorites, completed, rated, photos) — 72×72 rounded tiles
+- Stat tiles (favorites, completed, rated, photos) - 72×72 rounded tiles
 - Own profile only: edit button
 
 **Tabbed content** below card (MUI Tabs):
-- **Favorites** — grid of pattern cards (same card component as homepage)
-- **Completed** — same grid, different dataset
-- **Rated** — grid with user's rating visible on each card
-- **Gallery** — masonry image grid of user-uploaded photos, click for lightbox
+- **Favorites** - grid of pattern cards (same card component as homepage)
+- **Completed** - same grid, different dataset
+- **Rated** - grid with user's rating visible on each card
+- **Gallery** - masonry image grid of user-uploaded photos, click for lightbox
 
-**Loading state**: `ProfileSkeleton` matching layout — hero skeleton, profile card skeleton with text/avatar placeholders, grid skeleton tiles.
+**Loading state**: `ProfileSkeleton` matching layout - hero skeleton, profile card skeleton with text/avatar placeholders, grid skeleton tiles.
 
 **Error state** (user not found): same layout, error card with `PersonOffOutlinedIcon`, "Profile not found" title, secondary text, retry button.
 
@@ -327,9 +327,9 @@ Example URL: `/?q=floral&tags=Sun+Catcher&tags=Large+Horse&authors=Claycorp&page
 
 **Main content**:
 - **6 stat cards** in a responsive grid (1/2/3/6 cols): Users, Patterns, Favorites, Done, Tags, Authors. Each has value, label, small trend indicator (% change).
-- **Top 5 patterns table** — sorted by favorites. Columns: thumbnail, name, author, favorites, done, rating.
+- **Top 5 patterns table** - sorted by favorites. Columns: thumbnail, name, author, favorites, done, rating.
 
-### Admin — Patterns (`/admin/patterns`)
+### Admin - Patterns (`/admin/patterns`)
 
 MUI X `DataGrid`:
 - Search input above grid
@@ -339,51 +339,51 @@ MUI X `DataGrid`:
 
 **Pattern form fields** follow the `patterns` schema. File upload area accepts SVG and WebP. Preview panel renders the uploaded file. For external patterns, toggle hides the file upload and reveals external URL + source site name + license fields.
 
-### Admin — Tags (`/admin/tags`)
+### Admin - Tags (`/admin/tags`)
 
-Tags are a denormalized JSON array — no separate collection. The tool must operate across thousands of patterns in batched API calls.
+Tags are a denormalized JSON array - no separate collection. The tool must operate across thousands of patterns in batched API calls.
 
 **Layout**:
 - Header with total unique tag count + total patterns tagged
-- **Tag list** — searchable, sortable pill cards showing tag name + usage count + delete button
+- **Tag list** - searchable, sortable pill cards showing tag name + usage count + delete button
 - **Actions panel** on the right:
   - Global Rename (old tag → new tag, shows affected count)
   - Global Delete (removes tag from all patterns)
   - Merge Tags (combine tag A + tag B → new canonical name)
   - Add new tag (no-op unless immediately attached to patterns, so more of a "preflight" entry)
-- **Progress modal** during bulk operations — progress bar with current batch / total batches, cancel button
+- **Progress modal** during bulk operations - progress bar with current batch / total batches, cancel button
 - Batch size ~15, sequential await between batches to avoid hammering PocketBase
 
-### Admin — Authors (`/admin/authors`)
+### Admin - Authors (`/admin/authors`)
 
 Sortable table: avatar (initials), name, pattern count, bio preview, edit / delete. Add author dialog.
 
-### Admin — FAQ Editor (`/admin/faq`)
+### Admin - FAQ Editor (`/admin/faq`)
 
 **Three-pane layout**:
 - **Left pane**: page list with drag handle for reordering, add-page button, published/draft badge
 - **Top bar**: title, slug, published toggle, save button (briefly turns green on click)
 - **Main pane**: markdown textarea editor. Toggle switches to live preview rendered with theme-aware inline styles.
 
-### Admin — Users (`/admin/users`)
+### Admin - Users (`/admin/users`)
 
 Table with:
 - Role filter (All / User / Editor / Manager / Admin)
 - Search input
 - Columns: avatar, username, email, role, favorites count, done count, joined date, actions
-- Ban/unban toggle — banned rows visually dimmed (reduced opacity)
+- Ban/unban toggle - banned rows visually dimmed (reduced opacity)
 - Admin promotion toggle
 
-### Admin — Admins (`/admin/admins`)
+### Admin - Admins (`/admin/admins`)
 
 Table of admin users. Clicking edit opens a **Permission Transfer List** (MUI Transfer List component):
-- **Left column**: "Available Permissions" — all 28 codes not currently assigned
-- **Right column**: "Assigned to {username}" — permissions currently on the user
+- **Left column**: "Available Permissions" - all 28 codes not currently assigned
+- **Right column**: "Assigned to {username}" - permissions currently on the user
 - Transfer arrows between columns; multi-select with checkboxes
 - Permissions can be grouped visually by resource prefix (PATTERN_*, TAG_*, etc.) with subheaders
 - Save button fires `saveAdminUser(payload)` with the final array
 
-### Admin — Complaints (`/admin/complaints`)
+### Admin - Complaints (`/admin/complaints`)
 
 Table/queue:
 - Status tabs: Open / In Review / Resolved / Dismissed
@@ -434,7 +434,7 @@ Routes under `/admin` check `authUser.level.includes(required_code)` via a share
 - Favor comfortable line-height (~1.6) and generous letter-spacing on display headings.
 
 ### Iconography
-`@mui/icons-material` only — outlined variants preferred for a lighter feel. Common icons used: `FavoriteBorderOutlined`, `TaskAltOutlined`, `StarOutlined`, `PhotoLibraryOutlined`, `PersonOffOutlined`, `ZoomInOutlined`, `SaveIcon`, `ReportOutlined`.
+`@mui/icons-material` only - outlined variants preferred for a lighter feel. Common icons used: `FavoriteBorderOutlined`, `TaskAltOutlined`, `StarOutlined`, `PhotoLibraryOutlined`, `PersonOffOutlined`, `ZoomInOutlined`, `SaveIcon`, `ReportOutlined`.
 
 ### Card pattern
 `elevation={0}` MUI Paper/Card with 1px border (`#eee` or theme divider), rounded corners (`borderRadius: 3`), padding `3–4` (MUI spacing). Hover states on interactive cards: subtle border darken + slight Y-translate.
@@ -464,14 +464,14 @@ MUI `Skeleton` components that mirror the final layout dimensions. Grids show 6�
 
 ## Useful Hooks & Utilities (exist in the codebase)
 
-- `usePatternSearch()` — returns tokens, filter string for PocketBase, patternId, page, and mutation functions for all search actions (`addTag`, `addAuthor`, `toggleTag`, `nextPattern`, `prevPattern`, `setPage`, etc.)
-- `useGlobalAuthData()` — current authed user from Jotai
-- `useQueryGetPublicUserById(id)` — public profile fetch
-- `useQueryGetUserFavoritesByUserIdAndPagination(userId, page)` — paginated user's favorites
-- `generateOpengraphImage(source, patternName)` — 1200×630 canvas-rendered share image supporting SVG or WebP inputs
-- `scaleSvgWithFixedStrokes(svg, scaleX, scaleY)` — pattern scaling with stroke-width compensation
-- `buildPocketBaseFilter(tokens)` — converts token list to PB filter string
-- `saveAdminUser(payload)` — persists admin permission updates
+- `usePatternSearch()` - returns tokens, filter string for PocketBase, patternId, page, and mutation functions for all search actions (`addTag`, `addAuthor`, `toggleTag`, `nextPattern`, `prevPattern`, `setPage`, etc.)
+- `useGlobalAuthData()` - current authed user from Jotai
+- `useQueryGetPublicUserById(id)` - public profile fetch
+- `useQueryGetUserFavoritesByUserIdAndPagination(userId, page)` - paginated user's favorites
+- `generateOpengraphImage(source, patternName)` - 1200×630 canvas-rendered share image supporting SVG or WebP inputs
+- `scaleSvgWithFixedStrokes(svg, scaleX, scaleY)` - pattern scaling with stroke-width compensation
+- `buildPocketBaseFilter(tokens)` - converts token list to PB filter string
+- `saveAdminUser(payload)` - persists admin permission updates
 
 ---
 
@@ -483,7 +483,7 @@ MUI `Skeleton` components that mirror the final layout dimensions. Grids show 6�
 - Heavy drop shadows (prefer borders and subtle elevation)
 - Generic AI color palettes (purple gradients on white, system-font-only typography)
 - Nesting pattern metadata inside tooltips when a visible chip/label would be clearer
-- Showing a download CTA for a pattern whose dimensions are missing — disable with explanatory text
+- Showing a download CTA for a pattern whose dimensions are missing - disable with explanatory text
 
 ---
 

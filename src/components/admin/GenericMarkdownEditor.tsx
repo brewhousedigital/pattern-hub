@@ -15,7 +15,7 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
   return (
     <Box>
       <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: 'block' }}>
-        Content —{' '}
+        Content -{' '}
         <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
           Markdown supported
         </a>

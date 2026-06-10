@@ -43,7 +43,7 @@ export const AdminDashboardUsersCard = () => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Newest registration: {firstItem?.created ? createPrettyDate(firstItem.created) : '—'}
+            Newest registration: {firstItem?.created ? createPrettyDate(firstItem.created) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

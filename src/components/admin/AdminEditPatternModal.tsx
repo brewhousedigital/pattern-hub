@@ -116,7 +116,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const canEdit = checkAccess(EnumLevelsAdmin.PATTERN_AU);
   const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_AD);
 
-  // Tag autocomplete input — declared here so the debounced value can drive the
+  // Tag autocomplete input - declared here so the debounced value can drive the
   // server-side search query below (hook call order must stay consistent).
   const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
   const debouncedTagSearch = useDebounce(autoCompleteInputValue, 400);
@@ -227,7 +227,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       // When a primary tag is removed, clean up orphaned inherited ancestors
       for (const tag of removed) {
         if (!newInherited.has(tag)) {
-          // It was primary — check each of its ancestors
+          // It was primary - check each of its ancestors
           for (const ancestor of getAncestors(tag, hierarchyData)) {
             const stillNeeded = result
               .filter((t) => !newInherited.has(t) && t !== tag)
@@ -520,7 +520,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             </Box>
           ) : isError ? (
             <Alert severity="error" sx={{ m: 1 }}>
-              Couldn't load required data — please close the dialog, refresh, and try again.
+              Couldn't load required data - please close the dialog, refresh, and try again.
             </Alert>
           ) : (
             <Stack spacing={2.5} sx={{ py: 1 }}>

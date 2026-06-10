@@ -29,10 +29,10 @@ type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 type DpiOption = 72 | 96 | 150 | 300 | 600;
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; mime: string }[] = [
-  { value: 'png', label: 'PNG  — best for Cricut / vinyl cutters', mime: 'image/png' },
-  { value: 'jpg', label: 'JPG  — smaller file, no transparency', mime: 'image/jpeg' },
-  { value: 'webp', label: 'WebP — modern web format', mime: 'image/webp' },
-  { value: 'svg', label: 'SVG  — vector', mime: 'image/svg+xml' },
+  { value: 'png', label: 'PNG  - best for Cricut / vinyl cutters', mime: 'image/png' },
+  { value: 'jpg', label: 'JPG  - smaller file, no transparency', mime: 'image/jpeg' },
+  { value: 'webp', label: 'WebP - modern web format', mime: 'image/webp' },
+  { value: 'svg', label: 'SVG  - vector', mime: 'image/svg+xml' },
 ];
 
 const DPI_OPTIONS: DpiOption[] = [72, 96, 150, 300, 600];
@@ -274,7 +274,7 @@ export const ExportPatternToDownloadV2 = (props: TypeViewData) => {
   const outputSummary = (() => {
     if (!canExport) return null;
     if (!hasSourceDims) {
-      return 'Pattern source dimensions missing — cannot scale accurately.';
+      return 'Pattern source dimensions missing - cannot scale accurately.';
     }
     if (isSvgExport) {
       return `Pattern area: ${widthVal} × ${heightVal} ${unit}. File may be larger if pattern includes ruler/extras. Line thickness preserved.`;
@@ -289,7 +289,7 @@ export const ExportPatternToDownloadV2 = (props: TypeViewData) => {
 
     try {
       if (!scaleX || !scaleY) {
-        throw new Error('Cannot compute scale — missing pattern source dimensions.');
+        throw new Error('Cannot compute scale - missing pattern source dimensions.');
       }
 
       const response = await fetch(svgImageUrl);
@@ -498,7 +498,7 @@ export const ExportPatternToDownloadV2 = (props: TypeViewData) => {
               <Select value={dpi} onChange={(e) => setDpi(e.target.value as DpiOption)} sx={{ fontSize: '0.875rem' }}>
                 {DPI_OPTIONS.map((d) => (
                   <MenuItem key={d} value={d} sx={{ fontSize: '0.875rem' }}>
-                    {d} DPI{d === 300 ? ' — recommended' : d === 96 ? ' — screen' : ''}
+                    {d} DPI{d === 300 ? ' - recommended' : d === 96 ? ' - screen' : ''}
                   </MenuItem>
                 ))}
               </Select>

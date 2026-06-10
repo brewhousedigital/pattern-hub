@@ -85,7 +85,7 @@ function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string
       const searchTerm = input.slice(input.toLowerCase().indexOf(prefix) + prefix.length);
       return { mode, searchTerm };
     }
-    // User is mid-typing a known prefix (e.g. "auth") — suppress dropdown
+    // User is mid-typing a known prefix (e.g. "auth") - suppress dropdown
     // so we don't show tag results while they're still typing the prefix
     if (prefix.startsWith(lower) && lower.length > 0) {
       return { mode: 'suppress', searchTerm: '' };
@@ -378,7 +378,7 @@ export const HomepageSearchV3 = ({
             {/* Context label */}
             <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
               <Typography variant="caption" color="text.secondary">
-                {mode === 'author' ? 'Authors' : 'Tags'} —{' '}
+                {mode === 'author' ? 'Authors' : 'Tags'} -{' '}
                 {isFetchingDropdown
                   ? 'Loading...'
                   : searchTerm

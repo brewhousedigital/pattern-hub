@@ -33,7 +33,7 @@ function isBot(userAgent: string): boolean {
   // Catch anything explicitly in our list
   if (BOT_AGENTS.some((bot) => ua.includes(bot))) return true;
 
-  // Generic fallback — most crawlers self-identify with "bot" in their UA
+  // Generic fallback - most crawlers self-identify with "bot" in their UA
   // Excludes common false positives like "robot" in product names
   if (ua.includes('bot') && !ua.includes('chrome') && !ua.includes('firefox')) return true;
 
@@ -84,11 +84,11 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 
         return {
           ...base,
-          title: `${pattern.name} — ${SITE_NAME}`,
+          title: `${pattern.name} - ${SITE_NAME}`,
           description: pattern.description
             ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
             : 'View this pattern on Pattern Archive.',
-          'og:title': `${pattern.name} — ${SITE_NAME}`,
+          'og:title': `${pattern.name} - ${SITE_NAME}`,
           'og:description': pattern.description ?? 'View this pattern on Pattern Archive.',
           'og:url': `${SITE_URL}${pathname}`,
           ...(imageUrl ? { 'og:image': imageUrl, 'twitter:image': imageUrl } : {}),
@@ -114,11 +114,11 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 
         return {
           ...base,
-          title: `${pattern.name} — ${SITE_NAME}`,
+          title: `${pattern.name} - ${SITE_NAME}`,
           description: pattern.description
             ? `${pattern.description}. ${POCKETBASE_URL}/api/files/${pattern.collectionId}/${pattern.id}/${pattern.opengraph_image}`
             : 'View this pattern on Pattern Archive.',
-          'og:title': `${pattern.name} — ${SITE_NAME}`,
+          'og:title': `${pattern.name} - ${SITE_NAME}`,
           'og:description': pattern.description ?? 'View this pattern on Pattern Archive.',
           'og:url': `${SITE_URL}${pathname}`,
           ...(imageUrl ? { 'og:image': imageUrl, 'twitter:image': imageUrl } : {}),
@@ -133,9 +133,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
   if (pathname === '/help/faq') {
     return {
       ...base,
-      title: `FAQ — ${SITE_NAME}`,
+      title: `FAQ - ${SITE_NAME}`,
       description: 'Frequently asked questions about Pattern Archive.',
-      'og:title': `FAQ — ${SITE_NAME}`,
+      'og:title': `FAQ - ${SITE_NAME}`,
       'og:description': 'Frequently asked questions about Pattern Archive.',
       'og:url': `${SITE_URL}/help/faq`,
     };
@@ -144,9 +144,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
   if (pathname === '/collections') {
     return {
       ...base,
-      title: `Collections — ${SITE_NAME}`,
+      title: `Collections - ${SITE_NAME}`,
       description: 'Unique collections to help with your stained glass journey.',
-      'og:title': `Collections — ${SITE_NAME}`,
+      'og:title': `Collections - ${SITE_NAME}`,
       'og:description': 'Unique collections to help with your stained glass journey.',
       'og:url': `${SITE_URL}/collections`,
     };
@@ -155,9 +155,9 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
   if (pathname === '/guides') {
     return {
       ...base,
-      title: `Guides — ${SITE_NAME}`,
+      title: `Guides - ${SITE_NAME}`,
       description: 'Guides and tutorials to help you through projects.',
-      'og:title': `Guides — ${SITE_NAME}`,
+      'og:title': `Guides - ${SITE_NAME}`,
       'og:description': 'Guides and tutorials to help you through projects.',
       'og:url': `${SITE_URL}/guides`,
     };
@@ -177,7 +177,7 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
 export default async function handler(request: Request, context: Context): Promise<Response> {
   const userAgent = request.headers.get('user-agent') ?? '';
 
-  // Pass non-bot requests straight through — zero overhead for real users
+  // Pass non-bot requests straight through - zero overhead for real users
   if (!isBot(userAgent)) {
     return context.next();
   }

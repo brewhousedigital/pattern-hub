@@ -23,7 +23,7 @@ export default async (req: Request) => {
     ts?: number;
   };
 
-  // 1. Honeypot — silent success to avoid training bots to retry
+  // 1. Honeypot - silent success to avoid training bots to retry
   if (hp !== '') {
     return Response.json({ success: true });
   }
@@ -77,7 +77,7 @@ export default async (req: Request) => {
   });
 
   if (!pbResp.ok) {
-    return Response.json({ error: 'Submission failed — please try again' }, { status: 500 });
+    return Response.json({ error: 'Submission failed - please try again' }, { status: 500 });
   }
 
   return Response.json({ success: true });

@@ -62,7 +62,7 @@ function initialsOf(name = ''): string {
 }
 
 function formatDate(iso?: string): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
@@ -156,7 +156,7 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
         <Typography fontSize={13} color="text.secondary">
-          {params.row.email || '—'}
+          {params.row.email || '-'}
         </Typography>
       ),
     },
@@ -289,7 +289,7 @@ function RouteComponent() {
 
       {/* Edit permissions dialog */}
       <Dialog open={!!permTarget} onClose={() => setPermTarget(null)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Edit permissions — {permTarget?.name || permTarget?.email}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Edit permissions - {permTarget?.name || permTarget?.email}</DialogTitle>
         <Divider />
         <DialogContent>
           {permTarget && (
