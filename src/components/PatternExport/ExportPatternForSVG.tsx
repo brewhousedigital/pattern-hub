@@ -346,7 +346,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
   ]);
 
   return (
-    <CollapsibleCard title="Export SVG">
+    <Box>
       {/* Export type */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Export Type</SectionLabel>
@@ -458,7 +458,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       >
         {loading ? 'Generating SVG…' : 'Download SVG'}
       </Button>
-    </CollapsibleCard>
+    </Box>
   );
 };
 

@@ -632,7 +632,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
   ]);
 
   return (
-    <CollapsibleCard title="Print Pattern">
+    <Box>
       {/* Print mode */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Print Mode</SectionLabel>
@@ -906,7 +906,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
             ? `Download Tiled PDF${tilePages > 0 ? ` (${tilePages} pages)` : ''}`
             : 'Download PDF'}
       </Button>
-    </CollapsibleCard>
+    </Box>
   );
 };
 

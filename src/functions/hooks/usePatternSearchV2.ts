@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 
 import {
   buildPocketBaseFilter,
+  type ExportTab,
   parseRawInput,
   type PatternSearch,
   patternSearchSchema,
@@ -21,6 +22,8 @@ export type UsePatternSearchReturn = {
   setPageNumber: (pageNumber: number) => void;
   sort: SortValue;
   setSort: (sort: SortValue) => void;
+  exportTab: ExportTab;
+  setExportTab: (tab: ExportTab) => void;
 
   // Token mutations
   addRawInput: (raw: string) => void;
@@ -54,7 +57,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   const filter = useMemo(() => buildPocketBaseFilter(tokens), [tokens]);
 
-  const { patternId, pageNumber, sort } = search;
+  const { patternId, pageNumber, sort, exportTab } = search;
 
   /**
    * Central navigate helper. All mutations go through here so patternId is
@@ -76,6 +79,10 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   function setSort(sort: SortValue) {
     updateSearch({ sort, pageNumber: 1 });
+  }
+
+  function setExportTab(tab: ExportTab) {
+    updateSearch({ exportTab: tab });
   }
 
   function updateTokens(nextTokens: Token[]) {
@@ -226,6 +233,8 @@ export function usePatternSearch(): UsePatternSearchReturn {
     setPageNumber,
     sort,
     setSort,
+    exportTab,
+    setExportTab,
     addRawInput,
     addTag,
     addAuthor,

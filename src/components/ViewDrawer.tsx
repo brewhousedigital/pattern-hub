@@ -22,7 +22,7 @@ import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack } from '@mui/material';
+import { Box, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack, Tab, Tabs } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -34,7 +34,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
   const { handleOpenView, handleCloseView } = useGlobalIsViewOpen();
 
-  const { patternId } = usePatternSearch();
+  const { patternId, exportTab, setExportTab } = usePatternSearch();
 
   const svgImageUrl = generatePbImage(viewData);
 
@@ -101,13 +101,21 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
             )}
 
             {!viewData?.pattern_file_external && (
-              <ExportPatternForPrintV3 viewData={viewData} key={'print' + viewData?.id} />
-            )}
+              <BorderedCard>
+                <Tabs
+                  value={exportTab}
+                  onChange={(_, v) => setExportTab(v)}
+                  sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+                >
+                  <Tab label="Print Pattern" value="print" />
+                  <Tab label="Export SVG" value="svg" />
+                  <Tab label="Export Image" value="image" />
+                </Tabs>
 
-            {!viewData?.pattern_file_external && <ExportPatternForSVG viewData={viewData} key={'svg' + viewData?.id} />}
-
-            {!viewData?.pattern_file_external && (
-              <ExportPatternForImage viewData={viewData} key={'image' + viewData?.id} />
+                {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} />}
+                {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} />}
+                {exportTab === 'image' && <ExportPatternForImage viewData={viewData} />}
+              </BorderedCard>
             )}
 
             {!viewData?.pattern_file_external && (

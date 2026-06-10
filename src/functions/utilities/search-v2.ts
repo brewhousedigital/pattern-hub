@@ -48,6 +48,9 @@ export const SORT_OPTIONS = [
 
 export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
 
+export const EXPORT_TABS = ['print', 'svg', 'image'] as const;
+export type ExportTab = (typeof EXPORT_TABS)[number];
+
 export const patternSearchSchema = z.object({
   q: z.string().default(''),
   tags: z.array(z.string()).default([]),
@@ -58,6 +61,7 @@ export const patternSearchSchema = z.object({
   sort: z.enum(['-created', 'created', '-updated', 'updated']).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
+  exportTab: z.enum(EXPORT_TABS).default('print'),
 });
 
 export type PatternSearch = z.infer<typeof patternSearchSchema>;
@@ -114,7 +118,9 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
 /**
  * Reconstruct the three URL params from a flat token list.
  */
-export function searchFromTokens(tokens: Token[]): Omit<PatternSearch, 'patternId' | 'pageNumber' | 'sort'> {
+export function searchFromTokens(
+  tokens: Token[],
+): Omit<PatternSearch, 'patternId' | 'pageNumber' | 'sort' | 'exportTab'> {
   const q = tokens
     .filter((t): t is TextToken => t.type === 'text')
     .map((t) => (t.exclude ? `-${t.value}` : t.value))

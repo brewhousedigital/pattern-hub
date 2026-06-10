@@ -198,7 +198,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
   ]);
 
   return (
-    <CollapsibleCard title="Export Image">
+    <Box>
       {/* Format */}
       <Box sx={{ mb: 2.5 }}>
         <SectionLabel>Format</SectionLabel>
@@ -346,7 +346,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
       >
         {isExporting ? 'Generating image…' : `Download ${FORMAT_LABELS[format]}`}
       </Button>
-    </CollapsibleCard>
+    </Box>
   );
 };
 
