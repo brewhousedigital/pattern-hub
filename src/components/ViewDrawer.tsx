@@ -184,7 +184,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               )}
 
               {viewData?.description && (
-                <Box sx={{ px: 1, pt: 0.5, pb: 1 }}>
+                <Box sx={{ px: 1, pt: 0.5, mb: 3 }}>
                   <MarkdownWrapper>{viewData.description}</MarkdownWrapper>
                 </Box>
               )}
