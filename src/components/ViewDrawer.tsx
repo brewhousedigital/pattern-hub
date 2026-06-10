@@ -9,8 +9,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/PatternDrawerTopNavigation';
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
-import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
-import { PatternDifficultyRating } from '@/components/PatternUtilities/PatternDifficultyRating';
+import { PatternRatingsContainer } from '@/components/PatternUtilities/PatternRatingsContainer';
 import { ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
@@ -189,9 +188,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 </Box>
               )}
 
-              <PatternRatings viewData={viewData} />
-
-              <PatternDifficultyRating viewData={viewData} />
+              <PatternRatingsContainer viewData={viewData} />
 
               {/* ── Details ───────────────────────────────────────── */}
               <PanelSectionTitle>Details</PanelSectionTitle>
