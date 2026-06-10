@@ -3,6 +3,13 @@
   to = "/index.html"
   status = 200
 
+# Use for maintenance
+#[[redirects]]
+#  from = "/*"
+#  to = "/maintenance.html"
+#  status = 503
+#  force = true
+
 [build]
   publish = "dist"
   command = "npm run build"
@@ -16,6 +23,8 @@
 [prerendering]
   enabled = true
 
+# If maintenance mode is not working, comment out this section
 [[edge_functions]]
   path = "/*"
   function = "og-meta"
+
