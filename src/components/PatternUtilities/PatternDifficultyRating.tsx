@@ -44,8 +44,6 @@ export const PatternDifficultyRating = (props: TypeViewData) => {
 
   // Stored as 1–10, shown as 0.5–5
   const userRatingVal = data?.rating ? toRatingVal(data.rating) : null;
-  console.log('>>>data', data);
-  console.log('>>>userRatingVal', userRatingVal);
 
   const handleChange = async (_e: React.SyntheticEvent, val: number | null) => {
     if (val === null) return;
