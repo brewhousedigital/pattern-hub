@@ -10,6 +10,7 @@ import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/Patter
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatings } from '@/components/PatternUtilities/PatternRatings';
+import { PatternDifficultyRating } from '@/components/PatternUtilities/PatternDifficultyRating';
 import { ViewDrawerPatternSidebar } from '@/components/layout/Sidebar';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
@@ -189,6 +190,8 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
               )}
 
               <PatternRatings viewData={viewData} />
+
+              <PatternDifficultyRating viewData={viewData} />
 
               {/* ── Details ───────────────────────────────────────── */}
               <PanelSectionTitle>Details</PanelSectionTitle>
