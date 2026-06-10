@@ -64,6 +64,13 @@ const componentTheme = createTheme(baseTheme, {
         },
       },
     },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+        },
+      },
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {},
@@ -87,7 +94,7 @@ const componentTheme = createTheme(baseTheme, {
     MuiToggleButton: {
       styleOverrides: {
         root: {
-          textTransform: 'capitalize',
+          textTransform: 'none',
           borderColor: alpha(baseTheme.palette.primary.main, 0.3),
           color: baseTheme.palette.primary.main,
           px: 1.25,
