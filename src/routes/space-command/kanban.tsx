@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   DndContext,
@@ -197,6 +197,11 @@ function RouteComponent() {
   // ── Drag state ─────────────────────────────────────────────────────────────
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
+  // Refs track column state during drag to avoid stale-closure bugs.
+  // dragTargetColRef updates on every cross-column hover (handleDragOver).
+  // dragOriginalColRef stays fixed at the column the item started in.
+  const dragTargetColRef = useRef<string | null>(null);
+  const dragOriginalColRef = useRef<string | null>(null);
 
   const activeDragType = activeDragId ? (columns.some((c) => c.id === activeDragId) ? 'column' : 'item') : null;
   const activeDragItem = activeDragType === 'item' ? (items.find((i) => i.id === activeDragId) ?? null) : null;
@@ -208,7 +213,11 @@ function RouteComponent() {
   );
 
   function handleDragStart({ active }: DragStartEvent) {
-    setActiveDragId(String(active.id));
+    const activeIdStr = String(active.id);
+    setActiveDragId(activeIdStr);
+    const originalCol = items.find((i) => i.id === activeIdStr)?.column_id ?? null;
+    dragTargetColRef.current = originalCol;
+    dragOriginalColRef.current = originalCol;
   }
 
   function handleDragOver({ active, over }: DragOverEvent) {
@@ -226,19 +235,25 @@ function RouteComponent() {
     const targetColId = overColumn?.id ?? overItem?.column_id;
     if (!targetColId || targetColId === activeItem.column_id) return;
 
+    dragTargetColRef.current = targetColId;
     setItems((prev) => prev.map((i) => (i.id === activeIdStr ? { ...i, column_id: targetColId } : i)));
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveDragId(null);
-    if (!over || active.id === over.id) return;
+    const targetColId = dragTargetColRef.current;
+    const originalColId = dragOriginalColRef.current;
+    dragTargetColRef.current = null;
+    dragOriginalColRef.current = null;
 
     const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
+    const isCrossColumn = targetColId !== null && targetColId !== originalColId;
 
-    // ── Column reorder ─────────────────────────────────────────────────────
+    // ── Column reorder — always needs a valid over target ──────────────────
     const isActiveColumn = columns.some((c) => c.id === activeIdStr);
     if (isActiveColumn) {
+      if (!over || active.id === over.id) return;
+      const overIdStr = String(over.id);
       if (!columns.some((c) => c.id === overIdStr)) return;
       const oldIdx = columns.findIndex((c) => c.id === activeIdStr);
       const newIdx = columns.findIndex((c) => c.id === overIdStr);
@@ -263,18 +278,24 @@ function RouteComponent() {
     }
 
     // ── Item move ──────────────────────────────────────────────────────────
+    // For same-column reorders we need a valid over target; for cross-column
+    // moves we proceed even if over is null (pointer-up outside droppable bounds
+    // after handleDragOver already moved the card visually).
+    if (!isCrossColumn && (!over || active.id === over.id)) return;
+
     const activeItem = items.find((i) => i.id === activeIdStr);
     if (!activeItem) return;
 
-    const targetColId = activeItem.column_id; // updated by handleDragOver
-    const colItems = items.filter((i) => i.column_id === targetColId).sort((a, b) => a.position - b.position);
+    const resolvedTargetColId = targetColId ?? activeItem.column_id;
+    const overIdStr = over && String(over.id) !== activeIdStr ? String(over.id) : null;
+    const colItems = items.filter((i) => i.column_id === resolvedTargetColId).sort((a, b) => a.position - b.position);
 
-    const overItem = colItems.find((i) => i.id === overIdStr);
+    const overItem = overIdStr ? colItems.find((i) => i.id === overIdStr) : undefined;
 
     let newPos: number;
     if (overItem) {
       const oldIdx = colItems.findIndex((i) => i.id === activeIdStr);
-      const newIdx = colItems.findIndex((i) => i.id === overIdStr);
+      const newIdx = colItems.findIndex((i) => i.id === overItem.id);
       const reordered = arrayMove(colItems, oldIdx, newIdx);
       const finalIdx = reordered.findIndex((i) => i.id === activeIdStr);
       newPos = midpoint(reordered[finalIdx - 1]?.position, reordered[finalIdx + 1]?.position);
@@ -286,12 +307,12 @@ function RouteComponent() {
 
     const snapshot = [...items];
     setItems((prev) =>
-      prev.map((i) => (i.id === activeIdStr ? { ...i, position: newPos, column_id: targetColId } : i)),
+      prev.map((i) => (i.id === activeIdStr ? { ...i, position: newPos, column_id: resolvedTargetColId } : i)),
     );
     setLoadingItemIds((prev) => new Set(prev).add(activeIdStr));
 
     updateItemMut.mutate(
-      { id: activeIdStr, column_id: targetColId, position: newPos },
+      { id: activeIdStr, column_id: resolvedTargetColId, position: newPos },
       {
         onSuccess: () => {
           setLoadingItemIds((prev) => {
