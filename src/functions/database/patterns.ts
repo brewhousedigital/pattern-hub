@@ -44,6 +44,7 @@ export type TypePatternResponse = {
 export type TypePatternLayersMapItem = {
   layerName: string;
   mappedName: string;
+  isVisible: boolean;
 };
 
 export type TypePatternKeyReferenceObject = {

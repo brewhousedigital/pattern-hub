@@ -184,20 +184,22 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                           Layers
                         </Typography>
                         <Stack spacing={0}>
-                          {viewData.layers_map.map((layer) => (
-                            <FormControlLabel
-                              key={layer.layerName}
-                              control={
-                                <Checkbox
-                                  size="small"
-                                  checked={!hiddenLayers.has(layer.layerName)}
-                                  onChange={() => handleToggleLayer(layer.layerName)}
-                                />
-                              }
-                              label={<Typography variant="body2">{layer.mappedName || layer.layerName}</Typography>}
-                              sx={{ ml: 0 }}
-                            />
-                          ))}
+                          {viewData.layers_map
+                            .filter((layer) => layer.isVisible !== false)
+                            .map((layer) => (
+                              <FormControlLabel
+                                key={layer.layerName}
+                                control={
+                                  <Checkbox
+                                    size="small"
+                                    checked={!hiddenLayers.has(layer.layerName)}
+                                    onChange={() => handleToggleLayer(layer.layerName)}
+                                  />
+                                }
+                                label={<Typography variant="body2">{layer.mappedName || layer.layerName}</Typography>}
+                                sx={{ ml: 0 }}
+                              />
+                            ))}
                         </Stack>
                       </Grid>
                     )}

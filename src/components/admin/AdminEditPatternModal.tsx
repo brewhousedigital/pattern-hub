@@ -42,6 +42,8 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -110,7 +112,7 @@ function mergeLayerIds(existing: TypePatternLayersMapItem[], newIds: string[]): 
   const existingNames = new Set(existing.map((e) => e.layerName));
   const appended = newIds
     .filter((id) => !existingNames.has(id))
-    .map((id) => ({ layerName: id, mappedName: '' }));
+    .map((id) => ({ layerName: id, mappedName: '', isVisible: true }));
   return [...existing, ...appended];
 }
 
@@ -854,6 +856,34 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                     )
                                   }
                                 />
+                              </Grid>
+                              <Grid size="auto">
+                                <Tooltip
+                                  title={
+                                    item.isVisible !== false
+                                      ? 'Users can toggle this layer — click to lock'
+                                      : 'Required layer - users cannot hide this'
+                                  }
+                                  arrow
+                                >
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      setLayersMap((prev) =>
+                                        prev.map((e, i) =>
+                                          i === index ? { ...e, isVisible: e.isVisible === false ? true : false } : e,
+                                        ),
+                                      )
+                                    }
+                                    sx={{ color: item.isVisible === false ? 'error.main' : 'text.disabled' }}
+                                  >
+                                    {item.isVisible === false ? (
+                                      <LockRoundedIcon fontSize="small" />
+                                    ) : (
+                                      <LockOpenRoundedIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                </Tooltip>
                               </Grid>
                             </Grid>
                           ))}
