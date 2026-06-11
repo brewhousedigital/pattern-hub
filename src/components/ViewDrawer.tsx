@@ -5,6 +5,7 @@ import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternFor
 import { ExportPatternForImage } from '@/components/PatternExport/ExportPatternForImage';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
+import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/PatternDrawerTopNavigation';
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
@@ -22,7 +23,20 @@ import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Checkbox, FormControlLabel, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  FormControlLabel,
+  Typography,
+  Container,
+  Button,
+  Tooltip,
+  Grid,
+  Skeleton,
+  Stack,
+  Tab,
+  Tabs,
+} from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -48,7 +62,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
     if (viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && viewData.pattern_file) {
       fetch(generatePbImageSVG(viewData))
         .then((r) => r.text())
-        .then(setLayerSvgText)
+        .then((text) => setLayerSvgText(sanitizeSvg(text)))
         .catch(() => {});
     }
   }, [viewData?.id]);
@@ -122,7 +136,11 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 <>
                   {displaySvg ? (
                     <Box
-                      sx={{ width: '100%', aspectRatio: '1/1', '& svg': { width: '100%', height: 'auto', display: 'block' } }}
+                      sx={{
+                        width: '100%',
+                        aspectRatio: '1/1',
+                        '& svg': { width: '100%', height: 'auto', display: 'block' },
+                      }}
                       dangerouslySetInnerHTML={{ __html: displaySvg }}
                     />
                   ) : (
@@ -134,13 +152,23 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                     />
                   )}
 
-                  <Grid container spacing={3} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                  <Grid
+                    container
+                    spacing={6}
+                    sx={{
+                      mt: 2,
+                      pt: 2,
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                      justifyContent: 'space-between',
+                    }}
+                  >
                     <Grid size={{ xs: 12, md: 6 }}>
                       <PatternLegendCard viewData={viewData} />
                     </Grid>
 
                     {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
-                      <Grid size={{ xs: 12, md: 6 }}>
+                      <Grid size={{ xs: 12, md: 5 }}>
                         <Typography
                           variant="caption"
                           sx={{
@@ -166,11 +194,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                                   onChange={() => handleToggleLayer(layer.layerName)}
                                 />
                               }
-                              label={
-                                <Typography variant="body2">
-                                  {layer.mappedName || layer.layerName}
-                                </Typography>
-                              }
+                              label={<Typography variant="body2">{layer.mappedName || layer.layerName}</Typography>}
                               sx={{ ml: 0 }}
                             />
                           ))}
