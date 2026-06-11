@@ -94,6 +94,12 @@ export const SORT_OPTIONS = [
   { value: 'total_difficulty_ratings', label: 'Fewest difficulty votes' },
   { value: '-favorite_count', label: 'Most favorited' },
   { value: 'favorite_count', label: 'Least favorited' },
+  { value: '-pieces', label: 'Most pieces' },
+  { value: 'pieces', label: 'Fewest pieces' },
+  { value: '-design_height', label: 'Tallest' },
+  { value: 'design_height', label: 'Shortest' },
+  { value: '-design_width', label: 'Widest' },
+  { value: 'design_width', label: 'Skinniest' },
 ] as const;
 
 export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
@@ -122,6 +128,9 @@ export const patternSearchSchema = z.object({
     '-avg_difficulty', 'avg_difficulty',
     '-total_difficulty_ratings', 'total_difficulty_ratings',
     '-favorite_count', 'favorite_count',
+    '-pieces', 'pieces',
+    '-design_height', 'design_height',
+    '-design_width', 'design_width',
   ]).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
