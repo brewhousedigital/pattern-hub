@@ -86,7 +86,7 @@ function slugify(s: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
+export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
   const baseHIn = viewData ? dbToIn(viewData.design_height, viewData.design_height_unit) : 1;
   const aspectRatio = baseWIn > 0 && baseHIn > 0 ? baseHIn / baseWIn : 1;
@@ -164,6 +164,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
           lineWidthUnit: viewData.line_width_unit,
           instructionsMarkdown: viewData.instructions ?? '',
           patternKeys: viewData.pattern_key_reference_list ?? [],
+          hiddenLayerIds: hiddenLayers.size > 0 ? Array.from(hiddenLayers) : undefined,
         },
         {
           format,
@@ -194,6 +195,7 @@ export const ExportPatternForImage = ({ viewData }: TypeViewData) => {
     heightInput,
     widthIn,
     includeInstructions,
+    hiddenLayers,
     runExport,
   ]);
 

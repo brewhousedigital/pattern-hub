@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
+import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -129,7 +130,7 @@ function normalizeSvgStrokes(svgString: string, patternWIn: number, lineWidthIn:
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
+export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
@@ -255,7 +256,9 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
         img.src = svgUrl;
       });
 
-      const vb = parseSvgViewBox(svgString);
+      const baseSvg = applyHiddenLayers(svgString, hiddenLayers);
+
+      const vb = parseSvgViewBox(baseSvg);
       if (!vb) throw new Error('Pattern SVG is missing a viewBox - cannot composite.');
 
       // Convert legend physical dimensions into pattern SVG user-unit space.
@@ -289,9 +292,9 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
       const totalHIn = patternHIn + LEGEND_GAP_IN + resolvedLegendHIn + instrExtraHIn;
 
       // Custom mode: normalize stroke widths to the target physical size
-      let processedSvg = svgString;
+      let processedSvg = baseSvg;
       if (mode === 'custom') {
-        processedSvg = normalizeSvgStrokes(svgString, patternWIn, lineWidthIn);
+        processedSvg = normalizeSvgStrokes(baseSvg, patternWIn, lineWidthIn);
       }
 
       // Ensure SVG namespace so the composite is well-formed
@@ -336,6 +339,7 @@ export const ExportPatternForSVG = ({ viewData }: TypeViewData) => {
     canExport,
     viewData,
     svgString,
+    hiddenLayers,
     mode,
     patternWIn,
     patternHIn,

@@ -222,9 +222,9 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                   <Tab label="Export Image" value="image" />
                 </Tabs>
 
-                {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} />}
-                {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} />}
-                {exportTab === 'image' && <ExportPatternForImage viewData={viewData} />}
+                {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
+                {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
+                {exportTab === 'image' && <ExportPatternForImage viewData={viewData} hiddenLayers={hiddenLayers} />}
               </BorderedCard>
             )}
 

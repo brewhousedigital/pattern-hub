@@ -7,6 +7,16 @@ export function extractSvgLayerIds(svgText: string): string[] {
     .filter(Boolean);
 }
 
+export function applyHiddenLayers(svgText: string, hiddenLayers: Set<string>): string {
+  if (hiddenLayers.size === 0) return svgText;
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  hiddenLayers.forEach((id) => {
+    const el = doc.getElementById(id);
+    if (el) el.setAttribute('style', 'display:none');
+  });
+  return new XMLSerializer().serializeToString(doc);
+}
+
 export const sanitizeSvg = (code: string) => {
   return DOMPurify.sanitize(code, {
     USE_PROFILES: { svg: true, svgFilters: true },

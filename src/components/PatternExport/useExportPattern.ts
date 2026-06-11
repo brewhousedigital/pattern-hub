@@ -15,6 +15,7 @@ import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { normalizeUnit, toPx, type TypePatternExportUnit } from './units';
 import type { TypePatternKeyReferenceObject } from '@/functions/database/patterns';
+import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 
 export interface TypeExportFormState {
   format: ExportFormat;
@@ -42,6 +43,7 @@ export interface TypeExportPatternContext {
   lineWidthUnit: string;
   instructionsMarkdown: string;
   patternKeys: TypePatternKeyReferenceObject[];
+  hiddenLayerIds?: string[];
 }
 
 export function useExportPattern() {
@@ -55,7 +57,7 @@ export function useExportPattern() {
     setError(null);
     try {
       // ── 1. Fetch source SVG ────────────────────────────────────────────────
-      const svgText = await queryClient.fetchQuery({
+      const rawSvgText = await queryClient.fetchQuery({
         queryKey: ['pattern-svg', ctx.patternFileUrl],
         queryFn: () =>
           fetch(ctx.patternFileUrl).then((r) => {
@@ -65,6 +67,10 @@ export function useExportPattern() {
         staleTime: Infinity,
         gcTime: 1000 * 60 * 60,
       });
+      const svgText =
+        ctx.hiddenLayerIds?.length
+          ? applyHiddenLayers(rawSvgText, new Set(ctx.hiddenLayerIds))
+          : rawSvgText;
 
       // ── 2. Resolve target output px ────────────────────────────────────────
       // For 'svg' + 'original' variant we skip everything else; composite handles it.

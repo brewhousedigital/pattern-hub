@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
+import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -432,7 +433,7 @@ async function addInstructionPages(
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
+export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
@@ -581,9 +582,11 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
 
       const resolvedLegendHIn = legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX);
 
+      const filteredSvgString = applyHiddenLayers(svgString, hiddenLayers);
+
       if (mode === 'tiled') {
         await buildTiledPdf({
-          svgString,
+          svgString: filteredSvgString,
           patternName: viewData.name,
           patternWIn,
           patternHIn,
@@ -595,7 +598,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
         });
       } else {
         await buildSinglePdf({
-          svgString,
+          svgString: filteredSvgString,
           patternName: viewData.name,
           patternWIn,
           patternHIn,
@@ -618,6 +621,7 @@ export const ExportPatternForPrintV3 = ({ viewData }: TypeViewData) => {
     canExport,
     viewData,
     svgString,
+    hiddenLayers,
     mode,
     orientation,
     paperWIn,
