@@ -4,7 +4,7 @@ import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatter
 import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
 import { ExportPatternForImage } from '@/components/PatternExport/ExportPatternForImage';
 import { createPrettyDate } from '@/functions/utilities/dates';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternDrawerTopNavigation } from '@/components/PatternUtilities/PatternDrawerTopNavigation';
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
@@ -22,7 +22,7 @@ import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Box, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack, Tab, Tabs } from '@mui/material';
+import { Box, Checkbox, FormControlLabel, Typography, Container, Button, Tooltip, Grid, Skeleton, Stack, Tab, Tabs } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
@@ -37,6 +37,42 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   const { patternId, exportTab, setExportTab } = usePatternSearch();
 
   const svgImageUrl = generatePbImage(viewData);
+
+  // ── Layer toggles ──────────────────────────────────────────────────────────
+  const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
+  const [layerSvgText, setLayerSvgText] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setHiddenLayers(new Set());
+    setLayerSvgText(null);
+    if (viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && viewData.pattern_file) {
+      fetch(generatePbImageSVG(viewData))
+        .then((r) => r.text())
+        .then(setLayerSvgText)
+        .catch(() => {});
+    }
+  }, [viewData?.id]);
+
+  const displaySvg = React.useMemo(() => {
+    if (!layerSvgText) return null;
+    if (hiddenLayers.size === 0) return layerSvgText;
+    const doc = new DOMParser().parseFromString(layerSvgText, 'image/svg+xml');
+    hiddenLayers.forEach((id) => {
+      const el = doc.getElementById(id);
+      if (el) el.setAttribute('style', 'display:none');
+    });
+    return new XMLSerializer().serializeToString(doc);
+  }, [layerSvgText, hiddenLayers]);
+
+  const handleToggleLayer = (layerId: string) => {
+    setHiddenLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(layerId)) next.delete(layerId);
+      else next.add(layerId);
+      return next;
+    });
+  };
+  // ──────────────────────────────────────────────────────────────────────────
 
   const handleCopyId = async () => {
     await copyToClipboard(viewData?.id || '');
@@ -84,19 +120,63 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                 />
               ) : (
                 <>
-                  <img
-                    loading="lazy"
-                    src={svgImageUrl}
-                    alt={`pattern template for ${viewData?.name}`}
-                    style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
-                  />
+                  {displaySvg ? (
+                    <Box
+                      sx={{ width: '100%', aspectRatio: '1/1', '& svg': { width: '100%', height: 'auto', display: 'block' } }}
+                      dangerouslySetInnerHTML={{ __html: displaySvg }}
+                    />
+                  ) : (
+                    <img
+                      loading="lazy"
+                      src={svgImageUrl}
+                      alt={`pattern template for ${viewData?.name}`}
+                      style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
+                    />
+                  )}
 
                   <Grid container spacing={3} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                     <Grid size={{ xs: 12, md: 6 }}>
                       <PatternLegendCard viewData={viewData} />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6 }}>*Layers Coming Soon*</Grid>
+                    {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: 'block',
+                            mb: 0.75,
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            letterSpacing: '0.09em',
+                            textTransform: 'uppercase',
+                            color: 'text.disabled',
+                          }}
+                        >
+                          Layers
+                        </Typography>
+                        <Stack spacing={0}>
+                          {viewData.layers_map.map((layer) => (
+                            <FormControlLabel
+                              key={layer.layerName}
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  checked={!hiddenLayers.has(layer.layerName)}
+                                  onChange={() => handleToggleLayer(layer.layerName)}
+                                />
+                              }
+                              label={
+                                <Typography variant="body2">
+                                  {layer.mappedName || layer.layerName}
+                                </Typography>
+                              }
+                              sx={{ ml: 0 }}
+                            />
+                          ))}
+                        </Stack>
+                      </Grid>
+                    )}
                   </Grid>
                 </>
               )}
