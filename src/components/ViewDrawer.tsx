@@ -139,7 +139,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                       sx={{
                         width: '100%',
                         aspectRatio: '1/1',
-                        '& svg': { width: '100%', height: 'auto', display: 'block' },
+                        '& svg': { width: '100%', height: '100%', display: 'block' },
                       }}
                       dangerouslySetInnerHTML={{ __html: displaySvg }}
                     />
