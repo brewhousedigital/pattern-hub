@@ -33,6 +33,12 @@ export type TypePatternResponse = {
   line_width_unit: string;
   has_layers: boolean;
   layers_map: TypePatternLayersMapItem[];
+  size_width_in?: number;
+  size_width_cm?: number;
+  size_width_mm?: number;
+  size_height_in?: number;
+  size_height_cm?: number;
+  size_height_mm?: number;
   tag_count?: number;
   avg_rating?: number;
   total_ratings?: number;
@@ -139,6 +145,14 @@ export type TypePatternCreatePayload = {
   layers_map?: TypePatternLayersMapItem[];
 };
 
+function r4(n: number) { return Math.round(n * 10000) / 10000; }
+
+function convertToAllUnits(value: number, unit: string) {
+  if (unit === 'cm') return { in: r4(value / 2.54),  cm: r4(value),       mm: r4(value * 10)  };
+  if (unit === 'mm') return { in: r4(value / 25.4),  cm: r4(value / 10),  mm: r4(value)       };
+  return               { in: r4(value),         cm: r4(value * 2.54), mm: r4(value * 25.4) };
+}
+
 export const useMutationEditPattern = () => {
   return useMutation({
     mutationFn: async (payload: TypePatternCreatePayload): Promise<TypePatternResponse> => {
@@ -188,6 +202,15 @@ export const useMutationEditPattern = () => {
         const dateString = dayjs(payload?.design_date).startOf('day').toISOString();
         formData.append('design_date', dateString || '');
       }
+
+      const wConverted = convertToAllUnits(parseFloat(payload?.design_width || '0'), payload?.design_width_unit || 'in');
+      const hConverted = convertToAllUnits(parseFloat(payload?.design_height || '0'), payload?.design_height_unit || 'in');
+      formData.append('size_width_in', String(wConverted.in));
+      formData.append('size_width_cm', String(wConverted.cm));
+      formData.append('size_width_mm', String(wConverted.mm));
+      formData.append('size_height_in', String(hConverted.in));
+      formData.append('size_height_cm', String(hConverted.cm));
+      formData.append('size_height_mm', String(hConverted.mm));
 
       formData.append('has_layers', String(payload?.has_layers ?? false));
       formData.append('layers_map', JSON.stringify(payload?.layers_map ?? []));
