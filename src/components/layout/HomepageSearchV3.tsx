@@ -48,9 +48,9 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   id: { color: 'info', icon: <PersonIcon fontSize="small" /> },
   title: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
   description: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
-  partcount: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
-  sizewidth: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
-  sizeheight: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  parts: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  width: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  height: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
   filesize: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
 };
 
@@ -61,9 +61,9 @@ function getTokenStyle(token: Token) {
 
 function getTokenLabel(token: Token): string {
   // Numeric filters
-  if (token.type === 'partcount') return `partcount${token.operator}${token.value}`;
-  if (token.type === 'sizewidth') return `sizewidth${token.operator}${token.value}`;
-  if (token.type === 'sizeheight') return `sizeheight${token.operator}${token.value}`;
+  if (token.type === 'parts') return `parts${token.operator}${token.value}`;
+  if (token.type === 'width') return `width${token.operator}${token.value}`;
+  if (token.type === 'height') return `height${token.operator}${token.value}`;
   if (token.type === 'filesize') return `filesize${token.operator}${token.value}`;
 
   // Custom string prefix filters
@@ -78,9 +78,9 @@ function getTokenLabel(token: Token): string {
 
 function getTokenTooltip(token: Token): string {
   // Numeric filters
-  if (token.type === 'partcount') return `Part count ${token.operator} ${token.value}`;
-  if (token.type === 'sizewidth') return `Width ${token.operator} ${token.value}`;
-  if (token.type === 'sizeheight') return `Height ${token.operator} ${token.value}`;
+  if (token.type === 'parts') return `Parts ${token.operator} ${token.value}`;
+  if (token.type === 'width') return `Width ${token.operator} ${token.value}`;
+  if (token.type === 'height') return `Height ${token.operator} ${token.value}`;
   if (token.type === 'filesize') return `File size in Bytes ${token.operator} ${token.value}`;
 
   // Custom string prefix filters
@@ -105,9 +105,10 @@ const PREFIX_MAP: Record<string, PrefixMode> = {
   'id:': 'suppress',
   'title:': 'suppress',
   'description:': 'suppress',
-  partcount: 'suppress',
-  sizewidth: 'suppress',
-  sizeheight: 'suppress',
+  parts: 'suppress',
+  pieces: 'suppress',
+  width: 'suppress',
+  height: 'suppress',
   filesize: 'suppress',
 };
 

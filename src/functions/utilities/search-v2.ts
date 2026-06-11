@@ -38,20 +38,20 @@ export type DescriptionToken = {
 
 export type NumericOperator = '>' | '<' | '=';
 
-export type PartCountToken = {
-  type: 'partcount';
+export type PartsToken = {
+  type: 'parts';
   operator: NumericOperator;
   value: number;
 };
 
-export type SizeWidthToken = {
-  type: 'sizewidth';
+export type WidthToken = {
+  type: 'width';
   operator: NumericOperator;
   value: number;
 };
 
-export type SizeHeightToken = {
-  type: 'sizeheight';
+export type HeightToken = {
+  type: 'height';
   operator: NumericOperator;
   value: number;
 };
@@ -69,9 +69,9 @@ export type Token =
   | IdToken
   | TitleToken
   | DescriptionToken
-  | PartCountToken
-  | SizeWidthToken
-  | SizeHeightToken
+  | PartsToken
+  | WidthToken
+  | HeightToken
   | FileSizeToken;
 
 // URL Search Params Schema
@@ -108,9 +108,9 @@ export const patternSearchSchema = z.object({
   id: z.array(z.string()).default([]),
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
-  partcount: z.array(z.string()).default([]),
-  sizewidth: z.array(z.string()).default([]),
-  sizeheight: z.array(z.string()).default([]),
+  parts: z.array(z.string()).default([]),
+  width: z.array(z.string()).default([]),
+  height: z.array(z.string()).default([]),
   filesize: z.array(z.string()).default([]),
   sort: z.enum([
     '-created', 'created',
@@ -176,7 +176,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: description.startsWith('-'),
   }));
 
-  function parseNumericTokens<T extends 'partcount' | 'sizewidth' | 'sizeheight' | 'filesize'>(type: T, values: string[]): Token[] {
+  function parseNumericTokens<T extends 'parts' | 'width' | 'height' | 'filesize'>(type: T, values: string[]): Token[] {
     return values
       .map((v): Token | null => {
         const operator = v.startsWith('>') ? '>' : v.startsWith('<') ? '<' : v.startsWith('=') ? '=' : null;
@@ -188,9 +188,9 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
       .filter((t): t is Token => t !== null);
   }
 
-  const partcountTokens = parseNumericTokens('partcount', search.partcount);
-  const sizewidthTokens = parseNumericTokens('sizewidth', search.sizewidth);
-  const sizeheightTokens = parseNumericTokens('sizeheight', search.sizeheight);
+  const partsTokens = parseNumericTokens('parts', search.parts);
+  const widthTokens = parseNumericTokens('width', search.width);
+  const heightTokens = parseNumericTokens('height', search.height);
   const filesizeTokens = parseNumericTokens('filesize', search.filesize);
 
   return [
@@ -200,9 +200,9 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     ...idTokens,
     ...titleTokens,
     ...descriptionTokens,
-    ...partcountTokens,
-    ...sizewidthTokens,
-    ...sizeheightTokens,
+    ...partsTokens,
+    ...widthTokens,
+    ...heightTokens,
     ...filesizeTokens,
   ];
 }
@@ -234,23 +234,23 @@ export function searchFromTokens(
     .filter((t): t is DescriptionToken => t.type === 'description')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
-  const partcount = tokens
-    .filter((t): t is PartCountToken => t.type === 'partcount')
+  const parts = tokens
+    .filter((t): t is PartsToken => t.type === 'parts')
     .map((t) => `${t.operator}${t.value}`);
 
-  const sizewidth = tokens
-    .filter((t): t is SizeWidthToken => t.type === 'sizewidth')
+  const width = tokens
+    .filter((t): t is WidthToken => t.type === 'width')
     .map((t) => `${t.operator}${t.value}`);
 
-  const sizeheight = tokens
-    .filter((t): t is SizeHeightToken => t.type === 'sizeheight')
+  const height = tokens
+    .filter((t): t is HeightToken => t.type === 'height')
     .map((t) => `${t.operator}${t.value}`);
 
   const filesize = tokens
     .filter((t): t is FileSizeToken => t.type === 'filesize')
     .map((t) => `${t.operator}${t.value}`);
 
-  return { q, tags, authors, id, title, description, partcount, sizewidth, sizeheight, filesize };
+  return { q, tags, authors, id, title, description, parts, width, height, filesize };
 }
 
 /**
@@ -283,9 +283,10 @@ export function parseRawInput(raw: string): Token {
     return { type: 'description', value, exclude };
   }
 
-  const numericMatch = stripped.match(/^(partcount|sizewidth|sizeheight|filesize)([><=])([\d.]+)$/i);
+  const numericMatch = stripped.match(/^(width|height|parts|pieces|filesize)([><=])([\d.]+)$/i);
   if (numericMatch) {
-    const type = numericMatch[1].toLowerCase() as 'partcount' | 'sizewidth' | 'sizeheight' | 'filesize';
+    const rawType = numericMatch[1].toLowerCase();
+    const type = (rawType === 'pieces' ? 'parts' : rawType) as 'width' | 'height' | 'parts' | 'filesize';
     const operator = numericMatch[2] as NumericOperator;
     const value = parseFloat(numericMatch[3]);
     if (!isNaN(value)) return { type, operator, value };
@@ -354,15 +355,15 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
       }
     }
 
-    if (token.type === 'partcount') {
+    if (token.type === 'parts') {
       parts.push(`(pieces ${token.operator} ${token.value})`);
     }
 
-    if (token.type === 'sizewidth') {
+    if (token.type === 'width') {
       parts.push(`(design_width ${token.operator} ${token.value})`);
     }
 
-    if (token.type === 'sizeheight') {
+    if (token.type === 'height') {
       parts.push(`(design_height ${token.operator} ${token.value})`);
     }
 
