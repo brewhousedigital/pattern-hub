@@ -59,15 +59,35 @@ function getTokenStyle(token: Token) {
 }
 
 function getTokenLabel(token: Token): string {
+  // Numeric filters
+  if (token.type === 'partcount') return `partcount${token.operator}${token.value}`;
+  if (token.type === 'sizewidth') return `sizewidth${token.operator}${token.value}`;
+  if (token.type === 'sizeheight') return `sizeheight${token.operator}${token.value}`;
+
+  // Custom string prefix filters
   if (token.type === 'author') return `author:${token.value}`;
   if (token.type === 'id') return `id:${token.value}`;
   if (token.type === 'title') return `title:${token.value}`;
   if (token.type === 'description') return `description:${token.value}`;
-  if (token.type === 'partcount') return `partcount${token.operator}${token.value}`;
-  if (token.type === 'sizewidth') return `sizewidth${token.operator}${token.value}`;
-  if (token.type === 'sizeheight') return `sizeheight${token.operator}${token.value}`;
-  if ('exclude' in token && token.exclude) return `-${token.value}`;
-  return (token as { value: string }).value;
+
+  // Default tag / text search
+  return token.exclude ? `-${token.value}` : token.value;
+}
+
+function getTokenTooltip(token: Token): string {
+  // Numeric filters
+  if (token.type === 'partcount') return `Part count ${token.operator} ${token.value}`;
+  if (token.type === 'sizewidth') return `Width ${token.operator} ${token.value}`;
+  if (token.type === 'sizeheight') return `Height ${token.operator} ${token.value}`;
+
+  // Custom string prefix filters
+  if (token.type === 'author') return `Filtering by author "${token.value}"`;
+  if (token.type === 'id') return `Filtering by ID "${token.value}"`;
+  if (token.type === 'title') return `Filtering by title "${token.value}"`;
+  if (token.type === 'description') return `Filtering by description "${token.value}"`;
+
+  // Default tag / text search
+  return token.exclude ? `Excluding "${token.value}"` : `Searching for "${token.value}"`;
 }
 
 /**
@@ -305,21 +325,7 @@ export const HomepageSearchV3 = ({
             return (
               <Tooltip
                 key={index}
-                title={
-                  token.type === 'partcount'
-                    ? `Filtering by part count ${token.operator} ${token.value}`
-                    : token.type === 'sizewidth'
-                      ? `Filtering by width ${token.operator} ${token.value}`
-                      : token.type === 'sizeheight'
-                        ? `Filtering by height ${token.operator} ${token.value}`
-                        : 'exclude' in token && token.exclude
-                          ? `Excluding "${token.value}"`
-                          : token.type === 'author'
-                            ? `Filtering by author "${token.value}"`
-                            : token.type === 'tag'
-                              ? `Filtering by tag "${token.value}"`
-                              : `Searching for "${token.value}"`
-                }
+                title={getTokenTooltip(token)}
                 arrow
               >
                 <Chip
