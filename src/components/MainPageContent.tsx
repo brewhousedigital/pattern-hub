@@ -25,7 +25,7 @@ export const MainPageContent = () => {
   if (isPending) {
     return (
       <Grid container spacing={2}>
-        {Array.from(Array(25)).map((item, index) => (
+        {Array.from(Array(20)).map((item, index) => (
           <Grid key={`pattern-${index}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
             <Skeleton width="100%" variant="rounded" sx={{ borderRadius: 6, aspectRatio: '1 / 1', height: 'auto' }} />
           </Grid>

@@ -78,7 +78,7 @@ export const useQueryGetAllPatternsByPagination = () => {
   return useQuery({
     queryKey: ['GetAllPatternsByPagination', filter, pageNumber, sort],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(pageNumber, 25, {
+      return await pocketbase.collection('patterns').getList(pageNumber, 20, {
         filter: includeIsDeletedFilter,
         expand: 'authors',
         sort,
@@ -99,7 +99,7 @@ export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: nu
   return useQuery({
     queryKey: ['GetAllPatternsByPaginationAdmin', filter, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(page, 25, {
+      return await pocketbase.collection('patterns').getList(page, 20, {
         filter: includeIsDeletedFilter,
         expand: 'authors',
         sort: '-created',
