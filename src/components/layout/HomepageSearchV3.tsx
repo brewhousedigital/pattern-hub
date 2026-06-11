@@ -10,6 +10,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import PersonIcon from '@mui/icons-material/Person';
 import LabelIcon from '@mui/icons-material/Label';
 import SortIcon from '@mui/icons-material/Sort';
+import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 
 import {
   Box,
@@ -47,10 +48,13 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   id: { color: 'info', icon: <PersonIcon fontSize="small" /> },
   title: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
   description: { color: 'secondary', icon: <PersonIcon fontSize="small" /> },
+  partcount: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  sizewidth: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  sizeheight: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
 };
 
 function getTokenStyle(token: Token) {
-  if (token.exclude) return { color: 'error' as const, icon: TOKEN_STYLES[token.type].icon };
+  if ('exclude' in token && token.exclude) return { color: 'error' as const, icon: TOKEN_STYLES[token.type].icon };
   return TOKEN_STYLES[token.type];
 }
 
@@ -59,8 +63,11 @@ function getTokenLabel(token: Token): string {
   if (token.type === 'id') return `id:${token.value}`;
   if (token.type === 'title') return `title:${token.value}`;
   if (token.type === 'description') return `description:${token.value}`;
-  if (token.exclude) return `-${token.value}`;
-  return token.value;
+  if (token.type === 'partcount') return `partcount${token.operator}${token.value}`;
+  if (token.type === 'sizewidth') return `sizewidth${token.operator}${token.value}`;
+  if (token.type === 'sizeheight') return `sizeheight${token.operator}${token.value}`;
+  if ('exclude' in token && token.exclude) return `-${token.value}`;
+  return (token as { value: string }).value;
 }
 
 /**
@@ -75,6 +82,9 @@ const PREFIX_MAP: Record<string, PrefixMode> = {
   'id:': 'suppress',
   'title:': 'suppress',
   'description:': 'suppress',
+  partcount: 'suppress',
+  sizewidth: 'suppress',
+  sizeheight: 'suppress',
 };
 
 function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string } {
@@ -296,7 +306,7 @@ export const HomepageSearchV3 = ({
               <Tooltip
                 key={index}
                 title={
-                  token.exclude
+                  token?.exclude
                     ? `Excluding "${token.value}"`
                     : token.type === 'author'
                       ? `Filtering by author "${token.value}"`

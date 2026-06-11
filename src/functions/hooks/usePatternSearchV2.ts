@@ -86,9 +86,9 @@ export function usePatternSearch(): UsePatternSearchReturn {
   }
 
   function updateTokens(nextTokens: Token[]) {
-    const { q, tags, authors, id, title, description } = searchFromTokens(nextTokens);
+    const { q, tags, authors, id, title, description, partcount, sizewidth, sizeheight } = searchFromTokens(nextTokens);
     // When tokens change, set the pageNumber back to 1
-    updateSearch({ q, tags, authors, id, title, description, pageNumber: 1 });
+    updateSearch({ q, tags, authors, id, title, description, partcount, sizewidth, sizeheight, pageNumber: 1 });
   }
 
   /**
@@ -157,7 +157,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   /** Wipe all tokens, leaving patternId and other params intact. */
   function clearTokens() {
-    updateSearch({ q: '', tags: [], authors: [], title: [], description: [] });
+    updateSearch({ q: '', tags: [], authors: [], title: [], description: [], partcount: [], sizewidth: [], sizeheight: [] });
   }
 
   // Tag toggle (sidebar)

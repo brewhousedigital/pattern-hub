@@ -36,7 +36,36 @@ export type DescriptionToken = {
   exclude: boolean;
 };
 
-export type Token = TextToken | TagToken | AuthorToken | IdToken | TitleToken | DescriptionToken;
+export type NumericOperator = '>' | '<';
+
+export type PartCountToken = {
+  type: 'partcount';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type SizeWidthToken = {
+  type: 'sizewidth';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type SizeHeightToken = {
+  type: 'sizeheight';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type Token =
+  | TextToken
+  | TagToken
+  | AuthorToken
+  | IdToken
+  | TitleToken
+  | DescriptionToken
+  | PartCountToken
+  | SizeWidthToken
+  | SizeHeightToken;
 
 // URL Search Params Schema
 export const SORT_OPTIONS = [
@@ -60,6 +89,9 @@ export const patternSearchSchema = z.object({
   id: z.array(z.string()).default([]),
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
+  partcount: z.array(z.string()).default([]),
+  sizewidth: z.array(z.string()).default([]),
+  sizeheight: z.array(z.string()).default([]),
   sort: z.enum(['-created', 'created', '-design_date', 'design_date', '-updated', 'updated']).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
@@ -114,7 +146,33 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: description.startsWith('-'),
   }));
 
-  return [...textTokens, ...tagTokens, ...authorTokens, ...idTokens, ...titleTokens, ...descriptionTokens];
+  function parseNumericTokens<T extends 'partcount' | 'sizewidth' | 'sizeheight'>(type: T, values: string[]): Token[] {
+    return values
+      .map((v): Token | null => {
+        const operator = v.startsWith('>') ? '>' : v.startsWith('<') ? '<' : null;
+        if (!operator) return null;
+        const num = parseFloat(v.slice(1));
+        if (isNaN(num)) return null;
+        return { type, operator, value: num } as Token;
+      })
+      .filter((t): t is Token => t !== null);
+  }
+
+  const partcountTokens = parseNumericTokens('partcount', search.partcount);
+  const sizewidthTokens = parseNumericTokens('sizewidth', search.sizewidth);
+  const sizeheightTokens = parseNumericTokens('sizeheight', search.sizeheight);
+
+  return [
+    ...textTokens,
+    ...tagTokens,
+    ...authorTokens,
+    ...idTokens,
+    ...titleTokens,
+    ...descriptionTokens,
+    ...partcountTokens,
+    ...sizewidthTokens,
+    ...sizeheightTokens,
+  ];
 }
 
 /**
@@ -144,7 +202,19 @@ export function searchFromTokens(
     .filter((t): t is DescriptionToken => t.type === 'description')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
-  return { q, tags, authors, id, title, description };
+  const partcount = tokens
+    .filter((t): t is PartCountToken => t.type === 'partcount')
+    .map((t) => `${t.operator}${t.value}`);
+
+  const sizewidth = tokens
+    .filter((t): t is SizeWidthToken => t.type === 'sizewidth')
+    .map((t) => `${t.operator}${t.value}`);
+
+  const sizeheight = tokens
+    .filter((t): t is SizeHeightToken => t.type === 'sizeheight')
+    .map((t) => `${t.operator}${t.value}`);
+
+  return { q, tags, authors, id, title, description, partcount, sizewidth, sizeheight };
 }
 
 /**
@@ -175,6 +245,14 @@ export function parseRawInput(raw: string): Token {
     const exclude = stripped.startsWith('-');
     const value = stripped.replace(/^-?description:/i, '');
     return { type: 'description', value, exclude };
+  }
+
+  const numericMatch = stripped.match(/^(partcount|sizewidth|sizeheight)([><])([\d.]+)$/i);
+  if (numericMatch) {
+    const type = numericMatch[1].toLowerCase() as 'partcount' | 'sizewidth' | 'sizeheight';
+    const operator = numericMatch[2] as NumericOperator;
+    const value = parseFloat(numericMatch[3]);
+    if (!isNaN(value)) return { type, operator, value };
   }
 
   return {
@@ -238,6 +316,18 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
       } else {
         parts.push(`(description ~ "${token.value}")`);
       }
+    }
+
+    if (token.type === 'partcount') {
+      parts.push(`(pieces ${token.operator} ${token.value})`);
+    }
+
+    if (token.type === 'sizewidth') {
+      parts.push(`(design_width ${token.operator} ${token.value})`);
+    }
+
+    if (token.type === 'sizeheight') {
+      parts.push(`(design_height ${token.operator} ${token.value})`);
     }
   }
 
