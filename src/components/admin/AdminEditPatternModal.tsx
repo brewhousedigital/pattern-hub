@@ -389,6 +389,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(undefined);
+    setDesignWidth(String(props?.design_width) || '0');
+    setDesignWidthUnit(String(props?.design_width_unit) || 'in');
+    setDesignHeight(String(props?.design_height) || '0');
+    setDesignHeightUnit(String(props?.design_height_unit) || 'in');
   };
 
   const handleExternalFileDelete = () => {
