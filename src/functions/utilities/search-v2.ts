@@ -36,7 +36,7 @@ export type DescriptionToken = {
   exclude: boolean;
 };
 
-export type NumericOperator = '>' | '<';
+export type NumericOperator = '>' | '<' | '=';
 
 export type PartCountToken = {
   type: 'partcount';
@@ -75,6 +75,18 @@ export const SORT_OPTIONS = [
   { value: 'design_date', label: 'Oldest first' },
   { value: '-updated', label: 'Recently updated' },
   { value: 'updated', label: 'Oldest updated' },
+  { value: '-tag_count', label: 'Most tags' },
+  { value: 'tag_count', label: 'Fewest tags' },
+  { value: '-avg_rating', label: 'Highest rated' },
+  { value: 'avg_rating', label: 'Lowest rated' },
+  { value: '-total_ratings', label: 'Most rated' },
+  { value: 'total_ratings', label: 'Least rated' },
+  { value: '-avg_difficulty', label: 'Hardest' },
+  { value: 'avg_difficulty', label: 'Easiest' },
+  { value: '-total_difficulty_ratings', label: 'Most difficulty votes' },
+  { value: 'total_difficulty_ratings', label: 'Fewest difficulty votes' },
+  { value: '-favorite_count', label: 'Most favorited' },
+  { value: 'favorite_count', label: 'Least favorited' },
 ] as const;
 
 export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
@@ -92,7 +104,17 @@ export const patternSearchSchema = z.object({
   partcount: z.array(z.string()).default([]),
   sizewidth: z.array(z.string()).default([]),
   sizeheight: z.array(z.string()).default([]),
-  sort: z.enum(['-created', 'created', '-design_date', 'design_date', '-updated', 'updated']).default('-created'),
+  sort: z.enum([
+    '-created', 'created',
+    '-design_date', 'design_date',
+    '-updated', 'updated',
+    '-tag_count', 'tag_count',
+    '-avg_rating', 'avg_rating',
+    '-total_ratings', 'total_ratings',
+    '-avg_difficulty', 'avg_difficulty',
+    '-total_difficulty_ratings', 'total_difficulty_ratings',
+    '-favorite_count', 'favorite_count',
+  ]).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
   exportTab: z.enum(EXPORT_TABS).default('print'),
@@ -149,7 +171,7 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
   function parseNumericTokens<T extends 'partcount' | 'sizewidth' | 'sizeheight'>(type: T, values: string[]): Token[] {
     return values
       .map((v): Token | null => {
-        const operator = v.startsWith('>') ? '>' : v.startsWith('<') ? '<' : null;
+        const operator = v.startsWith('>') ? '>' : v.startsWith('<') ? '<' : v.startsWith('=') ? '=' : null;
         if (!operator) return null;
         const num = parseFloat(v.slice(1));
         if (isNaN(num)) return null;
@@ -247,7 +269,7 @@ export function parseRawInput(raw: string): Token {
     return { type: 'description', value, exclude };
   }
 
-  const numericMatch = stripped.match(/^(partcount|sizewidth|sizeheight)([><])([\d.]+)$/i);
+  const numericMatch = stripped.match(/^(partcount|sizewidth|sizeheight)([><=])([\d.]+)$/i);
   if (numericMatch) {
     const type = numericMatch[1].toLowerCase() as 'partcount' | 'sizewidth' | 'sizeheight';
     const operator = numericMatch[2] as NumericOperator;

@@ -33,6 +33,12 @@ export type TypePatternResponse = {
   line_width_unit: string;
   has_layers: boolean;
   layers_map: TypePatternLayersMapItem[];
+  tag_count: number;
+  avg_rating: number;
+  total_ratings: number;
+  avg_difficulty: number;
+  total_difficulty_ratings: number;
+  favorite_count: number;
   created: string;
   updated: string;
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
@@ -185,6 +191,7 @@ export const useMutationEditPattern = () => {
 
       formData.append('has_layers', String(payload?.has_layers ?? false));
       formData.append('layers_map', JSON.stringify(payload?.layers_map ?? []));
+      formData.append('tag_count', String(payload?.tags?.length ?? 0));
 
       if (payload?.id) {
         return await pocketbase.collection('patterns').update(payload?.id, formData);
