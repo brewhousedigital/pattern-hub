@@ -40,8 +40,10 @@ export type Token = TextToken | TagToken | AuthorToken | IdToken | TitleToken | 
 
 // URL Search Params Schema
 export const SORT_OPTIONS = [
-  { value: '-created', label: 'Newest first' },
-  { value: 'created', label: 'Oldest first' },
+  { value: '-created', label: 'Last uploaded' },
+  { value: 'created', label: 'First uploaded' },
+  { value: '-design_date', label: 'Newest first' },
+  { value: 'design_date', label: 'Oldest first' },
   { value: '-updated', label: 'Recently updated' },
   { value: 'updated', label: 'Oldest updated' },
 ] as const;
@@ -58,7 +60,7 @@ export const patternSearchSchema = z.object({
   id: z.array(z.string()).default([]),
   title: z.array(z.string()).default([]),
   description: z.array(z.string()).default([]),
-  sort: z.enum(['-created', 'created', '-updated', 'updated']).default('-created'),
+  sort: z.enum(['-created', 'created', '-design_date', 'design_date', '-updated', 'updated']).default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
   exportTab: z.enum(EXPORT_TABS).default('print'),
