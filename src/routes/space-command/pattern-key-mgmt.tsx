@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   useQueryGetAllPatternKeys,
   useQueryGetAllPatternKeyCollections,
@@ -653,8 +653,8 @@ function RouteComponent() {
                     <TableCell>
                       {row.pattern_ids.length > 0 ? (
                         <Button
-                          component="a"
-                          href={patternHref}
+                          component={Link}
+                          to={patternHref}
                           size="small"
                           variant="outlined"
                           sx={{ textTransform: 'none', borderRadius: 1.5 }}
