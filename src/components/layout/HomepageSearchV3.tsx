@@ -51,6 +51,7 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   partcount: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
   sizewidth: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
   sizeheight: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  filesize: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
 };
 
 function getTokenStyle(token: Token) {
@@ -63,6 +64,7 @@ function getTokenLabel(token: Token): string {
   if (token.type === 'partcount') return `partcount${token.operator}${token.value}`;
   if (token.type === 'sizewidth') return `sizewidth${token.operator}${token.value}`;
   if (token.type === 'sizeheight') return `sizeheight${token.operator}${token.value}`;
+  if (token.type === 'filesize') return `filesize${token.operator}${token.value}`;
 
   // Custom string prefix filters
   if (token.type === 'author') return `author:${token.value}`;
@@ -79,6 +81,7 @@ function getTokenTooltip(token: Token): string {
   if (token.type === 'partcount') return `Part count ${token.operator} ${token.value}`;
   if (token.type === 'sizewidth') return `Width ${token.operator} ${token.value}`;
   if (token.type === 'sizeheight') return `Height ${token.operator} ${token.value}`;
+  if (token.type === 'filesize') return `File size in Bytes ${token.operator} ${token.value}`;
 
   // Custom string prefix filters
   if (token.type === 'author') return `Filtering by author "${token.value}"`;
@@ -105,6 +108,7 @@ const PREFIX_MAP: Record<string, PrefixMode> = {
   partcount: 'suppress',
   sizewidth: 'suppress',
   sizeheight: 'suppress',
+  filesize: 'suppress',
 };
 
 function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string } {
@@ -323,11 +327,7 @@ export const HomepageSearchV3 = ({
           {tokens.map((token, index) => {
             const { color } = getTokenStyle(token);
             return (
-              <Tooltip
-                key={index}
-                title={getTokenTooltip(token)}
-                arrow
-              >
+              <Tooltip key={index} title={getTokenTooltip(token)} arrow>
                 <Chip
                   size="small"
                   label={getTokenLabel(token)}
