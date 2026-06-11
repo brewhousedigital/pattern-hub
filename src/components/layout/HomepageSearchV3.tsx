@@ -306,13 +306,19 @@ export const HomepageSearchV3 = ({
               <Tooltip
                 key={index}
                 title={
-                  token?.exclude
-                    ? `Excluding "${token.value}"`
-                    : token.type === 'author'
-                      ? `Filtering by author "${token.value}"`
-                      : token.type === 'tag'
-                        ? `Filtering by tag "${token.value}"`
-                        : `Searching for "${token.value}"`
+                  token.type === 'partcount'
+                    ? `Filtering by part count ${token.operator} ${token.value}`
+                    : token.type === 'sizewidth'
+                      ? `Filtering by width ${token.operator} ${token.value}`
+                      : token.type === 'sizeheight'
+                        ? `Filtering by height ${token.operator} ${token.value}`
+                        : 'exclude' in token && token.exclude
+                          ? `Excluding "${token.value}"`
+                          : token.type === 'author'
+                            ? `Filtering by author "${token.value}"`
+                            : token.type === 'tag'
+                              ? `Filtering by tag "${token.value}"`
+                              : `Searching for "${token.value}"`
                 }
                 arrow
               >
