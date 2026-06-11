@@ -91,7 +91,13 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
                     style={{ width: '100%', height: 'auto', aspectRatio: '1/1', display: 'block' }}
                   />
 
-                  <PatternLegendCard viewData={viewData} />
+                  <Grid container spacing={3} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <PatternLegendCard viewData={viewData} />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>*Layers Coming Soon*</Grid>
+                  </Grid>
                 </>
               )}
             </BorderedCard>
@@ -315,7 +321,7 @@ const PatternLegendCard = ({ viewData }: TypeViewData) => {
   ];
 
   return (
-    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+    <Box>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.3, mb: 0.25 }}>
         {viewData.name}
       </Typography>

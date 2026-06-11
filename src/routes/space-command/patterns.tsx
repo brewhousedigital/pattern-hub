@@ -340,6 +340,8 @@ function CustomToolbar() {
           pattern_key_reference_list={[]}
           instructions={''}
           design_date={dayjs()}
+          has_layers={false}
+          layers_map={[]}
         />
 
         <OpenAdminPatternTableHowToSearchButton />

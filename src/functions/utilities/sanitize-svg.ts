@@ -1,5 +1,12 @@
 import DOMPurify from 'dompurify';
 
+export function extractSvgLayerIds(svgText: string): string[] {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  return Array.from(doc.querySelectorAll('[id]'))
+    .map((el) => el.getAttribute('id')!)
+    .filter(Boolean);
+}
+
 export const sanitizeSvg = (code: string) => {
   return DOMPurify.sanitize(code, {
     USE_PROFILES: { svg: true, svgFilters: true },

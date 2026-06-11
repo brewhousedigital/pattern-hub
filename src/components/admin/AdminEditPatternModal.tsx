@@ -4,6 +4,7 @@ import {
   generatePbImage,
   generatePbImageExternalFile,
   generatePbImagePatternKeyRef,
+  generatePbImageSVG,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import {
@@ -25,17 +26,19 @@ import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
   type TypePatternKeyReferenceObject,
+  type TypePatternLayersMapItem,
   useQueryGetAllPatternsByPaginationAdmin,
   useMutationEditPattern,
   useMutationSoftDeletePattern,
   useQueryGetAllPatternKeys,
   useQueryGetAllPatternKeyCollections,
 } from '@/functions/database/patterns';
-import { sanitizeSvgFile } from '@/functions/utilities/sanitize-svg';
+import { sanitizeSvgFile, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
@@ -45,8 +48,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   Divider,
+  FormControlLabel,
   MenuItem,
   IconButton,
   DialogActions,
@@ -98,6 +103,16 @@ const FormSection = ({ label }: { label: string }) => (
     <Divider sx={{ flex: 1 }} />
   </Box>
 );
+
+// ─── Layers helpers ───────────────────────────────────────────────────────────
+
+function mergeLayerIds(existing: TypePatternLayersMapItem[], newIds: string[]): TypePatternLayersMapItem[] {
+  const existingNames = new Set(existing.map((e) => e.layerName));
+  const appended = newIds
+    .filter((id) => !existingNames.has(id))
+    .map((id) => ({ layerName: id, mappedName: '' }));
+  return [...existing, ...appended];
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -279,6 +294,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [previewExternalUrl, setPreviewExternalUrl] = React.useState<string | null>(null);
   const [externalFileLink, setExternalFileLink] = React.useState(props?.pattern_file_external_link || '');
 
+  // Layers
+  const [hasLayers, setHasLayers] = React.useState(props?.has_layers ?? false);
+  const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>(props?.layers_map ?? []);
+
+  const handleHasLayersChange = async (checked: boolean) => {
+    setHasLayers(checked);
+    if (!checked) return;
+    if (file) {
+      const text = await file.text();
+      setLayersMap((prev) => mergeLayerIds(prev, extractSvgLayerIds(text)));
+    } else if (props?.pattern_file) {
+      const text = await fetch(generatePbImageSVG(props)).then((r) => r.text());
+      setLayersMap((prev) => mergeLayerIds(prev, extractSvgLayerIds(text)));
+    }
+  };
+
   // Pattern Key manager
   const [newPatternKey, setNewPatternKey] = React.useState<TypePatternKeyReferenceObject>({
     image: '',
@@ -342,6 +373,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     handleResetChangePatternKey();
     setPatternKeyObject([]);
     setDesignDate(dayjs());
+    setHasLayers(false);
+    setLayersMap([]);
   };
 
   React.useEffect(() => {
@@ -397,6 +430,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       if (props?.id) {
         payload.id = props.id;
       }
+
+      payload.has_layers = hasLayers;
+      payload.layers_map = hasLayers ? layersMap : [];
 
       if (file && previewUrl) {
         const sanitizedFile = await sanitizeSvgFile(file);
@@ -592,7 +628,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   </Box>
 
                   {/* SVG tab */}
-                  <TabPanel value="1" sx={{ px: 0, pt: 2, pb: 0 }}>
+                  <TabPanel value="1" sx={{ px: 0, pt: 2, pb: 0 }} key="svg-tab">
                     {file && previewUrl ? (
                       <>
                         <Grid container spacing={2} sx={{ mb: 1.5 }}>
@@ -746,16 +782,83 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                               ? 'Drop a new SVG to replace, or click to browse'
                               : 'Drop SVG here or click to browse'
                           }
-                          onFile={(f) => {
+                          onFile={async (f) => {
                             if (!f.type.includes('svg')) {
                               alert('Please upload an SVG file');
                               return;
                             }
                             setPreviewUrl(URL.createObjectURL(f));
                             setFile(f);
+                            if (hasLayers) {
+                              const text = await f.text();
+                              setLayersMap((prev) => mergeLayerIds(prev, extractSvgLayerIds(text)));
+                            }
                           }}
                         />
                       </>
+                    )}
+
+                    {/* ── Has Layers ── */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox checked={hasLayers} onChange={(e) => handleHasLayersChange(e.target.checked)} />
+                      }
+                      label="Has Layers"
+                      sx={{ mt: 1 }}
+                    />
+
+                    {hasLayers && layersMap.length > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="caption" fontWeight={600} color="text.secondary" display="block" mb={1}>
+                          Layer Map
+                        </Typography>
+                        <Stack spacing={1}>
+                          {layersMap.map((item, index) => (
+                            <Grid container spacing={1} key={item.layerName} alignItems="center">
+                              <Grid size={{ xs: 5 }}>
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  variant="filled"
+                                  label="Layer ID"
+                                  value={item.layerName}
+                                  slotProps={{ input: { readOnly: true } }}
+                                />
+                              </Grid>
+                              <Grid size="auto">
+                                <Tooltip title="Copy layer ID to display name" arrow>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      setLayersMap((prev) =>
+                                        prev.map((e, i) => (i === index ? { ...e, mappedName: e.layerName } : e)),
+                                      )
+                                    }
+                                  >
+                                    <ArrowForwardRoundedIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Grid>
+                              <Grid size="grow">
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  variant="filled"
+                                  label="Display Name"
+                                  value={item.mappedName}
+                                  onChange={(e) =>
+                                    setLayersMap((prev) =>
+                                      prev.map((entry, i) =>
+                                        i === index ? { ...entry, mappedName: e.target.value } : entry,
+                                      ),
+                                    )
+                                  }
+                                />
+                              </Grid>
+                            </Grid>
+                          ))}
+                        </Stack>
+                      </Box>
                     )}
                   </TabPanel>
 

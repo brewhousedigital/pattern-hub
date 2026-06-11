@@ -31,12 +31,19 @@ export type TypePatternResponse = {
   design_width_unit: string;
   design_height_unit: string;
   line_width_unit: string;
+  has_layers: boolean;
+  layers_map: TypePatternLayersMapItem[];
   created: string;
   updated: string;
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
   expand?: {
     authors: TypeAuthData[];
   };
+};
+
+export type TypePatternLayersMapItem = {
+  layerName: string;
+  mappedName: string;
 };
 
 export type TypePatternKeyReferenceObject = {
@@ -121,6 +128,8 @@ export type TypePatternCreatePayload = {
   isDeleted?: boolean;
   pattern_key_reference_list?: TypePatternKeyReferenceObject[];
   design_date?: Date | Dayjs | null;
+  has_layers?: boolean;
+  layers_map?: TypePatternLayersMapItem[];
 };
 
 export const useMutationEditPattern = () => {
@@ -172,6 +181,9 @@ export const useMutationEditPattern = () => {
         const dateString = dayjs(payload?.design_date).startOf('day').toISOString();
         formData.append('design_date', dateString || '');
       }
+
+      formData.append('has_layers', String(payload?.has_layers ?? false));
+      formData.append('layers_map', JSON.stringify(payload?.layers_map ?? []));
 
       if (payload?.id) {
         return await pocketbase.collection('patterns').update(payload?.id, formData);
