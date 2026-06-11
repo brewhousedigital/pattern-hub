@@ -7,6 +7,7 @@ import {
   useMutationSavePatternKeyCollection,
   useMutationDeletePatternKeyCollection,
   useMutationSoftDeletePatternKey,
+  useQueryGetPatternReferenceKeys,
   type TypePatternKeyReferenceObject,
   type TypePatternKeyCollectionResponse,
   type TypeSavePatternKeyCollectionPayload,
@@ -39,8 +40,12 @@ import {
   TextField,
   Checkbox,
   Collapse,
-  Card,
-  CardContent,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 
 export const Route = createFileRoute('/space-command/pattern-key-mgmt')({
@@ -61,6 +66,7 @@ function RouteComponent() {
   const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_KEY_MGMT_AD);
 
   const { data: legends = [], isLoading: legendsLoading, refetch: refetchKeys } = useQueryGetAllPatternKeys();
+  const { data: referenceKeys = [], isLoading: referenceKeysLoading } = useQueryGetPatternReferenceKeys();
 
   const {
     data: collections = [],
@@ -592,6 +598,81 @@ function RouteComponent() {
             })}
           </Grid>
         </>
+      )}
+      <Divider sx={{ my: 4 }} />
+
+      <AdminHeaderContainer
+        title="Pattern Key Usage"
+        subtitle="Each key image used across all patterns, with a count of how many patterns reference it."
+      />
+
+      {referenceKeysLoading ? (
+        <Box display="flex" justifyContent="center" py={3}>
+          <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
+        </Box>
+      ) : referenceKeys.length === 0 ? (
+        <Typography variant="body2" color="text.disabled" py={1.5}>
+          No pattern key references found.
+        </Typography>
+      ) : (
+        <Box sx={{ border: '0.5px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 600, width: 160 }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 80 }} align="center">
+                  Count
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Patterns</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {referenceKeys.map((row) => {
+                const patternFilter = row.pattern_ids.map((id) => `id='${id}'`).join(' || ');
+                const patternHref = `/space-command/patterns?filter=${encodeURIComponent(patternFilter)}`;
+                return (
+                  <TableRow key={row.id} hover>
+                    <TableCell>
+                      <Box
+                        component="img"
+                        src={row.fullPath}
+                        alt={row.name}
+                        loading="lazy"
+                        sx={{ width: 140, height: 'auto', maxHeight: 80, display: 'block' }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {row.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip label={row.count} size="small" />
+                    </TableCell>
+                    <TableCell>
+                      {row.pattern_ids.length > 0 ? (
+                        <Button
+                          component="a"
+                          href={patternHref}
+                          size="small"
+                          variant="outlined"
+                          sx={{ textTransform: 'none', borderRadius: 1.5 }}
+                        >
+                          View {row.pattern_ids.length} pattern{row.pattern_ids.length !== 1 ? 's' : ''}
+                        </Button>
+                      ) : (
+                        <Typography variant="body2" color="text.disabled">
+                          —
+                        </Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Box>
       )}
     </Box>
   );

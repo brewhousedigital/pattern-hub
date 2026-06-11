@@ -324,3 +324,22 @@ export const useMutationDeletePatternKeyCollection = () => {
     },
   });
 };
+
+export type TypePatternReferenceKeyView = {
+  id: string;
+  fullPath: string;
+  name: string;
+  count: number;
+  pattern_ids: string[];
+};
+
+export const useQueryGetPatternReferenceKeys = () => {
+  return useQuery({
+    queryKey: ['GetPatternReferenceKeys'],
+    queryFn: async (): Promise<TypePatternReferenceKeyView[]> => {
+      return await pocketbase.collection('view_pattern_reference_keys').getFullList({
+        sort: '-count',
+      });
+    },
+  });
+};
