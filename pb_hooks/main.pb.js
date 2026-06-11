@@ -4,6 +4,17 @@
 // `X-Sync-Key` header to trigger the aggregate sync.
 
 routerAdd('POST', '/api/sync-aggregates', (c) => {
+  function r4(n) {
+    return Math.round(n * 10000) / 10000;
+  }
+
+  function convertToAllUnits(value, unit) {
+    const v = parseFloat(value) || 0;
+    if (unit === 'cm') return { in: r4(v / 2.54), cm: r4(v), mm: r4(v * 10) };
+    if (unit === 'mm') return { in: r4(v / 25.4), cm: r4(v / 10), mm: r4(v) };
+    return { in: r4(v), cm: r4(v * 2.54), mm: r4(v * 25.4) };
+  }
+
   try {
     const apiKey = c.request.header.get('X-Sync-Key');
     if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
@@ -42,6 +53,11 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
       favMap[pid] = (favMap[pid] || 0) + 1;
     }
 
+    // --- Resolve storage path for file-size reads ---
+    const patternsCollection = $app.findCollectionByNameOrId('patterns');
+    const collectionId = patternsCollection.id;
+    const dataDir = $app.dataDir();
+
     // --- Update each pattern with computed aggregates ---
     const patterns = $app.findRecordsByFilter('patterns', "id != ''", '', 0, 0);
     let updated = 0;
@@ -66,6 +82,28 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
         p.set('favorite_count', favMap[id] || 0);
         p.set('tag_count', tagCount);
 
+        // --- Dimension conversions ---
+        // Enable this to run across the site. Otherwise this happens normally in the admin panel
+        /*const wConverted = convertToAllUnits(p.getFloat('design_width'), p.getString('design_width_unit'));
+        const hConverted = convertToAllUnits(p.getFloat('design_height'), p.getString('design_height_unit'));
+        p.set('size_width_in', wConverted.in);
+        p.set('size_width_cm', wConverted.cm);
+        p.set('size_width_mm', wConverted.mm);
+        p.set('size_height_in', hConverted.in);
+        p.set('size_height_cm', hConverted.cm);
+        p.set('size_height_mm', hConverted.mm);*/
+
+        // --- File size (best-effort — silently skipped if the file is missing) ---
+        // Enable this to run across the site. Otherwise this happens normally in the admin panel
+        /*const fileName = p.getString('pattern_file');
+        if (fileName) {
+          try {
+            const filePath = dataDir + '/storage/' + collectionId + '/' + id + '/' + fileName;
+            const stat = $os.stat(filePath);
+            p.set('pattern_file_size', stat.size());
+          } catch (_) {}
+        }*/
+
         txApp.save(p);
         updated++;
       }
@@ -73,6 +111,7 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
 
     return c.json(200, { ok: true, updated, elapsed_ms: Date.now() - startTime });
   } catch (error) {
+    console.log('>>>Error', error.message);
     return c.json(500, { error: 'something went wrong', message: error?.message });
   }
 });
