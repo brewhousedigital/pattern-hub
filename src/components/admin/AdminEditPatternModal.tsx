@@ -33,7 +33,7 @@ import {
   useQueryGetAllPatternKeys,
   useQueryGetAllPatternKeyCollections,
 } from '@/functions/database/patterns';
-import { sanitizeSvgFile, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
+import { sanitizeSvgFile, extractSvgLayerIds, extractSvgDimensions } from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
@@ -791,8 +791,18 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             }
                             setPreviewUrl(URL.createObjectURL(f));
                             setFile(f);
+
+                            const text = await f.text();
+
+                            const dims = extractSvgDimensions(text);
+                            if (dims) {
+                              setDesignWidth(String(dims.width));
+                              setDesignWidthUnit(dims.widthUnit);
+                              setDesignHeight(String(dims.height));
+                              setDesignHeightUnit(dims.heightUnit);
+                            }
+
                             if (hasLayers) {
-                              const text = await f.text();
                               setLayersMap((prev) => mergeLayerIds(prev, extractSvgLayerIds(text)));
                             }
                           }}

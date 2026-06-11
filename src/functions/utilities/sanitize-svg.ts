@@ -1,5 +1,35 @@
 import DOMPurify from 'dompurify';
 
+type SvgDimensions = {
+  width: number;
+  widthUnit: 'in' | 'cm' | 'mm';
+  height: number;
+  heightUnit: 'in' | 'cm' | 'mm';
+};
+
+export function extractSvgDimensions(svgText: string): SvgDimensions | null {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  const root = doc.documentElement;
+
+  const widthAttr = root.getAttribute('width');
+  const heightAttr = root.getAttribute('height');
+  if (!widthAttr || !heightAttr) return null;
+
+  const parse = (val: string): { value: number; unit: 'in' | 'cm' | 'mm' } | null => {
+    const m = val.trim().match(/^([\d.]+)\s*(in|cm|mm)$/i);
+    if (!m) return null;
+    const value = parseFloat(m[1]);
+    if (isNaN(value) || value <= 0) return null;
+    return { value, unit: m[2].toLowerCase() as 'in' | 'cm' | 'mm' };
+  };
+
+  const w = parse(widthAttr);
+  const h = parse(heightAttr);
+  if (!w || !h) return null;
+
+  return { width: w.value, widthUnit: w.unit, height: h.value, heightUnit: h.unit };
+}
+
 export function extractSvgLayerIds(svgText: string): string[] {
   const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
   return Array.from(doc.querySelectorAll('[id]'))
