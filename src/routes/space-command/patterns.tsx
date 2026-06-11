@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
 import dayjs from 'dayjs';
 import { useDebounce } from '@/functions/hooks/useDebounce';
@@ -52,19 +52,26 @@ import {
 
 export const Route = createFileRoute('/space-command/patterns')({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: typeof search.filter === 'string' ? search.filter : undefined,
+  }),
   head: ({ match }) => ({
     meta: generateSEO('Patterns - Admin', '', match.pathname),
   }),
 });
 
 function RouteComponent() {
+  const navigate = useNavigate({ from: '/space-command/patterns' });
   const { paginationModel, setPaginationModel } = useGlobalAdminPagination();
 
   const { setFilterModel, searchResult } = useGlobalAdminFilter();
   const debouncedSearchTerm = useDebounce(searchResult, 600);
 
+  const { filter: urlFilter } = Route.useSearch();
+  const combinedFilter = [urlFilter, debouncedSearchTerm].filter(Boolean).join(' && ');
+
   const { isPending, isFetching, data, refetch } = useQueryGetAllPatternsByPaginationAdmin(
-    debouncedSearchTerm,
+    combinedFilter,
     paginationModel.page,
   );
 
@@ -277,8 +284,10 @@ function RouteComponent() {
             });
           }}
           onFilterModelChange={(newFilterModel) => {
-            // fetch data from server
             setFilterModel(newFilterModel);
+            if (urlFilter) {
+              navigate({ search: (prev) => ({ ...prev, filter: undefined }), replace: true });
+            }
           }}
           //getRowHeight={() => 'auto'}
           initialState={{
@@ -292,6 +301,7 @@ function RouteComponent() {
                 id: false,
               },
             },
+            filter: urlFilter ? { filterModel: { items: [], quickFilterValues: [urlFilter] } } : undefined,
           }}
         />
       </Box>
