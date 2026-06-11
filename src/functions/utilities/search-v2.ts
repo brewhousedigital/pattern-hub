@@ -100,6 +100,8 @@ export const SORT_OPTIONS = [
   { value: 'design_height', label: 'Shortest' },
   { value: '-design_width', label: 'Widest' },
   { value: 'design_width', label: 'Skinniest' },
+  { value: '-has_layers', label: 'Has layers' },
+  { value: 'has_layers', label: 'No layers' },
 ] as const;
 
 export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
@@ -118,20 +120,36 @@ export const patternSearchSchema = z.object({
   width: z.array(z.string()).default([]),
   height: z.array(z.string()).default([]),
   filesize: z.array(z.string()).default([]),
-  sort: z.enum([
-    '-created', 'created',
-    '-design_date', 'design_date',
-    '-updated', 'updated',
-    '-tag_count', 'tag_count',
-    '-avg_rating', 'avg_rating',
-    '-total_ratings', 'total_ratings',
-    '-avg_difficulty', 'avg_difficulty',
-    '-total_difficulty_ratings', 'total_difficulty_ratings',
-    '-favorite_count', 'favorite_count',
-    '-pieces', 'pieces',
-    '-design_height', 'design_height',
-    '-design_width', 'design_width',
-  ]).default('-created'),
+  sort: z
+    .enum([
+      '-created',
+      'created',
+      '-design_date',
+      'design_date',
+      '-updated',
+      'updated',
+      '-tag_count',
+      'tag_count',
+      '-avg_rating',
+      'avg_rating',
+      '-total_ratings',
+      'total_ratings',
+      '-avg_difficulty',
+      'avg_difficulty',
+      '-total_difficulty_ratings',
+      'total_difficulty_ratings',
+      '-favorite_count',
+      'favorite_count',
+      '-pieces',
+      'pieces',
+      '-design_height',
+      'design_height',
+      '-design_width',
+      'design_width',
+      '-has_layers',
+      'has_layers',
+    ])
+    .default('-created'),
   patternId: z.string().optional(),
   pageNumber: z.number().int().min(1).default(1),
   exportTab: z.enum(EXPORT_TABS).default('print'),
@@ -243,17 +261,11 @@ export function searchFromTokens(
     .filter((t): t is DescriptionToken => t.type === 'description')
     .map((t) => (t.exclude ? `-${t.value}` : t.value));
 
-  const parts = tokens
-    .filter((t): t is PartsToken => t.type === 'parts')
-    .map((t) => `${t.operator}${t.value}`);
+  const parts = tokens.filter((t): t is PartsToken => t.type === 'parts').map((t) => `${t.operator}${t.value}`);
 
-  const width = tokens
-    .filter((t): t is WidthToken => t.type === 'width')
-    .map((t) => `${t.operator}${t.value}`);
+  const width = tokens.filter((t): t is WidthToken => t.type === 'width').map((t) => `${t.operator}${t.value}`);
 
-  const height = tokens
-    .filter((t): t is HeightToken => t.type === 'height')
-    .map((t) => `${t.operator}${t.value}`);
+  const height = tokens.filter((t): t is HeightToken => t.type === 'height').map((t) => `${t.operator}${t.value}`);
 
   const filesize = tokens
     .filter((t): t is FileSizeToken => t.type === 'filesize')
