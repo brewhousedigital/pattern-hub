@@ -33,12 +33,12 @@ export type TypePatternResponse = {
   line_width_unit: string;
   has_layers: boolean;
   layers_map: TypePatternLayersMapItem[];
-  tag_count: number;
-  avg_rating: number;
-  total_ratings: number;
-  avg_difficulty: number;
-  total_difficulty_ratings: number;
-  favorite_count: number;
+  tag_count?: number;
+  avg_rating?: number;
+  total_ratings?: number;
+  avg_difficulty?: number;
+  total_difficulty_ratings?: number;
+  favorite_count?: number;
   created: string;
   updated: string;
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
