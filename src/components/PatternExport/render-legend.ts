@@ -35,17 +35,40 @@ export interface LegendOutput {
 
 const PAD = 20;
 const WIDTH = 320;
-const HEADER_H = 32;
 const SUB_H = 22;
 const STAT_ROW_H = 20;
 const DIVIDER_H = 16;
 const KEY_ROW_H = 32;
 const KEY_ICON = 24;
+const NAME_FONT_SIZE = 20;
+const NAME_LINE_H = 26; // line height for the pattern name rows
+
+function wrapText(text: string, maxWidth: number, fontSize: number, bold: boolean): string[] {
+  const avgCharW = fontSize * (bold ? 0.60 : 0.52);
+  const charsPerLine = Math.floor(maxWidth / avgCharW);
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (test.length > charsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [text];
+}
 
 export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   const STAT_COUNT = input.isSmall ? 3 : 4; // size, pieces, line width, date
 
   const dateStr = input.designDate ? dayjs(input.designDate).format('MM-DD-YYYY') : '-';
+
+  const nameLines = wrapText(input.patternName, WIDTH - 2 * PAD, NAME_FONT_SIZE, true);
+  const nameBlockH = nameLines.length * NAME_LINE_H + 4;
 
   const statsBlockH = STAT_COUNT * STAT_ROW_H;
   const keysBlockH = input.keys.length * KEY_ROW_H;
@@ -53,21 +76,21 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
 
   // Recalculate height based on content
   if (input.isSmall) {
-    height = PAD + HEADER_H + SUB_H + 6 + statsBlockH + PAD;
+    height = PAD + nameBlockH + SUB_H + 6 + statsBlockH + PAD;
   } else {
-    height = PAD + HEADER_H + SUB_H + 6 + statsBlockH + DIVIDER_H + keysBlockH + PAD;
+    height = PAD + nameBlockH + SUB_H + 6 + statsBlockH + DIVIDER_H + keysBlockH + PAD;
   }
 
   let y = PAD;
   const rows: string[] = [];
 
-  // Header - pattern name
-  rows.push(
-    `<text x="${PAD}" y="${y + 22}" font-family="Roboto, Arial, sans-serif" font-size="20" font-weight="700" fill="#1a1a1a">${escapeXml(
-      input.patternName,
-    )}</text>`,
-  );
-  y += HEADER_H;
+  // Header - pattern name (wraps if too long)
+  nameLines.forEach((line, i) => {
+    rows.push(
+      `<text x="${PAD}" y="${y + NAME_FONT_SIZE + i * NAME_LINE_H}" font-family="Roboto, Arial, sans-serif" font-size="${NAME_FONT_SIZE}" font-weight="700" fill="#1a1a1a">${escapeXml(line)}</text>`,
+    );
+  });
+  y += nameBlockH;
 
   // Author
   rows.push(
