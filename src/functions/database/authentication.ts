@@ -126,8 +126,8 @@ export type TypeAuthData = {
   about?: string;
   interests?: string;
   is_artist?: boolean;
-  avatar?: string;        // PocketBase filename — use generateUserFileUrl() to build the URL
-  header_image?: string;  // PocketBase filename — use generateUserFileUrl() to build the URL
+  avatar?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
+  header_image?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
   level?: TypeLevelsAdmin[];
   site_color?: string;
   site_color_secondary?: string;

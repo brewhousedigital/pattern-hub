@@ -93,7 +93,7 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
         p.set('size_height_cm', hConverted.cm);
         p.set('size_height_mm', hConverted.mm);*/
 
-        // --- File size (best-effort — silently skipped if the file is missing) ---
+        // --- File size (best-effort,  silently skipped if the file is missing) ---
         // Enable this to run across the site. Otherwise this happens normally in the admin panel
         /*const fileName = p.getString('pattern_file');
         if (fileName) {

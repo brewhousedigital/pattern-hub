@@ -875,7 +875,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                 <Tooltip
                                   title={
                                     item.isVisible !== false
-                                      ? 'Users can toggle this layer — click to lock'
+                                      ? 'Users can toggle this layer,  click to lock'
                                       : 'Required layer - users cannot hide this'
                                   }
                                   arrow

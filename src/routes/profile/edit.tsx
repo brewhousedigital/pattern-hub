@@ -118,10 +118,7 @@ function RouteComponent() {
 
   // ─── Image handlers ──────────────────────────────────────────────────────
 
-  async function handleImageSelect(
-    file: File,
-    type: 'avatar' | 'header',
-  ) {
+  async function handleImageSelect(file: File, type: 'avatar' | 'header') {
     setImageError('');
     if (!file.type.startsWith('image/')) {
       setImageError('Only image files are supported.');
@@ -129,7 +126,7 @@ function RouteComponent() {
     }
     const maxMB = type === 'avatar' ? 5 : 10;
     if (file.size > maxMB * 1024 * 1024) {
-      setImageError(`File is too large — maximum ${maxMB} MB.`);
+      setImageError(`File is too large: maximum ${maxMB} MB.`);
       return;
     }
 
@@ -152,7 +149,7 @@ function RouteComponent() {
         setHeaderCleared(false);
       }
     } catch {
-      setImageError('Could not process this image — please try another file.');
+      setImageError('Could not process this image,  please try another file.');
     } finally {
       setProcessingImage(null);
     }
@@ -180,9 +177,7 @@ function RouteComponent() {
     if (form.username.trim() === authData?.name) return true;
     try {
       const results = await verifyUsername.mutateAsync(form.username);
-      const taken = results.find(
-        (item) => item.name?.trim().toLowerCase() === form.username.trim().toLowerCase(),
-      );
+      const taken = results.find((item) => item.name?.trim().toLowerCase() === form.username.trim().toLowerCase());
       setUsernameAvailable(!taken);
       return !taken;
     } catch {
@@ -199,7 +194,10 @@ function RouteComponent() {
     setSaving(true);
 
     const usernameOk = await handleUsernameVerification();
-    if (!usernameOk) { setSaving(false); return; }
+    if (!usernameOk) {
+      setSaving(false);
+      return;
+    }
 
     const fd = new FormData();
     fd.append('name', form.username.trim());
@@ -255,7 +253,6 @@ function RouteComponent() {
             <EditSkeleton />
           ) : (
             <Box component="form" onSubmit={handleSubmit}>
-
               {/* ─── PHOTOS ─────────────────────────────────────────────── */}
               <SectionCard elevation={0}>
                 <SectionTitle>Profile Photos</SectionTitle>
@@ -267,14 +264,27 @@ function RouteComponent() {
                 )}
 
                 {/* Mini hero preview */}
-                <HeroPreview sx={{ backgroundImage: activeHeaderSrc ? `linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), url(${activeHeaderSrc})` : undefined }}>
+                <HeroPreview
+                  sx={{
+                    backgroundImage: activeHeaderSrc
+                      ? `linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), url(${activeHeaderSrc})`
+                      : undefined,
+                  }}
+                >
                   {!activeHeaderSrc && <WallpaperPlaceholder />}
 
                   {/* Avatar preview inside hero */}
-                  <Box sx={{ position: 'absolute', bottom: 12, left: 16, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{ position: 'absolute', bottom: 12, left: 16, display: 'flex', alignItems: 'center', gap: 1.5 }}
+                  >
                     <AvatarPreview hasPhoto={!!activeAvatarSrc}>
                       {activeAvatarSrc ? (
-                        <Box component="img" src={activeAvatarSrc} alt="Avatar" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <Box
+                          component="img"
+                          src={activeAvatarSrc}
+                          alt="Avatar"
+                          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       ) : (
                         <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
                           {initial}
@@ -282,10 +292,20 @@ function RouteComponent() {
                       )}
                     </AvatarPreview>
                     <Box>
-                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: activeHeaderSrc ? 'white' : 'text.primary', lineHeight: 1, mb: 0.25 }}>
+                      <Typography
+                        sx={{
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          color: activeHeaderSrc ? 'white' : 'text.primary',
+                          lineHeight: 1,
+                          mb: 0.25,
+                        }}
+                      >
                         {displayName || 'Your Name'}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.65rem', color: activeHeaderSrc ? 'rgba(255,255,255,0.6)' : 'text.disabled' }}>
+                      <Typography
+                        sx={{ fontSize: '0.65rem', color: activeHeaderSrc ? 'rgba(255,255,255,0.6)' : 'text.disabled' }}
+                      >
                         Preview
                       </Typography>
                     </Box>
@@ -318,15 +338,17 @@ function RouteComponent() {
                       onClick={() => avatarInputRef.current?.click()}
                       disabled={processingImage === 'avatar'}
                       startIcon={
-                        processingImage === 'avatar'
-                          ? <CircularProgress size={14} color="inherit" />
-                          : <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                        processingImage === 'avatar' ? (
+                          <CircularProgress size={14} color="inherit" />
+                        ) : (
+                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                        )
                       }
                       sx={{ borderStyle: 'dashed' }}
                     >
                       {processingImage === 'avatar' ? 'Processing…' : activeAvatarSrc ? 'Replace' : 'Upload'}
                     </Button>
-                    {(activeAvatarSrc && !avatarCleared) && (
+                    {activeAvatarSrc && !avatarCleared && (
                       <Button
                         fullWidth
                         size="small"
@@ -368,15 +390,17 @@ function RouteComponent() {
                       onClick={() => headerInputRef.current?.click()}
                       disabled={processingImage === 'header'}
                       startIcon={
-                        processingImage === 'header'
-                          ? <CircularProgress size={14} color="inherit" />
-                          : <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                        processingImage === 'header' ? (
+                          <CircularProgress size={14} color="inherit" />
+                        ) : (
+                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                        )
                       }
                       sx={{ borderStyle: 'dashed' }}
                     >
                       {processingImage === 'header' ? 'Processing…' : activeHeaderSrc ? 'Replace' : 'Upload'}
                     </Button>
-                    {(activeHeaderSrc && !headerCleared) && (
+                    {activeHeaderSrc && !headerCleared && (
                       <Button
                         fullWidth
                         size="small"
@@ -430,13 +454,17 @@ function RouteComponent() {
                     {usernameAvailable === true && (
                       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <CheckCircleOutlineRoundedIcon color="success" fontSize="small" />
-                        <Typography variant="body2" color="success.main">Available</Typography>
+                        <Typography variant="body2" color="success.main">
+                          Available
+                        </Typography>
                       </Stack>
                     )}
                     {usernameAvailable === false && (
                       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <ReportRoundedIcon color="error" fontSize="small" />
-                        <Typography variant="body2" color="error">Name taken</Typography>
+                        <Typography variant="body2" color="error">
+                          Name taken
+                        </Typography>
                       </Stack>
                     )}
                   </Grid>
@@ -510,9 +538,15 @@ function RouteComponent() {
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                   <Box
                     sx={{
-                      width: 36, height: 36, borderRadius: 2, flexShrink: 0, mt: 0.25,
+                      width: 36,
+                      height: 36,
+                      borderRadius: 2,
+                      flexShrink: 0,
+                      mt: 0.25,
                       backgroundColor: form.is_artist ? 'secondary.main' : 'action.disabledBackground',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       transition: 'background-color 0.2s ease',
                     }}
                   >
@@ -527,11 +561,16 @@ function RouteComponent() {
                           color="secondary"
                         />
                       }
-                      label={<Typography fontWeight={600} variant="body2">I'm a pattern artist</Typography>}
+                      label={
+                        <Typography fontWeight={600} variant="body2">
+                          I'm a pattern artist
+                        </Typography>
+                      }
                       sx={{ m: 0 }}
                     />
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                      Adds an Artist badge to your profile and shows a showcase of patterns you've contributed to the archive.
+                      Adds an Artist badge to your profile and shows a showcase of patterns you've contributed to the
+                      archive.
                     </Typography>
                   </Box>
                 </Box>
@@ -545,7 +584,12 @@ function RouteComponent() {
               )}
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button component={Link} variant="outlined" to="/profile" sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}>
+                <Button
+                  component={Link}
+                  variant="outlined"
+                  to="/profile"
+                  sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
+                >
                   Cancel
                 </Button>
                 <Button disableElevation type="submit" variant="contained" loading={saving}>
@@ -579,7 +623,14 @@ const SectionCard = styled(Paper)(({ theme }) => ({
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <Typography
     variant="overline"
-    sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', color: 'text.disabled', display: 'block', mb: 2 }}
+    sx={{
+      fontSize: '0.65rem',
+      fontWeight: 700,
+      letterSpacing: '0.12em',
+      color: 'text.disabled',
+      display: 'block',
+      mb: 2,
+    }}
   >
     {children}
   </Typography>

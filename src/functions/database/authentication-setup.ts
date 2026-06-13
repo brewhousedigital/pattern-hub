@@ -15,3 +15,14 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+if (typeof window !== 'undefined') {
+  const _originalFetch = window.fetch.bind(window);
+  window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
+    const response = await _originalFetch(...args);
+    if (response.status === 429) {
+      window.dispatchEvent(new CustomEvent('app:rate-limited'));
+    }
+    return response;
+  };
+}

@@ -193,7 +193,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       await navigator.clipboard.writeText(url);
       enqueueSnackbar('Profile link copied!', { variant: 'success' });
     } catch {
-      enqueueSnackbar('Unable to copy — please copy the URL manually', { variant: 'error' });
+      enqueueSnackbar('Unable to copy,  please copy the URL manually', { variant: 'error' });
     }
   }
 
