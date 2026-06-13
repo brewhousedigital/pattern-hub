@@ -388,3 +388,16 @@ export const useQueryGetPatternReferenceKeys = () => {
     },
   });
 };
+
+export const useQueryGetAllPatternsForKeyMgmt = () => {
+  return useQuery({
+    queryKey: ['GetAllPatternsForKeyMgmt'],
+    queryFn: async (): Promise<TypePatternResponse[]> => {
+      return await pocketbase.collection('patterns').getFullList({
+        filter: 'isDeleted = false',
+        sort: 'name',
+        fields: 'id,name,pattern_key_reference_list',
+      });
+    },
+  });
+};

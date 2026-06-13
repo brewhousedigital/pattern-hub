@@ -8,6 +8,7 @@ import {
   useMutationDeletePatternKeyCollection,
   useMutationSoftDeletePatternKey,
   useQueryGetPatternReferenceKeys,
+  useQueryGetAllPatternsForKeyMgmt,
   type TypePatternKeyReferenceObject,
   type TypePatternKeyCollectionResponse,
   type TypeSavePatternKeyCollectionPayload,
@@ -67,6 +68,11 @@ function RouteComponent() {
 
   const { data: legends = [], isLoading: legendsLoading, refetch: refetchKeys } = useQueryGetAllPatternKeys();
   const { data: referenceKeys = [], isLoading: referenceKeysLoading } = useQueryGetPatternReferenceKeys();
+  const { data: allPatterns = [], isLoading: allPatternsLoading } = useQueryGetAllPatternsForKeyMgmt();
+
+  const patternsWithoutKeys = allPatterns.filter(
+    (p) => !p.pattern_key_reference_list || p.pattern_key_reference_list.length === 0,
+  );
 
   const {
     data: collections = [],
@@ -666,6 +672,68 @@ function RouteComponent() {
                           —
                         </Typography>
                       )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+
+      <Divider sx={{ my: 4 }} />
+
+      <AdminHeaderContainer
+        title="Patterns Without Keys"
+        subtitle={`${patternsWithoutKeys.length} pattern${patternsWithoutKeys.length !== 1 ? 's' : ''} have no pattern key references assigned.`}
+      />
+
+      {allPatternsLoading ? (
+        <Box display="flex" justifyContent="center" py={3}>
+          <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
+        </Box>
+      ) : patternsWithoutKeys.length === 0 ? (
+        <Typography variant="body2" color="text.disabled" py={1.5}>
+          All patterns have at least one key assigned.
+        </Typography>
+      ) : (
+        <Box sx={{ border: '0.5px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 600 }}>Pattern Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 250, fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                  ID
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 250 }}>Edit</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {patternsWithoutKeys.map((pattern) => {
+                const patternHref = `/space-command/patterns?filter=${encodeURIComponent(`id='${pattern.id}'`)}`;
+                return (
+                  <TableRow key={pattern.id} hover>
+                    <TableCell>
+                      <Typography variant="body2">{pattern.name}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.disabled' }}
+                      >
+                        {pattern.id}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        component={Link}
+                        to={patternHref}
+                        size="small"
+                        variant="outlined"
+                        sx={{ textTransform: 'none', borderRadius: 1.5 }}
+                      >
+                        View in Patterns
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
