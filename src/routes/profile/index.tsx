@@ -21,6 +21,7 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import { useQueryGetPatternsByAuthor, type TypePatternResponse } from '@/functions/database/patterns';
 import { generateSEO } from '@/functions/utilities/seo.ts';
+import { generateUserAvatarUrl, generateUserHeaderUrl } from '@/functions/utilities/generate-pb-image';
 
 import { styled, alpha } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -177,6 +178,9 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const initial = displayName[0].toUpperCase();
   const galleryItems = dataGallery?.items ?? [];
 
+  const avatarUrl = generateUserAvatarUrl(thisAuthData);
+  const headerUrl = generateUserHeaderUrl(thisAuthData);
+
   const stats = [
     { Icon: FavoriteIcon, value: dataFav?.totalItems ?? 0, label: 'Saved', color: '#ef5350' },
     { Icon: CheckCircleIcon, value: dataDone?.totalItems ?? 0, label: 'Completed', color: '#66bb6a' },
@@ -198,7 +202,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   return (
     <PageRoot>
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
-      <HeroSection>
+      <HeroSection
+        sx={headerUrl ? {
+          backgroundImage: `
+            linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%),
+            url(${headerUrl})
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          '&::before': { display: 'none' },
+          '&::after': { display: 'none' },
+        } : {}}
+      >
         {/* Top-right action buttons */}
         <Box sx={{ position: 'absolute', top: { xs: 16, md: 24 }, right: { xs: 16, md: 32 }, display: 'flex', gap: 1, zIndex: 2 }}>
           <Tooltip title="Share profile">
@@ -220,9 +235,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 }, position: 'relative', zIndex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 2, sm: 3 } }}>
             <HeroAvatar isArtist={isArtist}>
-              <Typography sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, fontWeight: 700, color: 'white', lineHeight: 1 }}>
-                {initial}
-              </Typography>
+              {avatarUrl ? (
+                <Box
+                  component="img"
+                  src={avatarUrl}
+                  alt={displayName}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                <Typography sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                  {initial}
+                </Typography>
+              )}
             </HeroAvatar>
 
             <Box sx={{ pb: 0.5, minWidth: 0 }}>

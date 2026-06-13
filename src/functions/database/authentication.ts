@@ -118,6 +118,7 @@ export const EnumLevelsAdmin = {
 
 // This is the data from the pocketbase user and admin table
 export type TypeAuthData = {
+  collectionId?: string;
   created?: string;
   email?: string;
   id: string;
@@ -125,6 +126,8 @@ export type TypeAuthData = {
   about?: string;
   interests?: string;
   is_artist?: boolean;
+  avatar?: string;        // PocketBase filename — use generateUserFileUrl() to build the URL
+  header_image?: string;  // PocketBase filename — use generateUserFileUrl() to build the URL
   level?: TypeLevelsAdmin[];
   site_color?: string;
   site_color_secondary?: string;
@@ -167,6 +170,16 @@ export const useMutationAuthUpdateUser = () => {
   return useMutation({
     mutationFn: (payload: TypeAuthData): AuthUserDataType => {
       return pocketbase.collection('users').update(payload.id, payload);
+    },
+  });
+};
+
+// Use this when saving includes file uploads (avatar / header_image).
+// Build a FormData with all fields including the File objects.
+export const useMutationUpdateUserWithFiles = () => {
+  return useMutation({
+    mutationFn: ({ id, formData }: { id: string; formData: FormData }): AuthUserDataType => {
+      return pocketbase.collection('users').update(id, formData);
     },
   });
 };

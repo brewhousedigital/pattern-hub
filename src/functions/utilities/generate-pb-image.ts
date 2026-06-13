@@ -1,5 +1,6 @@
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypePatternResponse, TypePatternKeyTableResponse } from '@/functions/database/patterns.ts';
+import type { TypeAuthData } from '@/functions/database/authentication';
 
 export const generatePbImage = (pattern?: TypePatternResponse) => {
   const thisPatternFile = pattern?.pattern_file ? pattern?.pattern_file : pattern?.pattern_file_external;
@@ -24,4 +25,14 @@ export const generatePbImageOpenGraph = (pattern?: TypePatternResponse) => {
 // This function is used to generate the pattern key reference image stored on each pattern
 export const generatePbImagePatternKeyRef = (keyItem: TypePatternKeyTableResponse) => {
   return `${pocketbaseDomain}/api/files/pbc_669275364/${keyItem.id}/${keyItem.name}`;
+};
+
+export const generateUserAvatarUrl = (user?: TypeAuthData): string | null => {
+  if (!user?.avatar || !user.collectionId || !user.id) return null;
+  return `${pocketbaseDomain}/api/files/${user.collectionId}/${user.id}/${user.avatar}`;
+};
+
+export const generateUserHeaderUrl = (user?: TypeAuthData): string | null => {
+  if (!user?.header_image || !user.collectionId || !user.id) return null;
+  return `${pocketbaseDomain}/api/files/${user.collectionId}/${user.id}/${user.header_image}`;
 };
