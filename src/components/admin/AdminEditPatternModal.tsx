@@ -116,6 +116,13 @@ function mergeLayerIds(existing: TypePatternLayersMapItem[], newIds: string[]): 
   return [...existing, ...appended];
 }
 
+// When a new SVG is uploaded, the new file's layer list is authoritative.
+// Existing customizations (mappedName, isVisible) are preserved where layer IDs match.
+function replaceLayerIds(existing: TypePatternLayersMapItem[], newIds: string[]): TypePatternLayersMapItem[] {
+  const existingByName = new Map(existing.map((e) => [e.layerName, e]));
+  return newIds.map((id) => existingByName.get(id) ?? { layerName: id, mappedName: '', isVisible: true });
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const AdminEditPatternModal = (props: TypeEditModalProps) => {
@@ -807,7 +814,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             }
 
                             if (hasLayers) {
-                              setLayersMap((prev) => mergeLayerIds(prev, extractSvgLayerIds(text)));
+                              setLayersMap((prev) => replaceLayerIds(prev, extractSvgLayerIds(text)));
                             }
                           }}
                         />
