@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import ErrorPage from '@/components/layout/ErrorPage';
+import { stringifySearch, parseSearch } from '@/functions/utilities/search-v2';
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
@@ -10,6 +11,8 @@ import { routeTree } from './routeTree.gen';
 const router = createRouter({
   routeTree,
   scrollRestoration: true,
+  stringifySearch,
+  parseSearch,
   defaultErrorComponent: ({ error, reset }) => <ErrorPage error={error} onReset={reset} />,
 });
 

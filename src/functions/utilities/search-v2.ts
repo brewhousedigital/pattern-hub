@@ -151,7 +151,7 @@ export const patternSearchSchema = z.object({
     ])
     .default('-created'),
   patternId: z.string().optional(),
-  pageNumber: z.number().int().min(1).default(1),
+  pageNumber: z.coerce.number().int().min(1).default(1),
   exportTab: z.enum(EXPORT_TABS).default('print'),
 });
 
@@ -319,6 +319,62 @@ export function parseRawInput(raw: string): Token {
     exclude: stripped.startsWith('-'),
   };
 }
+
+// ─── Custom URL search serialisation ─────────────────────────────────────────
+// TanStack Router's default serialiser JSON-stringifies arrays, producing
+// values like %5B%22Raine%22%5D. The unencoded/encoded double-quote characters
+// cause social-media link parsers to truncate the URL.
+// These replacements use repeated params instead: ?authors=Raine — no quotes.
+
+const ARRAY_KEYS = new Set([
+  'tags', 'authors', 'id', 'title', 'description', 'parts', 'width', 'height', 'filesize',
+]);
+
+export function stringifySearch(search: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(search)) {
+    if (value === undefined || value === null) continue;
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== undefined && item !== null) params.append(key, String(item));
+      }
+    } else {
+      params.set(key, String(value));
+    }
+  }
+
+  const str = params.toString();
+  return str ? `?${str}` : '';
+}
+
+export function parseSearch(searchStr: string): Record<string, unknown> {
+  const raw = searchStr.startsWith('?') ? searchStr.slice(1) : searchStr;
+  const params = new URLSearchParams(raw);
+  const result: Record<string, unknown> = {};
+
+  for (const key of new Set(params.keys())) {
+    const values = params.getAll(key);
+
+    if (ARRAY_KEYS.has(key)) {
+      // Backward-compat: old links encoded arrays as JSON, e.g. %5B%22Raine%22%5D
+      if (values.length === 1 && values[0].startsWith('[')) {
+        try {
+          result[key] = JSON.parse(values[0]);
+          continue;
+        } catch { /* fall through to repeated-param handling */ }
+      }
+      result[key] = values;
+    } else {
+      result[key] = values[0];
+    }
+  }
+
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Convert tokens into a PocketBase filter string.
 // Use decodeURIComponent("") to read the output to test directly in Pocketbase
