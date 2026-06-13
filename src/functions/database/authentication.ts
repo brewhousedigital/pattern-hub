@@ -124,6 +124,7 @@ export type TypeAuthData = {
   name?: string;
   about?: string;
   interests?: string;
+  is_artist?: boolean;
   level?: TypeLevelsAdmin[];
   site_color?: string;
   site_color_secondary?: string;

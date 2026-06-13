@@ -18,6 +18,8 @@ import TagOutlinedIcon from '@mui/icons-material/TagOutlined';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 
+import BrushRoundedIcon from '@mui/icons-material/BrushRounded';
+
 import {
   Box,
   Container,
@@ -33,6 +35,8 @@ import {
   Skeleton,
   Grid,
   Stack,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 
 export const Route = createFileRoute('/profile/edit')({
@@ -53,6 +57,7 @@ function RouteComponent() {
     username: '',
     about: '',
     interests: '',
+    is_artist: false,
     site_color: '',
     site_color_secondary: '',
   });
@@ -80,6 +85,7 @@ function RouteComponent() {
           username: authData?.name || '',
           about: authData?.about || '',
           interests: authData?.interests || '',
+          is_artist: authData?.is_artist ?? false,
           site_color: authData?.site_color || PRIMARY_COLOR,
           site_color_secondary: authData?.site_color_secondary || SECONDARY_COLOR,
         });
@@ -150,6 +156,7 @@ function RouteComponent() {
         name: form.username.trim(),
         about: form.about.trim(),
         interests: form.interests,
+        is_artist: form.is_artist,
         site_color: form.site_color,
         site_color_secondary: form.site_color_secondary,
       });
@@ -315,6 +322,48 @@ function RouteComponent() {
                 )}
               </SectionCard>
 
+              <SectionCard elevation={0}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 2,
+                      backgroundColor: form.is_artist ? 'secondary.main' : 'action.disabledBackground',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      transition: 'background-color 0.2s ease',
+                      mt: 0.25,
+                    }}
+                  >
+                    <BrushRoundedIcon sx={{ fontSize: 18, color: form.is_artist ? 'white' : 'text.disabled' }} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={form.is_artist}
+                          onChange={(e) => setForm((prev) => ({ ...prev, is_artist: e.target.checked }))}
+                          color="secondary"
+                        />
+                      }
+                      label={
+                        <Typography fontWeight={600} variant="body2">
+                          I'm a pattern artist
+                        </Typography>
+                      }
+                      sx={{ m: 0 }}
+                    />
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      Mark yourself as an artist if you've contributed original stained glass patterns to the archive.
+                      This adds an Artist badge to your profile and displays a showcase of your contributed patterns.
+                    </Typography>
+                  </Box>
+                </Box>
+              </SectionCard>
+
               {/*<SectionCard elevation={0}>
               <SectionLabel>
                 <PaletteOutlinedIcon />
@@ -469,6 +518,7 @@ interface ProfileFormData {
   username: string;
   about: string;
   interests: string; // comma-separated raw input
+  is_artist: boolean;
   site_color: string;
   site_color_secondary: string;
 }
@@ -479,6 +529,7 @@ interface ProfileFormErrors {
   interests?: string;
   site_color?: string;
   site_color_secondary?: string;
+  is_artist?: boolean;
 }
 
 const isValidHex = (value: string) => /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);

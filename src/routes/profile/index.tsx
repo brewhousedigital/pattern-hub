@@ -19,6 +19,7 @@ import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
+import { useQueryGetPatternsByAuthor, type TypePatternResponse } from '@/functions/database/patterns';
 
 import { styled, alpha } from '@mui/material/styles';
 import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
@@ -37,6 +38,8 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import ShareRoundedIcon from '@mui/icons-material/ShareRounded';
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
+import BrushRoundedIcon from '@mui/icons-material/BrushRounded';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import {
   Alert,
@@ -93,16 +96,12 @@ type PageContentProps = {
 
 const PageContent = (props: PageContentProps) => {
   const { id } = Route.useSearch();
-
   const { authData } = useGlobalAuthData();
-
   const { isPending, isError, data, refetch } = useQueryGetUserById(id);
 
   if (id && id !== authData?.id) {
     if (isPending) return <ProfileSkeleton />;
-
     if (isError) return <ProfileError onRetry={refetch} />;
-
     return <ProfileContent userData={data} />;
   }
 
@@ -124,6 +123,7 @@ const ProfileContent = (props: ProfileContentProps) => {
   const [ratingsPagination, setRatingsPagination] = React.useState(1);
   const [galleryPagination, setGalleryPagination] = React.useState(1);
   const [collectionsPagination, setCollectionsPagination] = React.useState(1);
+  const [artistPage, setArtistPage] = React.useState(1);
 
   const {
     isPending: isPendingFavorite,
@@ -163,10 +163,15 @@ const ProfileContent = (props: ProfileContentProps) => {
     refetch: refetchCollections,
   } = useQueryGetUserCollections(thisAuthData?.id || '', collectionsPagination);
 
-  // Only fetch followed collections on own profile - this data is private
   const { data: followedCollectionsData = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
     !isPublicView ? thisAuthData?.id || '' : '',
   );
+
+  const {
+    data: artistPatternsData,
+    isPending: isPendingArtist,
+    isError: isErrorArtist,
+  } = useQueryGetPatternsByAuthor(thisAuthData?.is_artist ? (thisAuthData?.id || '') : '', artistPage);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<TypeGalleryResponse | null>(null);
@@ -212,216 +217,292 @@ const ProfileContent = (props: ProfileContentProps) => {
 
   const displayName = (thisAuthData?.name?.startsWith('NewUser_') ? 'New User' : thisAuthData?.name) || 'New User';
   const initial = displayName[0].toUpperCase();
+  const isArtist = !!thisAuthData?.is_artist;
 
   const stats = [
     {
-      icon: <FavoriteIcon sx={{ fontSize: 18, color: 'error.light' }} />,
+      icon: <FavoriteIcon sx={{ fontSize: 20, color: 'error.light' }} />,
       value: dataFavorite?.totalItems ?? 0,
       label: 'Saved',
     },
     {
-      icon: <CheckCircleIcon sx={{ fontSize: 18, color: 'success.light' }} />,
+      icon: <CheckCircleIcon sx={{ fontSize: 20, color: 'success.light' }} />,
       value: dataMarkedDone?.totalItems ?? 0,
       label: 'Completed',
     },
     {
-      icon: <StarOutlinedIcon sx={{ fontSize: 18, color: 'warning.main' }} />,
+      icon: <StarOutlinedIcon sx={{ fontSize: 20, color: 'warning.main' }} />,
       value: dataRatings?.totalItems ?? 0,
       label: 'Rated',
     },
     {
-      icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />,
+      icon: <PhotoLibraryOutlinedIcon sx={{ fontSize: 20, color: 'primary.main' }} />,
       value: galleryTotal,
       label: 'Photos',
     },
     {
-      icon: <BookmarksOutlinedIcon sx={{ fontSize: 18, color: 'secondary.main' }} />,
+      icon: <BookmarksOutlinedIcon sx={{ fontSize: 20, color: 'secondary.main' }} />,
       value: collectionsData?.totalItems ?? 0,
       label: 'Collections',
     },
   ];
+
+  const hasAboutContent = !!(thisAuthData?.about || thisAuthData?.interests);
 
   return (
     <PageWrapper>
       <HeroBanner />
 
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
-        {/* ─── Profile header card ─── */}
-        <ProfileCard elevation={0} sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
-            {/* Initials avatar */}
-            <InitialsAvatar>
-              <Typography variant="h4" fontWeight={700} color="white" lineHeight={1}>
-                {initial}
-              </Typography>
-            </InitialsAvatar>
+        {/* ─── Avatar row (overlaps hero) ─── */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            mt: '-52px',
+            mb: 2,
+            position: 'relative',
+            zIndex: 2,
+          }}
+        >
+          <InitialsAvatar isArtist={isArtist}>
+            <Typography variant="h4" fontWeight={700} color="white" lineHeight={1}>
+              {initial}
+            </Typography>
+          </InitialsAvatar>
 
-            {/* Name + join date */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.4px' }} noWrap>
-                {displayName}
-              </Typography>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                <CalendarTodayOutlinedIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-                <Typography variant="caption" color="text.disabled">
-                  Member since {createPrettyDate(thisAuthData?.created || '')}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Action buttons */}
-            <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
-              <Tooltip title="Share profile" placement="bottom">
-                <IconButton
-                  onClick={handleShare}
-                  size="small"
-                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-                >
-                  <ShareRoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              {!isPublicView && (
-                <Tooltip title="Edit profile" placement="bottom">
-                  <IconButton
-                    component={Link}
-                    to="/profile/edit"
-                    size="small"
-                    sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-                  >
-                    <EditRoundedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          </Box>
-
-          {/* Stats strip */}
-          <Box
-            sx={{
-              display: 'flex',
-              mt: 3,
-              pt: 2.5,
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              mx: { xs: -1, sm: 0 },
-            }}
-          >
-            {stats.map((stat, i) => (
-              <Box
-                key={stat.label}
+          <Box sx={{ display: 'flex', gap: 0.75, pb: 0.5 }}>
+            <Tooltip title="Share profile" placement="bottom">
+              <IconButton
+                onClick={handleShare}
+                size="small"
                 sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  borderRight: i < stats.length - 1 ? '1px solid' : 'none',
+                  border: '1px solid',
                   borderColor: 'divider',
-                  py: 0.5,
+                  borderRadius: 1.5,
+                  backgroundColor: 'background.paper',
+                  '&:hover': { backgroundColor: 'action.hover' },
                 }}
               >
-                {stat.icon}
-                <Typography variant="subtitle1" fontWeight={700} lineHeight={1}>
-                  {stat.value}
-                </Typography>
-                <Typography variant="caption" color="text.disabled" lineHeight={1}>
-                  {stat.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        </ProfileCard>
+                <ShareRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
-        {/* ─── Body ─── */}
-        <Grid container spacing={3}>
-          {/* Sidebar - appears below tabs on mobile, left on desktop */}
-          <Grid size={{ xs: 12, md: 3 }} sx={{ order: { xs: 2, md: 1 } }}>
-            <SidebarSection elevation={0}>
-              {thisAuthData?.about ? (
-                <>
-                  <SectionLabel>About</SectionLabel>
-                  <MarkdownWrapper>{thisAuthData.about}</MarkdownWrapper>
-                </>
-              ) : !isPublicView ? (
-                <Box sx={{ textAlign: 'center', py: 1 }}>
-                  <Typography variant="body2" color="text.disabled" sx={{ fontSize: '0.8rem' }}>
-                    <Box
-                      component={Link}
-                      to="/profile/edit"
-                      sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-                    >
-                      Add a bio
-                    </Box>{' '}
-                    to tell others about yourself
-                  </Typography>
-                </Box>
-              ) : null}
-
-              {thisAuthData?.interests && thisAuthData.interests.length > 0 && (
-                <Box sx={{ mt: thisAuthData?.about ? 2.5 : 0 }}>
-                  <SectionLabel>Interests</SectionLabel>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                    {thisAuthData.interests.split(',').map((interest, index) => {
-                      const cleaned = interest.trim();
-                      return (
-                        <Chip
-                          key={cleaned + '-' + index}
-                          label={cleaned}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          sx={{ borderRadius: '8px', fontWeight: 500 }}
-                        />
-                      );
-                    })}
-                  </Box>
-                </Box>
-              )}
-
-              {!thisAuthData?.about && !thisAuthData?.interests && isPublicView && (
-                <Typography
-                  variant="body2"
-                  color="text.disabled"
-                  sx={{ fontSize: '0.8rem', textAlign: 'center', py: 1 }}
+            {!isPublicView && (
+              <Tooltip title="Edit profile" placement="bottom">
+                <IconButton
+                  component={Link}
+                  to="/profile/edit"
+                  size="small"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1.5,
+                    backgroundColor: 'background.paper',
+                    '&:hover': { backgroundColor: 'action.hover' },
+                  }}
                 >
-                  No bio yet
+                  <EditRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
+
+        {/* ─── Name + join date ─── */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.5 }}>
+            <Typography variant="h4" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+              {displayName}
+            </Typography>
+            {isArtist && (
+              <Chip
+                icon={<BrushRoundedIcon />}
+                label="Artist"
+                size="small"
+                color="secondary"
+                sx={{ fontWeight: 700, borderRadius: 2, fontSize: '0.75rem' }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <CalendarTodayOutlinedIcon sx={{ fontSize: 13, color: 'text.disabled' }} />
+            <Typography variant="caption" color="text.disabled">
+              Member since {createPrettyDate(thisAuthData?.created || '')}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* ─── Stats strip ─── */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            mb: 3,
+          }}
+        >
+          {stats.map((stat, i) => (
+            <Box
+              key={stat.label}
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 0.5,
+                py: 2,
+                borderRight: i < stats.length - 1 ? '1px solid' : 'none',
+                borderColor: 'divider',
+              }}
+            >
+              {stat.icon}
+              <Typography variant="h6" fontWeight={800} lineHeight={1}>
+                {stat.value}
+              </Typography>
+              <Typography variant="caption" color="text.disabled" lineHeight={1} sx={{ fontSize: '0.7rem' }}>
+                {stat.label}
+              </Typography>
+            </Box>
+          ))}
+        </Paper>
+
+        {/* ─── About section ─── */}
+        {(hasAboutContent || !isPublicView) && (
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: 'divider',
+              p: { xs: 3, md: 4 },
+              mb: 3,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+              <Typography
+                variant="overline"
+                sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: 'text.disabled' }}
+              >
+                About
+              </Typography>
+            </Box>
+
+            {thisAuthData?.about ? (
+              <Box sx={{ fontSize: '1rem', lineHeight: 1.75 }}>
+                <MarkdownWrapper>{thisAuthData.about}</MarkdownWrapper>
+              </Box>
+            ) : !isPublicView ? (
+              <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                <Box
+                  component={Link}
+                  to="/profile/edit"
+                  sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  Add a bio
+                </Box>{' '}
+                to tell the community about yourself and your stained glass journey.
+              </Typography>
+            ) : null}
+
+            {!thisAuthData?.about && !thisAuthData?.interests && isPublicView && (
+              <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                No bio yet.
+              </Typography>
+            )}
+
+            {thisAuthData?.interests && thisAuthData.interests.length > 0 && (
+              <Box sx={{ mt: thisAuthData?.about ? 3 : 0 }}>
+                <Typography
+                  variant="overline"
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: 'text.disabled', display: 'block', mb: 1 }}
+                >
+                  Interests
                 </Typography>
-              )}
-            </SidebarSection>
-          </Grid>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                  {thisAuthData.interests.split(',').map((interest, index) => {
+                    const cleaned = interest.trim();
+                    return (
+                      <Chip
+                        key={cleaned + '-' + index}
+                        label={cleaned}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        sx={{ borderRadius: '8px', fontWeight: 500 }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
+          </Paper>
+        )}
 
-          {/* Main content */}
-          <Grid size={{ xs: 12, md: 9 }} sx={{ order: { xs: 1, md: 2 } }}>
-            <StyledTabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
-              {tabConfig.map((t) => (
-                <Tab
-                  key={t.label}
-                  disabled={'disabled' in t && !!t.disabled}
-                  icon={t.icon}
-                  iconPosition="start"
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <>{t.label}</>
-                      {'soon' in t && t.soon ? (
-                        <Chip
-                          label="Soon"
-                          size="small"
-                          sx={{
-                            height: 16,
-                            fontSize: '0.6rem',
-                            '& .MuiChip-label': { px: 0.75 },
-                            opacity: 0.65,
-                          }}
-                        />
-                      ) : null}
-                    </Box>
-                  }
-                />
-              ))}
-            </StyledTabs>
+        {/* ─── Artist showcase ─── */}
+        {isArtist && (
+          <ArtistShowcaseCard elevation={0} sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  backgroundColor: 'secondary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <BrushRoundedIcon sx={{ fontSize: 18, color: 'white' }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                  Contributed Patterns
+                </Typography>
+                {artistPatternsData?.totalItems != null && (
+                  <Typography variant="caption" color="text.disabled">
+                    {artistPatternsData.totalItems} pattern{artistPatternsData.totalItems !== 1 ? 's' : ''} in the archive
+                  </Typography>
+                )}
+              </Box>
+            </Box>
 
+            <ArtistPatternGrid
+              patterns={artistPatternsData?.items}
+              isPending={isPendingArtist}
+              isError={isErrorArtist}
+              displayName={displayName}
+            />
+
+            {artistPatternsData && artistPatternsData.totalItems > 0 && (
+              <PaginationBox data={artistPatternsData} value={artistPage} setter={setArtistPage} />
+            )}
+          </ArtistShowcaseCard>
+        )}
+
+        {/* ─── Activity tabs ─── */}
+        <Paper
+          elevation={0}
+          sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', mb: 4 }}
+        >
+          <StyledTabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
+            {tabConfig.map((t) => (
+              <Tab
+                key={t.label}
+                icon={t.icon}
+                iconPosition="start"
+                label={t.label}
+              />
+            ))}
+          </StyledTabs>
+
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
             {/* Tab: Favorites */}
             {tab === 0 && (
               <>
@@ -470,6 +551,40 @@ const ProfileContent = (props: ProfileContentProps) => {
                   <PaginationBox data={dataRatings} value={ratingsPagination} setter={setRatingsPagination} />
                 )}
               </>
+            )}
+
+            {/* Tab: Gallery */}
+            {tab === 3 && (
+              <Box>
+                {!isPublicView && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button
+                      startIcon={<AddPhotoAlternateOutlinedIcon />}
+                      variant="contained"
+                      onClick={() => setUploadOpen(true)}
+                    >
+                      Upload Photo
+                    </Button>
+                  </Box>
+                )}
+
+                {isPendingGallery ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : isErrorGallery ? (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    Unable to load gallery photos.
+                  </Alert>
+                ) : galleryItems.length === 0 ? (
+                  <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
+                ) : (
+                  <>
+                    <GalleryTab photos={galleryItems} onPhotoClick={setSelectedPhoto} />
+                    <PaginationBox data={galleryData} value={galleryPagination} setter={setGalleryPagination} />
+                  </>
+                )}
+              </Box>
             )}
 
             {/* Tab: Collections */}
@@ -524,7 +639,6 @@ const ProfileContent = (props: ProfileContentProps) => {
                   </>
                 )}
 
-                {/* ─── Followed collections - own profile only ─── */}
                 {!isPublicView && followedCollectionsData.length > 0 && (
                   <>
                     <Divider sx={{ my: 3 }} />
@@ -552,43 +666,8 @@ const ProfileContent = (props: ProfileContentProps) => {
                 )}
               </Box>
             )}
-
-            {/* Tab: Gallery */}
-            {tab === 3 && (
-              <Box>
-                {!isPublicView && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                    <Button
-                      startIcon={<AddPhotoAlternateOutlinedIcon />}
-                      variant="contained"
-                      onClick={() => setUploadOpen(true)}
-                    >
-                      Upload Photo
-                    </Button>
-                  </Box>
-                )}
-
-                {isPendingGallery ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : isErrorGallery ? (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    Unable to load gallery photos.
-                  </Alert>
-                ) : galleryItems.length === 0 ? (
-                  <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
-                ) : (
-                  <>
-                    <GalleryTab photos={galleryItems} onPhotoClick={setSelectedPhoto} />
-
-                    <PaginationBox data={galleryData} value={galleryPagination} setter={setGalleryPagination} />
-                  </>
-                )}
-              </Box>
-            )}
-          </Grid>
-        </Grid>
+          </Box>
+        </Paper>
       </Container>
 
       {/* ─── Dialogs ─── */}
@@ -622,6 +701,79 @@ const ProfileContent = (props: ProfileContentProps) => {
         }}
       />
     </PageWrapper>
+  );
+};
+
+// ─── Artist Pattern Grid ──────────────────────────────────────────────────────
+
+type ArtistPatternGridProps = {
+  patterns?: TypePatternResponse[];
+  isPending: boolean;
+  isError: boolean;
+  displayName: string;
+};
+
+const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: ArtistPatternGridProps) => {
+  if (isPending) {
+    return (
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <Grid size={{ xs: 6, sm: 4, md: 3 }} key={i}>
+            <Skeleton variant="rounded" sx={{ aspectRatio: '1/1', borderRadius: '14px' }} />
+            <Skeleton variant="text" width="70%" sx={{ mt: 1 }} />
+          </Grid>
+        ))}
+      </Grid>
+    );
+  }
+
+  if (isError) {
+    return <Alert severity="error" sx={{ mb: 2 }}>Unable to load patterns.</Alert>;
+  }
+
+  if (!patterns?.length) {
+    return (
+      <EmptyState
+        icon={<BrushRoundedIcon />}
+        message={`${displayName} hasn't contributed any patterns yet.`}
+      />
+    );
+  }
+
+  return (
+    <Grid container spacing={2} sx={{ mb: 2.5 }}>
+      {patterns.map((pattern) => (
+        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={pattern.id}>
+          <Link
+            to="/"
+            search={{ id: [pattern.id], patternId: pattern.id }}
+            style={{ textDecoration: 'none' }}
+          >
+            <PatternTile elevation={0}>
+              <Box sx={{ position: 'relative', p: 1.5 }}>
+                <Box
+                  component="img"
+                  loading="lazy"
+                  src={generatePbImage(pattern)}
+                  alt={pattern.name}
+                  style={{ width: '100%', height: 'auto', aspectRatio: '1/1' }}
+                />
+              </Box>
+              <Box sx={{ px: 1.5, pb: 1.5 }}>
+                <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ fontSize: '0.8rem' }}>
+                  {pattern.name}
+                </Typography>
+                {pattern.pieces > 0 && (
+                  <Typography variant="caption" color="text.disabled">
+                    {pattern.pieces} pieces
+                  </Typography>
+                )}
+              </Box>
+            </PatternTile>
+          </Link>
+        </Grid>
+      ))}
+    </Grid>
   );
 };
 
@@ -688,13 +840,11 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
   return (
     <Dialog open={!!photo} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 6 } }}>
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400 }}>
-        {/* Image */}
         <Box
           sx={{
             position: 'relative',
             flex: '0 0 auto',
             width: { xs: '100%', md: '60%' },
-
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -708,12 +858,7 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               loading="lazy"
               src={`${photo.src}?tr=w-900,f-auto,q-80`}
               alt={photo.title}
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                borderRadius: 5,
-              }}
+              sx={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 5 }}
             />
           )}
 
@@ -748,13 +893,11 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
           )}
         </Box>
 
-        {/* Info panel */}
         <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minWidth: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
             <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
-
             <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
               <CloseRoundedIcon fontSize="small" />
             </IconButton>
@@ -771,7 +914,6 @@ const GalleryLightbox = (props: GalleryLightboxProps) => {
               <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
                 Tagged pattern
               </Typography>
-
               <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
                 <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
               </Link>
@@ -864,7 +1006,6 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
               <Typography variant="caption" fontWeight={600} color="white" noWrap display="block">
                 {photo.title}
               </Typography>
-
               {photo.expand?.pattern_id?.name && (
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }} noWrap display="block">
                   {photo.expand.pattern_id.name}
@@ -878,7 +1019,7 @@ const GalleryTab = ({ photos, onPhotoClick }: GalleryTabProps) => (
   </Grid>
 );
 
-// ─── Pattern Grid ─────────────────────────────────────────────────────────────
+// ─── Pattern Grid (activity tabs) ────────────────────────────────────────────
 
 type PatternGridProps = {
   patterns?: TypeFavoriteDoneRatingsResponse[];
@@ -967,81 +1108,68 @@ const PageWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const HeroBanner = styled(Box)(({ theme }) => ({
-  height: 160,
+  height: 240,
   position: 'relative',
   overflow: 'hidden',
   background: `linear-gradient(135deg,
     ${theme.palette.primary.dark} 0%,
-    ${theme.palette.primary.main} 40%,
-    ${alpha(theme.palette.secondary.main, 0.7)} 100%)`,
-  '&::after': {
+    ${theme.palette.primary.main} 50%,
+    ${alpha(theme.palette.secondary.main, 0.75)} 100%)`,
+  '&::before': {
     content: '""',
     position: 'absolute',
     inset: 0,
-    backgroundImage: `radial-gradient(${alpha('#fff', 0.06)} 1px, transparent 1px)`,
-    backgroundSize: '24px 24px',
+    backgroundImage: `
+      repeating-linear-gradient(45deg, ${alpha('#fff', 0.045)} 0, ${alpha('#fff', 0.045)} 1px, transparent 0, transparent 50%),
+      repeating-linear-gradient(-45deg, ${alpha('#fff', 0.045)} 0, ${alpha('#fff', 0.045)} 1px, transparent 0, transparent 50%)
+    `,
+    backgroundSize: '44px 44px',
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    background: `linear-gradient(to top, ${alpha(theme.palette.background.default, 0.2)}, transparent)`,
   },
 }));
 
-const ProfileCard = styled(Paper)(({ theme }) => ({
-  borderRadius: 20,
-  border: `1px solid ${theme.palette.divider}`,
-  padding: theme.spacing(3),
-  marginTop: -56,
-  position: 'relative',
-  zIndex: 1,
-  boxShadow: `0 4px 24px ${alpha(theme.palette.common.black, 0.07)}`,
-}));
-
-const InitialsAvatar = styled(Box)(({ theme }) => ({
-  width: 72,
-  height: 72,
+const InitialsAvatar = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isArtist',
+})<{ isArtist?: boolean }>(({ theme, isArtist }) => ({
+  width: 96,
+  height: 96,
   borderRadius: '50%',
-  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+  background: isArtist
+    ? `linear-gradient(135deg, ${theme.palette.secondary.dark}, ${theme.palette.secondary.main})`
+    : `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
-  boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
-  border: `3px solid ${theme.palette.background.paper}`,
+  boxShadow: isArtist
+    ? `0 4px 20px ${alpha(theme.palette.secondary.main, 0.4)}`
+    : `0 4px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
+  border: `4px solid ${theme.palette.background.default}`,
 }));
 
-const SidebarSection = styled(Paper)(({ theme }) => ({
+const ArtistShowcaseCard = styled(Paper)(({ theme }) => ({
   borderRadius: 16,
-  border: `1px solid ${theme.palette.divider}`,
-  padding: theme.spacing(2.5),
+  border: `1px solid ${alpha(theme.palette.secondary.main, 0.35)}`,
+  padding: theme.spacing(3.5),
   boxShadow: 'none',
-  position: 'sticky',
-  top: theme.spacing(2),
+  background: alpha(theme.palette.secondary.main, 0.03),
 }));
-
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <Typography
-    variant="overline"
-    sx={{
-      fontSize: '0.65rem',
-      fontWeight: 700,
-      letterSpacing: '0.1em',
-      color: 'text.disabled',
-      display: 'block',
-      mb: 1,
-    }}
-  >
-    {children}
-  </Typography>
-);
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
-  marginBottom: theme.spacing(3),
   '& .MuiTab-root': {
     textTransform: 'none',
     fontWeight: 600,
-    minHeight: 48,
+    minHeight: 52,
     fontSize: '0.875rem',
-    '&.Mui-disabled': {
-      opacity: 0.45,
-    },
   },
 }));
 
@@ -1062,49 +1190,30 @@ const PatternTile = styled(Paper)(({ theme }) => ({
 const ProfileSkeleton = () => (
   <PageWrapper>
     <HeroBanner />
-
     <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
-      <ProfileCard elevation={0} sx={{ mb: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-          <Skeleton variant="circular" width={72} height={72} />
-
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width={180} height={32} />
-            <Skeleton variant="text" width={140} height={18} sx={{ mt: 0.5 }} />
-          </Box>
-
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: '-52px', mb: 2 }}>
+        <Skeleton variant="circular" width={96} height={96} sx={{ border: '4px solid', borderColor: 'background.default' }} />
+        <Box sx={{ display: 'flex', gap: 0.75, pb: 0.5 }}>
           <Skeleton variant="rounded" width={36} height={36} sx={{ borderRadius: 1.5 }} />
         </Box>
+      </Box>
 
-        <Divider sx={{ my: 2.5 }} />
+      <Box sx={{ mb: 3 }}>
+        <Skeleton variant="text" width={220} height={44} sx={{ mb: 0.5 }} />
+        <Skeleton variant="text" width={160} height={18} />
+      </Box>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <Box key={i} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Skeleton variant="circular" width={20} height={20} />
-              <Skeleton variant="text" width={28} height={24} />
-              <Skeleton variant="text" width={40} height={16} />
-            </Box>
-          ))}
-        </Box>
-      </ProfileCard>
+      <Skeleton variant="rounded" height={88} sx={{ borderRadius: 3, mb: 3 }} />
+      <Skeleton variant="rounded" height={160} sx={{ borderRadius: 3, mb: 3 }} />
 
-      <Grid container spacing={3} sx={{ mt: 0.5 }}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Skeleton variant="rounded" height={180} sx={{ borderRadius: 4 }} />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Skeleton variant="rounded" width="100%" height={48} sx={{ mb: 3, borderRadius: 2 }} />
-          <Grid container spacing={2}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-                <Skeleton variant="rounded" width="100%" sx={{ aspectRatio: '1/1', borderRadius: '14px' }} />
-                <Skeleton variant="text" width="70%" sx={{ mt: 1 }} />
-              </Grid>
-            ))}
+      <Skeleton variant="rounded" height={48} sx={{ borderRadius: '12px 12px 0 0', mb: 0 }} />
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+            <Skeleton variant="rounded" width="100%" sx={{ aspectRatio: '1/1', borderRadius: '14px' }} />
+            <Skeleton variant="text" width="70%" sx={{ mt: 1 }} />
           </Grid>
-        </Grid>
+        ))}
       </Grid>
     </Container>
   </PageWrapper>
@@ -1117,10 +1226,14 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
     <PageWrapper>
       <HeroBanner />
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
-        <ProfileCard elevation={0}>
-          <Box
-            sx={{ textAlign: 'center', py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
-          >
+        <Box sx={{ mt: '-52px', mb: 2 }}>
+          <Skeleton variant="circular" width={96} height={96} />
+        </Box>
+        <Paper
+          elevation={0}
+          sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', p: 6, textAlign: 'center' }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <PersonOffOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', opacity: 0.4 }} />
             <Typography variant="h6" fontWeight={600}>
               Profile not found
@@ -1132,7 +1245,7 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
               Try again
             </Button>
           </Box>
-        </ProfileCard>
+        </Paper>
       </Container>
     </PageWrapper>
   </GeneralLayout>

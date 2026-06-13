@@ -116,6 +116,20 @@ export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: nu
   });
 };
 
+export const useQueryGetPatternsByAuthor = (userId: string, page: number) => {
+  return useQuery({
+    queryKey: ['GetPatternsByAuthor', userId, page],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
+      return await pocketbase.collection('patterns').getList(page, 12, {
+        filter: `authors ~ '${userId}' && isDeleted = false`,
+        sort: '-created',
+      });
+    },
+    enabled: !!userId,
+    placeholderData: keepPreviousData,
+  });
+};
+
 export type TypePatternCreatePayload = {
   id?: string;
   name: string;
