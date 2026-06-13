@@ -750,7 +750,7 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
         <Grid size={{ xs: 6, sm: 4, md: 3 }} key={pattern.id}>
           <Link
             to="/"
-            search={{ id: [pattern.id], patternId: pattern.id }}
+            search={{ patternId: pattern.id, authors: [displayName] }}
             style={{ textDecoration: 'none', display: 'block' }}
           >
             <PatternCard>
@@ -806,7 +806,7 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
   return (
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns.map((item) => (
-        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={item.id}>
           <Link
             to="/"
             search={{ id: [item.pattern_id], patternId: item.pattern_id }}
