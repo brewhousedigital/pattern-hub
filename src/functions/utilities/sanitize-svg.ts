@@ -32,7 +32,7 @@ export function extractSvgDimensions(svgText: string): SvgDimensions | null {
 
 export function extractSvgLayerIds(svgText: string): string[] {
   const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
-  return Array.from(doc.querySelectorAll('[id]'))
+  return Array.from(doc.querySelectorAll('g[id]'))
     .map((el) => el.getAttribute('id')!)
     .filter(Boolean);
 }
