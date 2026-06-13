@@ -290,17 +290,17 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PanelSectionTitle>Details</PanelSectionTitle>
 
           <CompactRow label="Width">
-            {viewData?.design_width != null ? `${viewData.design_width}${viewData.design_width_unit ?? ''}` : '-'}
+            {viewData?.design_width != null ? `${Number(viewData.design_width.toFixed(2))}${viewData.design_width_unit ?? ''}` : '-'}
           </CompactRow>
 
           <CompactRow label="Height">
             {viewData?.design_height != null
-              ? `${viewData.design_height}${viewData.design_height_unit ?? ''}`
+              ? `${Number(viewData.design_height.toFixed(2))}${viewData.design_height_unit ?? ''}`
               : '-'}
           </CompactRow>
 
           <CompactRow label="Line Width">
-            {viewData?.line_width != null ? `${viewData.line_width}${viewData.line_width_unit ?? ''}` : '-'}
+            {viewData?.line_width != null ? `${Number(viewData.line_width.toFixed(2))}${viewData.line_width_unit ?? ''}` : '-'}
           </CompactRow>
 
           <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '-'}</CompactRow>
