@@ -286,7 +286,7 @@ export const useQueryGetPatternById = (patternId: string) => {
   return useQuery({
     queryKey: ['GetPatternById', patternId],
     queryFn: async (): Promise<TypePatternResponse> => {
-      return await pocketbase.collection('patterns').getOne(patternId);
+      return await pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' });
     },
   });
 };
@@ -294,8 +294,8 @@ export const useQueryGetPatternById = (patternId: string) => {
 // This is a fancy thing to handle automate queries for data on dynamic pages
 export const getPatternByIdOptions = (patternId: string) =>
   queryOptions({
-    queryKey: ['getPatternByIdOptions', patternId],
-    queryFn: () => pocketbase.collection('patterns').getOne(patternId),
+    queryKey: ['GetPatternById', patternId],
+    queryFn: () => pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
   });
 
 // This will query the list of pattern keys

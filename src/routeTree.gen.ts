@@ -29,6 +29,7 @@ import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
+import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
 import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
@@ -149,6 +150,11 @@ const ProfileEditRoute = ProfileEditRouteImport.update({
   path: '/profile/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
+  id: '/pattern/$patternId',
+  path: '/pattern/$patternId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
   id: '/help/terms-of-service',
   path: '/help/terms-of-service',
@@ -253,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -489,6 +501,7 @@ export interface RootRouteChildren {
   HelpFaqRoute: typeof HelpFaqRoute
   HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
+  PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/profile/edit'
       fullPath: '/profile/edit'
       preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pattern/$patternId': {
+      id: '/pattern/$patternId'
+      path: '/pattern/$patternId'
+      fullPath: '/pattern/$patternId'
+      preLoaderRoute: typeof PatternPatternIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help/terms-of-service': {
@@ -818,6 +838,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpFaqRoute: HelpFaqRoute,
   HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
+  PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   GuidesIndexRoute: GuidesIndexRoute,
