@@ -126,27 +126,50 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const [collectionsPage, setCollectionsPage] = React.useState(1);
   const [artistPage, setArtistPage] = React.useState(1);
 
-  const { isPending: isPendingFav, isError: isErrFav, data: dataFav, refetch: refetchFav } =
-    useQueryGetUserFavoritesByPagination(thisAuthData?.id ?? '', favoritePage);
+  const {
+    isPending: isPendingFav,
+    isError: isErrFav,
+    data: dataFav,
+    refetch: refetchFav,
+  } = useQueryGetUserFavoritesByPagination(thisAuthData?.id ?? '', favoritePage);
 
-  const { isPending: isPendingDone, isError: isErrDone, data: dataDone, refetch: refetchDone } =
-    useQueryGetUserMarkedDoneByPagination(thisAuthData?.id ?? '', donePage);
+  const {
+    isPending: isPendingDone,
+    isError: isErrDone,
+    data: dataDone,
+    refetch: refetchDone,
+  } = useQueryGetUserMarkedDoneByPagination(thisAuthData?.id ?? '', donePage);
 
-  const { isPending: isPendingRatings, isError: isErrRatings, data: dataRatings, refetch: refetchRatings } =
-    useQueryGetUserRatingsByPagination(thisAuthData?.id ?? '', ratingsPage);
+  const {
+    isPending: isPendingRatings,
+    isError: isErrRatings,
+    data: dataRatings,
+    refetch: refetchRatings,
+  } = useQueryGetUserRatingsByPagination(thisAuthData?.id ?? '', ratingsPage);
 
-  const { isPending: isPendingGallery, isError: isErrGallery, data: dataGallery, refetch: refetchGallery } =
-    useQueryGetUserGallery(thisAuthData?.id ?? '', galleryPage);
+  const {
+    isPending: isPendingGallery,
+    isError: isErrGallery,
+    data: dataGallery,
+    refetch: refetchGallery,
+  } = useQueryGetUserGallery(thisAuthData?.id ?? '', galleryPage);
 
-  const { isPending: isPendingCols, isError: isErrCols, data: dataCols, refetch: refetchCols } =
-    useQueryGetUserCollections(thisAuthData?.id ?? '', collectionsPage);
+  const {
+    isPending: isPendingCols,
+    isError: isErrCols,
+    data: dataCols,
+    refetch: refetchCols,
+  } = useQueryGetUserCollections(thisAuthData?.id ?? '', collectionsPage);
 
   const { data: followedCols = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
     !isPublicView ? (thisAuthData?.id ?? '') : '',
   );
 
-  const { data: artistPatterns, isPending: isPendingArtist, isError: isErrArtist } =
-    useQueryGetPatternsByAuthor(isArtist ? (thisAuthData?.id ?? '') : '', artistPage);
+  const {
+    data: artistPatterns,
+    isPending: isPendingArtist,
+    isError: isErrArtist,
+  } = useQueryGetPatternsByAuthor(isArtist ? (thisAuthData?.id ?? '') : '', artistPage);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<TypeGalleryResponse | null>(null);
@@ -159,8 +182,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   async function handleShare() {
     const url = `https://patternarchive.net/profile?id=${thisAuthData?.id}`;
     if (navigator.maxTouchPoints > 0 && navigator.share) {
-      try { await navigator.share({ title: `${thisAuthData?.name ?? 'Profile'} on Pattern Archive`, url }); }
-      catch { /* cancelled */ }
+      try {
+        await navigator.share({ title: `${thisAuthData?.name ?? 'Profile'} on Pattern Archive`, url });
+      } catch {
+        /* cancelled */
+      }
       return;
     }
     try {
@@ -203,28 +229,41 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     <PageRoot>
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
       <HeroSection
-        sx={headerUrl ? {
-          backgroundImage: `
+        sx={
+          headerUrl
+            ? {
+                backgroundImage: `
             linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%),
             url(${headerUrl})
           `,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          '&::before': { display: 'none' },
-          '&::after': { display: 'none' },
-        } : {}}
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                '&::before': { display: 'none' },
+                '&::after': { display: 'none' },
+              }
+            : {}
+        }
       >
         {/* Top-right action buttons */}
-        <Box sx={{ position: 'absolute', top: { xs: 16, md: 24 }, right: { xs: 16, md: 32 }, display: 'flex', gap: 1, zIndex: 2 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: { xs: 16, md: 24 },
+            right: { xs: 16, md: 32 },
+            display: 'flex',
+            gap: 1,
+            zIndex: 2,
+          }}
+        >
           <Tooltip title="Share profile">
-            <IconButton onClick={handleShare} size="small" sx={heroBtn}>
-              <ShareRoundedIcon fontSize="small" />
+            <IconButton onClick={handleShare} sx={heroBtn}>
+              <ShareRoundedIcon />
             </IconButton>
           </Tooltip>
           {!isPublicView && (
             <Tooltip title="Edit profile">
-              <IconButton component={Link} to="/profile/edit" size="small" sx={heroBtn}>
-                <EditRoundedIcon fontSize="small" />
+              <IconButton component={Link} to="/profile/edit" sx={heroBtn}>
+                <EditRoundedIcon />
               </IconButton>
             </Tooltip>
           )}
@@ -232,8 +271,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
         {/* Identity anchored to hero bottom */}
         <Box sx={{ flex: 1 }} />
-        <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 }, position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 2, sm: 3 } }}>
+        <Container
+          maxWidth="lg"
+          sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 }, position: 'relative', zIndex: 1 }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
             <HeroAvatar isArtist={isArtist}>
               {avatarUrl ? (
                 <Box
@@ -243,7 +285,9 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                 />
               ) : (
-                <Typography sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                <Typography
+                  sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, fontWeight: 700, color: 'white', lineHeight: 1 }}
+                >
                   {initial}
                 </Typography>
               )}
@@ -470,9 +514,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <t.Icon sx={{ fontSize: 16 }} />
                       <span>{t.label}</span>
-                      {(t.count ?? 0) > 0 && (
-                        <TabCount>{t.count}</TabCount>
-                      )}
+                      {(t.count ?? 0) > 0 && <TabCount>{t.count}</TabCount>}
                     </Box>
                   }
                 />
@@ -534,13 +576,19 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                    <Button startIcon={<AddPhotoAlternateOutlinedIcon />} variant="contained" onClick={() => setUploadOpen(true)}>
+                    <Button
+                      startIcon={<AddPhotoAlternateOutlinedIcon />}
+                      variant="contained"
+                      onClick={() => setUploadOpen(true)}
+                    >
                       Upload Photo
                     </Button>
                   </Box>
                 )}
                 {isPendingGallery ? (
-                  <Centered><CircularProgress /></Centered>
+                  <Centered>
+                    <CircularProgress />
+                  </Centered>
                 ) : isErrGallery ? (
                   <Alert severity="error">Unable to load gallery photos.</Alert>
                 ) : galleryItems.length === 0 ? (
@@ -559,13 +607,19 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                    <Button startIcon={<BookmarksOutlinedIcon />} variant="contained" onClick={() => setCreateColOpen(true)}>
+                    <Button
+                      startIcon={<BookmarksOutlinedIcon />}
+                      variant="contained"
+                      onClick={() => setCreateColOpen(true)}
+                    >
                       New Collection
                     </Button>
                   </Box>
                 )}
                 {isPendingCols ? (
-                  <Centered><CircularProgress /></Centered>
+                  <Centered>
+                    <CircularProgress />
+                  </Centered>
                 ) : isErrCols ? (
                   <Alert severity="error">Unable to load collections.</Alert>
                 ) : !dataCols?.items.length ? (
@@ -628,20 +682,29 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       <CreateCollectionDialog
         open={createColOpen}
         onClose={() => setCreateColOpen(false)}
-        onSuccess={() => { void refetchCols(); setCreateColOpen(false); }}
+        onSuccess={() => {
+          void refetchCols();
+          setCreateColOpen(false);
+        }}
       />
       <GalleryLightbox
         photo={lightboxPhoto}
         photos={galleryItems}
         onClose={() => setLightboxPhoto(null)}
         onNavigate={setLightboxPhoto}
-        onDeleteSuccess={() => { void refetchGallery(); setLightboxPhoto(null); }}
+        onDeleteSuccess={() => {
+          void refetchGallery();
+          setLightboxPhoto(null);
+        }}
         isOwner={!isPublicView}
       />
       <GalleryUploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSuccess={() => { void refetchGallery(); setUploadOpen(false); }}
+        onSuccess={() => {
+          void refetchGallery();
+          setUploadOpen(false);
+        }}
       />
     </PageRoot>
   );
@@ -670,7 +733,12 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
     );
   }
 
-  if (isError) return <Alert severity="error" sx={{ mb: 2 }}>Unable to load patterns.</Alert>;
+  if (isError)
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        Unable to load patterns.
+      </Alert>
+    );
 
   if (!patterns?.length) {
     return <EmptyState icon={<BrushRoundedIcon />} message={`${displayName} hasn't contributed any patterns yet.`} />;
@@ -680,7 +748,11 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {patterns.map((pattern) => (
         <Grid size={{ xs: 6, sm: 4, md: 3 }} key={pattern.id}>
-          <Link to="/" search={{ id: [pattern.id], patternId: pattern.id }} style={{ textDecoration: 'none', display: 'block' }}>
+          <Link
+            to="/"
+            search={{ id: [pattern.id], patternId: pattern.id }}
+            style={{ textDecoration: 'none', display: 'block' }}
+          >
             <PatternCard>
               <Box sx={{ p: 1.5, pb: 0 }}>
                 <Box
@@ -696,7 +768,9 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
                   {pattern.name}
                 </Typography>
                 {pattern.pieces > 0 && (
-                  <Typography variant="caption" color="text.disabled">{pattern.pieces} pcs</Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    {pattern.pieces} pcs
+                  </Typography>
                 )}
               </Box>
             </PatternCard>
@@ -720,7 +794,12 @@ type ActivityPatternGridProps = {
 };
 
 const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
-  if (props.isPending) return <Centered><CircularProgress /></Centered>;
+  if (props.isPending)
+    return (
+      <Centered>
+        <CircularProgress />
+      </Centered>
+    );
   if (props.isError) return <Alert severity="error">Unable to load your list 😔</Alert>;
   if (!props.patterns?.length) return <EmptyState icon={props.emptyIcon} message={props.emptyMessage} />;
 
@@ -728,7 +807,11 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns.map((item) => (
         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
-          <Link to="/" search={{ id: [item.pattern_id], patternId: item.pattern_id }} style={{ textDecoration: 'none', display: 'block' }}>
+          <Link
+            to="/"
+            search={{ id: [item.pattern_id], patternId: item.pattern_id }}
+            style={{ textDecoration: 'none', display: 'block' }}
+          >
             <PatternCard>
               <Box sx={{ p: 2, pb: 0 }}>
                 <Box
@@ -784,19 +867,31 @@ const GalleryGrid = ({ photos, onPhotoClick }: GalleryGridProps) => (
             src={`${photo.src}?tr=w-500,h-500,f-auto,q-80`}
             alt={photo.title}
             loading="lazy"
-            sx={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', transition: 'transform 0.3s ease' }}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+              transition: 'transform 0.3s ease',
+            }}
           />
           <Box
             className="overlay"
             sx={{
-              position: 'absolute', inset: 0,
+              position: 'absolute',
+              inset: 0,
               background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)',
-              opacity: 0, transition: 'opacity 0.2s ease',
-              display: 'flex', alignItems: 'flex-end', p: 1.5,
+              opacity: 0,
+              transition: 'opacity 0.2s ease',
+              display: 'flex',
+              alignItems: 'flex-end',
+              p: 1.5,
             }}
           >
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="caption" fontWeight={600} color="white" noWrap display="block">{photo.title}</Typography>
+              <Typography variant="caption" fontWeight={600} color="white" noWrap display="block">
+                {photo.title}
+              </Typography>
               {photo.expand?.pattern_id?.name && (
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }} noWrap display="block">
                   {photo.expand.pattern_id.name}
@@ -829,7 +924,9 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
   const hasPrev = idx > 0;
   const hasNext = idx >= 0 && idx < photos.length - 1;
 
-  React.useEffect(() => { setDeleteError(''); }, [photo?.id]);
+  React.useEffect(() => {
+    setDeleteError('');
+  }, [photo?.id]);
 
   React.useEffect(() => {
     if (!photo) return;
@@ -852,7 +949,10 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
         body: JSON.stringify({ recordId: photo.id, authToken: pocketbase.authStore.token }),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) { setDeleteError(data.error ?? 'Delete failed.'); return; }
+      if (!res.ok) {
+        setDeleteError(data.error ?? 'Delete failed.');
+        return;
+      }
       enqueueSnackbar('Photo deleted.', { variant: 'success' });
       onDeleteSuccess();
     } catch {
@@ -867,20 +967,52 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
   return (
     <Dialog open={!!photo} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 6 } }}>
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400 }}>
-        <Box sx={{ position: 'relative', flex: '0 0 auto', width: { xs: '100%', md: '60%' }, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: { xs: 240, md: 400 }, p: 1.5 }}>
+        <Box
+          sx={{
+            position: 'relative',
+            flex: '0 0 auto',
+            width: { xs: '100%', md: '60%' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: { xs: 240, md: 400 },
+            p: 1.5,
+          }}
+        >
           {photo && (
-            <Box component="img" loading="lazy" src={`${photo.src}?tr=w-900,f-auto,q-80`} alt={photo.title}
-              sx={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 5 }} />
+            <Box
+              component="img"
+              loading="lazy"
+              src={`${photo.src}?tr=w-900,f-auto,q-80`}
+              alt={photo.title}
+              sx={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 5 }}
+            />
           )}
           {hasPrev && (
-            <IconButton onClick={() => onNavigate(photos[idx - 1])}
-              sx={{ position: 'absolute', left: -3, backgroundColor: 'rgba(0,0,0,0.45)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' } }}>
+            <IconButton
+              onClick={() => onNavigate(photos[idx - 1])}
+              sx={{
+                position: 'absolute',
+                left: -3,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                color: 'white',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
+              }}
+            >
               <ChevronLeftRoundedIcon />
             </IconButton>
           )}
           {hasNext && (
-            <IconButton onClick={() => onNavigate(photos[idx + 1])}
-              sx={{ position: 'absolute', right: -3, backgroundColor: 'rgba(0,0,0,0.45)', color: 'white', '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' } }}>
+            <IconButton
+              onClick={() => onNavigate(photos[idx + 1])}
+              sx={{
+                position: 'absolute',
+                right: -3,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                color: 'white',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
+              }}
+            >
               <ChevronRightRoundedIcon />
             </IconButton>
           )}
@@ -888,27 +1020,47 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
 
         <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minWidth: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-            <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>{photo?.title}</Typography>
-            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}><CloseRoundedIcon fontSize="small" /></IconButton>
+            <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+              {photo?.title}
+            </Typography>
+            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
+              <CloseRoundedIcon fontSize="small" />
+            </IconButton>
           </Box>
           {photo?.description && (
-            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>{photo.description}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+              {photo.description}
+            </Typography>
           )}
           {patternExpand && (
             <Box>
-              <Typography variant="caption" color="text.disabled" display="block" gutterBottom>Tagged pattern</Typography>
+              <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
+                Tagged pattern
+              </Typography>
               <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
                 <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
               </Link>
             </Box>
           )}
-          <Typography variant="caption" color="text.disabled">{photo ? createPrettyDate(String(photo.created)) : ''}</Typography>
+          <Typography variant="caption" color="text.disabled">
+            {photo ? createPrettyDate(String(photo.created)) : ''}
+          </Typography>
           <Box sx={{ flex: 1 }} />
-          {deleteError && <Alert severity="error" sx={{ py: 0.5 }}>{deleteError}</Alert>}
+          {deleteError && (
+            <Alert severity="error" sx={{ py: 0.5 }}>
+              {deleteError}
+            </Alert>
+          )}
           {isOwner && (
-            <Button variant="outlined" color="error" size="small" onClick={handleDelete} disabled={deleting}
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={handleDelete}
+              disabled={deleting}
               startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlinedIcon />}
-              sx={{ alignSelf: 'flex-start' }}>
+              sx={{ alignSelf: 'flex-start' }}
+            >
               {deleting ? 'Deleting…' : 'Delete photo'}
             </Button>
           )}
@@ -925,7 +1077,17 @@ const Centered = ({ children }: { children: React.ReactNode }) => (
 );
 
 const EmptyState = ({ icon, message }: { icon: React.ReactNode; message: string }) => (
-  <Box sx={{ textAlign: 'center', py: 10, color: 'text.disabled', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+  <Box
+    sx={{
+      textAlign: 'center',
+      py: 10,
+      color: 'text.disabled',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 1.5,
+    }}
+  >
     <Box sx={{ fontSize: 48, lineHeight: 1, opacity: 0.3 }}>{icon}</Box>
     <Typography variant="body2">{message}</Typography>
   </Box>
@@ -982,8 +1144,8 @@ const HeroSection = styled(Box)(({ theme }) => ({
 const HeroAvatar = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isArtist',
 })<{ isArtist?: boolean }>(({ theme, isArtist }) => ({
-  width: 88,
-  height: 88,
+  width: 125,
+  height: 125,
   borderRadius: '50%',
   background: isArtist
     ? `linear-gradient(135deg, ${theme.palette.secondary.dark}, ${theme.palette.secondary.main})`
@@ -1035,7 +1197,12 @@ const AboutBody = styled(Box)({
   '& ul, & ol': { paddingLeft: '1.5rem', marginBottom: '1rem' },
   '& li': { fontSize: '1.0625rem', lineHeight: 1.8, marginBottom: '0.25rem' },
   '& a': { color: 'inherit', textDecoration: 'underline' },
-  '& code': { fontSize: '0.875em', padding: '0.15em 0.4em', borderRadius: 4, backgroundColor: 'rgba(128,128,128,0.12)' },
+  '& code': {
+    fontSize: '0.875em',
+    padding: '0.15em 0.4em',
+    borderRadius: 4,
+    backgroundColor: 'rgba(128,128,128,0.12)',
+  },
   '& blockquote': { borderLeft: '3px solid rgba(128,128,128,0.3)', paddingLeft: '1rem', marginLeft: 0, opacity: 0.8 },
 });
 
@@ -1057,7 +1224,15 @@ const heroBtn = {
 
 const ProfileSkeleton = () => (
   <PageRoot>
-    <Box sx={{ minHeight: 320, backgroundColor: 'primary.dark', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+    <Box
+      sx={{
+        minHeight: 320,
+        backgroundColor: 'primary.dark',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      }}
+    >
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 } }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3 }}>
           <Skeleton variant="circular" width={88} height={88} sx={{ flexShrink: 0 }} />
@@ -1073,7 +1248,19 @@ const ProfileSkeleton = () => (
       <Container maxWidth="lg" sx={{ px: { xs: 0, md: 4 } }}>
         <Box sx={{ display: 'flex' }}>
           {Array.from({ length: 5 }).map((_, i) => (
-            <Box key={i} sx={{ flex: 1, py: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, borderRight: i < 4 ? '1px solid' : 'none', borderColor: 'divider' }}>
+            <Box
+              key={i}
+              sx={{
+                flex: 1,
+                py: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                borderRight: i < 4 ? '1px solid' : 'none',
+                borderColor: 'divider',
+              }}
+            >
               <Skeleton variant="text" width={40} height={36} />
               <Skeleton variant="text" width={56} height={16} />
             </Box>
@@ -1120,11 +1307,15 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: 6 }}>
         <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <PersonOffOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', opacity: 0.4 }} />
-          <Typography variant="h6" fontWeight={600}>Profile not found</Typography>
+          <Typography variant="h6" fontWeight={600}>
+            Profile not found
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             This user doesn't exist or their profile is unavailable.
           </Typography>
-          <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>Try again</Button>
+          <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>
+            Try again
+          </Button>
         </Box>
       </Container>
     </PageRoot>
