@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { TypeViewData } from '@/functions/types/types';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import {
   useMutationMarkDonePattern,
   useMutationRemoveMarkDonePattern,
-  useQueryGetPatternDoneStatus,
 } from '@/functions/database/marked-done';
+import {
+  useQueryGetPatternDrawerData,
+  useInvalidateDrawerData,
+} from '@/functions/database/pattern-drawer-data';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
-import { Button, IconButton, Tooltip } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 
 export const PatternCompletedButton = (props: TypeViewData) => {
   const viewData = props.viewData;
   const { authData } = useGlobalAuthData();
 
-  const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternDoneStatus(viewData?.id || '');
+  const patternId = viewData?.id || '';
+  const userId = authData?.id || '';
+
+  const { data: drawerData, isPending, isFetching } = useQueryGetPatternDrawerData(patternId, userId);
+  const invalidateDrawerData = useInvalidateDrawerData(patternId, userId);
 
   const markAsCompletedPattern = useMutationMarkDonePattern();
   const removeMarkAsCompleted = useMutationRemoveMarkDonePattern();
 
   const isLoading = isPending || isFetching || markAsCompletedPattern.isPending || removeMarkAsCompleted.isPending;
-
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  React.useEffect(() => {
-    setIsCompleted(!!data?.id);
-  }, [data]);
+  const isCompleted = !!drawerData?.userMarkedDone?.id;
 
   const handleMarkAsDone = async () => {
     if (!authData?.verified) {
@@ -38,15 +40,12 @@ export const PatternCompletedButton = (props: TypeViewData) => {
 
     try {
       if (isCompleted) {
-        await removeMarkAsCompleted.mutateAsync(data?.id || '');
+        await removeMarkAsCompleted.mutateAsync(drawerData!.userMarkedDone!.id);
       } else {
-        await markAsCompletedPattern.mutateAsync(viewData?.id || '');
+        await markAsCompletedPattern.mutateAsync(patternId);
       }
-
-      await refetch();
-
-      setIsCompleted((prev) => !prev);
-    } catch (error: any) {
+      await invalidateDrawerData();
+    } catch {
       enqueueSnackbar('Something went wrong trying to mark this pattern as completed. Try again in a few minutes', {
         variant: 'error',
       });

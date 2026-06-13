@@ -5,20 +5,21 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 
 import {
-  useQueryGetPatternRating,
-  useQueryGetCommunityRatingByPatternId,
   useMutationCreatePatternRating,
   useMutationUpdatePatternRating,
   type TypeRatingPayload,
 } from '@/functions/database/ratings';
 
 import {
-  useQueryGetPatternDifficultyRating,
-  useQueryGetCommunityDifficultyRatingByPatternId,
   useMutationCreatePatternDifficultyRating,
   useMutationUpdatePatternDifficultyRating,
   type TypeDifficultyRatingPayload,
 } from '@/functions/database/difficulty_ratings';
+
+import {
+  useQueryGetPatternDrawerData,
+  useInvalidateDrawerData,
+} from '@/functions/database/pattern-drawer-data';
 
 import { alpha } from '@mui/material/styles';
 import { Box, Typography, Rating, Chip, Stack } from '@mui/material';
@@ -47,30 +48,25 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
   const [userStarRating, setUserStarRating] = useState<number | null>(0);
   const [diffHover, setDiffHover] = useState(-1);
 
-  // ── Star rating queries ────────────────────────────────────────────────────
+  const patternId = viewData?.id || '';
+  const userId = authData?.id || '';
 
-  const { data: userRatingData, refetch: refetchUserRating } = useQueryGetPatternRating(viewData?.id || '');
-  const { data: communityRatingData, refetch: refetchCommunityRating } = useQueryGetCommunityRatingByPatternId(
-    viewData?.id || '',
-  );
+  const { data: drawerData } = useQueryGetPatternDrawerData(patternId, userId);
+  const invalidateDrawerData = useInvalidateDrawerData(patternId, userId);
+
+  const userRatingData = drawerData?.userRating ?? null;
+  const communityRatingData = drawerData?.communityRating ?? null;
+  const userDifficultyData = drawerData?.userDifficulty ?? null;
+  const communityDifficultyData = drawerData?.communityDifficulty ?? null;
 
   const createRating = useMutationCreatePatternRating();
   const updateRating = useMutationUpdatePatternRating();
+  const createDifficulty = useMutationCreatePatternDifficultyRating();
+  const updateDifficulty = useMutationUpdatePatternDifficultyRating();
 
   React.useEffect(() => {
     setUserStarRating(userRatingData ? userRatingData.rating : 0);
   }, [userRatingData]);
-
-  // ── Difficulty queries ─────────────────────────────────────────────────────
-
-  const { data: userDifficultyData, refetch: refetchUserDifficulty } = useQueryGetPatternDifficultyRating(
-    viewData?.id || '',
-  );
-  const { data: communityDifficultyData, refetch: refetchCommunityDifficulty } =
-    useQueryGetCommunityDifficultyRatingByPatternId(viewData?.id || '');
-
-  const createDifficulty = useMutationCreatePatternDifficultyRating();
-  const updateDifficulty = useMutationUpdatePatternDifficultyRating();
 
   const userDifficultyVal = userDifficultyData?.rating ? toRatingVal(userDifficultyData.rating) : null;
 
@@ -83,8 +79,8 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
     }
     try {
       const payload: TypeRatingPayload = {
-        pattern_id: viewData?.id || '',
-        owner_id: authData?.id || '',
+        pattern_id: patternId,
+        owner_id: userId,
         rating: val || 3,
         rating_notes: '',
       };
@@ -94,9 +90,8 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
       } else {
         await createRating.mutateAsync(payload);
       }
-      await refetchUserRating();
-      await refetchCommunityRating();
       setUserStarRating(val);
+      await invalidateDrawerData();
     } catch {
       enqueueSnackbar("Oops... couldn't rate this pattern right now. Try again in a few minutes.", {
         variant: 'error',
@@ -112,8 +107,8 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
     }
     try {
       const payload: TypeDifficultyRatingPayload = {
-        pattern_id: viewData?.id || '',
-        owner_id: authData?.id || '',
+        pattern_id: patternId,
+        owner_id: userId,
         rating: toScale10(val),
       };
       if (userDifficultyData) {
@@ -122,8 +117,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
       } else {
         await createDifficulty.mutateAsync(payload);
       }
-      await refetchUserDifficulty();
-      await refetchCommunityDifficulty();
+      await invalidateDrawerData();
     } catch {
       enqueueSnackbar("Couldn't save your difficulty rating. Try again in a few minutes.", { variant: 'error' });
     }

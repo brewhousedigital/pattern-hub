@@ -1,5 +1,112 @@
 /// <reference path="./types.d.ts" />
 
+// Combines all per-pattern drawer lookups into a single HTTP call to reduce
+// request volume. Each sub-query is isolated in its own try/catch so a missing
+// record in one table never blocks the others from returning.
+// Uses {:param} syntax for safe parameterized filter binding (no injection risk).
+routerAdd('GET', '/api/pattern-drawer-data', (c) => {
+  const patternId = c.request.url.query().get('patternId') || '';
+  const userId = c.request.url.query().get('userId') || '';
+
+  if (!patternId) return c.json(400, { error: 'patternId is required' });
+
+  const result = {
+    communityRating: null,
+    communityDifficulty: null,
+    userRating: null,
+    userDifficulty: null,
+    userFavorite: null,
+    userMarkedDone: null,
+  };
+
+  try {
+    const r = $app.findFirstRecordByFilter(
+      'community_ratings',
+      'pattern_id = {:pid}',
+      { pid: patternId },
+    );
+    result.communityRating = {
+      id: r.id,
+      pattern_id: r.getString('pattern_id'),
+      average_rating: r.getFloat('average_rating'),
+      total_ratings: r.getInt('total_ratings'),
+    };
+  } catch (_) {}
+
+  try {
+    const r = $app.findFirstRecordByFilter(
+      'community_difficulty_ratings',
+      'pattern_id = {:pid}',
+      { pid: patternId },
+    );
+    result.communityDifficulty = {
+      id: r.id,
+      pattern_id: r.getString('pattern_id'),
+      average_rating: r.getFloat('average_rating'),
+      total_ratings: r.getInt('total_ratings'),
+    };
+  } catch (_) {}
+
+  if (userId) {
+    try {
+      const r = $app.findFirstRecordByFilter(
+        'user_ratings',
+        'pattern_id = {:pid} && owner_id = {:uid}',
+        { pid: patternId, uid: userId },
+      );
+      result.userRating = {
+        id: r.id,
+        pattern_id: r.getString('pattern_id'),
+        owner_id: r.getString('owner_id'),
+        rating: r.getFloat('rating'),
+        rating_notes: r.getString('rating_notes'),
+      };
+    } catch (_) {}
+
+    try {
+      const r = $app.findFirstRecordByFilter(
+        'user_difficulty_ratings',
+        'pattern_id = {:pid} && owner_id = {:uid}',
+        { pid: patternId, uid: userId },
+      );
+      result.userDifficulty = {
+        id: r.id,
+        pattern_id: r.getString('pattern_id'),
+        owner_id: r.getString('owner_id'),
+        rating: r.getFloat('rating'),
+      };
+    } catch (_) {}
+
+    try {
+      const r = $app.findFirstRecordByFilter(
+        'user_favorites',
+        'pattern_id = {:pid} && owner_id = {:uid}',
+        { pid: patternId, uid: userId },
+      );
+      result.userFavorite = {
+        id: r.id,
+        pattern_id: r.getString('pattern_id'),
+        owner_id: r.getString('owner_id'),
+      };
+    } catch (_) {}
+
+    try {
+      const r = $app.findFirstRecordByFilter(
+        'user_marked_done',
+        'pattern_id = {:pid} && owner_id = {:uid}',
+        { pid: patternId, uid: userId },
+      );
+      result.userMarkedDone = {
+        id: r.id,
+        pattern_id: r.getString('pattern_id'),
+        owner_id: r.getString('owner_id'),
+      };
+    } catch (_) {}
+  }
+
+  return c.json(200, result);
+});
+
 // An external cron service sends a POST to /api/sync-aggregates with the
 // `X-Sync-Key` header to trigger the aggregate sync.
 

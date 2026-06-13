@@ -4,31 +4,33 @@ import type { TypeViewData } from '@/functions/types/types';
 import {
   useMutationFavoritePattern,
   useMutationRemoveFavoritePattern,
-  useQueryGetPatternFavoriteStatus,
 } from '@/functions/database/favorites.ts';
+import {
+  useQueryGetPatternDrawerData,
+  useInvalidateDrawerData,
+} from '@/functions/database/pattern-drawer-data';
 import { enqueueSnackbar } from 'notistack';
 
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
-import { Button, IconButton, Tooltip } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 
 export const PatternFavoriteButton = (props: TypeViewData) => {
   const viewData = props.viewData;
   const { authData } = useGlobalAuthData();
 
-  const { isPending, isFetching, isError, data, refetch } = useQueryGetPatternFavoriteStatus(viewData?.id || '');
+  const patternId = viewData?.id || '';
+  const userId = authData?.id || '';
+
+  const { data: drawerData, isPending, isFetching } = useQueryGetPatternDrawerData(patternId, userId);
+  const invalidateDrawerData = useInvalidateDrawerData(patternId, userId);
 
   const favoritePattern = useMutationFavoritePattern();
   const removeFavorite = useMutationRemoveFavoritePattern();
 
   const isLoading = isPending || isFetching || favoritePattern.isPending || removeFavorite.isPending;
-
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  React.useEffect(() => {
-    setIsFavorite(!!data?.id);
-  }, [data]);
+  const isFavorite = !!drawerData?.userFavorite?.id;
 
   const handleFavorite = async () => {
     if (!authData?.verified) {
@@ -38,15 +40,12 @@ export const PatternFavoriteButton = (props: TypeViewData) => {
 
     try {
       if (isFavorite) {
-        await removeFavorite.mutateAsync(data?.id || '');
+        await removeFavorite.mutateAsync(drawerData!.userFavorite!.id);
       } else {
-        await favoritePattern.mutateAsync(viewData?.id || '');
+        await favoritePattern.mutateAsync(patternId);
       }
-
-      await refetch();
-
-      setIsFavorite((prev) => !prev);
-    } catch (error: any) {
+      await invalidateDrawerData();
+    } catch {
       enqueueSnackbar('Something went wrong trying to favorite this pattern. Try again in a few minutes', {
         variant: 'error',
       });
