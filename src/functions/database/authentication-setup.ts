@@ -19,10 +19,19 @@ export const queryClient = new QueryClient({
 if (typeof window !== 'undefined') {
   const _originalFetch = window.fetch.bind(window);
   window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
-    const response = await _originalFetch(...args);
-    if (response.status === 429) {
-      window.dispatchEvent(new CustomEvent('app:rate-limited'));
+    try {
+      const response = await _originalFetch(...args);
+      if (response.status === 429) {
+        window.dispatchEvent(new CustomEvent('app:rate-limited'));
+      }
+      return response;
+    } catch (error) {
+      // CORS failures and other server-side errors surface as TypeErrors with no HTTP
+      // response. If the user is online, this most likely means the server is struggling.
+      if (error instanceof TypeError && navigator.onLine) {
+        window.dispatchEvent(new CustomEvent('app:rate-limited'));
+      }
+      throw error;
     }
-    return response;
   };
 }
