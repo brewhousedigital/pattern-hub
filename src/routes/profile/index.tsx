@@ -343,40 +343,41 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       {/* ─── STAT BAR ─────────────────────────────────────────────────────── */}
       <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }}>
         <Container maxWidth="lg" sx={{ px: { xs: 0, md: 4 } }}>
-          <Box sx={{ display: 'flex' }}>
+          <Grid container sx={{ justifyContent: 'center' }}>
             {stats.map((stat, i) => (
-              <Box
-                key={stat.label}
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  py: { xs: 2.5, md: 3 },
-                  borderRight: i < stats.length - 1 ? '1px solid' : 'none',
-                  borderColor: 'divider',
-                  gap: 0.75,
-                }}
-              >
-                <Typography
+              <Grid size={{ xs: 4, md: 2.4 }} key={stat.label}>
+                <Box
                   sx={{
-                    fontSize: { xs: '1.375rem', sm: '1.75rem', md: '2.25rem' },
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    fontVariantNumeric: 'tabular-nums',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    py: { xs: 2.5, md: 3 },
+                    borderRight: i < stats.length - 1 ? '1px solid' : 'none',
+                    borderColor: 'divider',
+                    gap: 0.75,
                   }}
                 >
-                  {stat.value}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <stat.Icon sx={{ fontSize: 14, color: stat.color, opacity: 0.9 }} />
-                  <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', fontWeight: 500 }}>
-                    {stat.label}
+                  <Typography
+                    sx={{
+                      fontSize: { xs: '1.375rem', sm: '1.75rem', md: '2.25rem' },
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {stat.value}
                   </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <stat.Icon sx={{ fontSize: 14, color: stat.color, opacity: 0.9 }} />
+                    <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', fontWeight: 500 }}>
+                      {stat.label}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
+              </Grid>
             ))}
-          </Box>
+          </Grid>
         </Container>
       </Box>
 
@@ -806,7 +807,7 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
   return (
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns.map((item) => (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={item.id}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }} key={item.id}>
           <Link
             to="/"
             search={{ id: [item.pattern_id], patternId: item.pattern_id }}
@@ -828,7 +829,7 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
                 </Typography>
                 {props.showCompleted && (
                   <Typography variant="caption" color="text.disabled">
-                    Completed {createPrettyDate(item.created!)}
+                    {createPrettyDate(item.created!)}
                   </Typography>
                 )}
                 {props.showRating && <Rating value={item.rating} readOnly size="small" />}
