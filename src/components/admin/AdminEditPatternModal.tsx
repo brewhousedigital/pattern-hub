@@ -552,7 +552,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         </Button>
       )}
 
-      <Dialog fullWidth maxWidth="lg" open={isOpen} onClose={handleClose}>
+      <Dialog fullWidth maxWidth="xl" open={isOpen} onClose={handleClose}>
         {/* Title */}
         <DialogTitle
           sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
@@ -586,13 +586,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               {/* ── Sticky left preview (desktop only) ── */}
               <Box
                 sx={{
-                  display: { xs: 'none', md: 'flex' },
+                  display: { xs: 'none', lg: 'flex' },
                   flexDirection: 'column',
                   gap: 1.5,
                   position: 'sticky',
                   top: 0,
                   alignSelf: 'flex-start',
-                  width: 240,
+                  width: 600,
                   flexShrink: 0,
                   p: 3,
                   borderRight: '1px solid',
