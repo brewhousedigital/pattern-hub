@@ -134,3 +134,23 @@ export const useMutationDeleteWikiPage = () => {
     },
   });
 };
+
+export const useMutationReorderWikiCategories = () => {
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      await Promise.all(
+        items.map((item) => pocketbase.collection('wiki_categories').update(item.id, { order: item.order })),
+      );
+    },
+  });
+};
+
+export const useMutationReorderWikiPages = () => {
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      await Promise.all(
+        items.map((item) => pocketbase.collection('wiki_pages').update(item.id, { order: item.order })),
+      );
+    },
+  });
+};

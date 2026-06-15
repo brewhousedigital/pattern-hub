@@ -7,6 +7,7 @@ export type TypeFAQItem = {
   id: string;
   title: string;
   content: string;
+  order: number;
   created: Date;
   updated: Date;
 };
@@ -16,7 +17,7 @@ export const useQueryGetAllFAQ = () => {
     queryKey: ['GetAllFAQ'],
     queryFn: async (): Promise<TypeFAQItem[]> => {
       return await pocketbase.collection('faq').getFullList({
-        sort: 'title',
+        sort: 'order,title',
       });
     },
   });
@@ -26,6 +27,7 @@ export type TypeFAQPayload = {
   id?: string;
   title: string;
   content: string;
+  order?: number;
 };
 
 export const useMutationCreateFAQ = () => {
@@ -48,6 +50,14 @@ export const useMutationDeleteFAQ = () => {
   return useMutation({
     mutationFn: async (faq_id: string) => {
       await pocketbase.collection('faq').delete(faq_id);
+    },
+  });
+};
+
+export const useMutationReorderFAQItems = () => {
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      await Promise.all(items.map((item) => pocketbase.collection('faq').update(item.id, { order: item.order })));
     },
   });
 };
