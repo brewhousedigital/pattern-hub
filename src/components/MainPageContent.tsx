@@ -5,7 +5,18 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
+
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
+
+function getDifficultyChip(avgDifficulty: number | undefined) {
+  if (!avgDifficulty) return null;
+  const d = Math.round(avgDifficulty * 2);
+  if (d <= 3) return { label: 'Beginner', color: 'success' as const };
+  if (d <= 6) return { label: 'Intermediate', color: 'warning' as const };
+  return { label: 'Expert', color: 'error' as const };
+}
 import { alpha } from '@mui/material/styles';
 
 export const MainPageContent = () => {
@@ -94,6 +105,44 @@ export const MainPageContent = () => {
                       />
                     </Box>
                   )}
+
+                  {(() => {
+                    const diffChip = getDifficultyChip(pattern.avg_difficulty);
+                    return (
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          pb: 1.5,
+                          display: 'flex',
+                          gap: 0.75,
+                          flexWrap: 'wrap',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          icon={<FavoriteRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                          label={pattern.favorite_count ?? 0}
+                          sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                        />
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          icon={<StarRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                          label={(pattern.avg_rating ?? 0).toFixed(1)}
+                          sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                        />
+                        <Chip
+                          size="small"
+                          label={diffChip ? diffChip.label : 'No ratings'}
+                          color={diffChip ? diffChip.color : undefined}
+                          variant={diffChip ? 'filled' : 'outlined'}
+                          sx={{ fontSize: '0.65rem', height: 18, ...(!diffChip && { color: 'text.disabled', borderColor: 'divider' }) }}
+                        />
+                      </Box>
+                    );
+                  })()}
                 </Card>
               </MuiLink>
             </Grid>
