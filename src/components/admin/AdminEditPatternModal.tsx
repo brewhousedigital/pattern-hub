@@ -547,7 +547,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         </Button>
       )}
 
-      <Dialog fullWidth maxWidth="md" open={isOpen} onClose={handleClose}>
+      <Dialog fullWidth maxWidth="lg" open={isOpen} onClose={handleClose}>
         {/* Title */}
         <DialogTitle
           sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
@@ -567,16 +567,141 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ p: 0 }}>
           {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6, px: 3 }}>
               <CircularProgress />
             </Box>
           ) : isError ? (
-            <Alert severity="error" sx={{ m: 1 }}>
+            <Alert severity="error" sx={{ m: 3 }}>
               Couldn't load required data - please close the dialog, refresh, and try again.
             </Alert>
           ) : (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+
+              {/* ── Sticky left preview (desktop only) ── */}
+              <Box
+                sx={{
+                  display: { xs: 'none', md: 'flex' },
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  position: 'sticky',
+                  top: 0,
+                  alignSelf: 'flex-start',
+                  width: 240,
+                  flexShrink: 0,
+                  p: 3,
+                  borderRight: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  fontWeight={700}
+                  color="text.secondary"
+                  sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                >
+                  Preview
+                </Typography>
+
+                {previewUrl ? (
+                  <Box
+                    component="img"
+                    src={previewUrl}
+                    alt="New pattern preview"
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '1/1',
+                      objectFit: 'contain',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'grey.50',
+                      p: 1,
+                    }}
+                  />
+                ) : props.pattern_file ? (
+                  <Box
+                    component="img"
+                    src={generatePbImageSVG(props)}
+                    alt={props.name}
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '1/1',
+                      objectFit: 'contain',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'grey.50',
+                      p: 1,
+                    }}
+                  />
+                ) : previewExternalUrl ? (
+                  <Box
+                    component="img"
+                    src={previewExternalUrl}
+                    alt="New external pattern preview"
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '1/1',
+                      objectFit: 'contain',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'grey.50',
+                      p: 1,
+                    }}
+                  />
+                ) : props.pattern_file_external ? (
+                  <Box
+                    component="img"
+                    src={generatePbImageExternalFile(props)}
+                    alt={props.name}
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '1/1',
+                      objectFit: 'contain',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      backgroundColor: 'grey.50',
+                      p: 1,
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      border: '1px dashed',
+                      borderColor: 'divider',
+                      borderRadius: 1.5,
+                      aspectRatio: '1/1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'grey.50',
+                    }}
+                  >
+                    <Typography variant="body2" color="text.disabled">
+                      No pattern yet
+                    </Typography>
+                  </Box>
+                )}
+
+                {name && (
+                  <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                    {name}
+                  </Typography>
+                )}
+
+                {isDraft && (
+                  <Typography variant="caption" color="warning.main" fontWeight={600}>
+                    Draft — hidden from public
+                  </Typography>
+                )}
+              </Box>
+
+              {/* ── Right: form fields ── */}
+              <Box sx={{ flex: 1, minWidth: 0, p: 3 }}>
             <Stack spacing={2.5} sx={{ py: 1 }}>
               {/* ── Status ── */}
               {isDraft && (
@@ -1350,6 +1475,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                 </>
               )}
             </Stack>
+              </Box>
+            </Box>
           )}
         </DialogContent>
 
