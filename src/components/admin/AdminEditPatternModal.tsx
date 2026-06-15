@@ -75,7 +75,7 @@ import {
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { AdminPatternInstructionsModal } from '@/components/admin/AdminPatternInstructionsModal.tsx';
+import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -294,6 +294,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const isLoading = isPendingManualAuthors || isPendingAuthorData;
   const isError = isErrorManualAuthors || isErrorAuthorData;
 
+  // Instructions
+  const [instructions, setInstructions] = React.useState(props?.instructions || '');
+
   // SVG Upload
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -373,6 +376,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setDesignWidthUnit('in');
     setDesignHeight('0');
     setDesignHeightUnit('in');
+    setInstructions('');
     setTagValue([]);
     setAutoCompleteInputValue('');
     setAuthorValue([]);
@@ -425,6 +429,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       const payload: TypePatternCreatePayload = {
         name,
         description,
+        instructions,
         source_url: sourceURL,
         pieces: pieces && pieces !== 'undefined' ? pieces : '0',
         line_width: lineWidth && lineWidth !== 'undefined' ? lineWidth : '0',
@@ -578,7 +583,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             </Alert>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-
               {/* ── Sticky left preview (desktop only) ── */}
               <Box
                 sx={{
@@ -702,110 +706,381 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
               {/* ── Right: form fields ── */}
               <Box sx={{ flex: 1, minWidth: 0, p: 3 }}>
-            <Stack spacing={2.5} sx={{ py: 1 }}>
-              {/* ── Status ── */}
-              {isDraft && (
-                <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                  This pattern is in <strong>Draft Mode</strong> and is not visible to the public.
-                </Alert>
-              )}
+                <Stack spacing={2.5} sx={{ py: 1 }}>
+                  {/* ── Status ── */}
+                  {isDraft && (
+                    <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                      This pattern is in <strong>Draft Mode</strong> and is not visible to the public.
+                    </Alert>
+                  )}
 
-              {/* ── Info ── */}
-              <FormSection label="Pattern Info" />
-
-              <TextField
-                fullWidth
-                variant="filled"
-                label="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                helperText={name?.length > 100 ? `Name is too long: ${name?.length}/100` : `${name?.length}/100`}
-                error={name?.length > 100}
-              />
-
-              <TextField
-                multiline
-                fullWidth
-                variant="filled"
-                minRows={2}
-                label="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                helperText={
-                  <Stack
-                    component="span"
-                    direction="row"
-                    sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <Typography variant="caption">
-                      {description?.length > 2000
-                        ? `Description is too long: ${description?.length}/2000`
-                        : `${description?.length}/2000`}
-                    </Typography>
-                    <Typography variant="caption">
-                      Supports{' '}
-                      <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
-                        Markdown
-                      </a>
-                    </Typography>
-                  </Stack>
-                }
-                error={description?.length > 2000}
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isDraft}
-                    onChange={(e) => setIsDraft(e.target.checked)}
+                  <FormControlLabel
+                    control={<Checkbox checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} />}
+                    label="Draft Mode (hidden from public)"
                   />
-                }
-                label="Draft Mode (hidden from public)"
-              />
 
-              <AdminPatternInstructionsModal callback={props.callback} largeButton {...props} />
+                  {/* ── Info ── */}
+                  <FormSection label="Pattern Info" />
 
-              <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    helperText={name?.length > 100 ? `Name is too long: ${name?.length}/100` : `${name?.length}/100`}
+                    error={name?.length > 100}
+                  />
 
-              <TextField
-                fullWidth
-                variant="filled"
-                label="Source URL"
-                value={sourceURL}
-                onChange={(e) => setSourceURL(e.target.value)}
-              />
+                  <TextField
+                    multiline
+                    fullWidth
+                    variant="filled"
+                    minRows={2}
+                    label="Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    helperText={
+                      <Stack
+                        component="span"
+                        direction="row"
+                        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <Typography variant="caption">
+                          {description?.length > 2000
+                            ? `Description is too long: ${description?.length}/2000`
+                            : `${description?.length}/2000`}
+                        </Typography>
+                        <Typography variant="caption">
+                          Supports{' '}
+                          <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
+                            Markdown
+                          </a>
+                        </Typography>
+                      </Stack>
+                    }
+                    error={description?.length > 2000}
+                  />
 
-              {/* ── Pattern File ── */}
-              <FormSection label="Pattern File" />
+                  <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
 
-              <Box sx={{ width: '100%' }}>
-                <TabContext value={tabValue}>
-                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList onChange={handleTabChange} aria-label="Pattern upload type">
-                      <Tab label="Upload SVG" value="1" />
-                      <Tab label="External Pattern" value="2" />
-                    </TabList>
-                  </Box>
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Source URL"
+                    value={sourceURL}
+                    onChange={(e) => setSourceURL(e.target.value)}
+                  />
 
-                  {/* SVG tab */}
-                  <TabPanel value="1" sx={{ px: 0, pt: 2, pb: 0 }} key="svg-tab">
-                    {file && previewUrl ? (
-                      <>
-                        <Grid container spacing={2} sx={{ mb: 1.5 }}>
-                          <Grid size={{ xs: 12, md: 6 }}>
+                  {/* ── Pattern File ── */}
+                  <FormSection label="Pattern File" />
+
+                  <Box sx={{ width: '100%' }}>
+                    <TabContext value={tabValue}>
+                      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                        <TabList onChange={handleTabChange} aria-label="Pattern upload type">
+                          <Tab label="Upload SVG" value="1" />
+                          <Tab label="External Pattern" value="2" />
+                        </TabList>
+                      </Box>
+
+                      {/* SVG tab */}
+                      <TabPanel value="1" sx={{ px: 0, pt: 2, pb: 0 }} key="svg-tab">
+                        {file && previewUrl ? (
+                          <>
+                            <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  fontWeight={600}
+                                  display="block"
+                                  mb={0.75}
+                                >
+                                  Current
+                                </Typography>
+
+                                {props.pattern_file ? (
+                                  <Tooltip title="Download" arrow>
+                                    <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
+                                      <Box
+                                        component="img"
+                                        loading="lazy"
+                                        src={generatePbImage(props)}
+                                        alt={`current pattern for ${props.name}`}
+                                        sx={{
+                                          width: '100%',
+                                          height: 'auto',
+                                          aspectRatio: '1/1',
+                                          objectFit: 'contain',
+                                          borderRadius: 1.5,
+                                          border: '1px solid',
+                                          borderColor: 'divider',
+                                          backgroundColor: 'grey.50',
+                                          p: 1,
+                                        }}
+                                      />
+                                    </a>
+                                  </Tooltip>
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      borderRadius: 1.5,
+                                      p: 4,
+                                      textAlign: 'center',
+                                      backgroundColor: 'grey.50',
+                                    }}
+                                  >
+                                    <Typography variant="body2" color="text.disabled">
+                                      No current file
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Grid>
+
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ position: 'relative' }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    fontWeight={600}
+                                    display="block"
+                                    mb={0.75}
+                                  >
+                                    New
+                                  </Typography>
+
+                                  <IconButton
+                                    size="small"
+                                    onClick={handleFileDelete}
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      right: 0,
+                                      backgroundColor: 'background.paper',
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      '&:hover': { color: 'error.main' },
+                                    }}
+                                  >
+                                    <DeleteRoundedIcon fontSize="small" />
+                                  </IconButton>
+
+                                  <Box
+                                    component="img"
+                                    loading="lazy"
+                                    src={previewUrl}
+                                    alt="New pattern preview"
+                                    sx={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      aspectRatio: '1/1',
+                                      objectFit: 'contain',
+                                      borderRadius: 1.5,
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      backgroundColor: 'grey.50',
+                                      p: 1,
+                                    }}
+                                  />
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </>
+                        ) : (
+                          <>
+                            {props.pattern_file && (
+                              <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                  <>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      fontWeight={600}
+                                      display="block"
+                                      mb={0.75}
+                                    >
+                                      Current pattern
+                                    </Typography>
+
+                                    <Tooltip title="Download" arrow>
+                                      <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
+                                        <Box
+                                          component="img"
+                                          loading="lazy"
+                                          src={generatePbImage(props)}
+                                          alt={`current pattern for ${props.name}`}
+                                          sx={{
+                                            width: '100%',
+                                            height: 'auto',
+                                            aspectRatio: '1/1',
+                                            objectFit: 'contain',
+                                            borderRadius: 1.5,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            backgroundColor: 'grey.50',
+                                            p: 1,
+                                          }}
+                                        />
+                                      </a>
+                                    </Tooltip>
+                                  </>
+                                </Grid>
+                              </Grid>
+                            )}
+
+                            <SvgDropZone
+                              accept=".svg,image/svg+xml"
+                              acceptLabel=".svg only"
+                              label={
+                                props.pattern_file
+                                  ? 'Drop a new SVG to replace, or click to browse'
+                                  : 'Drop SVG here or click to browse'
+                              }
+                              onFile={async (f) => {
+                                if (!f.type.includes('svg')) {
+                                  alert('Please upload an SVG file');
+                                  return;
+                                }
+                                setPreviewUrl(URL.createObjectURL(f));
+                                setFile(f);
+
+                                const text = await f.text();
+
+                                const dims = extractSvgDimensions(text);
+                                if (dims) {
+                                  setDesignWidth(String(dims.width));
+                                  setDesignWidthUnit(dims.widthUnit);
+                                  setDesignHeight(String(dims.height));
+                                  setDesignHeightUnit(dims.heightUnit);
+                                }
+
+                                if (hasLayers) {
+                                  setLayersMap((prev) => replaceLayerIds(prev, extractSvgLayerIds(text)));
+                                }
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {/* ── Has Layers ── */}
+                        <FormControlLabel
+                          control={
+                            <Checkbox checked={hasLayers} onChange={(e) => handleHasLayersChange(e.target.checked)} />
+                          }
+                          label="Has Layers"
+                          sx={{ mt: 1 }}
+                        />
+
+                        {hasLayers && layersMap.length > 0 && (
+                          <Box sx={{ mt: 1 }}>
                             <Typography
                               variant="caption"
-                              color="text.secondary"
                               fontWeight={600}
+                              color="text.secondary"
                               display="block"
-                              mb={0.75}
+                              mb={1}
                             >
-                              Current
+                              Layer Map
                             </Typography>
+                            <Stack spacing={1}>
+                              {layersMap.map((item, index) => (
+                                <Grid container spacing={1} key={item.layerName} alignItems="center">
+                                  <Grid size={{ xs: 5 }}>
+                                    <TextField
+                                      size="small"
+                                      fullWidth
+                                      variant="filled"
+                                      label="Layer ID"
+                                      value={item.layerName}
+                                      slotProps={{ input: { readOnly: true } }}
+                                    />
+                                  </Grid>
+                                  <Grid size="auto">
+                                    <Tooltip title="Copy layer ID to display name" arrow>
+                                      <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                          setLayersMap((prev) =>
+                                            prev.map((e, i) => (i === index ? { ...e, mappedName: e.layerName } : e)),
+                                          )
+                                        }
+                                      >
+                                        <ArrowForwardRoundedIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Grid>
+                                  <Grid size="grow">
+                                    <TextField
+                                      size="small"
+                                      fullWidth
+                                      variant="filled"
+                                      label="Display Name"
+                                      value={item.mappedName}
+                                      onChange={(e) =>
+                                        setLayersMap((prev) =>
+                                          prev.map((entry, i) =>
+                                            i === index ? { ...entry, mappedName: e.target.value } : entry,
+                                          ),
+                                        )
+                                      }
+                                    />
+                                  </Grid>
+                                  <Grid size="auto">
+                                    <Tooltip
+                                      title={
+                                        item.isVisible !== false
+                                          ? 'Users can toggle this layer,  click to lock'
+                                          : 'Required layer - users cannot hide this'
+                                      }
+                                      arrow
+                                    >
+                                      <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                          setLayersMap((prev) =>
+                                            prev.map((e, i) =>
+                                              i === index
+                                                ? { ...e, isVisible: e.isVisible === false ? true : false }
+                                                : e,
+                                            ),
+                                          )
+                                        }
+                                        sx={{ color: item.isVisible === false ? 'error.main' : 'text.disabled' }}
+                                      >
+                                        {item.isVisible === false ? (
+                                          <LockRoundedIcon fontSize="small" />
+                                        ) : (
+                                          <LockOpenRoundedIcon fontSize="small" />
+                                        )}
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Grid>
+                                </Grid>
+                              ))}
+                            </Stack>
+                          </Box>
+                        )}
+                      </TabPanel>
 
-                            {props.pattern_file ? (
-                              <Tooltip title="Download" arrow>
-                                <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
+                      {/* External pattern tab */}
+                      <TabPanel value="2" sx={{ px: 0, pt: 2, pb: 0 }}>
+                        {externalFile && previewExternalUrl ? (
+                          <>
+                            <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  fontWeight={600}
+                                  display="block"
+                                  mb={0.75}
+                                >
+                                  Current
+                                </Typography>
+                                {props.pattern_file_external ? (
                                   <Box
                                     component="img"
                                     loading="lazy"
@@ -823,81 +1098,75 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                       p: 1,
                                     }}
                                   />
-                                </a>
-                              </Tooltip>
-                            ) : (
-                              <Box
-                                sx={{
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  borderRadius: 1.5,
-                                  p: 4,
-                                  textAlign: 'center',
-                                  backgroundColor: 'grey.50',
-                                }}
-                              >
-                                <Typography variant="body2" color="text.disabled">
-                                  No current file
-                                </Typography>
-                              </Box>
-                            )}
-                          </Grid>
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      borderRadius: 1.5,
+                                      p: 4,
+                                      textAlign: 'center',
+                                      backgroundColor: 'grey.50',
+                                    }}
+                                  >
+                                    <Typography variant="body2" color="text.disabled">
+                                      No current file
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Grid>
 
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Box sx={{ position: 'relative' }}>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                                display="block"
-                                mb={0.75}
-                              >
-                                New
-                              </Typography>
-
-                              <IconButton
-                                size="small"
-                                onClick={handleFileDelete}
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  right: 0,
-                                  backgroundColor: 'background.paper',
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  '&:hover': { color: 'error.main' },
-                                }}
-                              >
-                                <DeleteRoundedIcon fontSize="small" />
-                              </IconButton>
-
-                              <Box
-                                component="img"
-                                loading="lazy"
-                                src={previewUrl}
-                                alt="New pattern preview"
-                                sx={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  aspectRatio: '1/1',
-                                  objectFit: 'contain',
-                                  borderRadius: 1.5,
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  backgroundColor: 'grey.50',
-                                  p: 1,
-                                }}
-                              />
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </>
-                    ) : (
-                      <>
-                        {props.pattern_file && (
-                          <Grid container spacing={2} sx={{ mb: 1.5 }}>
-                            <Grid size={{ xs: 12, md: 6 }}>
-                              <>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ position: 'relative' }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    fontWeight={600}
+                                    display="block"
+                                    mb={0.75}
+                                  >
+                                    New
+                                  </Typography>
+                                  <IconButton
+                                    size="small"
+                                    onClick={handleExternalFileDelete}
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      right: 0,
+                                      backgroundColor: 'background.paper',
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      '&:hover': { color: 'error.main' },
+                                    }}
+                                  >
+                                    <DeleteRoundedIcon fontSize="small" />
+                                  </IconButton>
+                                  <Box
+                                    component="img"
+                                    loading="lazy"
+                                    src={previewExternalUrl}
+                                    alt="New external pattern preview"
+                                    sx={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      aspectRatio: '1/1',
+                                      objectFit: 'contain',
+                                      borderRadius: 1.5,
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      backgroundColor: 'grey.50',
+                                      p: 1,
+                                    }}
+                                  />
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </>
+                        ) : (
+                          <>
+                            {props.pattern_file_external && (
+                              <Box sx={{ mb: 2 }}>
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -905,576 +1174,324 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   display="block"
                                   mb={0.75}
                                 >
-                                  Current pattern
+                                  Current image
                                 </Typography>
-
-                                <Tooltip title="Download" arrow>
-                                  <a href={generatePbImage(props)} download style={{ display: 'inlineBlock' }}>
-                                    <Box
-                                      component="img"
-                                      loading="lazy"
-                                      src={generatePbImage(props)}
-                                      alt={`current pattern for ${props.name}`}
-                                      sx={{
-                                        width: '100%',
-                                        height: 'auto',
-                                        aspectRatio: '1/1',
-                                        objectFit: 'contain',
-                                        borderRadius: 1.5,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        backgroundColor: 'grey.50',
-                                        p: 1,
-                                      }}
-                                    />
-                                  </a>
-                                </Tooltip>
-                              </>
-                            </Grid>
-                          </Grid>
-                        )}
-
-                        <SvgDropZone
-                          accept=".svg,image/svg+xml"
-                          acceptLabel=".svg only"
-                          label={
-                            props.pattern_file
-                              ? 'Drop a new SVG to replace, or click to browse'
-                              : 'Drop SVG here or click to browse'
-                          }
-                          onFile={async (f) => {
-                            if (!f.type.includes('svg')) {
-                              alert('Please upload an SVG file');
-                              return;
-                            }
-                            setPreviewUrl(URL.createObjectURL(f));
-                            setFile(f);
-
-                            const text = await f.text();
-
-                            const dims = extractSvgDimensions(text);
-                            if (dims) {
-                              setDesignWidth(String(dims.width));
-                              setDesignWidthUnit(dims.widthUnit);
-                              setDesignHeight(String(dims.height));
-                              setDesignHeightUnit(dims.heightUnit);
-                            }
-
-                            if (hasLayers) {
-                              setLayersMap((prev) => replaceLayerIds(prev, extractSvgLayerIds(text)));
-                            }
-                          }}
-                        />
-                      </>
-                    )}
-
-                    {/* ── Has Layers ── */}
-                    <FormControlLabel
-                      control={
-                        <Checkbox checked={hasLayers} onChange={(e) => handleHasLayersChange(e.target.checked)} />
-                      }
-                      label="Has Layers"
-                      sx={{ mt: 1 }}
-                    />
-
-                    {hasLayers && layersMap.length > 0 && (
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="caption" fontWeight={600} color="text.secondary" display="block" mb={1}>
-                          Layer Map
-                        </Typography>
-                        <Stack spacing={1}>
-                          {layersMap.map((item, index) => (
-                            <Grid container spacing={1} key={item.layerName} alignItems="center">
-                              <Grid size={{ xs: 5 }}>
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  variant="filled"
-                                  label="Layer ID"
-                                  value={item.layerName}
-                                  slotProps={{ input: { readOnly: true } }}
-                                />
-                              </Grid>
-                              <Grid size="auto">
-                                <Tooltip title="Copy layer ID to display name" arrow>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      setLayersMap((prev) =>
-                                        prev.map((e, i) => (i === index ? { ...e, mappedName: e.layerName } : e)),
-                                      )
-                                    }
-                                  >
-                                    <ArrowForwardRoundedIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Grid>
-                              <Grid size="grow">
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  variant="filled"
-                                  label="Display Name"
-                                  value={item.mappedName}
-                                  onChange={(e) =>
-                                    setLayersMap((prev) =>
-                                      prev.map((entry, i) =>
-                                        i === index ? { ...entry, mappedName: e.target.value } : entry,
-                                      ),
-                                    )
-                                  }
-                                />
-                              </Grid>
-                              <Grid size="auto">
-                                <Tooltip
-                                  title={
-                                    item.isVisible !== false
-                                      ? 'Users can toggle this layer,  click to lock'
-                                      : 'Required layer - users cannot hide this'
-                                  }
-                                  arrow
-                                >
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      setLayersMap((prev) =>
-                                        prev.map((e, i) =>
-                                          i === index ? { ...e, isVisible: e.isVisible === false ? true : false } : e,
-                                        ),
-                                      )
-                                    }
-                                    sx={{ color: item.isVisible === false ? 'error.main' : 'text.disabled' }}
-                                  >
-                                    {item.isVisible === false ? (
-                                      <LockRoundedIcon fontSize="small" />
-                                    ) : (
-                                      <LockOpenRoundedIcon fontSize="small" />
-                                    )}
-                                  </IconButton>
-                                </Tooltip>
-                              </Grid>
-                            </Grid>
-                          ))}
-                        </Stack>
-                      </Box>
-                    )}
-                  </TabPanel>
-
-                  {/* External pattern tab */}
-                  <TabPanel value="2" sx={{ px: 0, pt: 2, pb: 0 }}>
-                    {externalFile && previewExternalUrl ? (
-                      <>
-                        <Grid container spacing={2} sx={{ mb: 1.5 }}>
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              fontWeight={600}
-                              display="block"
-                              mb={0.75}
-                            >
-                              Current
-                            </Typography>
-                            {props.pattern_file_external ? (
-                              <Box
-                                component="img"
-                                loading="lazy"
-                                src={generatePbImage(props)}
-                                alt={`current pattern for ${props.name}`}
-                                sx={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  aspectRatio: '1/1',
-                                  objectFit: 'contain',
-                                  borderRadius: 1.5,
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  backgroundColor: 'grey.50',
-                                  p: 1,
-                                }}
-                              />
-                            ) : (
-                              <Box
-                                sx={{
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  borderRadius: 1.5,
-                                  p: 4,
-                                  textAlign: 'center',
-                                  backgroundColor: 'grey.50',
-                                }}
-                              >
-                                <Typography variant="body2" color="text.disabled">
-                                  No current file
-                                </Typography>
-                              </Box>
-                            )}
-                          </Grid>
-
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Box sx={{ position: 'relative' }}>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                                display="block"
-                                mb={0.75}
-                              >
-                                New
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={handleExternalFileDelete}
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  right: 0,
-                                  backgroundColor: 'background.paper',
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  '&:hover': { color: 'error.main' },
-                                }}
-                              >
-                                <DeleteRoundedIcon fontSize="small" />
-                              </IconButton>
-                              <Box
-                                component="img"
-                                loading="lazy"
-                                src={previewExternalUrl}
-                                alt="New external pattern preview"
-                                sx={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  aspectRatio: '1/1',
-                                  objectFit: 'contain',
-                                  borderRadius: 1.5,
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  backgroundColor: 'grey.50',
-                                  p: 1,
-                                }}
-                              />
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </>
-                    ) : (
-                      <>
-                        {props.pattern_file_external && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              fontWeight={600}
-                              display="block"
-                              mb={0.75}
-                            >
-                              Current image
-                            </Typography>
-                            <Box
-                              component="img"
-                              loading="lazy"
-                              src={generatePbImage(props)}
-                              alt={`current external pattern for ${props.name}`}
-                              sx={{
-                                width: '100%',
-                                maxWidth: 280,
-                                height: 'auto',
-                                borderRadius: 1.5,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                backgroundColor: 'grey.50',
-                                p: 1,
-                              }}
-                            />
-                          </Box>
-                        )}
-
-                        <SvgDropZone
-                          accept=".webp,image/webp"
-                          acceptLabel=".webp only"
-                          label={
-                            props.pattern_file_external
-                              ? 'Drop a new WebP to replace, or click to browse'
-                              : 'Drop WebP image here or click to browse'
-                          }
-                          onFile={(f) => {
-                            if (!f.type.includes('webp')) {
-                              alert('Please upload a WebP file');
-                              return;
-                            }
-                            setPreviewExternalUrl(URL.createObjectURL(f));
-                            setExternalFile(f);
-                          }}
-                        />
-                      </>
-                    )}
-
-                    <Box sx={{ mt: 2 }}>
-                      <TextField
-                        label="External Pattern Link"
-                        variant="filled"
-                        fullWidth
-                        value={externalFileLink}
-                        onChange={(e) => setExternalFileLink(e.target.value)}
-                      />
-                    </Box>
-                  </TabPanel>
-                </TabContext>
-              </Box>
-
-              {/* ── Measurements ── */}
-              <FormSection label="Measurements" />
-
-              <TextField
-                fullWidth
-                variant="filled"
-                label="Pieces"
-                type="number"
-                value={pieces}
-                onChange={(e) => setPieces(e.target.value)}
-              />
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    label="Line Width"
-                    type="number"
-                    value={lineWidth}
-                    onChange={(e) => setLineWidth(e.target.value)}
-                  />
-                </Grid>
-                <UnitOfMeasurementSelect label="Line Width Unit" value={lineWidthUnit} onChange={setLineWidthUnit} />
-              </Grid>
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    label="Design Width"
-                    type="number"
-                    value={designWidth}
-                    onChange={(e) => setDesignWidth(e.target.value)}
-                  />
-                </Grid>
-                <UnitOfMeasurementSelect
-                  label="Design Width Unit"
-                  value={designWidthUnit}
-                  onChange={setDesignWidthUnit}
-                />
-              </Grid>
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    label="Design Height"
-                    type="number"
-                    value={designHeight}
-                    onChange={(e) => setDesignHeight(e.target.value)}
-                  />
-                </Grid>
-                <UnitOfMeasurementSelect
-                  label="Design Height Unit"
-                  value={designHeightUnit}
-                  onChange={setDesignHeightUnit}
-                />
-              </Grid>
-
-              {/* ── Metadata ── */}
-              <FormSection label="Metadata" />
-
-              <FancyAutocomplete
-                label="Tags"
-                freeSolo
-                serverSide
-                data={tagSearchData?.items ?? []}
-                value={tagValue}
-                onChange={handleTagChange}
-                inputValue={autoCompleteInputValue}
-                onInputChange={setAutoCompleteInputValue}
-                inheritedValues={inheritedTags}
-                loading={tagSearchFetching}
-              />
-
-              {/*<Typography variant="body2" color="text.secondary">
-                Total Tags Used: {allTagsData?.length}/500
-              </Typography>*/}
-
-              <FancyAutocompleteAuthors
-                label="Author"
-                data={authorData?.items || []}
-                value={authorValue}
-                onChange={setAuthorValue}
-                inputValue={authorAutoCompleteInputValue}
-                onInputChange={setAuthorAutoCompleteInputValue}
-              />
-
-              <FancyAutocomplete
-                label="Manual Author"
-                data={allManualAuthorsData}
-                value={manualAuthorValue}
-                freeSolo
-                onChange={setManualAuthorValue}
-                inputValue={manualAuthorAutoCompleteInputValue}
-                onInputChange={setManualAuthorAutoCompleteInputValue}
-              />
-
-              {/* ── Pattern Key Builder ── */}
-              {!props.pattern_file_external_link && (
-                <>
-                  <FormSection label="Pattern Key" />
-
-                  <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ mr: 'auto' }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        Pattern Key Builder
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Add key images to the legend
-                      </Typography>
-                    </Box>
-
-                    <TextField
-                      select
-                      size="small"
-                      label="Quick-add collection"
-                      sx={{ minWidth: 200 }}
-                      value={quickAddKeyCollection}
-                      onChange={(e) => setQuickAddKeyCollection(e.target.value)}
-                    >
-                      {patternKeyCollections?.map((item, index) => (
-                        <MenuItem key={`key-collection-quick-add-${index}`} value={JSON.stringify(item.collection)}>
-                          {item.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={handleClickQuickAddKeyCollection}
-                      disabled={!quickAddKeyCollection}
-                    >
-                      Apply
-                    </Button>
-                  </Stack>
-
-                  {isPendingPatternKeys && <CircularProgress size={20} />}
-
-                  {isErrorPatternKeys && (
-                    <Alert severity="error">
-                      Unable to load the pattern keys… that's probably not good. Try refreshing.
-                    </Alert>
-                  )}
-
-                  {patternKeys && (
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                          fullWidth
-                          select
-                          variant="filled"
-                          label="Key Image"
-                          value={newPatternKey.fullPath}
-                          slotProps={{
-                            select: {
-                              open: openKeySelectWindow,
-                              onOpen: handleOpenKeySelect,
-                              onClose: () => setOpenKeySelectWindow(false),
-                            },
-                          }}
-                          onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
-                        >
-                          {patternKeys.map((item) => (
-                            <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
-                              <Box
-                                component="img"
-                                loading="lazy"
-                                src={generatePbImagePatternKeyRef(item)}
-                                alt={`pattern-key-img-${item.id}`}
-                                sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
-                              />
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                          fullWidth
-                          variant="filled"
-                          label="Key Name"
-                          value={newPatternKey.name}
-                          onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
-                          sx={{ mb: 2 }}
-                        />
-                        <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
-                          <Button variant="outlined" color="error" onClick={handleResetChangePatternKey}>
-                            Reset
-                          </Button>
-                          <Button variant="outlined" color="success" onClick={() => handleAddPatternKey(newPatternKey)}>
-                            Add key
-                          </Button>
-                        </Stack>
-                      </Grid>
-                    </Grid>
-                  )}
-
-                  <Box>
-                    <Typography variant="body2" fontWeight={600} mb={0.5}>
-                      Assigned Keys
-                    </Typography>
-
-                    {!patternKeyObject?.length ? (
-                      <Alert severity="warning" variant="outlined">
-                        No keys have been assigned to this pattern yet.
-                      </Alert>
-                    ) : (
-                      <List disablePadding>
-                        {patternKeyObject.map((item) => (
-                          <ListItem
-                            key={item.fullPath}
-                            disableGutters
-                            divider
-                            secondaryAction={
-                              <IconButton
-                                aria-label="remove this pattern key"
-                                size="small"
-                                onClick={() => handleDeletePatternKey(item?.fullPath || '')}
-                              >
-                                <DeleteRoundedIcon fontSize="small" />
-                              </IconButton>
-                            }
-                          >
-                            <ListItemText
-                              primary={
-                                <Typography variant="body2" fontWeight={500}>
-                                  {item.name}
-                                </Typography>
-                              }
-                              secondary={
                                 <Box
                                   component="img"
                                   loading="lazy"
-                                  src={item.fullPath}
-                                  alt={`pattern-key-img-added-${item.name}`}
-                                  sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}
+                                  src={generatePbImage(props)}
+                                  alt={`current external pattern for ${props.name}`}
+                                  sx={{
+                                    width: '100%',
+                                    maxWidth: 280,
+                                    height: 'auto',
+                                    borderRadius: 1.5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    backgroundColor: 'grey.50',
+                                    p: 1,
+                                  }}
                                 />
+                              </Box>
+                            )}
+
+                            <SvgDropZone
+                              accept=".webp,image/webp"
+                              acceptLabel=".webp only"
+                              label={
+                                props.pattern_file_external
+                                  ? 'Drop a new WebP to replace, or click to browse'
+                                  : 'Drop WebP image here or click to browse'
                               }
+                              onFile={(f) => {
+                                if (!f.type.includes('webp')) {
+                                  alert('Please upload a WebP file');
+                                  return;
+                                }
+                                setPreviewExternalUrl(URL.createObjectURL(f));
+                                setExternalFile(f);
+                              }}
                             />
-                          </ListItem>
-                        ))}
-                      </List>
-                    )}
+                          </>
+                        )}
+
+                        <Box sx={{ mt: 2 }}>
+                          <TextField
+                            label="External Pattern Link"
+                            variant="filled"
+                            fullWidth
+                            value={externalFileLink}
+                            onChange={(e) => setExternalFileLink(e.target.value)}
+                          />
+                        </Box>
+                      </TabPanel>
+                    </TabContext>
                   </Box>
-                </>
-              )}
-            </Stack>
+
+                  {/* ── Measurements ── */}
+                  <FormSection label="Measurements" />
+
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Pieces"
+                    type="number"
+                    value={pieces}
+                    onChange={(e) => setPieces(e.target.value)}
+                  />
+
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        variant="filled"
+                        label="Line Width"
+                        type="number"
+                        value={lineWidth}
+                        onChange={(e) => setLineWidth(e.target.value)}
+                      />
+                    </Grid>
+                    <UnitOfMeasurementSelect
+                      label="Line Width Unit"
+                      value={lineWidthUnit}
+                      onChange={setLineWidthUnit}
+                    />
+                  </Grid>
+
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        variant="filled"
+                        label="Design Width"
+                        type="number"
+                        value={designWidth}
+                        onChange={(e) => setDesignWidth(e.target.value)}
+                      />
+                    </Grid>
+                    <UnitOfMeasurementSelect
+                      label="Design Width Unit"
+                      value={designWidthUnit}
+                      onChange={setDesignWidthUnit}
+                    />
+                  </Grid>
+
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        variant="filled"
+                        label="Design Height"
+                        type="number"
+                        value={designHeight}
+                        onChange={(e) => setDesignHeight(e.target.value)}
+                      />
+                    </Grid>
+                    <UnitOfMeasurementSelect
+                      label="Design Height Unit"
+                      value={designHeightUnit}
+                      onChange={setDesignHeightUnit}
+                    />
+                  </Grid>
+
+                  {/* ── Instructions ── */}
+                  <FormSection label="Instructions" />
+                  <GenericMarkdownEditor content={instructions} setContent={setInstructions} characterLimit={10000} />
+
+                  {/* ── Metadata ── */}
+                  <FormSection label="Metadata" />
+
+                  <FancyAutocomplete
+                    label="Tags"
+                    freeSolo
+                    serverSide
+                    data={tagSearchData?.items ?? []}
+                    value={tagValue}
+                    onChange={handleTagChange}
+                    inputValue={autoCompleteInputValue}
+                    onInputChange={setAutoCompleteInputValue}
+                    inheritedValues={inheritedTags}
+                    loading={tagSearchFetching}
+                  />
+
+                  {/*<Typography variant="body2" color="text.secondary">
+                Total Tags Used: {allTagsData?.length}/500
+              </Typography>*/}
+
+                  <FancyAutocompleteAuthors
+                    label="Author"
+                    data={authorData?.items || []}
+                    value={authorValue}
+                    onChange={setAuthorValue}
+                    inputValue={authorAutoCompleteInputValue}
+                    onInputChange={setAuthorAutoCompleteInputValue}
+                  />
+
+                  <FancyAutocomplete
+                    label="Manual Author"
+                    data={allManualAuthorsData}
+                    value={manualAuthorValue}
+                    freeSolo
+                    onChange={setManualAuthorValue}
+                    inputValue={manualAuthorAutoCompleteInputValue}
+                    onInputChange={setManualAuthorAutoCompleteInputValue}
+                  />
+
+                  {/* ── Pattern Key Builder ── */}
+                  {!props.pattern_file_external_link && (
+                    <>
+                      <FormSection label="Pattern Key" />
+
+                      <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ mr: 'auto' }}>
+                          <Typography variant="body2" fontWeight={600}>
+                            Pattern Key Builder
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Add key images to the legend
+                          </Typography>
+                        </Box>
+
+                        <TextField
+                          select
+                          size="small"
+                          label="Quick-add collection"
+                          sx={{ minWidth: 200 }}
+                          value={quickAddKeyCollection}
+                          onChange={(e) => setQuickAddKeyCollection(e.target.value)}
+                        >
+                          {patternKeyCollections?.map((item, index) => (
+                            <MenuItem key={`key-collection-quick-add-${index}`} value={JSON.stringify(item.collection)}>
+                              {item.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={handleClickQuickAddKeyCollection}
+                          disabled={!quickAddKeyCollection}
+                        >
+                          Apply
+                        </Button>
+                      </Stack>
+
+                      {isPendingPatternKeys && <CircularProgress size={20} />}
+
+                      {isErrorPatternKeys && (
+                        <Alert severity="error">
+                          Unable to load the pattern keys… that's probably not good. Try refreshing.
+                        </Alert>
+                      )}
+
+                      {patternKeys && (
+                        <Grid container spacing={2}>
+                          <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                              fullWidth
+                              select
+                              variant="filled"
+                              label="Key Image"
+                              value={newPatternKey.fullPath}
+                              slotProps={{
+                                select: {
+                                  open: openKeySelectWindow,
+                                  onOpen: handleOpenKeySelect,
+                                  onClose: () => setOpenKeySelectWindow(false),
+                                },
+                              }}
+                              onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
+                            >
+                              {patternKeys.map((item) => (
+                                <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
+                                  <Box
+                                    component="img"
+                                    loading="lazy"
+                                    src={generatePbImagePatternKeyRef(item)}
+                                    alt={`pattern-key-img-${item.id}`}
+                                    sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
+                                  />
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          </Grid>
+
+                          <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                              fullWidth
+                              variant="filled"
+                              label="Key Name"
+                              value={newPatternKey.name}
+                              onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
+                              sx={{ mb: 2 }}
+                            />
+                            <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
+                              <Button variant="outlined" color="error" onClick={handleResetChangePatternKey}>
+                                Reset
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="success"
+                                onClick={() => handleAddPatternKey(newPatternKey)}
+                              >
+                                Add key
+                              </Button>
+                            </Stack>
+                          </Grid>
+                        </Grid>
+                      )}
+
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} mb={0.5}>
+                          Assigned Keys
+                        </Typography>
+
+                        {!patternKeyObject?.length ? (
+                          <Alert severity="warning" variant="outlined">
+                            No keys have been assigned to this pattern yet.
+                          </Alert>
+                        ) : (
+                          <List disablePadding>
+                            {patternKeyObject.map((item) => (
+                              <ListItem
+                                key={item.fullPath}
+                                disableGutters
+                                divider
+                                secondaryAction={
+                                  <IconButton
+                                    aria-label="remove this pattern key"
+                                    size="small"
+                                    onClick={() => handleDeletePatternKey(item?.fullPath || '')}
+                                  >
+                                    <DeleteRoundedIcon fontSize="small" />
+                                  </IconButton>
+                                }
+                              >
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {item.name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box
+                                      component="img"
+                                      loading="lazy"
+                                      src={item.fullPath}
+                                      alt={`pattern-key-img-added-${item.name}`}
+                                      sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}
+                                    />
+                                  }
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                        )}
+                      </Box>
+                    </>
+                  )}
+                </Stack>
               </Box>
             </Box>
           )}

@@ -179,6 +179,7 @@ export const useMutationEditPattern = () => {
       // Insert the base data first
       formData.append('name', payload?.name || '');
       formData.append('description', payload?.description || '');
+      formData.append('instructions', payload?.instructions || '');
       formData.append('source_url', payload?.source_url || '');
       formData.append('tags', JSON.stringify(payload?.tags));
       formData.append('authors', JSON.stringify(payload?.authors));
