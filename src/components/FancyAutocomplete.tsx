@@ -28,6 +28,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
   return (
     <Autocomplete
       multiple
+      disableClearable
       filterSelectedOptions
       fullWidth
       id={`tags-filled-${props.label}`}
@@ -111,9 +112,10 @@ export const FancyAutocompleteAuthors = (props: FancyAutocompleteAuthorsProps) =
   const selectedOptions = filteredData.filter((option) => props?.value?.includes(option.id));
 
   return (
-    <Autocomplete<TypeFilteredAuthor, true>
+    <Autocomplete
       multiple
       fullWidth
+      disableClearable
       filterSelectedOptions
       id="author-autocomplete"
       options={filteredData}

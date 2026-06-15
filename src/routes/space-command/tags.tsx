@@ -321,7 +321,7 @@ interface SetParentDialogProps {
 }
 
 function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDialogProps) {
-  const [selectedParent, setSelectedParent] = useState<string | null>(null);
+  const [selectedParent, setSelectedParent] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -329,7 +329,7 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
 
   // Current parent from the hierarchy table
   const currentParent = useMemo(
-    () => (tag ? (hierarchy.find((h) => h.tag === tag.tag)?.parent_tag ?? null) : null),
+    () => (tag ? (hierarchy.find((h) => h.tag === tag.tag)?.parent_tag ?? undefined) : undefined),
     [tag, hierarchy],
   );
 
@@ -398,8 +398,9 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
         )}
 
         <Box sx={{ py: 2 }}>
-          <Autocomplete<string>
+          <Autocomplete
             options={options}
+            disableClearable
             value={selectedParent}
             onChange={(_, v) => setSelectedParent(v)}
             inputValue={inputValue}
@@ -431,7 +432,7 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
           <Button
             color="warning"
             onClick={async () => {
-              setSelectedParent(null);
+              setSelectedParent(undefined);
               setSaving(true);
               setError(null);
               try {

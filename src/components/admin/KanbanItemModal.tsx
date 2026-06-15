@@ -331,6 +331,7 @@ export const KanbanItemModal = ({
         <Autocomplete
           multiple
           freeSolo
+          disableClearable
           options={LABEL_SUGGESTIONS}
           value={labels}
           onChange={(_, v) => setLabels(v as string[])}

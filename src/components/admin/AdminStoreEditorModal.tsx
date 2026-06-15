@@ -301,6 +301,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
           <Autocomplete
             multiple
             freeSolo
+            disableClearable
             options={[]}
             value={tags}
             onChange={(_, newValue) => setTags(newValue as string[])}
