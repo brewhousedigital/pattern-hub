@@ -37,7 +37,9 @@ import {
   Box,
   Button,
   Chip,
+  Fade,
   IconButton,
+  LinearProgress,
   Paper,
   Skeleton,
   Stack,
@@ -152,12 +154,7 @@ const SortablePageRow = (props: SortablePageRowProps) => {
 
         <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
           <Tooltip title="View page">
-            <IconButton
-              size="small"
-              component={Link as any}
-              to={`/wiki/${cat.slug}/${page.slug}`}
-              target="_blank"
-            >
+            <IconButton size="small" component={Link as any} to={`/wiki/${cat.slug}/${page.slug}`} target="_blank">
               <FileOpenIcon sx={{ fontSize: '0.9rem' }} />
             </IconButton>
           </Tooltip>
@@ -172,7 +169,12 @@ const SortablePageRow = (props: SortablePageRowProps) => {
 
           <Tooltip title="Delete page">
             <span>
-              <IconButton size="small" color="error" disabled={!props.canDelete} onClick={() => props.onDeletePage(page)}>
+              <IconButton
+                size="small"
+                color="error"
+                disabled={!props.canDelete}
+                onClick={() => props.onDeletePage(page)}
+              >
                 <DeleteIcon sx={{ fontSize: '0.9rem' }} />
               </IconButton>
             </span>
@@ -205,12 +207,19 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
   const { category: cat, pages, categoryIndex, dragHandleProps } = props;
 
   const [localPages, setLocalPages] = useState<TypeWikiPage[]>(pages);
-  useEffect(() => {
-    setLocalPages(pages);
-  }, [pages]);
-
   const reorderPages = useMutationReorderWikiPages();
   const pageSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  useEffect(() => {
+    if (!pages.length) return;
+    if (pages.length > 1 && pages.every((p) => !p.order)) {
+      const initialized = pages.map((p, i) => ({ ...p, order: (i + 1) * 1000 }));
+      setLocalPages(initialized);
+      reorderPages.mutate(initialized.map((p) => ({ id: p.id, order: p.order })));
+    } else {
+      setLocalPages(pages);
+    }
+  }, [pages]);
 
   function handlePageDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -219,9 +228,20 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
       const oldIndex = prev.findIndex((p) => p.id === active.id);
       const newIndex = prev.findIndex((p) => p.id === over.id);
       const reordered = arrayMove(prev, oldIndex, newIndex);
-      reorderPages
-        .mutateAsync(reordered.map((p, i) => ({ id: p.id, order: i + 1 })))
-        .then(() => props.onRefetchPages());
+
+      const prevItem = reordered[newIndex - 1];
+      const nextItem = reordered[newIndex + 1];
+      let newOrder: number;
+      if (!prevItem) {
+        newOrder = (nextItem?.order ?? 1000) - 500;
+      } else if (!nextItem) {
+        newOrder = (prevItem?.order ?? 0) + 500;
+      } else {
+        newOrder = (prevItem.order + nextItem.order) / 2;
+      }
+
+      reordered[newIndex] = { ...reordered[newIndex], order: newOrder };
+      reorderPages.mutate([{ id: active.id as string, order: newOrder }]);
       return reordered;
     });
   }
@@ -280,6 +300,9 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
         </AccordionSummary>
 
         <AccordionDetails sx={{ px: 2, pt: 0, pb: 1.5 }}>
+          <Fade in={reorderPages.isPending} unmountOnExit>
+            <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />
+          </Fade>
           {localPages.length === 0 ? (
             <Typography variant="body2" color="text.disabled" sx={{ py: 1, pl: 1 }}>
               No pages yet -{' '}
@@ -388,7 +411,14 @@ function RouteComponent() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
-    if (categories.length) setLocalCategories(categories);
+    if (!categories.length) return;
+    if (categories.length > 1 && categories.every((c) => !c.order)) {
+      const initialized = categories.map((c, i) => ({ ...c, order: (i + 1) * 1000 }));
+      setLocalCategories(initialized);
+      reorderCategories.mutate(initialized.map((c) => ({ id: c.id, order: c.order })));
+    } else {
+      setLocalCategories(categories);
+    }
   }, [categories]);
 
   // Category modal state
@@ -455,9 +485,20 @@ function RouteComponent() {
       const oldIndex = prev.findIndex((c) => c.id === active.id);
       const newIndex = prev.findIndex((c) => c.id === over.id);
       const reordered = arrayMove(prev, oldIndex, newIndex);
-      reorderCategories
-        .mutateAsync(reordered.map((c, i) => ({ id: c.id, order: i + 1 })))
-        .then(() => refetchCats());
+
+      const prevItem = reordered[newIndex - 1];
+      const nextItem = reordered[newIndex + 1];
+      let newOrder: number;
+      if (!prevItem) {
+        newOrder = (nextItem?.order ?? 1000) - 500;
+      } else if (!nextItem) {
+        newOrder = (prevItem?.order ?? 0) + 500;
+      } else {
+        newOrder = (prevItem.order + nextItem.order) / 2;
+      }
+
+      reordered[newIndex] = { ...reordered[newIndex], order: newOrder };
+      reorderCategories.mutate([{ id: active.id as string, order: newOrder }]);
       return reordered;
     });
   }
@@ -526,36 +567,41 @@ function RouteComponent() {
           </Button>
         </Box>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-          <SortableContext items={localCategories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            <Stack gap={1}>
-              {localCategories.map((cat, catIndex) => {
-                const catPages = pages.filter((p) => p.category === cat.id);
-                return (
-                  <SortableCategoryWrapper key={cat.id} id={cat.id}>
-                    {({ dragHandleProps }) => (
-                      <CategoryAccordion
-                        category={cat}
-                        categoryIndex={catIndex}
-                        dragHandleProps={dragHandleProps}
-                        pages={catPages}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        canAdd={canAdd}
-                        onEditCategory={() => openEditCategory(cat)}
-                        onDeleteCategory={() => handleDeleteCategory(cat)}
-                        onAddPage={() => openCreatePage(cat.id)}
-                        onEditPage={openEditPage}
-                        onDeletePage={handleDeletePage}
-                        onRefetchPages={refetchPages}
-                      />
-                    )}
-                  </SortableCategoryWrapper>
-                );
-              })}
-            </Stack>
-          </SortableContext>
-        </DndContext>
+        <Box sx={{ position: 'relative' }}>
+          <Fade in={reorderCategories.isPending} unmountOnExit>
+            <LinearProgress sx={{ position: 'absolute', top: -10, left: 0, right: 0, borderRadius: 1 }} />
+          </Fade>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+            <SortableContext items={localCategories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+              <Stack gap={1}>
+                {localCategories.map((cat, catIndex) => {
+                  const catPages = pages.filter((p) => p.category === cat.id);
+                  return (
+                    <SortableCategoryWrapper key={cat.id} id={cat.id}>
+                      {({ dragHandleProps }) => (
+                        <CategoryAccordion
+                          category={cat}
+                          categoryIndex={catIndex}
+                          dragHandleProps={dragHandleProps}
+                          pages={catPages}
+                          canEdit={canEdit}
+                          canDelete={canDelete}
+                          canAdd={canAdd}
+                          onEditCategory={() => openEditCategory(cat)}
+                          onDeleteCategory={() => handleDeleteCategory(cat)}
+                          onAddPage={() => openCreatePage(cat.id)}
+                          onEditPage={openEditPage}
+                          onDeletePage={handleDeletePage}
+                          onRefetchPages={refetchPages}
+                        />
+                      )}
+                    </SortableCategoryWrapper>
+                  );
+                })}
+              </Stack>
+            </SortableContext>
+          </DndContext>
+        </Box>
       )}
 
       <AdminWikiCategoryModal open={catModalOpen} onClose={() => setCatModalOpen(false)} category={selectedCat} />

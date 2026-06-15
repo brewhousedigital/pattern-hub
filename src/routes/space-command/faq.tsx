@@ -21,7 +21,19 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded';
 
-import { Box, Typography, Card, CardContent, IconButton, Tooltip, Skeleton, Alert, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  IconButton,
+  Tooltip,
+  Skeleton,
+  Alert,
+  Stack,
+  LinearProgress,
+  Fade,
+} from '@mui/material';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import { enqueueSnackbar } from 'notistack';
 
@@ -136,7 +148,15 @@ function RouteComponent() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
-    if (faqs) setLocalFaqs(faqs);
+    if (!faqs) return;
+    if (faqs.length > 1 && faqs.every((f) => !f.order)) {
+      // One-time bootstrap: assign wide spacing so fractional drags have room
+      const initialized = faqs.map((f, i) => ({ ...f, order: (i + 1) * 1000 }));
+      setLocalFaqs(initialized);
+      reorderFaqs.mutate(initialized.map((f) => ({ id: f.id, order: f.order })));
+    } else {
+      setLocalFaqs(faqs);
+    }
   }, [faqs]);
 
   function openCreate() {
@@ -170,7 +190,22 @@ function RouteComponent() {
       const oldIndex = prev.findIndex((f) => f.id === active.id);
       const newIndex = prev.findIndex((f) => f.id === over.id);
       const reordered = arrayMove(prev, oldIndex, newIndex);
-      reorderFaqs.mutateAsync(reordered.map((f, i) => ({ id: f.id, order: i + 1 }))).then(() => refetch());
+
+      const prevItem = reordered[newIndex - 1];
+      const nextItem = reordered[newIndex + 1];
+      let newOrder: number;
+      if (!prevItem) {
+        newOrder = (nextItem?.order ?? 1000) - 500;
+      } else if (!nextItem) {
+        newOrder = (prevItem?.order ?? 0) + 500;
+      } else {
+        newOrder = (prevItem.order + nextItem.order) / 2;
+      }
+
+      // Update order in local state so subsequent drags compute correctly
+      reordered[newIndex] = { ...reordered[newIndex], order: newOrder };
+      // Only the moved item needs to be updated
+      reorderFaqs.mutate([{ id: active.id as string, order: newOrder }]);
       return reordered;
     });
   }
@@ -211,24 +246,29 @@ function RouteComponent() {
           ))}
         </Box>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localFaqs.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {localFaqs.map((faq, index) => (
-                <SortableFAQCard
-                  key={faq.id}
-                  faq={faq}
-                  index={index}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
-                  isDeleteLoading={isDeleteLoading}
-                  onEdit={() => openEdit(faq)}
-                  onDelete={() => handleDelete(faq.id, faq.title)}
-                />
-              ))}
-            </Box>
-          </SortableContext>
-        </DndContext>
+        <Box sx={{ position: 'relative' }}>
+          <Fade in={reorderFaqs.isPending} unmountOnExit>
+            <LinearProgress sx={{ position: 'absolute', top: -10, left: 0, right: 0, borderRadius: 1 }} />
+          </Fade>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={localFaqs.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {localFaqs.map((faq, index) => (
+                  <SortableFAQCard
+                    key={faq.id}
+                    faq={faq}
+                    index={index}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    isDeleteLoading={isDeleteLoading}
+                    onEdit={() => openEdit(faq)}
+                    onDelete={() => handleDelete(faq.id, faq.title)}
+                  />
+                ))}
+              </Box>
+            </SortableContext>
+          </DndContext>
+        </Box>
       )}
 
       <AdminFAQEditorModal open={dialogOpen} onClose={() => setDialogOpen(false)} faq={selected} />
