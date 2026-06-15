@@ -25,28 +25,25 @@ export const AdminPatternTableHowToSearch = () => {
             <AccordionDetails>
               <MarkdownWrapper>
                 {`
-Use the search to filter the returned patterns list. For example:
-\`name = 'Vulva'\` will return an exact match of the name. The value you're searching for must contain quote signs around it
+Type a filter expression into the search bar to narrow the patterns list.
 
-If you want to do a partial match, you can use the \`~\` operator. For example:
-\`name ~ 'Vul'\` will return any pattern with "Vul" in the name, such as "Vulva" or "Vulture"
+**Exact match** \`name = 'Toucan'\` string values must be wrapped in single quotes.
 
-You can also combine multiple conditions using logical operators. For example:
-\`(name ~ 'moon' && created > '2022-01-01')\`
-This will return patterns with "moon" in the name (case-insensitive) that were created after January 1, 2022.
+**Partial match** \`name ~ 'moon'\` returns anything containing "moon" (case-insensitive), e.g. "Moonrise", "Half Moon".
 
-You can use parentheses to group conditions and control the order of evaluation. For example:
-\`(name ~ 'Clock' || name ~ 'Sun') && created > '2022-01-01'\`
-This will return patterns with "Clock" or "Sun" in the name that were created after January 1, 2022.
+**Negation** \`name !~ 'clock'\` excludes any pattern whose name contains "clock". Watch out for partial matches: searching \`!~ 'lock'\` would also exclude "Clockwork".
 
-You can also use the \`!\` operator to negate conditions. For example:
-\`name !~ 'Clock'\`
-This will return patterns that do not have "Clock" in any part of the name. This can be tricky if you do a partial match search for \`lock\` because \`lock\` will be a partial match for \`Clock\`.
+**Numbers** no quotes needed. \`pieces > 100\` or \`size_width_in >= 8\`.
 
-You can combine this with other conditions as well. For example:
-\`name !~ 'clock' && created > '2022-01-01'\`
-This will return patterns that do not have "clock" in the name and were created after January 1, 2022.
-          `}
+**Booleans**  use \`true\` or \`false\` without quotes. \`is_draft = true\` shows only draft patterns. \`has_layers = true\` shows only patterns with layer data.
+
+**Dates** wrap in single quotes. \`created > '2024-01-01'\`.
+
+**Arrays** use \`?~\` to search inside tags, author_manual, or pattern_key_reference_list. \`tags ?~ 'bird'\` returns any pattern that has "bird" as one of its tags.
+
+**Combining** use \`&&\` (AND) and \`||\` (OR), and parentheses to group:
+\`(name ~ 'Clock' || name ~ 'Sun') && has_layers = true\`
+                `}
               </MarkdownWrapper>
             </AccordionDetails>
           </Accordion>
@@ -54,82 +51,156 @@ This will return patterns that do not have "clock" in the name and were created 
 
         <MarkdownWrapper>
           {`
-# Filter expressions to filter/search:
+# Filter expressions
 
 \`\`\`
-name ~ 'moon' && created > '2022-01-01'
+name ~ 'moon' && created > '2024-01-01'
 \`\`\`
 
-## Supported record filter fields:
+---
 
-String / Number / Dates:
+## String fields
+Wrap values in single quotes. Use \`=\` for exact match, \`~\` for partial match.
 
 \`\`\`
 id,
 name,
 description,
 instructions,
-pieces,
-design_width,
-design_height,
-line_width,
-design_date,
-updated,
-created
+source_url,
+design_width_unit,
+design_height_unit,
+line_width_unit
 \`\`\`
-
-For strings and dates, the value has to be wrapped in quote signs. For numbers, you can leave it as is
 
 \`\`\`
 name = 'Toucan'
-pieces > 3
-updated > '2022-01-01'
-\`\`\`
-
-The columns below require the \`contains\` search to be able to look through the array of tags for a match:
-
-\`\`\`
-tags ?~ '2026'
-author_manual ?~ 'cline glass co.'
-pattern_key_reference_list ?~ 'Wire Overlay'
-
-// Or search by a pattern key reference image name like so:
-pattern_key_reference_list ?~ 'dashed_line_8thab5zref.svg'
-\`\`\`
-
-Authors with linked accounts can be searched like so:
-
-\`\`\`
-authors.name = 'Claycorp'
+name ~ 'moon'
+name !~ 'clock'
+description ~ 'beginner'
+source_url ~ 'etsy'
+design_width_unit = 'in'
 \`\`\`
 
 ---
 
-The syntax follows the format \`OPERAND OPERATOR OPERAND\`, where:
+## Number fields
+No quotes needed.
 
-\`OPERAND\` - could be any field literal, string (single or double-quoted), number, null, true, false
+\`\`\`
+pieces,
+design_width,
+design_height,
+line_width,
+pattern_file_size,
+size_width_in,
+size_width_cm,
+size_width_mm,
+size_height_in,
+size_height_cm,
+size_height_mm,
+avg_rating,
+total_ratings,
+avg_difficulty,
+total_difficulty_ratings,
+favorite_count,
+tag_count
+\`\`\`
 
-\`OPERATOR\` - is one of:
-- \`=\` Equal
-- \`!=\` NOT equal
-- \`>\` Greater than
-- \`>=\` Greater than or equal
-- \`<\` Less than
-- \`<=\` Less than or equal
-- \`~\` Like/Contains (if not specified auto wraps the right string OPERAND in a "%" for wildcard match)
-- \`!~\` NOT Like/Contains (if not specified auto wraps the right string OPERAND in a "%" for wildcard match)
-- \`?=\` Any/At least one of Equal
-- \`?!=\` Any/At least one of NOT equal
-- \`?>\` Any/At least one of Greater than
-- \`?>=\` Any/At least one of Greater than or equal
-- \`?<\` Any/At least one of Less than
-- \`?<=\` Any/At least one of Less than or equal
-- \`?~\` Any/At least one of Like/Contains (if not specified auto wraps the right string OPERAND in a "%" for wildcard match)
-- \`?!~\` Any/At least one of NOT Like/Contains (if not specified auto wraps the right string OPERAND in a "%" for wildcard match)
+\`\`\`
+pieces > 100
+pieces >= 50 && pieces <= 200
+design_width > 10
+size_width_in >= 8 && size_width_in <= 12
+size_height_cm > 20
+pattern_file_size > 500000
+avg_rating > 4
+total_ratings >= 10
+favorite_count > 0
+tag_count >= 5
+\`\`\`
 
-To group and combine several expressions you can use parenthesis \`(...)\`, \`&&\` (AND) and \`||\` (OR) tokens.
+---
 
-Field expressions with array-like value or nested fields that originate from a source with multiple records will apply a match-all constraint by default. If you want any/at-least-one-of type of constraint for such fields you'll have to prefix your operator with ? (e.g. multiRelation.title ?= "test").
+## Date fields
+Wrap values in single quotes.
+
+\`\`\`
+design_date,
+created,
+updated
+\`\`\`
+
+\`\`\`
+design_date > '2020-01-01'
+created > '2024-06-01'
+updated > '2025-01-01'
+created > '2024-01-01' && created < '2025-01-01'
+\`\`\`
+
+---
+
+## Boolean fields
+
+\`\`\`
+is_draft,
+has_layers,
+isDeleted
+\`\`\`
+
+\`\`\`
+is_draft = true
+is_draft = false
+has_layers = true
+isDeleted = true
+\`\`\`
+
+---
+
+## Array / relation fields
+These require the \`?~\` (any/at-least-one contains) operator to search inside the array.
+
+\`\`\`
+tags ?~ 'bird'
+tags ?~ '2026'
+author_manual ?~ 'cline glass co.'
+pattern_key_reference_list ?~ 'Wire Overlay'
+pattern_key_reference_list ?~ 'dashed_line_8thab5zref.svg'
+\`\`\`
+
+Authors with linked accounts:
+\`\`\`
+authors.name = 'Claycorp'
+authors.name ~ 'clay'
+\`\`\`
+
+---
+
+## Combining conditions
+
+\`\`\`
+name ~ 'moon' && created > '2024-01-01'
+(name ~ 'Clock' || name ~ 'Sun') && pieces > 50
+tags ?~ 'animal' && has_layers = true
+is_draft = true && created > '2025-01-01'
+avg_rating > 4 && total_ratings >= 5
+size_width_in >= 8 && size_width_in <= 14 && size_height_in >= 8
+\`\`\`
+
+---
+
+## Operator reference
+
+| Operator | Meaning |
+|----------|---------|
+| \`=\` | Equal |
+| \`!=\` | Not equal |
+| \`>\` \`>=\` \`<\` \`<=\` | Comparison |
+| \`~\` | Like / contains |
+| \`!~\` | Not like / not contains |
+| \`?=\` \`?~\` etc. | Any-of (use for array fields) |
+| \`&&\` | AND |
+| \`||\` | OR |
           `}
         </MarkdownWrapper>
       </BorderedCard>
