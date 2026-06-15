@@ -96,7 +96,7 @@ const ViewDrawerContainer = () => {
 
   const { setPatternId, patternId } = usePatternSearch();
 
-  const { viewData } = usePatternViewData(patternId);
+  const { viewData, isPending } = usePatternViewData(patternId);
 
   const handleClose = () => {
     handleCloseView();
@@ -121,7 +121,7 @@ const ViewDrawerContainer = () => {
         },
       }}
     >
-      <ViewDrawer viewData={viewData} handleClose={handleClose} />
+      <ViewDrawer viewData={viewData} handleClose={handleClose} isLoading={isPending} />
     </SwipeableDrawer>
   );
 };

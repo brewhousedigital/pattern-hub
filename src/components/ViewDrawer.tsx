@@ -6,11 +6,13 @@ import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
 
-import { Box, Container } from '@mui/material';
+import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded';
+import { Box, Button, Container, Typography } from '@mui/material';
 
 type ViewDrawerProps = {
   viewData: TypePatternResponse | undefined;
   handleClose?: () => void;
+  isLoading?: boolean;
 };
 
 export const ViewDrawer = (props: ViewDrawerProps) => {
@@ -26,6 +28,37 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
       handleCloseView();
     }
   }, [patternId]);
+
+  const notFound = !props.isLoading && patternId && !viewData;
+
+  if (notFound) {
+    return (
+      <Box
+        sx={{
+          backgroundColor: 'background.default',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+          py: 10,
+          px: 3,
+          textAlign: 'center',
+        }}
+      >
+        <SearchOffRoundedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+        <Typography variant="h6" fontWeight={600}>
+          Pattern not found
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
+          This pattern may have been removed or the link may be incorrect.
+        </Typography>
+        <Button variant="outlined" onClick={props.handleClose}>
+          Return to search
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ backgroundColor: 'background.default' }}>
