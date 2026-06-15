@@ -303,6 +303,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [previewExternalUrl, setPreviewExternalUrl] = React.useState<string | null>(null);
   const [externalFileLink, setExternalFileLink] = React.useState(props?.pattern_file_external_link || '');
 
+  // Draft mode
+  const [isDraft, setIsDraft] = React.useState(props?.is_draft ?? false);
+
   // Layers
   const [hasLayers, setHasLayers] = React.useState(props?.has_layers ?? false);
   const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>(props?.layers_map ?? []);
@@ -384,6 +387,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setDesignDate(dayjs());
     setHasLayers(false);
     setLayersMap([]);
+    setIsDraft(false);
   };
 
   React.useEffect(() => {
@@ -446,6 +450,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
       payload.has_layers = hasLayers;
       payload.layers_map = hasLayers ? layersMap : [];
+      payload.is_draft = isDraft;
 
       if (file && previewUrl) {
         const sanitizedFile = await sanitizeSvgFile(file);
@@ -573,6 +578,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             </Alert>
           ) : (
             <Stack spacing={2.5} sx={{ py: 1 }}>
+              {/* ── Status ── */}
+              {isDraft && (
+                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                  This pattern is in <strong>Draft Mode</strong> and is not visible to the public.
+                </Alert>
+              )}
+
               {/* ── Info ── */}
               <FormSection label="Pattern Info" />
 
@@ -614,6 +626,16 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   </Stack>
                 }
                 error={description?.length > 2000}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isDraft}
+                    onChange={(e) => setIsDraft(e.target.checked)}
+                  />
+                }
+                label="Draft Mode (hidden from public)"
               />
 
               <AdminPatternInstructionsModal callback={props.callback} largeButton {...props} />

@@ -69,7 +69,7 @@ export const useQuerySearchPatternsForPicker = (search: string) => {
     queryKey: ['PatternPickerSearch', search],
     queryFn: async (): Promise<TypePatternResponse[]> => {
       const safe = search.trim().replace(/"/g, '\\"');
-      const filter = safe ? `isDeleted=false && (name~"${safe}" || description~"${safe}")` : 'isDeleted=false';
+      const filter = safe ? `isDeleted=false && is_draft=false && (name~"${safe}" || description~"${safe}")` : 'isDeleted=false && is_draft=false';
       const result = await pocketbase.collection('patterns').getList<TypePatternResponse>(1, 20, {
         filter,
         sort: 'name',

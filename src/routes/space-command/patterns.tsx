@@ -21,6 +21,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 
 import {
   Box,
@@ -84,6 +85,24 @@ function RouteComponent() {
       filterable: false,
       disableColumnMenu: true,
       width: 150,
+    },
+    {
+      field: 'is_draft',
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      headerName: 'Draft',
+      width: 60,
+      renderCell: (params: GridRenderCellParams<TypePatternResponse>) => {
+        if (!params.value) return '';
+        return (
+          <Box sx={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+            <Tooltip title="Draft">
+              <VisibilityOffRoundedIcon fontSize="small" color="warning" />
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       field: 'description',
@@ -352,6 +371,7 @@ function CustomToolbar() {
           design_date={dayjs()}
           has_layers={false}
           layers_map={[]}
+          is_draft={false}
         />
 
         <OpenAdminPatternTableHowToSearchButton />

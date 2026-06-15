@@ -39,6 +39,7 @@ export type TypePatternResponse = {
   size_height_in?: number;
   size_height_cm?: number;
   size_height_mm?: number;
+  is_draft: boolean;
   tag_count?: number;
   avg_rating?: number;
   total_ratings?: number;
@@ -75,7 +76,7 @@ export type TypePatternKeyTableResponse = {
 export const useQueryGetAllPatternsByPagination = () => {
   const { filter, pageNumber, sort } = usePatternSearch();
 
-  let includeIsDeletedFilter = `isDeleted = false`;
+  let includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
 
   if (filter) {
     includeIsDeletedFilter = filter + ' && ' + includeIsDeletedFilter;
@@ -121,7 +122,7 @@ export const useQueryGetPatternsByAuthor = (userId: string, page: number) => {
     queryKey: ['GetPatternsByAuthor', userId, page],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(page, 8, {
-        filter: `authors ~ '${userId}' && isDeleted = false`,
+        filter: `authors ~ '${userId}' && isDeleted = false && is_draft = false`,
         sort: '-created',
       });
     },
@@ -157,6 +158,7 @@ export type TypePatternCreatePayload = {
   design_date?: Date | Dayjs | null;
   has_layers?: boolean;
   layers_map?: TypePatternLayersMapItem[];
+  is_draft?: boolean;
 };
 
 function r4(n: number) {
@@ -237,6 +239,7 @@ export const useMutationEditPattern = () => {
       formData.append('has_layers', String(payload?.has_layers ?? false));
       formData.append('layers_map', JSON.stringify(payload?.layers_map ?? []));
       formData.append('tag_count', String(payload?.tags?.length ?? 0));
+      formData.append('is_draft', String(payload?.is_draft ?? false));
 
       if (payload?.id) {
         return await pocketbase.collection('patterns').update(payload?.id, formData);
@@ -394,7 +397,7 @@ export const useQueryGetAllPatternsForKeyMgmt = () => {
     queryKey: ['GetAllPatternsForKeyMgmt'],
     queryFn: async (): Promise<TypePatternResponse[]> => {
       return await pocketbase.collection('patterns').getFullList({
-        filter: 'isDeleted = false',
+        filter: 'isDeleted = false && is_draft = false',
         sort: 'name',
         fields: 'id,name,pattern_key_reference_list',
       });
