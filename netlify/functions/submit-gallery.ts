@@ -149,8 +149,8 @@ export default async (req: Request) => {
   // 8. Upload to ImageKit
   const ikForm = new FormData();
   ikForm.append('file', uploadBlob, sanitizedName);
-  ikForm.append('fileName', sanitizedName);
-  ikForm.append('folder', `/user-gallery/${userId}/`);
+  ikForm.append('fileName', `${userId}_${sanitizedName}`);
+  ikForm.append('folder', `/pattern-archive/user-gallery/`);
   ikForm.append('useUniqueFileName', 'true');
   ikForm.append('tags', 'user-gallery');
   ikForm.append('extensions', AI_TASK_EXTENSIONS);
