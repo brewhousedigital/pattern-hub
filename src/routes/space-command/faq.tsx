@@ -7,7 +7,6 @@ import {
   type TypeFAQItem,
 } from '@/functions/database/faq';
 import { AdminFAQEditorModal } from '@/components/admin/AdminFAQEditorModal';
-import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
@@ -25,7 +24,6 @@ import {
   Box,
   Typography,
   Card,
-  CardContent,
   IconButton,
   Tooltip,
   Skeleton,
@@ -33,7 +31,9 @@ import {
   Stack,
   LinearProgress,
   Fade,
+  Chip,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import { enqueueSnackbar } from 'notistack';
 
@@ -44,6 +44,21 @@ export const Route = createFileRoute('/space-command/faq')({
   }),
 });
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^\s*[-*+]\s/gm, '')
+    .replace(/^\s*\d+\.\s/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+}
+
 // ─── Sortable card ────────────────────────────────────────────────────────────
 
 type SortableFAQCardProps = {
@@ -52,13 +67,16 @@ type SortableFAQCardProps = {
   canEdit: boolean;
   canDelete: boolean;
   isDeleteLoading: boolean;
+  isSaving: boolean;
   onEdit: () => void;
   onDelete: () => void;
 };
 
 const SortableFAQCard = (props: SortableFAQCardProps) => {
-  const { faq, index } = props;
+  const { faq, index, isSaving } = props;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: faq.id });
+
+  const preview = stripMarkdown(faq.content);
 
   return (
     <div
@@ -71,56 +89,102 @@ const SortableFAQCard = (props: SortableFAQCardProps) => {
         zIndex: isDragging ? 10 : 0,
       }}
     >
-      <Card variant="outlined" sx={{ '&:hover': { borderColor: 'success.light' } }}>
-        <CardContent sx={{ pb: 1 }}>
-          <Stack direction="row" sx={{ mb: 2, alignItems: 'center', gap: 1 }}>
-            <Box
-              {...attributes}
-              {...listeners}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                cursor: isDragging ? 'grabbing' : 'grab',
-                flexShrink: 0,
-                touchAction: 'none',
-              }}
-            >
-              <DragIndicatorRoundedIcon sx={{ fontSize: '1rem', color: 'text.disabled' }} />
-              <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 500 }}>
-                #{index + 1}
-              </Typography>
-            </Box>
-
-            <Typography fontWeight={500} sx={{ flex: 1, minWidth: 0 }}>
-              {faq.title}
+      <Card
+        elevation={0}
+        sx={{
+          border: '1px solid',
+          borderColor: isSaving ? 'primary.light' : 'divider',
+          borderRadius: 3,
+          overflow: 'hidden',
+          transition: 'border-color 0.2s, box-shadow 0.2s',
+          '&:hover': {
+            borderColor: 'primary.light',
+            boxShadow: (t) => `0 4px 16px ${alpha(t.palette.common.black, 0.06)}`,
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+          {/* Drag zone */}
+          <Box
+            {...attributes}
+            {...listeners}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.5,
+              width: 52,
+              flexShrink: 0,
+              cursor: isDragging ? 'grabbing' : 'grab',
+              backgroundColor: (t) => alpha(t.palette.text.primary, 0.02),
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              py: 2,
+              touchAction: 'none',
+              color: 'text.disabled',
+              transition: 'background-color 0.15s, color 0.15s',
+              '&:hover': {
+                backgroundColor: (t) => alpha(t.palette.primary.main, 0.05),
+                color: 'text.secondary',
+              },
+            }}
+          >
+            <DragIndicatorRoundedIcon sx={{ fontSize: '1rem' }} />
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.6rem', letterSpacing: 0.5 }}>
+              #{index + 1}
             </Typography>
-
-            <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-              <Tooltip title="Edit">
-                <IconButton disabled={!props.canEdit} size="small" onClick={props.onEdit}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Delete">
-                <IconButton
-                  loading={props.isDeleteLoading}
-                  size="small"
-                  color="error"
-                  onClick={props.onDelete}
-                  disabled={props.isDeleteLoading || !props.canDelete}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Stack>
-
-          <Box sx={{ maxHeight: 100, overflowY: 'scroll', textOverflow: 'ellipsis' }}>
-            <MarkdownWrapper>{faq.content}</MarkdownWrapper>
           </Box>
-        </CardContent>
+
+          {/* Content */}
+          <Box sx={{ flex: 1, px: 2.5, py: 2, minWidth: 0 }}>
+            <Stack direction="row" alignItems="flex-start" gap={1.5}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: preview ? 0.5 : 0, lineHeight: 1.4 }}>
+                  {faq.title}
+                </Typography>
+                {preview && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {preview}
+                  </Typography>
+                )}
+              </Box>
+
+              <Stack direction="row" gap={0.5} sx={{ flexShrink: 0, mt: -0.5 }}>
+                <Tooltip title="Edit">
+                  <IconButton size="small" disabled={!props.canEdit} onClick={props.onEdit}>
+                    <EditIcon sx={{ fontSize: '0.95rem' }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete">
+                  <IconButton
+                    loading={props.isDeleteLoading}
+                    size="small"
+                    color="error"
+                    onClick={props.onDelete}
+                    disabled={props.isDeleteLoading || !props.canDelete}
+                  >
+                    <DeleteIcon sx={{ fontSize: '0.95rem' }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Stack>
+          </Box>
+        </Box>
+
+        <Fade in={isSaving} unmountOnExit>
+          <LinearProgress sx={{ height: 2 }} />
+        </Fade>
       </Card>
     </div>
   );
@@ -150,7 +214,6 @@ function RouteComponent() {
   useEffect(() => {
     if (!faqs) return;
     if (faqs.length > 1 && faqs.every((f) => !f.order)) {
-      // One-time bootstrap: assign wide spacing so fractional drags have room
       const initialized = faqs.map((f, i) => ({ ...f, order: (i + 1) * 1000 }));
       setLocalFaqs(initialized);
       reorderFaqs.mutate(initialized.map((f) => ({ id: f.id, order: f.order })));
@@ -178,7 +241,6 @@ function RouteComponent() {
       } catch (error: any) {
         enqueueSnackbar(`Unable to delete FAQ item: ${error.message}`, { variant: 'error' });
       }
-
       setIsDeleteLoading(false);
     }
   };
@@ -202,13 +264,13 @@ function RouteComponent() {
         newOrder = (prevItem.order + nextItem.order) / 2;
       }
 
-      // Update order in local state so subsequent drags compute correctly
       reordered[newIndex] = { ...reordered[newIndex], order: newOrder };
-      // Only the moved item needs to be updated
       reorderFaqs.mutate([{ id: active.id as string, order: newOrder }]);
       return reordered;
     });
   }
+
+  const pendingSaveId = reorderFaqs.isPending ? reorderFaqs.variables?.[0]?.id : undefined;
 
   return (
     <>
@@ -225,13 +287,15 @@ function RouteComponent() {
         disabled={!canAdd}
       />
 
-      <Typography sx={{ mb: 2 }}>
-        Need help with Markdown?{' '}
-        <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
-          Use this cheatsheet
-        </a>
-        .
-      </Typography>
+      <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="caption" sx={{ mb: 2 }}>
+          Need help with Markdown?{' '}
+          <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
+            Use this cheatsheet
+          </a>
+          .
+        </Typography>
+      </Box>
 
       {isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -240,35 +304,58 @@ function RouteComponent() {
       )}
 
       {isPending ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Stack gap={1.5}>
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rounded" height={80} />
+            <Skeleton key={i} variant="rounded" height={76} sx={{ borderRadius: 3 }} />
           ))}
+        </Stack>
+      ) : localFaqs.length === 0 ? (
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 8,
+            border: '1px dashed',
+            borderColor: 'divider',
+            borderRadius: 3,
+          }}
+        >
+          <Typography color="text.secondary" gutterBottom>
+            No FAQ items yet.
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.disabled"
+            component="a"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (canAdd) openCreate();
+            }}
+            sx={{ textDecoration: 'underline', cursor: canAdd ? 'pointer' : 'default' }}
+          >
+            Add the first one
+          </Typography>
         </Box>
       ) : (
-        <Box sx={{ position: 'relative' }}>
-          <Fade in={reorderFaqs.isPending} unmountOnExit>
-            <LinearProgress sx={{ position: 'absolute', top: -10, left: 0, right: 0, borderRadius: 1 }} />
-          </Fade>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={localFaqs.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {localFaqs.map((faq, index) => (
-                  <SortableFAQCard
-                    key={faq.id}
-                    faq={faq}
-                    index={index}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    isDeleteLoading={isDeleteLoading}
-                    onEdit={() => openEdit(faq)}
-                    onDelete={() => handleDelete(faq.id, faq.title)}
-                  />
-                ))}
-              </Box>
-            </SortableContext>
-          </DndContext>
-        </Box>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localFaqs.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+            <Stack gap={1.5}>
+              {localFaqs.map((faq, index) => (
+                <SortableFAQCard
+                  key={faq.id}
+                  faq={faq}
+                  index={index}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  isDeleteLoading={isDeleteLoading}
+                  isSaving={pendingSaveId === faq.id}
+                  onEdit={() => openEdit(faq)}
+                  onDelete={() => handleDelete(faq.id, faq.title)}
+                />
+              ))}
+            </Stack>
+          </SortableContext>
+        </DndContext>
       )}
 
       <AdminFAQEditorModal open={dialogOpen} onClose={() => setDialogOpen(false)} faq={selected} />
