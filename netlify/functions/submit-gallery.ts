@@ -131,7 +131,7 @@ export default async (req: Request) => {
   try {
     const originalBuffer = Buffer.from(await file.arrayBuffer());
     const processedBuffer = await sharp(originalBuffer)
-      .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 85 })
       .toBuffer();
 
