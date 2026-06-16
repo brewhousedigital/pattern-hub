@@ -124,7 +124,7 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Stack direction="row" spacing={1.25} alignItems="center">
+        <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
           <Avatar
             sx={{
               width: 30,
@@ -137,10 +137,10 @@ function RouteComponent() {
             {initialsOf(params.row.name)}
           </Avatar>
           <Box>
-            <Typography fontSize={13} fontWeight={600} lineHeight={1.3}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
               {params.row.name || <em style={{ opacity: 0.5 }}>No name</em>}
             </Typography>
-            <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+            <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
               {params.row.id}
             </Typography>
           </Box>
@@ -155,7 +155,7 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Typography fontSize={13} color="text.secondary">
+        <Typography sx={{ fontSize: 13 }} color="text.secondary">
           {params.row.email || '-'}
         </Typography>
       ),
@@ -195,7 +195,7 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Typography fontSize={12} color="text.secondary">
+        <Typography sx={{ fontSize: 12 }} color="text.secondary">
           {formatDate(params.row.created)}
         </Typography>
       ),
@@ -208,7 +208,7 @@ function RouteComponent() {
       disableColumnMenu: true,
       align: 'center',
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Stack direction="row" spacing={0.25} justifyContent="center">
+        <Stack direction="row" spacing={0.25} sx={{ justifyContent: 'center' }}>
           <Tooltip title={canEdit ? 'Edit permissions' : 'Requires ADMINS_AU permission'}>
             <span>
               <IconButton size="small" disabled={!canEdit} onClick={() => setPermTarget(params.row)}>

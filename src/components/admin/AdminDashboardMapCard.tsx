@@ -37,7 +37,7 @@ export const AdminDashboardMapCard = () => {
             </Box>
           </Box>
 
-          <Typography variant="h4" fontWeight={700} lineHeight={1} mb={0.75}>
+          <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
             {(data?.totalItems ?? 0).toLocaleString()}
           </Typography>
 

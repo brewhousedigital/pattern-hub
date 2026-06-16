@@ -105,7 +105,7 @@ function RouteComponent() {
                     sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 4, md: 0 } }}
                   >
                     <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-                      <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.4px', mb: 0.5 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}>
                         {collection.name}
                       </Typography>
 

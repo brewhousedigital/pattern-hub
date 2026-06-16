@@ -42,10 +42,8 @@ export const AdminDashboardComplaintsCard = () => {
 
           <Typography
             variant="h4"
-            fontWeight={700}
-            lineHeight={1}
-            mb={0.75}
             color={total > 0 ? 'error.main' : 'text.primary'}
+            sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}
           >
             {total.toLocaleString()}
           </Typography>

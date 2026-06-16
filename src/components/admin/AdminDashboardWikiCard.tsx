@@ -54,15 +54,15 @@ export const AdminDashboardWikiCard = () => {
           </Box>
 
           <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} spacing={2}>
-            <Typography variant="h4" fontWeight={700} lineHeight={1} mb={0.25}>
+            <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.25 }}>
               {(categories?.length ?? 0).toLocaleString()}
             </Typography>
-            <Typography variant="h4" fontWeight={700} lineHeight={1} mb={0.25}>
+            <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.25 }}>
               {(pages?.length ?? 0).toLocaleString()}
             </Typography>
           </Stack>
 
-          <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
             {catCount} {catCount === 1 ? 'category' : 'categories'}, {pageCount} {pageCount === 1 ? 'page' : 'pages'}
           </Typography>
 

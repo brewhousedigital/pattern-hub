@@ -85,8 +85,8 @@ function RouteComponent() {
                 pl: set.color ? 2 : 0,
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1.5} mb={0.5}>
-                <Typography variant="h4" fontWeight={700} lineHeight={1.2}>
+              <Stack direction="row" sx={{ alignItems: 'center', mb: 0.5 }} spacing={1.5}>
+                <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                   {set.title}
                 </Typography>
                 <Chip

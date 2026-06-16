@@ -20,7 +20,7 @@ export const AdminHeaderContainer = (props: TypeHeaderProps) => {
       sx={{ alignItems: 'center', justifyContent: { xs: 'center', md: 'space-between' }, mb: 3 }}
     >
       <Box>
-        <Typography variant="h5" fontWeight={500}>
+        <Typography variant="h5" sx={{ fontWeight: 500 }}>
           {props.title}
         </Typography>
 

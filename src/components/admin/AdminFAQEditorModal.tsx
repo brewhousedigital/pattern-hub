@@ -71,7 +71,7 @@ export const AdminFAQEditorModal = (props: AdminFAQEditorModalProps) => {
   return (
     <Dialog open={props.open} onClose={props.onClose} fullWidth maxWidth="xl">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-        <Typography variant="h6" fontWeight={500}>
+        <Typography variant="h6" sx={{ fontWeight: 500 }}>
           {isEdit ? 'Edit FAQ' : 'New FAQ'}
         </Typography>
 

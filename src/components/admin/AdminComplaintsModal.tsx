@@ -86,7 +86,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
   return (
     <Dialog open={props.open} onClose={props.onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-        <Typography variant="h6" component="span" fontWeight={500}>
+        <Typography variant="h6" component="span" sx={{ fontWeight: 500 }}>
           Review report
         </Typography>
 
@@ -116,11 +116,11 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           />
 
           <Box>
-            <Typography fontWeight={500} fontSize={14}>
+            <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
               {pattern?.name ?? props.complaint?.pattern_id}
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" display="block">
+            <Typography variant="body2" color="text.secondary" sx={{ display: 'block' }}>
               Reporter: {props.complaint?.email}
             </Typography>
 
@@ -146,8 +146,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           <Typography
             variant="caption"
             color="text.secondary"
-            fontWeight={500}
-            sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75 }}
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75, fontWeight: 500 }}
           >
             Category
           </Typography>
@@ -160,8 +159,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           <Typography
             variant="caption"
             color="text.secondary"
-            fontWeight={500}
-            sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75 }}
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 0.75, fontWeight: 500 }}
           >
             Report / Complaint
           </Typography>

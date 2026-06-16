@@ -558,7 +558,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
           sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
         >
           <Box>
-            <Typography variant="h6" fontWeight={600} lineHeight={1.2}>
+            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               {props.mode === 'add' ? 'Add Pattern' : 'Edit Pattern'}
             </Typography>
             {props.mode !== 'add' && props.name && (
@@ -601,9 +601,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               >
                 <Typography
                   variant="caption"
-                  fontWeight={700}
                   color="text.secondary"
-                  sx={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                  sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}
                 >
                   Preview
                 </Typography>
@@ -692,13 +691,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                 )}
 
                 {name && (
-                  <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                  <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 600 }}>
                     {name}
                   </Typography>
                 )}
 
                 {isDraft && (
-                  <Typography variant="caption" color="warning.main" fontWeight={600}>
+                  <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
                     Draft — hidden from public
                   </Typography>
                 )}
@@ -793,9 +792,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
-                                  fontWeight={600}
-                                  display="block"
-                                  mb={0.75}
+                                  sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                 >
                                   Current
                                 </Typography>
@@ -845,9 +842,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
-                                    fontWeight={600}
-                                    display="block"
-                                    mb={0.75}
+                                    sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                   >
                                     New
                                   </Typography>
@@ -898,9 +893,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                     <Typography
                                       variant="caption"
                                       color="text.secondary"
-                                      fontWeight={600}
-                                      display="block"
-                                      mb={0.75}
+                                      sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                     >
                                       Current pattern
                                     </Typography>
@@ -978,16 +971,14 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                           <Box sx={{ mt: 1 }}>
                             <Typography
                               variant="caption"
-                              fontWeight={600}
                               color="text.secondary"
-                              display="block"
-                              mb={1}
+                              sx={{ fontWeight: 600, display: 'block', mb: 1 }}
                             >
                               Layer Map
                             </Typography>
                             <Stack spacing={1}>
                               {layersMap.map((item, index) => (
-                                <Grid container spacing={1} key={item.layerName} alignItems="center">
+                                <Grid container spacing={1} key={item.layerName} sx={{ alignItems: 'center' }}>
                                   <Grid size={{ xs: 5 }}>
                                     <TextField
                                       size="small"
@@ -1074,9 +1065,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
-                                  fontWeight={600}
-                                  display="block"
-                                  mb={0.75}
+                                  sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                 >
                                   Current
                                 </Typography>
@@ -1121,9 +1110,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
-                                    fontWeight={600}
-                                    display="block"
-                                    mb={0.75}
+                                    sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                   >
                                     New
                                   </Typography>
@@ -1170,9 +1157,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
-                                  fontWeight={600}
-                                  display="block"
-                                  mb={0.75}
+                                  sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}
                                 >
                                   Current image
                                 </Typography>
@@ -1344,7 +1329,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
                       <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
                         <Box sx={{ mr: 'auto' }}>
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             Pattern Key Builder
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -1443,7 +1428,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                       )}
 
                       <Box>
-                        <Typography variant="body2" fontWeight={600} mb={0.5}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                           Assigned Keys
                         </Typography>
 
@@ -1470,7 +1455,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                               >
                                 <ListItemText
                                   primary={
-                                    <Typography variant="body2" fontWeight={500}>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                       {item.name}
                                     </Typography>
                                   }

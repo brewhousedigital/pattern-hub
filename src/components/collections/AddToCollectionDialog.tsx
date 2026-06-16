@@ -84,7 +84,7 @@ export const AddToCollectionDialog = ({ open, onClose, patternId }: AddToCollect
         <DialogTitle sx={{ pr: 6 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <BookmarksOutlinedIcon fontSize="small" color="primary" />
-            <Typography variant="subtitle1" fontWeight={700}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Add to Collection
             </Typography>
           </Stack>
@@ -147,8 +147,10 @@ export const AddToCollectionDialog = ({ open, onClose, patternId }: AddToCollect
                           ? 'Collection full (500/500)'
                           : `${collection.patterns.length} pattern${collection.patterns.length !== 1 ? 's' : ''}`
                       }
-                      primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
+                      slotProps={{
+                        primary: { sx: { fontWeight: 500 }, variant: 'body2' },
+                        secondary: { variant: 'caption' },
+                      }}
                     />
                     {alreadyAdded && (
                       <Chip

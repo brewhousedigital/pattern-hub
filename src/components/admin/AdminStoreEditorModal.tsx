@@ -16,7 +16,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -231,8 +230,10 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                       <ListItemText
                         primary={r.display_name}
                         secondary={`${parseFloat(r.lat).toFixed(5)}, ${parseFloat(r.lon).toFixed(5)}`}
-                        primaryTypographyProps={{ fontSize: '0.8rem' }}
-                        secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                        slotProps={{
+                          primary: { sx: { fontSize: '0.8rem' } },
+                          secondary: { sx: { fontSize: '0.7rem' } },
+                        }}
                       />
                     </ListItemButton>
                   ))}
@@ -251,7 +252,6 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                 onChange={(e) => setLat(e.target.value)}
                 fullWidth
                 variant="filled"
-                inputProps={{ step: 'any' }}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -260,6 +260,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                       </InputAdornment>
                     ),
                   },
+                  htmlInput: { step: 'any' },
                 }}
               />
             </Grid>
@@ -271,7 +272,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                 onChange={(e) => setLon(e.target.value)}
                 fullWidth
                 variant="filled"
-                inputProps={{ step: 'any' }}
+                slotProps={{ htmlInput: { step: 'any' } }}
               />
             </Grid>
           </Grid>
@@ -305,11 +306,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
             options={[]}
             value={tags}
             onChange={(_, newValue) => setTags(newValue as string[])}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip label={option} size="small" {...getTagProps({ index })} key={option} />
-              ))
-            }
+            slotProps={{ chip: { size: 'small' } }}
             renderInput={(params) => (
               <TextField
                 {...params}

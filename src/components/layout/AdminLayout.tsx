@@ -190,7 +190,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           >
             <MenuIcon fontSize="small" />
           </IconButton>
-          <Typography variant="subtitle1" fontWeight={600} color="text.primary" noWrap>
+          <Typography variant="subtitle1" color="text.primary" noWrap sx={{ fontWeight: 600 }}>
             {currentPageLabel}
           </Typography>
         </Toolbar>
@@ -242,10 +242,10 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
               <AutoFixHighIcon sx={{ fontSize: 16, color: 'white' }} />
             </Box>
             <Box>
-              <Typography variant="body2" fontWeight={700} lineHeight={1.15} color="text.primary">
+              <Typography variant="body2" color="text.primary" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
                 Pattern Archive
               </Typography>
-              <Typography sx={{ fontSize: '0.65rem' }} color="text.disabled" lineHeight={1}>
+              <Typography sx={{ fontSize: '0.65rem', lineHeight: 1 }} color="text.disabled">
                 Admin Panel
               </Typography>
             </Box>
