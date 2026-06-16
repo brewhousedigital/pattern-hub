@@ -1,8 +1,14 @@
 import React, { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ExportPatternForPrintV3 } from '@/components/PatternExport/ExportPatternForPrintV3';
-import { ExportPatternForSVG } from '@/components/PatternExport/ExportPatternForSVG';
-import { ExportPatternForImage } from '@/components/PatternExport/ExportPatternForImage';
+const ExportPatternForPrintV3 = React.lazy(() =>
+  import('@/components/PatternExport/ExportPatternForPrintV3').then((m) => ({ default: m.ExportPatternForPrintV3 })),
+);
+const ExportPatternForSVG = React.lazy(() =>
+  import('@/components/PatternExport/ExportPatternForSVG').then((m) => ({ default: m.ExportPatternForSVG })),
+);
+const ExportPatternForImage = React.lazy(() =>
+  import('@/components/PatternExport/ExportPatternForImage').then((m) => ({ default: m.ExportPatternForImage })),
+);
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
@@ -211,9 +217,11 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               <Tab label="Export Image" value="image" />
             </Tabs>
 
-            {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
-            {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
-            {exportTab === 'image' && <ExportPatternForImage viewData={viewData} hiddenLayers={hiddenLayers} />}
+            <Suspense fallback={<Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />}>
+              {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
+              {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
+              {exportTab === 'image' && <ExportPatternForImage viewData={viewData} hiddenLayers={hiddenLayers} />}
+            </Suspense>
           </BorderedCard>
         )}
 

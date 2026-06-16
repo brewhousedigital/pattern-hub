@@ -24,4 +24,18 @@ export default defineConfig({
     }),*/
     react(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@tanstack/react-query') || id.includes('node_modules/@tanstack/react-router')) {
+            return 'vendor-query';
+          }
+        },
+      },
+    },
+  },
 });
