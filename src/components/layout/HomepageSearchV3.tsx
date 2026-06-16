@@ -1,4 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect, type KeyboardEvent } from 'react';
+import { Link } from '@tanstack/react-router';
 import { type Token, SORT_OPTIONS, type SortValue } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQuerySearchTags } from '@/functions/database/tags';
@@ -11,6 +12,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LabelIcon from '@mui/icons-material/Label';
 import SortIcon from '@mui/icons-material/Sort';
 import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 
 import {
   Box,
@@ -378,6 +380,19 @@ export const HomepageSearchV3 = ({
               </IconButton>
             </Tooltip>
           )}
+
+          <Tooltip title="Search help" arrow>
+            <IconButton
+              size="small"
+              component={Link}
+              to="/wiki/site-functions/search"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              sx={{ ml: hasContent ? 0 : 'auto', flexShrink: 0, color: 'text.disabled' }}
+              aria-label="Search help"
+            >
+              <HelpOutlineRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Paper>
 
         {showDropdown && (
