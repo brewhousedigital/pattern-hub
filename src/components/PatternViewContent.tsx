@@ -220,7 +220,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
         {!viewData?.pattern_file_external && (
           <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>
             <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
-              <PatternViewer3DLazy viewData={viewData} />
+              <PatternViewer3DLazy viewData={viewData} hiddenLayers={hiddenLayers} />
             </Suspense>
           </CollapsibleCard>
         )}

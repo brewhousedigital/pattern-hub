@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import type { TypePatternResponse } from '@/functions/database/patterns.ts';
 import { buildExteriorMask } from './floodFill';
+import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 
 const RASTER_RES = 1024;
 
@@ -46,8 +47,15 @@ const INITIAL: RasterizerState = {
   error: null,
 };
 
-export function usePatternRasterizer(viewData: TypePatternResponse | undefined): RasterizerState {
+export function usePatternRasterizer(
+  viewData: TypePatternResponse | undefined,
+  hiddenLayers?: Set<string>,
+): RasterizerState {
   const [state, setState] = useState<RasterizerState>(INITIAL);
+
+  // Serialize the Set to a stable string so the effect only re-runs when the
+  // actual layer selection changes, not on every Set reference creation.
+  const hiddenLayersKey = hiddenLayers ? [...hiddenLayers].sort().join(',') : '';
 
   useEffect(() => {
     if (!viewData?.pattern_file) {
@@ -67,6 +75,12 @@ export function usePatternRasterizer(viewData: TypePatternResponse | undefined):
       })
       .then((svgText) => {
         if (cancelled) return;
+
+        // Apply hidden layers before rasterizing so the color planner reflects
+        // the same visibility state as the export tools.
+        if (hiddenLayers && hiddenLayers.size > 0) {
+          svgText = applyHiddenLayers(svgText, hiddenLayers);
+        }
 
         // ── Determine canvas dimensions from viewBox ──────────────────────
         let vbW = 100,
@@ -161,7 +175,7 @@ export function usePatternRasterizer(viewData: TypePatternResponse | undefined):
         blobUrl = '';
       }
     };
-  }, [viewData?.id, viewData?.pattern_file]);
+  }, [viewData?.id, viewData?.pattern_file, hiddenLayersKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;
 }

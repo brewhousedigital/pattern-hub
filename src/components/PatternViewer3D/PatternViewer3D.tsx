@@ -227,11 +227,12 @@ const Scene = ({
 
 type PatternViewer3DProps = {
   viewData: TypePatternResponse | undefined;
+  hiddenLayers?: Set<string>;
 };
 
-export const PatternViewer3D = ({ viewData }: PatternViewer3DProps) => {
+export const PatternViewer3D = ({ viewData, hiddenLayers }: PatternViewer3DProps) => {
   const { hitData, exteriorMask, svgOverlayCanvas, colorCanvas, canvasW, canvasH, loading, error } =
-    usePatternRasterizer(viewData);
+    usePatternRasterizer(viewData, hiddenLayers);
 
   const [paintColor, setPaintColor] = useState<string>(STAINED_GLASS_COLORS[0].hex);
   const [usedColors, setUsedColors] = useState<Map<string, string>>(new Map());
