@@ -23,6 +23,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 type AdminFAQEditorModalProps = {
   open: boolean;
@@ -38,6 +39,7 @@ export const AdminFAQEditorModal = (props: AdminFAQEditorModalProps) => {
 
   const create = useMutationCreateFAQ();
   const update = useMutationUpdateFAQ();
+  const { log } = useAdminLogger();
 
   const isPending = create.isPending || update.isPending;
   const isEdit = props.faq !== null;
@@ -55,8 +57,27 @@ export const AdminFAQEditorModal = (props: AdminFAQEditorModalProps) => {
     try {
       if (isEdit) {
         await update.mutateAsync({ id: props.faq?.id, title, content });
+        log({
+          action: 'FAQ Updated',
+          entity_type: 'FAQ',
+          entity_id: props.faq?.id ?? '',
+          entity_name: title,
+          changes: {
+            title: { from: props.faq?.title ?? '', to: title },
+            content: { from: props.faq?.content ?? '', to: content },
+          },
+          metadata: {},
+        });
       } else {
-        await create.mutateAsync({ title, content });
+        const created = await create.mutateAsync({ title, content });
+        log({
+          action: 'FAQ Created',
+          entity_type: 'FAQ',
+          entity_id: (created as any)?.id ?? '',
+          entity_name: title,
+          changes: {},
+          metadata: {},
+        });
       }
 
       await refetch();

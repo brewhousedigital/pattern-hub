@@ -39,6 +39,7 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { generateSEO } from '@/functions/utilities/seo';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 import AddIcon from '@mui/icons-material/Add';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -193,6 +194,7 @@ function RouteComponent() {
   const updateColumnMut = useMutationUpdateColumn();
   const deleteColumnMut = useMutationDeleteColumn();
   const updateItemMut = useMutationUpdateItem();
+  const { log } = useAdminLogger();
 
   // ── Drag state ─────────────────────────────────────────────────────────────
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -340,7 +342,15 @@ function RouteComponent() {
 
   async function handleAddColumn(title: string) {
     const maxPos = columns[columns.length - 1]?.position ?? 0;
-    await createColumnMut.mutateAsync({ title, position: maxPos + 1 });
+    const created = await createColumnMut.mutateAsync({ title, position: maxPos + 1 });
+    log({
+      action: 'Kanban Column Created',
+      entity_type: 'Kanban Column',
+      entity_id: created.id,
+      entity_name: title,
+      changes: {},
+      metadata: {},
+    });
     void refetchColumns();
     setAddColOpen(false);
   }
@@ -350,6 +360,16 @@ function RouteComponent() {
 
   async function handleEditColumn(col: TypeKanbanColumn, patch: Partial<TypeKanbanColumn>) {
     await updateColumnMut.mutateAsync({ id: col.id, ...patch });
+    log({
+      action: 'Kanban Column Updated',
+      entity_type: 'Kanban Column',
+      entity_id: col.id,
+      entity_name: (patch.title ?? col.title),
+      changes: Object.fromEntries(
+        Object.entries(patch).map(([k, v]) => [k, { from: (col as any)[k], to: v }]),
+      ),
+      metadata: {},
+    });
     void refetchColumns();
     setEditColTarget(null);
   }
@@ -364,6 +384,14 @@ function RouteComponent() {
     if (!window.confirm(msg)) return;
     try {
       await deleteColumnMut.mutateAsync(col.id);
+      log({
+        action: 'Kanban Column Deleted',
+        entity_type: 'Kanban Column',
+        entity_id: col.id,
+        entity_name: col.title,
+        changes: {},
+        metadata: { item_count: count },
+      });
       void refetchColumns();
       void refetchItems();
       enqueueSnackbar('Column deleted.', { variant: 'success' });

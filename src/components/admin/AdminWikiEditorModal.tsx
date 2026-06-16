@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 // ─── Shared helper ────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export const AdminWikiCategoryModal = (props: AdminWikiCategoryModalProps) => {
   const { refetch } = useQueryGetAllWikiCategories();
   const create = useMutationCreateWikiCategory();
   const update = useMutationUpdateWikiCategory();
+  const { log } = useAdminLogger();
   const isPending = create.isPending || update.isPending;
   const isEdit = props.category !== null;
 
@@ -81,8 +83,27 @@ export const AdminWikiCategoryModal = (props: AdminWikiCategoryModalProps) => {
     try {
       if (isEdit) {
         await update.mutateAsync(payload);
+        log({
+          action: 'Wiki Category Updated',
+          entity_type: 'Wiki Category',
+          entity_id: props.category?.id ?? '',
+          entity_name: name.trim(),
+          changes: {
+            name: { from: props.category?.name ?? '', to: name.trim() },
+            slug: { from: props.category?.slug ?? '', to: slug.trim() },
+          },
+          metadata: {},
+        });
       } else {
-        await create.mutateAsync(payload);
+        const created = await create.mutateAsync(payload);
+        log({
+          action: 'Wiki Category Created',
+          entity_type: 'Wiki Category',
+          entity_id: (created as any)?.id ?? '',
+          entity_name: name.trim(),
+          changes: {},
+          metadata: { slug: slug.trim() },
+        });
       }
       await refetch();
       props.onClose();
@@ -178,6 +199,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
   const { refetch } = useQueryGetAllWikiPages();
   const create = useMutationCreateWikiPage();
   const update = useMutationUpdateWikiPage();
+  const { log } = useAdminLogger();
   const isPending = create.isPending || update.isPending;
   const isEdit = props.page !== null;
 
@@ -210,8 +232,27 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
     try {
       if (isEdit) {
         await update.mutateAsync(payload);
+        log({
+          action: 'Wiki Page Updated',
+          entity_type: 'Wiki Page',
+          entity_id: props.page?.id ?? '',
+          entity_name: title.trim(),
+          changes: {
+            title: { from: props.page?.title ?? '', to: title.trim() },
+            slug: { from: props.page?.slug ?? '', to: slug.trim() },
+          },
+          metadata: { category_id: categoryId },
+        });
       } else {
-        await create.mutateAsync(payload);
+        const created = await create.mutateAsync(payload);
+        log({
+          action: 'Wiki Page Created',
+          entity_type: 'Wiki Page',
+          entity_id: (created as any)?.id ?? '',
+          entity_name: title.trim(),
+          changes: {},
+          metadata: { slug: slug.trim(), category_id: categoryId },
+        });
       }
       await refetch();
       props.onClose();

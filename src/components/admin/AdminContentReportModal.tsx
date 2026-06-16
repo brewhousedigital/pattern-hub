@@ -9,6 +9,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -48,6 +49,7 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
   const { authData } = useGlobalAuthData();
   const { refetch } = useQueryGetContentReports();
   const updateReport = useMutationUpdateContentReport();
+  const { log } = useAdminLogger();
 
   const typeMeta = CONTENT_TYPE_META[props.report?.content_type ?? ''] ?? {
     label: props.report?.content_type ?? 'Unknown',
@@ -71,6 +73,21 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
         review_notes: notes,
         reviewed_by: authData?.id || '',
         spam: isSpam,
+      });
+
+      log({
+        action: 'Content Report Reviewed',
+        entity_type: 'Content Report',
+        entity_id: props.report.id,
+        entity_name: props.report.content_name || props.report.content_id,
+        changes: {},
+        metadata: {
+          content_type: props.report.content_type,
+          category: props.report.category,
+          spam: isSpam,
+          reporter_email: props.report.email,
+          review_notes: notes,
+        },
       });
 
       await refetch();

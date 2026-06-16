@@ -25,6 +25,7 @@ import {
   Stack,
 } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 const ALL_PERMISSIONS = Object.values(EnumLevelsAdmin);
 
@@ -89,6 +90,7 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
 
   const saveAdminUser = useMutationUpdateAdminUser();
   const { handleRefresh } = useRefreshAdminAuth();
+  const { log } = useAdminLogger();
 
   const assignedPermissions = props.userData?.level || [];
 
@@ -138,6 +140,15 @@ export const PermissionsTransferList = (props: PermissionsTransferListProps) => 
       const id = props.userData.id;
 
       await saveAdminUser.mutateAsync({ id: id, level: right });
+
+      log({
+        action: 'Admin Permissions Updated',
+        entity_type: 'Admin User',
+        entity_id: id,
+        entity_name: props.userData.name || props.userData.email || id,
+        changes: { permissions: { from: assignedPermissions, to: right } },
+        metadata: {},
+      });
 
       await refetch();
 

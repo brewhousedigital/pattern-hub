@@ -15,6 +15,7 @@ import {
 } from '@/functions/database/patterns';
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
@@ -85,6 +86,7 @@ function RouteComponent() {
 
   const saveCollection = useMutationSavePatternKeyCollection();
   const deleteCollection = useMutationDeletePatternKeyCollection();
+  const { log } = useAdminLogger();
 
   const handleSaveCollection = async () => {
     const payload: TypeSavePatternKeyCollectionPayload = {
@@ -97,10 +99,16 @@ function RouteComponent() {
     }
 
     try {
-      await saveCollection.mutateAsync(payload);
-
+      const saved = await saveCollection.mutateAsync(payload);
+      log({
+        action: collectionId ? 'Pattern Key Collection Updated' : 'Pattern Key Collection Created',
+        entity_type: 'Pattern Key Collection',
+        entity_id: saved?.id ?? collectionId,
+        entity_name: collectionName,
+        changes: {},
+        metadata: { legend_count: selectedLegends.length },
+      });
       await refetchCollections();
-
       resetPanel();
     } catch (error: any) {
       enqueueSnackbar('Not able to save your collection for some reason... try again in a few minutes.', {
@@ -115,8 +123,15 @@ function RouteComponent() {
       delete clonedData.id;
       clonedData.name = 'Duplicated Collection';
 
-      await saveCollection.mutateAsync(clonedData);
-
+      const duped = await saveCollection.mutateAsync(clonedData);
+      log({
+        action: 'Pattern Key Collection Duplicated',
+        entity_type: 'Pattern Key Collection',
+        entity_id: duped?.id ?? '',
+        entity_name: clonedData.name,
+        changes: {},
+        metadata: { source_name: collectionData.name },
+      });
       await refetchCollections();
     } catch (error: any) {
       enqueueSnackbar('Not able to duplicate your collection for some reason... try again in a few minutes.', {
@@ -132,7 +147,15 @@ function RouteComponent() {
     }
 
     try {
-      await savePatternKey.mutateAsync(file);
+      const saved = await savePatternKey.mutateAsync(file);
+      log({
+        action: 'Pattern Key Uploaded',
+        entity_type: 'Pattern Key',
+        entity_id: saved?.id ?? '',
+        entity_name: file.name,
+        changes: {},
+        metadata: { file_name: file.name, file_size: file.size },
+      });
       await refetchKeys();
     } catch (error: any) {
       enqueueSnackbar(`Couldn't upload for some reason. Try again in a few minutes. Error: ${error?.message}`, {
@@ -201,6 +224,14 @@ function RouteComponent() {
     if (shouldDelete) {
       try {
         await deleteCollection.mutateAsync(collection.id);
+        log({
+          action: 'Pattern Key Collection Deleted',
+          entity_type: 'Pattern Key Collection',
+          entity_id: collection.id,
+          entity_name: collection.name,
+          changes: {},
+          metadata: {},
+        });
         await refetchCollections();
       } catch (error: any) {
         enqueueSnackbar(`Something went wrong deleting that collection... sorry about that. Error: ${error?.message}`);
@@ -221,6 +252,14 @@ function RouteComponent() {
     if (shouldDelete) {
       try {
         await softDeleteKey.mutateAsync(id);
+        log({
+          action: 'Pattern Key Deleted',
+          entity_type: 'Pattern Key',
+          entity_id: id,
+          entity_name: id,
+          changes: {},
+          metadata: {},
+        });
         await refetchKeys();
       } catch (error: any) {
         enqueueSnackbar(`Ran into an error trying to delete this key image... whoops. Error: ${error?.message}`);

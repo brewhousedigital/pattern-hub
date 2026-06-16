@@ -27,8 +27,8 @@ type CreateUserPayload = {
 
 export const useMutationCreateAdminUser = () => {
   return useMutation({
-    mutationFn: async (payload: CreateUserPayload) => {
-      await pocketbase.collection('admins').create(payload);
+    mutationFn: async (payload: CreateUserPayload): Promise<TypeAuthData> => {
+      return await pocketbase.collection('admins').create(payload);
     },
   });
 };

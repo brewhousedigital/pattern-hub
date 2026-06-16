@@ -7,6 +7,7 @@ import {
   type TypeNominatimResult,
 } from '@/functions/database/stores';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 
 import SearchIcon from '@mui/icons-material/Search';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -61,6 +62,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
 
   const createStore = useMutationCreateStore();
   const updateStore = useMutationUpdateStore();
+  const { log } = useAdminLogger();
 
   // Populate form when editing
   useEffect(() => {
@@ -136,9 +138,29 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
 
       if (isEdit && store) {
         await updateStore.mutateAsync({ id: store.id, ...payload });
+        log({
+          action: 'Store Updated',
+          entity_type: 'Store',
+          entity_id: store.id,
+          entity_name: payload.name,
+          changes: diffAdminChanges(
+            { name: store.name, description: store.description, street_address: store.street_address, phone: store.phone, website: store.website } as Record<string, unknown>,
+            { name: payload.name, description: payload.description, street_address: payload.street_address, phone: payload.phone, website: payload.website } as Record<string, unknown>,
+            ['name', 'description', 'street_address', 'phone', 'website'],
+          ),
+          metadata: { lat: payload.location.lat, lon: payload.location.lon },
+        });
         enqueueSnackbar('Store updated successfully.', { variant: 'success' });
       } else {
-        await createStore.mutateAsync(payload);
+        const created = await createStore.mutateAsync(payload);
+        log({
+          action: 'Store Created',
+          entity_type: 'Store',
+          entity_id: (created as any)?.id ?? '',
+          entity_name: payload.name,
+          changes: {},
+          metadata: { lat: payload.location.lat, lon: payload.location.lon },
+        });
         enqueueSnackbar('Store created successfully.', { variant: 'success' });
       }
 

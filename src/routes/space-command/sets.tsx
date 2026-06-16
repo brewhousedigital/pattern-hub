@@ -20,6 +20,7 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryClient } from '@tanstack/react-query';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -101,12 +102,21 @@ function RouteComponent() {
   const [deleteTarget, setDeleteTarget] = useState<TypePatternSet | null>(null);
   const [deleting, setDeleting] = useState(false);
   const deleteSet = useMutationDeleteSet();
+  const { log } = useAdminLogger();
 
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
       await deleteSet.mutateAsync(deleteTarget.id);
+      log({
+        action: 'Set Deleted',
+        entity_type: 'Set',
+        entity_id: deleteTarget.id,
+        entity_name: deleteTarget.title,
+        changes: {},
+        metadata: { pattern_count: deleteTarget.patterns?.length ?? 0 },
+      });
       enqueueSnackbar(`Set "${deleteTarget.title}" deleted.`, { variant: 'success' });
       setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: PATTERN_SETS_QUERY_KEY });
@@ -404,6 +414,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
 
   const createSet = useMutationCreateSet();
   const updateSet = useMutationUpdateSet();
+  const { log } = useAdminLogger();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -421,9 +432,25 @@ function SetEditorDialog(props: SetEditorDialogProps) {
 
       if (isEdit) {
         await updateSet.mutateAsync({ id: props.setId, payload });
+        log({
+          action: 'Set Updated',
+          entity_type: 'Set',
+          entity_id: props.setId,
+          entity_name: title.trim(),
+          changes: {},
+          metadata: { pattern_count: selectedPatterns.length, is_published: isPublished },
+        });
         enqueueSnackbar(`Set "${title}" updated.`, { variant: 'success' });
       } else {
-        await createSet.mutateAsync(payload);
+        const created = await createSet.mutateAsync(payload);
+        log({
+          action: 'Set Created',
+          entity_type: 'Set',
+          entity_id: created?.id ?? '',
+          entity_name: title.trim(),
+          changes: {},
+          metadata: { pattern_count: selectedPatterns.length, is_published: isPublished },
+        });
         enqueueSnackbar(`Set "${title}" created.`, { variant: 'success' });
       }
 

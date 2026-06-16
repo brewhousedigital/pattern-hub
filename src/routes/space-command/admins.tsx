@@ -13,6 +13,7 @@ import { PermissionsTransferList } from '@/components/admin/PermissionsTransferL
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -80,11 +81,20 @@ function RouteComponent() {
 
   // ── Reset password ─────────────────────────────────────────────────────────
   const resetPassword = useMutationResetAdminUser();
+  const { log } = useAdminLogger();
 
   async function handleResetPassword(admin: TypeAuthData) {
     if (!admin.email) return;
     try {
       await resetPassword.mutateAsync(admin.email);
+      log({
+        action: 'Admin Password Reset',
+        entity_type: 'Admin User',
+        entity_id: admin.id,
+        entity_name: admin.name || admin.email,
+        changes: {},
+        metadata: { email: admin.email },
+      });
       enqueueSnackbar(`Password reset email sent to ${admin.email}.`, { variant: 'success' });
     } catch {
       enqueueSnackbar('Failed to send reset email. Try again.', { variant: 'error' });
@@ -101,6 +111,14 @@ function RouteComponent() {
     setDeleting(true);
     try {
       await deleteAdminMut.mutateAsync(deleteTarget.id);
+      log({
+        action: 'Admin Deleted',
+        entity_type: 'Admin User',
+        entity_id: deleteTarget.id,
+        entity_name: deleteTarget.name || deleteTarget.email || deleteTarget.id,
+        changes: {},
+        metadata: { email: deleteTarget.email, previous_levels: deleteTarget.level },
+      });
       enqueueSnackbar(`Admin "${deleteTarget.name || deleteTarget.email}" removed.`, { variant: 'success' });
       setDeleteTarget(null);
       void refetch();
@@ -358,6 +376,7 @@ function AddAdminDialog({ onCreated }: AddAdminDialogProps) {
 
   const createAdmin = useMutationCreateAdminUser();
   const resetPassword = useMutationResetAdminUser();
+  const { log } = useAdminLogger();
 
   useEffect(() => {
     if (!open) {
@@ -367,19 +386,27 @@ function AddAdminDialog({ onCreated }: AddAdminDialogProps) {
     }
   }, [open]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
     setSaving(true);
     try {
       const tempPassword = crypto.randomUUID();
-      await createAdmin.mutateAsync({
+      const created = await createAdmin.mutateAsync({
         name: name.trim(),
         email: email.trim(),
         emailVisibility: true,
         password: tempPassword,
         passwordConfirm: tempPassword,
         level: [],
+      });
+      log({
+        action: 'Admin Created',
+        entity_type: 'Admin User',
+        entity_id: created?.id ?? '',
+        entity_name: name.trim(),
+        changes: {},
+        metadata: { email: email.trim() },
       });
       await resetPassword.mutateAsync(email.trim());
       enqueueSnackbar(`Admin created for ${email}. They'll receive an email to set up their password.`, {

@@ -8,6 +8,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -41,6 +42,7 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
 
   const { refetch } = useQueryGetPendingContactSubmissions();
   const updateSubmission = useMutationUpdateContactSubmission();
+  const { log } = useAdminLogger();
 
   async function handleSubmit() {
     if (!props.submission) return;
@@ -58,6 +60,18 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
         reviewed: true,
         review_notes: notes,
         reviewed_by: authData?.id || '',
+      });
+
+      log({
+        action: 'Contact Submission Reviewed',
+        entity_type: 'Contact Submission',
+        entity_id: props.submission.id,
+        entity_name: props.submission.name ?? props.submission.email ?? props.submission.id,
+        changes: {},
+        metadata: {
+          sender_email: props.submission.email,
+          review_notes: notes,
+        },
       });
 
       await refetch();

@@ -14,6 +14,7 @@ import {
   getAncestors,
 } from '@/functions/database/tags';
 import { useQuerySearchLinkedAuthors, useQuerySearchManualAuthors } from '@/functions/database/authors';
+import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
@@ -161,6 +162,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const savePattern = useMutationEditPattern();
   const deletePattern = useMutationSoftDeletePattern();
+  const { log } = useAdminLogger();
 
   const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
 
@@ -465,6 +467,35 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
       const savedPattern = await savePattern.mutateAsync(payload);
 
+      log({
+        action: props.mode === 'add' ? 'Pattern Created' : 'Pattern Updated',
+        entity_type: 'Pattern',
+        entity_id: savedPattern.id,
+        entity_name: name,
+        changes:
+          props.mode === 'add'
+            ? {}
+            : diffAdminChanges(
+                props as unknown as Record<string, unknown>,
+                {
+                  name,
+                  description,
+                  source_url: sourceURL,
+                  pieces,
+                  tags: tagValue,
+                  authors: authorValue,
+                  author_manual: manualAuthorValue,
+                  is_draft: isDraft,
+                  has_layers: hasLayers,
+                } as Record<string, unknown>,
+                ['name', 'description', 'source_url', 'pieces', 'tags', 'authors', 'author_manual', 'is_draft', 'has_layers'],
+              ),
+        metadata: {
+          ...(file ? { pattern_file: '[file uploaded]' } : {}),
+          ...(externalFile ? { pattern_file_external: '[file uploaded]' } : {}),
+        },
+      });
+
       if (file && previewUrl) {
         try {
           const svgUrl = generatePbImage(savedPattern);
@@ -510,6 +541,14 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
     try {
       await deletePattern.mutateAsync({ id: props.id, isDeleted: true });
+      log({
+        action: 'Pattern Deleted',
+        entity_type: 'Pattern',
+        entity_id: props.id,
+        entity_name: props.name,
+        changes: {},
+        metadata: {},
+      });
       await refetchPatterns();
       handleClose();
     } catch (error: any) {

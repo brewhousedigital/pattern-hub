@@ -26,6 +26,7 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
@@ -163,6 +164,12 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/users',
           icon: <PeopleRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.USERS_AR,
+        },
+        {
+          label: 'Audit Log',
+          href: '/space-command/logs',
+          icon: <HistoryRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.LOGS_VIEW,
         },
       ],
     },

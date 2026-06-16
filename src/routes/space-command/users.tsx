@@ -13,6 +13,7 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { generateSEO } from '@/functions/utilities/seo';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import type { GridColDef, GridFilterModel, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -100,11 +101,20 @@ function RouteComponent() {
   // ── Mutations ──────────────────────────────────────────────────────────────
   const resetPassword = useMutationResetUserPassword();
   const deleteUser = useMutationDeleteUser();
+  const { log } = useAdminLogger();
 
   async function handleResetPassword(user: TypeAuthData) {
     if (!user.email) return;
     try {
       await resetPassword.mutateAsync(user.email);
+      log({
+        action: 'User Password Reset',
+        entity_type: 'User',
+        entity_id: user.id,
+        entity_name: user.name || user.email,
+        changes: {},
+        metadata: { email: user.email },
+      });
       enqueueSnackbar(`Password reset email sent to ${user.email}.`, { variant: 'success' });
     } catch {
       enqueueSnackbar('Failed to send reset email. Try again.', { variant: 'error' });
@@ -120,6 +130,14 @@ function RouteComponent() {
     setDeleting(true);
     try {
       await deleteUser.mutateAsync(deleteTarget.id);
+      log({
+        action: 'User Account Deleted',
+        entity_type: 'User',
+        entity_id: deleteTarget.id,
+        entity_name: deleteTarget.name || deleteTarget.email || deleteTarget.id,
+        changes: {},
+        metadata: { email: deleteTarget.email },
+      });
       enqueueSnackbar(`Account "${deleteTarget.name || deleteTarget.email}" deleted.`, { variant: 'success' });
       setDeleteTarget(null);
       void refetch();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { enqueueSnackbar } from 'notistack';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   type TypeKanbanItem,
@@ -105,6 +106,7 @@ export const KanbanItemModal = ({
   const createItem = useMutationCreateItem();
   const updateItem = useMutationUpdateItem();
   const deleteItem = useMutationDeleteItem();
+  const { log } = useAdminLogger();
 
   // Populate form when the modal opens
   useEffect(() => {
@@ -153,11 +155,26 @@ export const KanbanItemModal = ({
       };
 
       if (isCreate) {
-        // Position = max position in column + 1 (server will correct on next fetch)
-        await createItem.mutateAsync({ ...payload, position: Date.now() });
+        const created = await createItem.mutateAsync({ ...payload, position: Date.now() });
+        log({
+          action: 'Kanban Item Created',
+          entity_type: 'Kanban Item',
+          entity_id: created?.id ?? '',
+          entity_name: title.trim(),
+          changes: {},
+          metadata: { priority, column_id: columnId, assignee: assignee.trim() },
+        });
         enqueueSnackbar('Item created.', { variant: 'success' });
       } else {
         await updateItem.mutateAsync({ id: item!.id, ...payload });
+        log({
+          action: 'Kanban Item Updated',
+          entity_type: 'Kanban Item',
+          entity_id: item!.id,
+          entity_name: title.trim(),
+          changes: {},
+          metadata: { priority, assignee: assignee.trim() },
+        });
         enqueueSnackbar('Item saved.', { variant: 'success' });
       }
 
@@ -175,6 +192,14 @@ export const KanbanItemModal = ({
     setSaving(true);
     try {
       await deleteItem.mutateAsync(item.id);
+      log({
+        action: 'Kanban Item Deleted',
+        entity_type: 'Kanban Item',
+        entity_id: item.id,
+        entity_name: item.title,
+        changes: {},
+        metadata: {},
+      });
       enqueueSnackbar('Item deleted.', { variant: 'success' });
       invalidate();
       onClose();

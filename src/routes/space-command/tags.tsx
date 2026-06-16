@@ -20,6 +20,7 @@ import {
   type TypeTagHierarchyRecord,
 } from '@/functions/database/tags';
 import { useDebounce } from '@/functions/hooks/useDebounce';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
@@ -326,6 +327,7 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const debouncedSearch = useDebounce(inputValue, 400);
+  const { log } = useAdminLogger();
 
   // Current parent from the hierarchy table
   const currentParent = useMemo(
@@ -367,8 +369,24 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
     try {
       if (selectedParent) {
         await setTagParent(tag.tag, selectedParent);
+        log({
+          action: 'Tag Parent Set',
+          entity_type: 'Tag',
+          entity_id: tag.tag,
+          entity_name: tag.tag,
+          changes: { parent: { from: currentParent ?? null, to: selectedParent } },
+          metadata: {},
+        });
       } else {
         await clearTagParent(tag.tag);
+        log({
+          action: 'Tag Parent Cleared',
+          entity_type: 'Tag',
+          entity_id: tag.tag,
+          entity_name: tag.tag,
+          changes: { parent: { from: currentParent ?? null, to: null } },
+          metadata: {},
+        });
       }
       onSaved();
       onClose();
@@ -437,6 +455,14 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
               setError(null);
               try {
                 await clearTagParent(tag!.tag);
+                log({
+                  action: 'Tag Parent Cleared',
+                  entity_type: 'Tag',
+                  entity_id: tag!.tag,
+                  entity_name: tag!.tag,
+                  changes: { parent: { from: currentParent ?? null, to: null } },
+                  metadata: {},
+                });
                 onSaved();
                 onClose();
               } catch (e) {
@@ -793,6 +819,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
 
 const TagManagementPage = () => {
   const queryClient = useQueryClient();
+  const { log } = useAdminLogger();
 
   const { data: tagStats = [] } = useQueryAdminTagStats();
   const { data: hierarchy = [], refetch: refetchHierarchy } = useQueryGetTagHierarchy();
@@ -904,6 +931,17 @@ const TagManagementPage = () => {
         queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
 
         setProgress((p) => ({ ...p, done: true, total: records.length, completed: records.length }));
+
+        const actionLabel = type === 'delete' ? 'Tag Deleted' : type === 'rename' ? 'Tag Renamed' : 'Tag Merged';
+        log({
+          action: actionLabel,
+          entity_type: 'Tag',
+          entity_id: tag,
+          entity_name: tag,
+          changes: newTag ? { tag: { from: tag, to: newTag } } : {},
+          metadata: { affected_patterns: records.length, type },
+        });
+
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
       } catch (err) {
@@ -913,7 +951,7 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, refetchHierarchy],
+    [queryClient, refetchHierarchy, log],
   );
 
   const startOp = useCallback(
@@ -980,6 +1018,14 @@ const TagManagementPage = () => {
           setProgress((p) => ({ ...p, completed, total: tags.length }));
         }
         setProgress((p) => ({ ...p, done: true }));
+        log({
+          action: 'Tags Bulk Deleted',
+          entity_type: 'Tag',
+          entity_id: '',
+          entity_name: `${tags.length} tags`,
+          changes: {},
+          metadata: { tags, affected_patterns: total },
+        });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
       } catch (err) {
@@ -989,7 +1035,7 @@ const TagManagementPage = () => {
     } else {
       await executeOperation({ type: op.type, tag: op.tag, newTag: op.newTag });
     }
-  }, [pendingOp, executeOperation, queryClient]);
+  }, [pendingOp, executeOperation, queryClient, log]);
 
   // ── Sync Ancestor Tags ─────────────────────────────────────────────────────
   const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
@@ -1049,6 +1095,14 @@ const TagManagementPage = () => {
       );
 
       setProgress((p) => ({ ...p, done: true }));
+      log({
+        action: 'Ancestor Tags Synced',
+        entity_type: 'Tag',
+        entity_id: '',
+        entity_name: 'Sync Ancestor Tags',
+        changes: {},
+        metadata: { patterns_updated: needsUpdate.length },
+      });
       queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
     } catch (err) {
@@ -1057,7 +1111,7 @@ const TagManagementPage = () => {
     } finally {
       setIsFetchingPatterns(false);
     }
-  }, [hierarchy, queryClient]);
+  }, [hierarchy, queryClient, log]);
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);

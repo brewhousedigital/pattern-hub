@@ -9,6 +9,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -48,6 +49,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
   const { refetch } = useQueryGetComplaints();
 
   const updateComplaint = useMutationUpdateComplaint();
+  const { log } = useAdminLogger();
 
   const pattern = props.complaint?.expand?.pattern_id;
   const thumbUrl = generatePbImage(pattern);
@@ -69,6 +71,20 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
         review_notes: notes,
         reviewed_by: authData?.id || '',
         spam: isSpam,
+      });
+
+      log({
+        action: 'Complaint Reviewed',
+        entity_type: 'Complaint',
+        entity_id: props.complaint.id,
+        entity_name: pattern?.name ?? props.complaint.pattern_id,
+        changes: {},
+        metadata: {
+          spam: isSpam,
+          reporter_email: props.complaint.email,
+          category: props.complaint.category,
+          review_notes: notes,
+        },
       });
 
       await refetch();
