@@ -65,6 +65,10 @@ export const Footer = () => {
               <MuiLink component={Link} to="/wiki" sx={subLinkStyles}>
                 Wiki
               </MuiLink>
+
+              <MuiLink component={Link} to="/sets" sx={subLinkStyles}>
+                Sets
+              </MuiLink>
             </Stack>
           </Grid>
 

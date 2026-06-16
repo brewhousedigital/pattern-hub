@@ -94,18 +94,6 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
-      {/*<MuiLink component={Link} to="/sets" sx={activeLinkStyles('/sets')}>
-        Sets
-      </MuiLink>*/}
-
-      {/*<MuiLink component={Link} to="/collections" sx={activeLinkStyles('/collections')}>
-        Collections
-      </MuiLink>*/}
-
-      {/*<MuiLink component={Link} to="/guides" sx={activeLinkStyles('/guides')}>
-        Guides
-      </MuiLink>*/}
-
       <MuiLink component={Link} to="/help/faq" sx={activeLinkStyles('/help/faq')}>
         FAQ
       </MuiLink>
@@ -113,6 +101,14 @@ const ExtraLinks = () => {
       <MuiLink component={Link} to="/wiki" sx={activeLinkStyles('/wiki')}>
         Wiki
       </MuiLink>
+
+      <MuiLink component={Link} to="/sets" sx={activeLinkStyles('/sets')}>
+        Sets
+      </MuiLink>
+
+      {/*<MuiLink component={Link} to="/guides" sx={activeLinkStyles('/guides')}>
+        Guides
+      </MuiLink>*/}
 
       {/*<MuiLink component={Link} to="/store-locator" sx={activeLinkStyles('/store-locator')}>
         Store Locator
