@@ -10,7 +10,6 @@ export type TypeAdminLogChanges = Record<string, { from: unknown; to: unknown }>
 export type TypeAdminLogCreate = {
   admin_id: string;
   admin_name: string;
-  admin_email: string;
   /** Human-readable action label, e.g. "Pattern Updated", "Admin Deleted" */
   action: string;
   /** Area of the admin tool, e.g. "Pattern", "Tag", "Admin User" */
@@ -84,13 +83,12 @@ export function useAdminLogger() {
   const { authData } = useGlobalAuthData();
 
   const log = useCallback(
-    (entry: Omit<TypeAdminLogCreate, 'admin_id' | 'admin_name' | 'admin_email'>) => {
+    (entry: Omit<TypeAdminLogCreate, 'admin_id' | 'admin_name'>) => {
       if (!authData) return;
       createAdminLog({
         ...entry,
         admin_id: authData.id,
         admin_name: authData.name || authData.email || authData.id,
-        admin_email: authData.email || '',
       });
     },
     [authData],
@@ -113,14 +111,10 @@ export const useQueryGetAdminLogs = (params: TypeAdminLogsQueryParams) => {
       if (params.entityType) filters.push(`entity_type = "${params.entityType}"`);
       if (params.adminId) filters.push(`admin_id = "${params.adminId}"`);
 
-      return await pocketbase.collection('admin_logs').getList<TypeAdminLog>(
-        params.page + 1,
-        params.pageSize,
-        {
-          sort: '-created',
-          ...(filters.length ? { filter: filters.join(' && ') } : {}),
-        },
-      );
+      return await pocketbase.collection('admin_logs').getList<TypeAdminLog>(params.page + 1, params.pageSize, {
+        sort: '-created',
+        ...(filters.length ? { filter: filters.join(' && ') } : {}),
+      });
     },
     placeholderData: (prev) => prev,
   });

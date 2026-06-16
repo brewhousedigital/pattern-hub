@@ -169,7 +169,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           label: 'Audit Log',
           href: '/space-command/logs',
           icon: <HistoryRoundedIcon fontSize="small" />,
-          view: EnumLevelsAdmin.LOGS_VIEW,
+          view: EnumLevelsAdmin.LOGS_VIEW_AR,
         },
       ],
     },

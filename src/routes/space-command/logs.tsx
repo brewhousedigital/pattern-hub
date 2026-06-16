@@ -1,7 +1,6 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
-import { AdminLayout } from '@/components/layout/AdminLayout';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useQueryGetAdminLogs, type TypeAdminLog } from '@/functions/database/admin-logs';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
@@ -56,7 +55,7 @@ const ENTITY_TYPES = [
 
 function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
-  const canView = checkAccess(EnumLevelsAdmin.LOGS_VIEW);
+  const canView = checkAccess(EnumLevelsAdmin.LOGS_VIEW_AR);
 
   const [search, setSearch] = React.useState('');
   const [entityType, setEntityType] = React.useState('');
@@ -94,14 +93,14 @@ function RouteComponent() {
       headerName: 'Admin',
       width: 170,
       renderCell: ({ row }) => (
-        <Box>
+        <Stack sx={{ justifyContent: 'center', height: '100%' }}>
           <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
             {row.admin_name}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {row.admin_email}
+            {row.id}
           </Typography>
-        </Box>
+        </Stack>
       ),
     },
     {
@@ -110,9 +109,11 @@ function RouteComponent() {
       flex: 1,
       minWidth: 180,
       renderCell: ({ row }) => (
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {row.action}
-        </Typography>
+        <Stack sx={{ justifyContent: 'center', height: '100%' }}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {row.action}
+          </Typography>
+        </Stack>
       ),
     },
     {
@@ -126,8 +127,8 @@ function RouteComponent() {
       headerName: 'Record',
       width: 210,
       renderCell: ({ row }) => (
-        <Box>
-          <Typography variant="body2" noWrap sx={{ lineHeight: 1.3 }}>
+        <Stack sx={{ justifyContent: 'center', height: '100%' }}>
+          <Typography variant="body2" noWrap>
             {row.entity_name || '—'}
           </Typography>
           {row.entity_id && (
@@ -135,7 +136,7 @@ function RouteComponent() {
               {row.entity_id}
             </Typography>
           )}
-        </Box>
+        </Stack>
       ),
     },
     {
@@ -156,7 +157,7 @@ function RouteComponent() {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <AdminHeaderContainer title="Audit Log" />
 
       {/*<HistoryRoundedIcon />*/}
@@ -330,6 +331,6 @@ function RouteComponent() {
           </>
         )}
       </Dialog>
-    </AdminLayout>
+    </>
   );
 }
