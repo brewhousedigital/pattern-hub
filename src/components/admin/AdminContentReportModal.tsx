@@ -80,11 +80,13 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
         entity_type: 'Content Report',
         entity_id: props.report.id,
         entity_name: props.report.content_name || props.report.content_id,
-        changes: {},
+        changes: {
+          reviewed: { from: false, to: true },
+          ...(isSpam ? { spam: { from: false, to: true } } : {}),
+        },
         metadata: {
           content_type: props.report.content_type,
           category: props.report.category,
-          spam: isSpam,
           reporter_email: props.report.email,
           review_notes: notes,
         },

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { enqueueSnackbar } from 'notistack';
-import { useAdminLogger } from '@/functions/database/admin-logs';
+import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   type TypeKanbanItem,
@@ -139,7 +139,7 @@ export const KanbanItemModal = ({
     onSaved();
   };
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.SubmitEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
@@ -172,8 +172,28 @@ export const KanbanItemModal = ({
           entity_type: 'Kanban Item',
           entity_id: item!.id,
           entity_name: title.trim(),
-          changes: {},
-          metadata: { priority, assignee: assignee.trim() },
+          changes: diffAdminChanges(
+            {
+              title: item!.title ?? '',
+              description: item!.description ?? '',
+              priority: item!.priority ?? 'none',
+              due_date: item!.due_date ?? '',
+              assignee: item!.assignee ?? '',
+              column_id: item!.column_id ?? '',
+              labels: JSON.stringify(item!.labels ?? []),
+            } as Record<string, unknown>,
+            {
+              title: payload.title,
+              description: payload.description,
+              priority: payload.priority,
+              due_date: payload.due_date,
+              assignee: payload.assignee,
+              column_id: payload.column_id,
+              labels: JSON.stringify(payload.labels),
+            } as Record<string, unknown>,
+            ['title', 'description', 'priority', 'due_date', 'assignee', 'column_id', 'labels'],
+          ),
+          metadata: {},
         });
         enqueueSnackbar('Item saved.', { variant: 'success' });
       }

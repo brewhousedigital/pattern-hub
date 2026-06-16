@@ -78,9 +78,11 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
         entity_type: 'Complaint',
         entity_id: props.complaint.id,
         entity_name: pattern?.name ?? props.complaint.pattern_id,
-        changes: {},
+        changes: {
+          reviewed: { from: false, to: true },
+          ...(isSpam ? { spam: { from: false, to: true } } : {}),
+        },
         metadata: {
-          spam: isSpam,
           reporter_email: props.complaint.email,
           category: props.complaint.category,
           review_notes: notes,

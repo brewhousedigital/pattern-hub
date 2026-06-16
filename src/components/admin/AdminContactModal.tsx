@@ -67,7 +67,9 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
         entity_type: 'Contact Submission',
         entity_id: props.submission.id,
         entity_name: props.submission.name ?? props.submission.email ?? props.submission.id,
-        changes: {},
+        changes: {
+          reviewed: { from: false, to: true },
+        },
         metadata: {
           sender_email: props.submission.email,
           review_notes: notes,

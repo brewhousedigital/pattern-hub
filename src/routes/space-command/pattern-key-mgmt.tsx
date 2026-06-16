@@ -15,7 +15,7 @@ import {
 } from '@/functions/database/patterns';
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import { enqueueSnackbar } from 'notistack';
-import { useAdminLogger } from '@/functions/database/admin-logs';
+import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
@@ -100,12 +100,19 @@ function RouteComponent() {
 
     try {
       const saved = await saveCollection.mutateAsync(payload);
+      const existingCollection = collectionId ? collections.find((c) => c.id === collectionId) : null;
       log({
         action: collectionId ? 'Pattern Key Collection Updated' : 'Pattern Key Collection Created',
         entity_type: 'Pattern Key Collection',
         entity_id: saved?.id ?? collectionId,
         entity_name: collectionName,
-        changes: {},
+        changes: existingCollection
+          ? diffAdminChanges(
+              { name: existingCollection.name ?? '', legend_count: String(existingCollection.collection?.length ?? 0) } as Record<string, unknown>,
+              { name: collectionName, legend_count: String(selectedLegends.length) } as Record<string, unknown>,
+              ['name', 'legend_count'],
+            )
+          : {},
         metadata: { legend_count: selectedLegends.length },
       });
       await refetchCollections();
