@@ -185,6 +185,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                           />
                         ))}
                     </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      Layer selections affect your downloaded and printed files.
+                    </Typography>
                   </Grid>
                 )}
               </Grid>
