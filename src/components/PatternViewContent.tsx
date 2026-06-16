@@ -48,7 +48,7 @@ type PatternViewContentProps = {
 export const PatternViewContent = (props: PatternViewContentProps) => {
   const { viewData, sidebar } = props;
 
-  const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('print');
+  const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('svg');
 
   // ── Layer toggles ──────────────────────────────────────────────────────────
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
@@ -212,14 +212,14 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               onChange={(_, v) => setExportTab(v)}
               sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
             >
-              <Tab label="Print Pattern" value="print" />
               <Tab label="Export SVG" value="svg" />
+              <Tab label="Print Pattern" value="print" />
               <Tab label="Export Image" value="image" />
             </Tabs>
 
             <Suspense fallback={<Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />}>
-              {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
               {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
+              {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
               {exportTab === 'image' && <ExportPatternForImage viewData={viewData} hiddenLayers={hiddenLayers} />}
             </Suspense>
           </BorderedCard>
@@ -301,7 +301,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PanelSectionTitle>Details</PanelSectionTitle>
 
           <CompactRow label="Width">
-            {viewData?.design_width != null ? `${Number(viewData.design_width.toFixed(2))}${viewData.design_width_unit ?? ''}` : '-'}
+            {viewData?.design_width != null
+              ? `${Number(viewData.design_width.toFixed(2))}${viewData.design_width_unit ?? ''}`
+              : '-'}
           </CompactRow>
 
           <CompactRow label="Height">
@@ -311,7 +313,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           </CompactRow>
 
           <CompactRow label="Line Width">
-            {viewData?.line_width != null ? `${Number(viewData.line_width.toFixed(2))}${viewData.line_width_unit ?? ''}` : '-'}
+            {viewData?.line_width != null
+              ? `${Number(viewData.line_width.toFixed(2))}${viewData.line_width_unit ?? ''}`
+              : '-'}
           </CompactRow>
 
           <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '-'}</CompactRow>
