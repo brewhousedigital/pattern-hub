@@ -80,7 +80,7 @@ function MapController({
   markerRefs,
 }: {
   target: PanTarget | null;
-  markerRefs: React.MutableRefObject<Map<string, L.Marker>>;
+  markerRefs: React.RefObject<Map<string, L.Marker>>;
 }) {
   const map = useMap();
   useEffect(() => {

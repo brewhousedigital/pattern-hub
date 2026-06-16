@@ -134,6 +134,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
           />
 
           <TextField
+            required
             variant="filled"
             size="small"
             type="email"
@@ -143,6 +144,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
           />
 
           <TextField
+            required
             select
             variant="filled"
             size="small"
@@ -165,6 +167,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
           </TextField>
 
           <TextField
+            required
             multiline
             size="small"
             variant="filled"
