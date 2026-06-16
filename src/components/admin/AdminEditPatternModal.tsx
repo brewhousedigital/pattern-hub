@@ -13,8 +13,7 @@ import {
   useQueryGetTagHierarchy,
   getAncestors,
 } from '@/functions/database/tags';
-import { useQueryGetAllManualAuthors } from '@/functions/database/authors';
-import { useQueryUsersByPagination } from '@/functions/database/users';
+import { useQuerySearchLinkedAuthors, useQuerySearchManualAuthors } from '@/functions/database/authors';
 import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
@@ -152,12 +151,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     sortField: 'count',
     sortDir: 'desc',
   });
-  const {
-    isPending: isPendingManualAuthors,
-    isError: isErrorManualAuthors,
-    data: allManualAuthorsData,
-    refetch: refetchManualAuthors,
-  } = useQueryGetAllManualAuthors();
 
   const { refetch: refetchTagManagementStats } = useQueryAdminTagStats();
 
@@ -275,24 +268,23 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
   const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
 
-  const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 750);
+  const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 600);
 
   // Manual Authors
   const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.author_manual || []);
   const [manualAuthorAutoCompleteInputValue, setManualAuthorAutoCompleteInputValue] = React.useState('');
+  const debouncedManualAuthorSearch = useDebounce(manualAuthorAutoCompleteInputValue, 600);
 
   // Design Date
   const now = props?.design_date ? dayjs(props?.design_date) : dayjs();
   const [designDate, setDesignDate] = React.useState<Dayjs | null>(now);
 
-  const {
-    isPending: isPendingAuthorData,
-    isError: isErrorAuthorData,
-    data: authorData,
-  } = useQueryUsersByPagination(1, debouncedAuthorSearch);
+  const { data: authorData, isFetching: authorFetching } = useQuerySearchLinkedAuthors(debouncedAuthorSearch);
+  const { data: manualAuthorData, isFetching: manualAuthorFetching } =
+    useQuerySearchManualAuthors(debouncedManualAuthorSearch);
 
-  const isLoading = isPendingManualAuthors || isPendingAuthorData;
-  const isError = isErrorManualAuthors || isErrorAuthorData;
+  const isLoading = false;
+  const isError = false;
 
   // Instructions
   const [instructions, setInstructions] = React.useState(props?.instructions || '');
@@ -494,7 +486,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       }
 
       await refetchPatterns();
-      await refetchManualAuthors();
       await refetchTagManagementStats();
       handleClose();
 
@@ -1305,7 +1296,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
                   <FancyAutocompleteAuthors
                     label="Author"
-                    data={authorData?.items || []}
+                    serverSide
+                    freeSolo
+                    loading={authorFetching}
+                    data={authorData ?? []}
                     value={authorValue}
                     onChange={setAuthorValue}
                     inputValue={authorAutoCompleteInputValue}
@@ -1314,7 +1308,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
                   <FancyAutocomplete
                     label="Manual Author"
-                    data={allManualAuthorsData}
+                    serverSide
+                    loading={manualAuthorFetching}
+                    data={manualAuthorData ?? []}
                     value={manualAuthorValue}
                     freeSolo
                     onChange={setManualAuthorValue}

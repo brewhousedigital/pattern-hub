@@ -1,5 +1,5 @@
 import React from 'react';
-import { Autocomplete, Chip, TextField, Tooltip } from '@mui/material';
+import { Autocomplete, Chip, TextField, Tooltip, type AutocompleteValueOrFreeSoloValueMapping } from '@mui/material';
 
 type FancyAutocompleteProps = {
   label: string;
@@ -94,6 +94,9 @@ type FancyAutocompleteAuthorsProps = {
   onChange: (newValue: string[]) => void;
   inputValue: string;
   onInputChange: (newInputValue: string) => void;
+  serverSide?: boolean;
+  loading?: boolean;
+  freeSolo?: boolean;
 };
 
 type TypeFilteredAuthor = {
@@ -108,8 +111,10 @@ export const FancyAutocompleteAuthors = (props: FancyAutocompleteAuthorsProps) =
       id: item.id,
     })) || [];
 
-  // Derive full objects from the stored IDs so MUI has what it needs
-  const selectedOptions = filteredData.filter((option) => props?.value?.includes(option.id));
+  // Derive full objects from stored IDs; fall back to {label: id, id} for free-solo entries
+  const selectedOptions: TypeFilteredAuthor[] = (props.value ?? []).map(
+    (id) => filteredData.find((opt) => opt.id === id) ?? { label: id, id },
+  );
 
   return (
     <Autocomplete
@@ -117,13 +122,20 @@ export const FancyAutocompleteAuthors = (props: FancyAutocompleteAuthorsProps) =
       fullWidth
       disableClearable
       filterSelectedOptions
+      freeSolo={props.freeSolo}
       id="author-autocomplete"
       options={filteredData}
-      getOptionLabel={(option) => option.label}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
+      getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
+      isOptionEqualToValue={(option, value) =>
+        typeof option !== 'string' && typeof value !== 'string' && option.id === value.id
+      }
+      filterOptions={props.serverSide ? (x) => x : undefined}
+      loading={props.loading}
+      loadingText="Searching…"
+      noOptionsText={props.serverSide ? (props.inputValue ? 'No authors found' : 'Type to search authors') : undefined}
       value={selectedOptions}
-      onChange={(_, newValue: TypeFilteredAuthor[]) => {
-        props.onChange(newValue.map((v) => v.id));
+      onChange={(_, newValue: (TypeFilteredAuthor | string)[]) => {
+        props.onChange(newValue.map((v) => (typeof v === 'string' ? v : v.id)));
       }}
       slotProps={{
         popper: {
@@ -137,10 +149,11 @@ export const FancyAutocompleteAuthors = (props: FancyAutocompleteAuthorsProps) =
       onInputChange={(_, newInputValue) => {
         props.onInputChange(newInputValue);
       }}
-      renderValue={(value: TypeFilteredAuthor[], getTagProps) =>
+      renderValue={(value, getItemProps) =>
         value.map((option, index) => {
-          const { key, ...tagProps } = getTagProps({ index });
-          return <Chip variant="outlined" label={option.label} key={key} {...tagProps} />;
+          const { key, ...itemProps } = getItemProps({ index });
+          const label = typeof option === 'string' ? option : option.label;
+          return <Chip variant="outlined" label={label} key={key} {...itemProps} />;
         })
       }
       renderInput={(params) => <TextField {...params} variant="filled" label={props.label} />}
