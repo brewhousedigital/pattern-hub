@@ -487,7 +487,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 mb: 4,
                 minHeight: 'unset',
                 '& .MuiTabs-indicator': { display: 'none' },
-                '& .MuiTabs-flexContainer': { gap: 1 },
+                '& .MuiTabs-list': { gap: 1 },
                 '& .MuiTab-root': {
                   borderRadius: '20px',
                   border: '1px solid',
@@ -654,7 +654,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     <Typography
                       variant="subtitle2"
                       color="text.secondary"
-                      sx={{ fontWeight: 700, mb: 2, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em' }}
+                      sx={{
+                        fontWeight: 700,
+                        mb: 2,
+                        textTransform: 'uppercase',
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.08em',
+                      }}
                     >
                       Collections You Follow
                     </Typography>
