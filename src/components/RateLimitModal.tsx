@@ -40,7 +40,6 @@ export const RateLimitModal = () => {
       open={open}
       maxWidth="xs"
       fullWidth
-      disableEscapeKeyDown
       slotProps={{
         backdrop: {
           sx: {
@@ -48,13 +47,13 @@ export const RateLimitModal = () => {
             backgroundColor: 'rgba(0,0,0,0.4)',
           },
         },
+        paper: { sx: { borderRadius: 4 } },
       }}
-      PaperProps={{ sx: { borderRadius: 4 } }}
     >
       <DialogContent sx={{ p: { xs: 3, sm: 4 } }}>
         {isRepeat ? (
           <>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Typography variant="h6" sx={{ fontWeight: 700 }} gutterBottom>
               Still catching up 🐢
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.7, mb: 1 }}>
@@ -67,7 +66,7 @@ export const RateLimitModal = () => {
           </>
         ) : (
           <>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Typography variant="h6" sx={{ fontWeight: 700 }} gutterBottom>
               The server needs a breather 😮‍💨
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>

@@ -91,10 +91,10 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
       {sidebar && (
         <Grid
           size={{ xs: 12, lg: 'auto' }}
-          order={{ xs: 3, lg: 1 }}
           sx={{
             width: { lg: 250 },
             flexShrink: 0,
+            order: { xs: 3, lg: 1 },
           }}
         >
           {sidebar}
@@ -103,9 +103,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
       <Grid
         size={{ xs: 12, lg: 'grow' }}
-        order={{ xs: 1, lg: 2 }}
         sx={{
           minWidth: 0,
+          order: { xs: 1, lg: 2 },
         }}
       >
         <BorderedCard>
@@ -225,10 +225,10 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
       <Grid
         size={{ xs: 12, lg: 'auto' }}
-        order={{ xs: 2, lg: 3 }}
         sx={{
           width: { lg: 300 },
           flexShrink: 0,
+          order: { xs: 2, lg: 3 },
         }}
       >
         <Box>

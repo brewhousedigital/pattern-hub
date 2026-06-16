@@ -93,7 +93,7 @@ export const NotificationBell = () => {
       >
         {/* Header */}
         <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle2" fontWeight={700}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Notifications
           </Typography>
           {updates.length > 0 && (
@@ -125,7 +125,7 @@ export const NotificationBell = () => {
                 </ListItemIcon>
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.3 }}>
+                    <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                       {col?.name ?? 'Collection'}
                     </Typography>
                     <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />

@@ -25,7 +25,7 @@ import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 
 import {
@@ -261,7 +261,7 @@ function RouteComponent() {
       />
 
       {/* ── Legends ── */}
-      <Typography variant="overline" color="text.secondary" display="block" mb={1}>
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
         Legends
       </Typography>
 
@@ -277,11 +277,11 @@ function RouteComponent() {
       )}
 
       {legendsLoading ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
         </Box>
       ) : legends.length === 0 ? (
-        <Typography variant="body2" color="text.disabled" py={1.5}>
+        <Typography variant="body2" color="text.disabled" sx={{ py: 1.5 }}>
           No legends yet.
         </Typography>
       ) : (
@@ -368,7 +368,7 @@ function RouteComponent() {
             backgroundColor: 'background.paper',
           }}
         >
-          <Typography variant="subtitle2" fontWeight={500} mb={1.5}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1.5 }}>
             New key collection
           </Typography>
 
@@ -386,12 +386,12 @@ function RouteComponent() {
             />
           </Box>
 
-          <Typography variant="overline" color="text.secondary" display="block" mb={1}>
+          <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
             Select legends &amp; name each
           </Typography>
 
           {legends.length === 0 ? (
-            <Typography variant="body2" color="text.disabled" mb={2}>
+            <Typography variant="body2" color="text.disabled" sx={{ mb: 2 }}>
               Upload legends first.
             </Typography>
           ) : (
@@ -443,7 +443,7 @@ function RouteComponent() {
                       }}
                     />
 
-                    <Box flex={1} minWidth={0} onClick={(e) => e.stopPropagation()}>
+                    <Box sx={{ flex: 1, minWidth: 0 }} onClick={(e) => e.stopPropagation()}>
                       <TextField
                         size="small"
                         placeholder="Name…"
@@ -468,7 +468,7 @@ function RouteComponent() {
             <Divider />
           </Box>
 
-          <Box display="flex" justifyContent="flex-end" gap={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
             <Button
               size="small"
               onClick={resetPanel}
@@ -506,11 +506,11 @@ function RouteComponent() {
 
       {/* Collections list */}
       {collectionsLoading ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
         </Box>
       ) : collections.length === 0 ? (
-        <Typography variant="body2" color="text.disabled" py={1.5}>
+        <Typography variant="body2" color="text.disabled" sx={{ py: 1.5 }}>
           No collections yet.
         </Typography>
       ) : (
@@ -532,7 +532,7 @@ function RouteComponent() {
                         }}
                       >
                         <Box sx={{ mr: 'auto' }}>
-                          <Typography variant="body2" fontWeight={500} noWrap>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
                             {collection.name}
                           </Typography>
 
@@ -613,11 +613,11 @@ function RouteComponent() {
       />
 
       {referenceKeysLoading ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
         </Box>
       ) : referenceKeys.length === 0 ? (
-        <Typography variant="body2" color="text.disabled" py={1.5}>
+        <Typography variant="body2" color="text.disabled" sx={{ py: 1.5 }}>
           No pattern key references found.
         </Typography>
       ) : (
@@ -689,11 +689,11 @@ function RouteComponent() {
       />
 
       {allPatternsLoading ? (
-        <Box display="flex" justifyContent="center" py={3}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress size={22} sx={{ color: '#3B6D11' }} />
         </Box>
       ) : patternsWithoutKeys.length === 0 ? (
-        <Typography variant="body2" color="text.disabled" py={1.5}>
+        <Typography variant="body2" color="text.disabled" sx={{ py: 1.5 }}>
           All patterns have at least one key assigned.
         </Typography>
       ) : (

@@ -29,7 +29,7 @@ export const MarkdownEditor = ({
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         {label && (
-          <Typography variant="body2" color={error ? 'error' : 'text.secondary'} fontWeight={600}>
+          <Typography variant="body2" color={error ? 'error' : 'text.secondary'} sx={{ fontWeight: 600 }}>
             {label}
           </Typography>
         )}
@@ -90,7 +90,7 @@ export const MarkdownEditor = ({
           {value.trim() ? (
             <MarkdownWrapper>{value}</MarkdownWrapper>
           ) : (
-            <Typography color="text.disabled" variant="body2" fontStyle="italic">
+            <Typography color="text.disabled" variant="body2" sx={{ fontStyle: 'italic' }}>
               Nothing to preview yet.
             </Typography>
           )}

@@ -12,7 +12,7 @@ import {
 } from '@/functions/database/pattern-drawer-data';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 
 import { IconButton, Tooltip } from '@mui/material';
 

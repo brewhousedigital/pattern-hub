@@ -96,7 +96,7 @@ export const PatternDifficultyRating = (props: TypeViewData) => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, justifyContent: 'space-between' }}>
         {communityInfo && communityRating ? (
           <>
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
               <Rating
                 readOnly
                 precision={0.1}
@@ -126,7 +126,7 @@ export const PatternDifficultyRating = (props: TypeViewData) => {
           <SectionLabel>Your Difficulty</SectionLabel>
 
           <Box sx={{ mb: 2.5 }}>
-            <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1.5}>
               <Rating
                 precision={0.5}
                 value={userRatingVal}

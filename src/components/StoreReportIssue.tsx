@@ -153,7 +153,7 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
           sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pb: 1, pr: 1.5 }}
         >
           <Box>
-            <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               Report Store Issue
             </Typography>
             <Typography variant="caption" color="text.secondary">

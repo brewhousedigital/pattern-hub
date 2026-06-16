@@ -121,7 +121,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
       </Collapse>
 
       <Collapse in={isOpen}>
-        <Stack onSubmit={handleSubmit} gap={2} component="form">
+        <Stack onSubmit={handleSubmit} sx={{ gap: 2 }} component="form">
           {/* Honeypot - invisible to humans, traps bots that fill every field */}
           <input
             aria-hidden="true"

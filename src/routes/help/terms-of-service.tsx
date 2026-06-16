@@ -36,7 +36,7 @@ function RouteComponent() {
               Plain-language terms for using our service. Please read them before you get started.
             </Typography>
 
-            <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1.5 }}>
               Last updated: {LAST_UPDATED}
             </Typography>
           </HeroSection>
@@ -47,11 +47,11 @@ function RouteComponent() {
             <GavelOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
 
             <Box>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }} gutterBottom>
                 The short version
               </Typography>
 
-              <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
                 The service is free. You're responsible for what you do with it. We provide no warranties and accept no
                 liability for any harm arising from your use. Use it wisely.
               </Typography>
@@ -64,11 +64,11 @@ function RouteComponent() {
                 <IconCircle highlight={section.highlight}>{section.icon}</IconCircle>
 
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.4 }} gutterBottom>
                     {section.title}
                   </Typography>
 
-                  <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.85 }}>
                     {section.body}
                   </Typography>
                 </Box>
@@ -86,11 +86,11 @@ function RouteComponent() {
               borderColor: 'primary.main',
             }}
           >
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }} gutterBottom>
               Governing Law
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
               These terms are governed by the laws of the jurisdiction in which we operate, without regard to
               conflict-of-law principles. Any disputes arising from these terms or your use of the service will be
               subject to the exclusive jurisdiction of the courts in that jurisdiction.
@@ -98,7 +98,7 @@ function RouteComponent() {
           </Box>
 
           <ContactBox elevation={0}>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }} gutterBottom>
               Questions about these terms?
             </Typography>
 

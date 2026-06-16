@@ -94,10 +94,10 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) => (
         <Box>
-          <Typography fontSize={13} fontWeight={600} lineHeight={1.3}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
             {params.row.name}
           </Typography>
-          <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+          <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
             {params.row.id}
           </Typography>
         </Box>
@@ -112,11 +112,11 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) =>
         params.row.street_address ? (
-          <Typography fontSize={13} color="text.secondary">
+          <Typography sx={{ fontSize: 13 }} color="text.secondary">
             {params.row.street_address}
           </Typography>
         ) : (
-          <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+          <Typography color="text.disabled" sx={{ fontSize: 12, fontStyle: 'italic' }}>
             -
           </Typography>
         ),
@@ -129,11 +129,11 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) =>
         params.row.phone ? (
-          <Typography fontSize={13} color="text.secondary">
+          <Typography sx={{ fontSize: 13 }} color="text.secondary">
             {params.row.phone}
           </Typography>
         ) : (
-          <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+          <Typography color="text.disabled" sx={{ fontSize: 12, fontStyle: 'italic' }}>
             -
           </Typography>
         ),
@@ -147,17 +147,16 @@ function RouteComponent() {
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) =>
         params.row.website ? (
           <Typography
-            fontSize={12}
             component="a"
             href={params.row.website}
             target="_blank"
             rel="noopener noreferrer"
-            sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            sx={{ fontSize: 12, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
             {params.row.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
           </Typography>
         ) : (
-          <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+          <Typography color="text.disabled" sx={{ fontSize: 12, fontStyle: 'italic' }}>
             -
           </Typography>
         ),
@@ -173,7 +172,7 @@ function RouteComponent() {
         const tags = Array.isArray(params.row.tags) ? params.row.tags : [];
         if (!tags.length)
           return (
-            <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+            <Typography color="text.disabled" sx={{ fontSize: 12, fontStyle: 'italic' }}>
               -
             </Typography>
           );
@@ -200,11 +199,11 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeStoreLocation>) =>
         params.row.location?.lat != null ? (
-          <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+          <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
             {params.row.location.lat.toFixed(5)}, {params.row.location.lon.toFixed(5)}
           </Typography>
         ) : (
-          <Typography fontSize={12} color="text.disabled" fontStyle="italic">
+          <Typography color="text.disabled" sx={{ fontSize: 12, fontStyle: 'italic' }}>
             -
           </Typography>
         ),

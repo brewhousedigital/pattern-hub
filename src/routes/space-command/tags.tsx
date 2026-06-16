@@ -25,10 +25,10 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 import SearchIcon from '@mui/icons-material/Search';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import MergeIcon from '@mui/icons-material/Merge';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ListIcon from '@mui/icons-material/List';
@@ -287,7 +287,7 @@ function ConfirmDialog({ open, type, tag, newTag, affectedCount, childTags, onCo
 
         {childTags && childTags.length > 0 && (
           <Alert severity="warning" icon={<AccountTreeIcon />}>
-            <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
               {childTags.length} child tag{childTags.length !== 1 ? 's' : ''} will become orphaned:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -577,7 +577,7 @@ function TagTreeView({
 
       {orphans.length > 0 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="caption" color="warning.main" fontWeight={600} sx={{ px: 1, display: 'block', mb: 0.5 }}>
+          <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600, px: 1, display: 'block', mb: 0.5 }}>
             Orphaned - parent tag no longer exists
           </Typography>
           {orphans.map((h) => (
@@ -701,7 +701,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
     <Paper variant="outlined" sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
         <CleaningServicesIcon color="action" />
-        <Typography variant="subtitle1" fontWeight={600}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           Low-Use Tag Cleanup
         </Typography>
         <Box sx={{ flex: 1 }} />
@@ -715,7 +715,7 @@ function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
           }}
           size="small"
           sx={{ width: 140 }}
-          inputProps={{ min: 1 }}
+          slotProps={{ htmlInput: { min: 1 } }}
         />
       </Box>
 
@@ -1173,7 +1173,7 @@ const TagManagementPage = () => {
 
       {/* All Tags header row */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1, minWidth: 120 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1, minWidth: 120 }}>
           All Tags
         </Typography>
 

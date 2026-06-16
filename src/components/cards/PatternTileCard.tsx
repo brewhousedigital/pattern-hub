@@ -68,10 +68,10 @@ export function PatternTileCard({ pattern, patternIdArray }: Props) {
         {/* Info */}
         <Box sx={{ px: 1.5, pt: 1, pb: 1.5 }}>
           <Typography
-            fontSize={13}
-            fontWeight={600}
-            lineHeight={1.3}
             sx={{
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: 1.3,
               overflow: 'hidden',
               display: '-webkit-box',
               WebkitBoxOrient: 'vertical',
@@ -81,7 +81,7 @@ export function PatternTileCard({ pattern, patternIdArray }: Props) {
             {pattern.name}
           </Typography>
           {authors && (
-            <Typography fontSize={11} color="text.secondary" mt={0.25} noWrap>
+            <Typography color="text.secondary" noWrap sx={{ fontSize: 11, mt: 0.25 }}>
               {authors}
             </Typography>
           )}

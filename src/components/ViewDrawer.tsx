@@ -47,7 +47,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
         }}
       >
         <SearchOffRoundedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-        <Typography variant="h6" fontWeight={600}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Pattern not found
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>

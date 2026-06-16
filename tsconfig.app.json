@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
-    "baseUrl": ".", // Must be set to resolve paths correctly
     "paths": {
-      "@/*": ["src/*"]
-      // Ensure a trailing '/*' is used to match files within the directory
+      "@/*": ["./src/*"]
     },
 
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",

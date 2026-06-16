@@ -73,7 +73,7 @@ function RouteComponent() {
       <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
         <Card elevation={0}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+            <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.3px' }}>
               Welcome back
             </Typography>
 
@@ -148,7 +148,7 @@ function RouteComponent() {
           <Box sx={{ textAlign: 'center', mt: 3.5 }}>
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{' '}
-              <MuiLink component={Link} to="/auth/register" underline="hover" fontWeight={600}>
+              <MuiLink component={Link} to="/auth/register" underline="hover" sx={{ fontWeight: 600 }}>
                 Create one
               </MuiLink>
             </Typography>

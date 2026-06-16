@@ -337,7 +337,7 @@ function CustomToolbar() {
   return (
     <Toolbar>
       <Stack direction="row" sx={{ width: '100%', alignItems: 'center', gap: 3 }}>
-        <Typography fontWeight="medium" sx={{ flex: 1, mx: 0.5, mr: 'auto' }}>
+        <Typography sx={{ fontWeight: 'medium', flex: 1, mx: 0.5, mr: 'auto' }}>
           List of Patterns
         </Typography>
 

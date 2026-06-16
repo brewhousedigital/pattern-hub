@@ -92,7 +92,7 @@ function RouteComponent() {
       <Container disableGutters maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
         <Card elevation={0}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+            <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.3px' }}>
               Create an account
             </Typography>
 
@@ -126,23 +126,25 @@ function RouteComponent() {
                   autoComplete="new-password"
                   required
                   helperText="Minimum 8 characters"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword((v) => !v)}
-                          edge="end"
-                          size="small"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? (
-                            <VisibilityOffOutlinedIcon fontSize="small" />
-                          ) : (
-                            <VisibilityOutlinedIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword((v) => !v)}
+                            edge="end"
+                            size="small"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? (
+                              <VisibilityOffOutlinedIcon fontSize="small" />
+                            ) : (
+                              <VisibilityOutlinedIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
 
@@ -176,27 +178,29 @@ function RouteComponent() {
                 required
                 error={passwordMismatch}
                 helperText={passwordMismatch ? 'Passwords do not match' : ''}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      {passwordsMatch ? (
-                        <CheckCircleOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />
-                      ) : (
-                        <IconButton
-                          onClick={() => setShowConfirm((v) => !v)}
-                          edge="end"
-                          size="small"
-                          aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                        >
-                          {showConfirm ? (
-                            <VisibilityOffOutlinedIcon fontSize="small" />
-                          ) : (
-                            <VisibilityOutlinedIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      )}
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {passwordsMatch ? (
+                          <CheckCircleOutlinedIcon fontSize="small" sx={{ color: 'success.main' }} />
+                        ) : (
+                          <IconButton
+                            onClick={() => setShowConfirm((v) => !v)}
+                            edge="end"
+                            size="small"
+                            aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                          >
+                            {showConfirm ? (
+                              <VisibilityOffOutlinedIcon fontSize="small" />
+                            ) : (
+                              <VisibilityOutlinedIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        )}
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
             </Box>
@@ -208,9 +212,7 @@ function RouteComponent() {
             <Typography
               variant="caption"
               color="text.disabled"
-              display="block"
-              textAlign="center"
-              sx={{ mt: 2, lineHeight: 1.6 }}
+              sx={{ mt: 2, lineHeight: 1.6, display: 'block', textAlign: 'center' }}
             >
               By creating an account you agree to our{' '}
               <MuiLink component={Link} to="/help/terms-of-service" underline="hover" color="text.secondary">
@@ -227,7 +229,7 @@ function RouteComponent() {
           <Box sx={{ textAlign: 'center', mt: 3.5 }}>
             <Typography variant="body2" color="text.secondary">
               Already have an account?{' '}
-              <MuiLink component={Link} to="/auth/login" underline="hover" fontWeight={600}>
+              <MuiLink component={Link} to="/auth/login" underline="hover" sx={{ fontWeight: 600 }}>
                 Sign in
               </MuiLink>
             </Typography>

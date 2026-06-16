@@ -295,7 +295,7 @@ function ContentReportsGrid() {
       renderCell: (params) => (
         <>
           <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{params.value || '-'}</Typography>
-          <Typography variant="body2" fontFamily="monospace" color="text.disabled">
+          <Typography variant="body2" sx={{ fontFamily: 'monospace' }} color="text.disabled">
             {params.row.content_id}
           </Typography>
         </>

@@ -105,7 +105,7 @@ function RouteComponent() {
           <Card elevation={0}>
             <Box sx={{ textAlign: 'center' }}>
               <LockResetRoundedIcon sx={{ fontSize: 52, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                 Invalid reset link
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -157,7 +157,7 @@ function RouteComponent() {
             >
               <LockResetRoundedIcon color="primary" />
             </Box>
-            <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+            <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.3px' }}>
               Set a new password
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
@@ -168,7 +168,7 @@ function RouteComponent() {
           {formError && (
             <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
               {formError}{' '}
-              <MuiLink component={Link} to="/auth/forgot-password" underline="hover" fontWeight={600}>
+              <MuiLink component={Link} to="/auth/forgot-password" underline="hover" sx={{ fontWeight: 600 }}>
                 Request a new link
               </MuiLink>
             </Alert>

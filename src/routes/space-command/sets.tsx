@@ -130,11 +130,11 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
           {params.row.color && (
             <Box sx={{ width: 4, height: 28, borderRadius: 1, backgroundColor: params.row.color, flexShrink: 0 }} />
           )}
-          <Typography fontSize={13} fontWeight={600}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
             {params.row.title}
           </Typography>
         </Stack>
@@ -149,9 +149,8 @@ function RouteComponent() {
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
         <Typography
-          fontSize={12}
           color="text.secondary"
-          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          sx={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
         >
           {params.row.description || <em style={{ opacity: 0.5 }}>No description</em>}
         </Typography>
@@ -206,7 +205,7 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
-        <Typography fontSize={12} color="text.secondary">
+        <Typography color="text.secondary" sx={{ fontSize: 12 }}>
           {params.row.position ?? '-'}
         </Typography>
       ),
@@ -218,7 +217,7 @@ function RouteComponent() {
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
-        <Typography fontSize={12} color="text.secondary">
+        <Typography sx={{ fontSize: 12 }} color="text.secondary">
           {formatDate(params.row.created)}
         </Typography>
       ),
@@ -231,7 +230,7 @@ function RouteComponent() {
       disableColumnMenu: true,
       align: 'center',
       renderCell: (params: GridRenderCellParams<TypePatternSet>) => (
-        <Stack direction="row" spacing={0.25} justifyContent="center">
+        <Stack direction="row" spacing={0.25} sx={{ justifyContent: 'center' }}>
           <Tooltip title={canEdit ? 'Edit set' : 'Requires SETS_AU permission'}>
             <span>
               <IconButton size="small" disabled={!canEdit} onClick={() => setEditTarget(params.row)}>
@@ -480,7 +479,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
               <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                 Accent color
               </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+              <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }} spacing={1}>
                 {ACCENT_COLORS.map((c) => (
                   <Tooltip key={c.value} title={c.label}>
                     <Box
@@ -509,7 +508,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
               }
               label={
                 <Stack>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {isPublished ? 'Published' : 'Draft'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -575,7 +574,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
 
   return (
     <Box>
-      <Typography variant="subtitle2" fontWeight={700} mb={1}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
         Patterns in set ({selected.length})
       </Typography>
 
@@ -607,12 +606,12 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
             >
               <ListItemText
                 primary={
-                  <Typography fontSize={13} fontWeight={500}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
                     {p.name}
                   </Typography>
                 }
                 secondary={
-                  <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+                  <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                     {p.id}
                   </Typography>
                 }
@@ -622,7 +621,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
         </List>
       )}
 
-      <Typography variant="subtitle2" fontWeight={700} mb={1}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
         Add patterns
       </Typography>
 
@@ -633,12 +632,14 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
         variant="outlined"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              {isFetching ? <CircularProgress size={14} /> : <SearchRoundedIcon fontSize="small" />}
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                {isFetching ? <CircularProgress size={14} /> : <SearchRoundedIcon fontSize="small" />}
+              </InputAdornment>
+            ),
+          },
         }}
         sx={{ mb: 1 }}
       />
@@ -682,7 +683,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
                 </ListItemAvatar>
                 <ListItemText
                   primary={
-                    <Typography fontSize={13} fontWeight={500}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
                       {p.name}
                       {alreadyAdded && (
                         <Chip

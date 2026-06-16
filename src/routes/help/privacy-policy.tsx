@@ -36,7 +36,7 @@ function RouteComponent() {
               don't do, with your data.
             </Typography>
 
-            <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1.5 }}>
               Last updated: {LAST_UPDATED}
             </Typography>
           </HeroSection>
@@ -47,11 +47,11 @@ function RouteComponent() {
             <ShieldOutlinedIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
 
             <Box>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }} gutterBottom>
                 The short version
               </Typography>
 
-              <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
                 Anonymous users: very little data collected. Registered users: email only, for account management. We
                 don't sell data. We don't use third-party analytics. That's it.
               </Typography>
@@ -64,11 +64,11 @@ function RouteComponent() {
                 <IconCircle>{section.icon}</IconCircle>
 
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ lineHeight: 1.4 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.4 }} gutterBottom>
                     {section.title}
                   </Typography>
 
-                  <Typography variant="body2" color="text.secondary" lineHeight={1.85}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.85 }}>
                     {section.body}
                   </Typography>
                 </Box>
@@ -86,22 +86,22 @@ function RouteComponent() {
               borderColor: 'primary.main',
             }}
           >
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }} gutterBottom>
               Account Deletion & Data Retention
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
               When you delete your account, your email address is permanently removed from our systems. We do not retain
               any residual account data after account deletion.
             </Typography>
           </Box>
 
           <Box sx={{ mt: 4, p: 3, borderRadius: 3, backgroundColor: 'action.hover' }}>
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }} gutterBottom>
               Changes to This Policy
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
               If we ever change this policy in a meaningful way, we will notify registered users by email before the
               change takes effect. We will never retroactively weaken the privacy protections described here without
               explicit consent.
@@ -109,7 +109,7 @@ function RouteComponent() {
           </Box>
 
           <ContactBox elevation={0}>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }} gutterBottom>
               Questions about your privacy?
             </Typography>
 
