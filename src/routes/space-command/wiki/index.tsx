@@ -288,7 +288,7 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
 
           <FolderIcon sx={{ color: 'primary.main', fontSize: '1.1rem' }} />
 
-          <Typography fontWeight={600}>{cat.name}</Typography>
+          <Typography sx={{ fontWeight: 600 }}>{cat.name}</Typography>
 
           <Chip label={cat.slug} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
 
@@ -321,7 +321,7 @@ const CategoryAccordion = (props: CategoryAccordionProps) => {
           ) : (
             <DndContext sensors={pageSensors} collisionDetection={closestCenter} onDragEnd={handlePageDragEnd}>
               <SortableContext items={localPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                <Stack gap={0.5}>
+                <Stack sx={{ gap: 0.5 }}>
                   {localPages.map((page, pageIndex) => (
                     <SortablePageRow
                       key={page.id}
@@ -513,7 +513,7 @@ function RouteComponent() {
         title="Wiki"
         subtitle={`${categories.length} categor${categories.length !== 1 ? 'ies' : 'y'} · ${totalPages} page${totalPages !== 1 ? 's' : ''}`}
         actionNode={
-          <Stack direction="row" gap={1}>
+          <Stack direction="row" sx={{ gap: 1 }}>
             <Button
               variant="outlined"
               size="small"
@@ -543,7 +543,7 @@ function RouteComponent() {
       )}
 
       {isLoading ? (
-        <Stack gap={1.5}>
+        <Stack sx={{ gap: 1.5 }}>
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} variant="rounded" height={56} />
           ))}
@@ -573,7 +573,7 @@ function RouteComponent() {
           </Fade>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
             <SortableContext items={localCategories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-              <Stack gap={1}>
+              <Stack sx={{ gap: 1 }}>
                 {localCategories.map((cat, catIndex) => {
                   const catPages = pages.filter((p) => p.category === cat.id);
                   return (

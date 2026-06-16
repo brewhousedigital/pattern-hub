@@ -431,7 +431,7 @@ export const HomepageSearchV3 = ({
                     },
                   }}
                 >
-                  <ListItemText primary={item.tag} primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                  <ListItemText primary={item.tag} slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }} />
 
                   {/*<ListItemSecondaryAction>
                   <Typography

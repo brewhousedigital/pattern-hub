@@ -40,10 +40,10 @@ function RouteComponent() {
       <Container maxWidth="lg" sx={{ py: 5 }}>
         {/* Page header */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight={700} lineHeight={1.2} gutterBottom>
+          <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }} gutterBottom>
             Sets
           </Typography>
-          <Typography variant="body1" color="text.secondary" maxWidth={560}>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560 }}>
             Curated collections of patterns
           </Typography>
         </Box>
@@ -114,7 +114,7 @@ function RouteComponent() {
                       sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
                     >
                       <CardContent sx={{ flexGrow: 1, p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                        <Typography variant="h6" fontWeight={700} lineHeight={1.3} gutterBottom>
+                        <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }} gutterBottom>
                           {set.title}
                         </Typography>
 

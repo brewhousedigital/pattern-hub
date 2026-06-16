@@ -244,7 +244,7 @@ function RouteComponent() {
       <PageWrapper>
         <Container maxWidth="sm">
           <Box sx={{ mb: 5 }}>
-            <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.3px' }}>
               Edit Profile
             </Typography>
           </Box>
@@ -327,7 +327,7 @@ function RouteComponent() {
                     />
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <PersonRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
+                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
                         Profile Photo
                       </Typography>
                     </Box>
@@ -360,7 +360,7 @@ function RouteComponent() {
                         Remove photo
                       </Button>
                     )}
-                    <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.75 }}>
+                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
                       Square crop recommended · max 5 MB · resized to 400×400 px
                     </Typography>
                   </Grid>
@@ -379,7 +379,7 @@ function RouteComponent() {
                     />
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                      <Typography variant="caption" fontWeight={600} color="text.secondary">
+                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
                         Header Image
                       </Typography>
                     </Box>
@@ -412,7 +412,7 @@ function RouteComponent() {
                         Remove image
                       </Button>
                     )}
-                    <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.75 }}>
+                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
                       Wide landscape image · max 10 MB · resized to 1920×500 px
                     </Typography>
                   </Grid>
@@ -562,13 +562,13 @@ function RouteComponent() {
                         />
                       }
                       label={
-                        <Typography fontWeight={600} variant="body2">
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           I'm a pattern artist
                         </Typography>
                       }
                       sx={{ m: 0 }}
                     />
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                       Adds an Artist badge to your profile and shows a showcase of patterns you've contributed to the
                       archive.
                     </Typography>

@@ -464,7 +464,7 @@ function RouteComponent() {
             gap: 2,
           }}
         >
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             No columns yet
           </Typography>
           <Typography variant="body2">Create your first column to start planning.</Typography>
@@ -669,13 +669,13 @@ function KanbanColumn({
           </Tooltip>
 
           {/* Title + done badge */}
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+          <Stack direction="row" sx={{ alignItems: 'center', flex: 1, minWidth: 0 }} spacing={0.75}>
             {column.is_done && (
               <Tooltip title="Done column - shows last 5 items">
                 <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main', flexShrink: 0 }} />
               </Tooltip>
             )}
-            <Typography variant="body2" fontWeight={700} noWrap sx={{ color: accentColor || 'text.primary' }}>
+            <Typography variant="body2" noWrap sx={{ fontWeight: 700, color: accentColor || 'text.primary' }}>
               {column.title}
             </Typography>
           </Stack>
@@ -742,7 +742,7 @@ function KanbanColumn({
           <Box
             sx={{ px: 1.5, py: 0.5, backgroundColor: wipExceeded ? alpha('#f44336', 0.08) : alpha('#ff9800', 0.08) }}
           >
-            <Typography variant="caption" color={wipExceeded ? 'error.main' : 'warning.main'} fontWeight={600}>
+            <Typography variant="caption" color={wipExceeded ? 'error.main' : 'warning.main'} sx={{ fontWeight: 600 }}>
               {wipExceeded ? `Over WIP limit (${column.wip_limit})` : `At WIP limit (${column.wip_limit})`}
             </Typography>
           </Box>
@@ -781,7 +781,7 @@ function KanbanColumn({
             ))}
             {items.length === 0 && (
               <Box sx={{ py: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
-                <Typography variant="caption" color="text.disabled" fontStyle="italic">
+                <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
                   {column.is_done ? 'No completed items' : 'No items'}
                 </Typography>
               </Box>
@@ -792,7 +792,7 @@ function KanbanColumn({
         {/* Done column note */}
         {column.is_done && rawCount > 5 && (
           <Box sx={{ px: 1.5, pb: 1 }}>
-            <Typography variant="caption" color="text.disabled" fontStyle="italic">
+            <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
               Showing 5 most recently updated ({rawCount} total)
             </Typography>
           </Box>
@@ -900,7 +900,7 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
         )}
 
         {/* Title */}
-        <Typography variant="body2" fontWeight={600} lineHeight={1.35} sx={{ mb: labels.length > 0 ? 0.75 : 0.5 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.35, mb: labels.length > 0 ? 0.75 : 0.5 }}>
           {item.title}
         </Typography>
 
@@ -920,12 +920,12 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
         )}
 
         {/* Bottom row */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={0.5}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }} spacing={0.5}>
           {item.due_date ? (
             <Typography
               variant="caption"
-              fontWeight={600}
               sx={{
+                fontWeight: 600,
                 color: isOverdue ? 'error.main' : isDueToday ? 'warning.main' : 'text.disabled',
                 fontSize: '0.65rem',
               }}
@@ -937,7 +937,7 @@ function KanbanCardStatic({ item, isLoading, onClick, dragProps }: KanbanCardSta
             <Box />
           )}
 
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Stack direction="row" sx={{ alignItems: 'center' }} spacing={0.5}>
             {item.assignee && (
               <Tooltip title={item.assignee} disableInteractive>
                 <Avatar sx={{ width: 18, height: 18, fontSize: '0.55rem', backgroundColor: 'primary.main' }}>
@@ -993,7 +993,7 @@ function KanbanColumnStatic({ column, items, rawCount }: KanbanColumnStaticProps
           }}
         >
           <DragIndicatorIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-          <Typography variant="body2" fontWeight={700} noWrap sx={{ flex: 1, color: accentColor || 'text.primary' }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 700, flex: 1, color: accentColor || 'text.primary' }}>
             {column.title}
           </Typography>
           <Chip
@@ -1146,7 +1146,7 @@ function EditColumnDialog({ open, column, onClose, onSave, loading }: EditColumn
             <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
               Accent color
             </Typography>
-            <Stack direction="row" spacing={0.75} alignItems="center">
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
               {['#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0', '#00bcd4', ''].map((preset) => (
                 <Tooltip key={preset || 'none'} title={preset || 'None'} disableInteractive>
                   <Box
@@ -1197,7 +1197,7 @@ function EditColumnDialog({ open, column, onClose, onSave, loading }: EditColumn
             fullWidth
             variant="filled"
             type="number"
-            inputProps={{ min: 0, step: 1 }}
+            slotProps={{ htmlInput: { min: 0, step: 1 } }}
             helperText="Column header turns amber at limit, red when exceeded."
           />
 
@@ -1205,7 +1205,7 @@ function EditColumnDialog({ open, column, onClose, onSave, loading }: EditColumn
             control={<Checkbox checked={isDone} onChange={(e) => setIsDone(e.target.checked)} />}
             label={
               <Box>
-                <Typography variant="body2" fontWeight={600}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Done column
                 </Typography>
                 <Typography variant="caption" color="text.disabled">

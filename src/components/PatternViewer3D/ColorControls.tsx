@@ -79,7 +79,7 @@ export const ColorControls = ({
               flexShrink: 0,
             }}
           />
-          <Typography variant="subtitle2" fontWeight={600} color="text.primary">
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }} color="text.primary">
             Click any region to fill
           </Typography>
         </Box>
@@ -165,7 +165,7 @@ export const ColorControls = ({
             backgroundColor: 'transparent',
           }}
         />
-        <Typography variant="caption" fontFamily="monospace" color="text.secondary">
+        <Typography variant="caption" sx={{ fontFamily: 'monospace' }} color="text.secondary">
           {paintColor}
         </Typography>
       </Box>
@@ -174,7 +174,7 @@ export const ColorControls = ({
       {usedColors.size > 0 && (
         <>
           <Divider sx={{ mt: 1.5, mb: 1.5 }} />
-          <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}>
             Colors used:
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -223,7 +223,7 @@ export const ColorControls = ({
       {/* Background environment selector */}
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="caption" fontWeight={600} color="text.secondary">
+          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
             Background scene:
           </Typography>
           <ToggleButtonGroup

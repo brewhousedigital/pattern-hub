@@ -68,7 +68,7 @@ function RouteComponent() {
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                       <ArticleIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
                       <Box sx={{ flex: 1 }}>
-                        <Typography fontWeight={600} sx={{ color: 'text.primary', mb: 0.5 }}>
+                        <Typography sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
                           {page.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ lineClamp: 2 }}>

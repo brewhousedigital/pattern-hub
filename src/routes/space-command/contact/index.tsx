@@ -76,25 +76,25 @@ function RouteComponent() {
               : data?.map((submission) => (
                   <TableRow key={submission.id} hover>
                     <TableCell>
-                      <Typography fontSize={13} fontWeight={500}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
                         {submission.name}
                       </Typography>
                     </TableCell>
 
                     <TableCell>
-                      <Typography fontSize={12} color="text.secondary">
+                      <Typography color="text.secondary" sx={{ fontSize: 12 }}>
                         {submission.email}
                       </Typography>
                     </TableCell>
 
                     <TableCell sx={{ maxWidth: 280 }}>
-                      <Typography fontSize={13} color="text.secondary" noWrap>
+                      <Typography color="text.secondary" noWrap sx={{ fontSize: 13 }}>
                         {submission.message}
                       </Typography>
                     </TableCell>
 
                     <TableCell>
-                      <Typography fontSize={12} color="text.disabled" noWrap>
+                      <Typography color="text.disabled" noWrap sx={{ fontSize: 12 }}>
                         {new Date(submission.created).toLocaleDateString()}
                       </Typography>
                     </TableCell>

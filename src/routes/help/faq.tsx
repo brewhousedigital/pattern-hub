@@ -101,8 +101,7 @@ function RouteComponent() {
                 <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography
                     variant="subtitle1"
-                    fontWeight={expanded === index ? 700 : 500}
-                    sx={{ transition: 'font-weight 0.2s' }}
+                    sx={{ fontWeight: expanded === index ? 700 : 500, transition: 'font-weight 0.2s' }}
                   >
                     {faq.title}
                   </Typography>

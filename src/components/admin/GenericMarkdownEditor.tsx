@@ -145,7 +145,7 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
             {props.content.trim() ? (
               <MarkdownWrapper>{props.content}</MarkdownWrapper>
             ) : (
-              <Typography variant="body2" color="text.disabled" fontStyle="italic">
+              <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
                 Preview will appear here…
               </Typography>
             )}

@@ -114,11 +114,11 @@ function RouteComponent() {
           </Box>
 
           <Box sx={{ maxWidth: 365 }}>
-            <Typography fontWeight={500} fontSize={15} gutterBottom>
+            <Typography sx={{ fontWeight: 500, fontSize: 15 }} gutterBottom>
               Join our Discord community
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" mb={1}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Get help from other members, share your patterns, and stay up to date.
             </Typography>
 
@@ -140,23 +140,23 @@ function RouteComponent() {
           </Box>
         </Box>
 
-        <Typography variant="h5" fontWeight={500} gutterBottom>
+        <Typography variant="h5" sx={{ fontWeight: 500 }} gutterBottom>
           Contact us
         </Typography>
 
-        <Typography variant="body2" color="text.secondary" mb={4}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Have a question or feedback? Fill out the form below and we'll get back to you.
         </Typography>
 
         {formState === 'success' ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
-            <Typography fontSize={40} mb={2}>
+            <Typography sx={{ fontSize: 40, mb: 2 }}>
               ✓
             </Typography>
-            <Typography variant="h6" fontWeight={500} gutterBottom>
+            <Typography variant="h6" sx={{ fontWeight: 500 }} gutterBottom>
               Message sent
             </Typography>
-            <Typography variant="body2" color="text.secondary" mb={3}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Thanks for reaching out - we'll get back to you soon.
             </Typography>
             <Button variant="outlined" color="success" onClick={() => setFormState('idle')}>

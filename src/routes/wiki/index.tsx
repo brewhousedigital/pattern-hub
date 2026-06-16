@@ -51,7 +51,7 @@ function RouteComponent() {
                 return (
                   <CategoryCard key={cat.id}>
                     <Box sx={{ mb: 1.5 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', mb: 0.25 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.25 }}>
                         {cat.name}
                       </Typography>
                       <Typography variant="caption" color="text.disabled">

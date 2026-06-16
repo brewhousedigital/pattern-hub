@@ -50,7 +50,7 @@ function RouteComponent() {
             /* ─── Success state ─── */
             <Box sx={{ textAlign: 'center' }}>
               <CheckCircleOutlineRoundedIcon sx={{ fontSize: 52, color: 'success.main', mb: 2 }} />
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                 Check your inbox
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -87,7 +87,7 @@ function RouteComponent() {
                   <MailOutlineRoundedIcon color="primary" />
                 </Box>
 
-                <Typography variant="h5" fontWeight={500} sx={{ letterSpacing: '-0.3px' }}>
+                <Typography variant="h5" sx={{ fontWeight: 500, letterSpacing: '-0.3px' }}>
                   Forgot your password?
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>

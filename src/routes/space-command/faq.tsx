@@ -138,9 +138,9 @@ const SortableFAQCard = (props: SortableFAQCardProps) => {
 
           {/* Content */}
           <Box sx={{ flex: 1, px: 2.5, py: 2, minWidth: 0 }}>
-            <Stack direction="row" alignItems="flex-start" gap={1.5}>
+            <Stack direction="row" sx={{ alignItems: 'flex-start', gap: 1.5 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: preview ? 0.5 : 0, lineHeight: 1.4 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: preview ? 0.5 : 0, lineHeight: 1.4 }}>
                   {faq.title}
                 </Typography>
                 {preview && (
@@ -160,7 +160,7 @@ const SortableFAQCard = (props: SortableFAQCardProps) => {
                 )}
               </Box>
 
-              <Stack direction="row" gap={0.5} sx={{ flexShrink: 0, mt: -0.5 }}>
+              <Stack direction="row" sx={{ gap: 0.5, flexShrink: 0, mt: -0.5 }}>
                 <Tooltip title="Edit">
                   <IconButton size="small" disabled={!props.canEdit} onClick={props.onEdit}>
                     <EditIcon sx={{ fontSize: '0.95rem' }} />
@@ -304,7 +304,7 @@ function RouteComponent() {
       )}
 
       {isPending ? (
-        <Stack gap={1.5}>
+        <Stack sx={{ gap: 1.5 }}>
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} variant="rounded" height={76} sx={{ borderRadius: 3 }} />
           ))}
@@ -339,7 +339,7 @@ function RouteComponent() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localFaqs.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-            <Stack gap={1.5}>
+            <Stack sx={{ gap: 1.5 }}>
               {localFaqs.map((faq, index) => (
                 <SortableFAQCard
                   key={faq.id}

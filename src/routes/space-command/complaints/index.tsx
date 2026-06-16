@@ -83,7 +83,7 @@ function RouteComponent() {
       >
         <Tab
           label={
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <span>Pattern Reports</span>
               {pendingPatternCount > 0 && (
                 <Chip label={pendingPatternCount} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />
@@ -93,7 +93,7 @@ function RouteComponent() {
         />
         <Tab
           label={
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <span>Content Reports</span>
               {pendingContentCount > 0 && (
                 <Chip label={pendingContentCount} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />
@@ -151,11 +151,11 @@ function RouteComponent() {
                             />
                             <Box>
                               <a href={generatePatternLink(pattern?.id || '')} target="_blank">
-                                <Typography fontSize={13} fontWeight={500} lineHeight={1.3}>
+                                <Typography sx={{ fontSize: 13, fontWeight: 500, lineHeight: 1.3 }}>
                                   {pattern?.name ?? '-'}
                                 </Typography>
                               </a>
-                              <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+                              <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                                 {complaint?.pattern_id}
                               </Typography>
                             </Box>
@@ -163,25 +163,25 @@ function RouteComponent() {
                         </TableCell>
 
                         <TableCell sx={{ maxWidth: 220 }}>
-                          <Typography fontSize={13} color="text.secondary" noWrap>
+                          <Typography color="text.secondary" noWrap sx={{ fontSize: 13 }}>
                             {complaint.category}
                           </Typography>
                         </TableCell>
 
                         <TableCell sx={{ maxWidth: 220 }}>
-                          <Typography fontSize={13} color="text.secondary" noWrap>
+                          <Typography color="text.secondary" noWrap sx={{ fontSize: 13 }}>
                             {complaint.reason}
                           </Typography>
                         </TableCell>
 
                         <TableCell>
-                          <Typography fontSize={12} color="text.secondary">
+                          <Typography color="text.secondary" sx={{ fontSize: 12 }}>
                             {complaint.email}
                           </Typography>
                         </TableCell>
 
                         <TableCell>
-                          <Typography fontSize={12} color="text.disabled" noWrap>
+                          <Typography color="text.disabled" noWrap sx={{ fontSize: 12 }}>
                             {new Date(complaint.created).toLocaleDateString()}
                           </Typography>
                         </TableCell>
@@ -255,34 +255,34 @@ function RouteComponent() {
                         </TableCell>
 
                         <TableCell sx={{ maxWidth: 200 }}>
-                          <Typography fontSize={13} fontWeight={500} noWrap>
+                          <Typography noWrap sx={{ fontSize: 13, fontWeight: 500 }}>
                             {report.content_name || '-'}
                           </Typography>
-                          <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+                          <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                             {report.content_id}
                           </Typography>
                         </TableCell>
 
                         <TableCell sx={{ maxWidth: 180 }}>
-                          <Typography fontSize={13} color="text.secondary" noWrap>
+                          <Typography color="text.secondary" noWrap sx={{ fontSize: 13 }}>
                             {report.category}
                           </Typography>
                         </TableCell>
 
                         <TableCell sx={{ maxWidth: 220 }}>
-                          <Typography fontSize={13} color="text.secondary" noWrap>
+                          <Typography color="text.secondary" noWrap sx={{ fontSize: 13 }}>
                             {report.reason}
                           </Typography>
                         </TableCell>
 
                         <TableCell>
-                          <Typography fontSize={12} color="text.secondary">
+                          <Typography color="text.secondary" sx={{ fontSize: 12 }}>
                             {report.email}
                           </Typography>
                         </TableCell>
 
                         <TableCell>
-                          <Typography fontSize={12} color="text.disabled" noWrap>
+                          <Typography color="text.disabled" noWrap sx={{ fontSize: 12 }}>
                             {new Date(report.created).toLocaleDateString()}
                           </Typography>
                         </TableCell>

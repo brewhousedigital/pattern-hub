@@ -147,8 +147,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
               <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <Typography
                   variant="subtitle2"
-                  fontWeight={700}
-                  sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
                   {collection.name}
                 </Typography>
@@ -251,7 +250,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{ paper: { sx: { p: 2, maxWidth: 240, borderRadius: 2 } } }}
       >
-        <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
           Delete "{collection.name}"?
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
@@ -283,7 +282,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
             label="Collection name"
             value={editName}
             onChange={(e) => setEditName(e.target.value.slice(0, 100))}
-            inputProps={{ maxLength: 100 }}
+            slotProps={{ htmlInput: { maxLength: 100 } }}
             helperText={`${editName.length}/100`}
             variant="filled"
             fullWidth
@@ -298,7 +297,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
 
           {/* Pattern list */}
           <Box>
-            <Typography variant="subtitle2" fontWeight={700} mb={1}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
               Patterns ({fetchingFull ? '…' : editPatterns.length})
             </Typography>
 
@@ -309,7 +308,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
                 ))}
               </Stack>
             ) : editPatterns.length === 0 ? (
-              <Typography variant="body2" color="text.disabled" fontStyle="italic">
+              <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
                 No patterns in this collection.
               </Typography>
             ) : (
@@ -337,12 +336,12 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
                   >
                     <ListItemText
                       primary={
-                        <Typography fontSize={13} fontWeight={500}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
                           {pattern.name}
                         </Typography>
                       }
                       secondary={
-                        <Typography fontSize={11} color="text.disabled" fontFamily="monospace">
+                        <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                           {pattern.id}
                         </Typography>
                       }

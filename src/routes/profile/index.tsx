@@ -443,7 +443,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 4 }}>
                 <Box>
                   <OverlineLabel>Contributed Patterns</OverlineLabel>
-                  <Typography variant="h5" fontWeight={800} sx={{ mt: 0.5, letterSpacing: '-0.3px' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, letterSpacing: '-0.3px' }}>
                     {displayName}'s work
                   </Typography>
                 </Box>
@@ -653,9 +653,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     <Divider sx={{ my: 4 }} />
                     <Typography
                       variant="subtitle2"
-                      fontWeight={700}
                       color="text.secondary"
-                      sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em' }}
+                      sx={{ fontWeight: 700, mb: 2, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em' }}
                     >
                       Collections You Follow
                     </Typography>
@@ -765,7 +764,7 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
                 />
               </Box>
               <Box sx={{ p: 1.5, pt: 1 }}>
-                <Typography variant="body2" fontWeight={700} noWrap sx={{ fontSize: '0.8rem' }}>
+                <Typography variant="body2" noWrap sx={{ fontWeight: 700, fontSize: '0.8rem' }}>
                   {pattern.name}
                 </Typography>
                 {pattern.pieces > 0 && (
@@ -824,7 +823,7 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
                 />
               </Box>
               <Box sx={{ px: 2, pb: 2, pt: 1 }}>
-                <Typography variant="subtitle2" fontWeight={700} noWrap>
+                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                   {item.expand?.pattern_id?.name}
                 </Typography>
                 {props.showCompleted && (
@@ -890,11 +889,11 @@ const GalleryGrid = ({ photos, onPhotoClick }: GalleryGridProps) => (
             }}
           >
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="caption" fontWeight={600} color="white" noWrap display="block">
+              <Typography variant="caption" color="white" noWrap sx={{ fontWeight: 600, display: 'block' }}>
                 {photo.title}
               </Typography>
               {photo.expand?.pattern_id?.name && (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }} noWrap display="block">
+                <Typography variant="caption" noWrap sx={{ color: 'rgba(255,255,255,0.7)', display: 'block' }}>
                   {photo.expand.pattern_id.name}
                 </Typography>
               )}
@@ -1021,7 +1020,7 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
 
         <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minWidth: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-            <Typography variant="h6" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
             <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
@@ -1035,7 +1034,7 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
           )}
           {patternExpand && (
             <Box>
-              <Typography variant="caption" color="text.disabled" display="block" gutterBottom>
+              <Typography variant="caption" color="text.disabled" gutterBottom sx={{ display: 'block' }}>
                 Tagged pattern
               </Typography>
               <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
@@ -1308,7 +1307,7 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: 6 }}>
         <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <PersonOffOutlinedIcon sx={{ fontSize: 56, color: 'text.disabled', opacity: 0.4 }} />
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Profile not found
           </Typography>
           <Typography variant="body2" color="text.secondary">

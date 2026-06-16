@@ -171,7 +171,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
   return (
     <Dialog open={props.open} onClose={props.onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-        <Typography variant="h6" component="span" fontWeight={500}>
+        <Typography variant="h6" component="span" sx={{ fontWeight: 500 }}>
           Upload a photo
         </Typography>
         <IconButton onClick={props.onClose} size="small" disabled={uploadState === 'loading'}>

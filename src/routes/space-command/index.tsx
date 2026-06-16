@@ -25,10 +25,10 @@ function RouteComponent() {
     <Box>
       {/* Page header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
           Dashboard
         </Typography>
-        <Typography variant="body2" color="text.secondary" mt={0.5}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Overview of Pattern Archive activity
         </Typography>
       </Box>

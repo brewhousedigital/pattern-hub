@@ -194,10 +194,10 @@ export const KanbanItemModal = ({
       <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap' }}>
         {dueDate && (
           <Box>
-            <Typography variant="caption" color="text.disabled" display="block">
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
               Due
             </Typography>
-            <Typography variant="body2" fontWeight={600} color={isOverdue ? 'error.main' : 'text.primary'}>
+            <Typography variant="body2" color={isOverdue ? 'error.main' : 'text.primary'} sx={{ fontWeight: 600 }}>
               {dueDate.format('MMM D, YYYY')}
               {isOverdue && ' (overdue)'}
             </Typography>
@@ -205,20 +205,20 @@ export const KanbanItemModal = ({
         )}
         {assignee && (
           <Box>
-            <Typography variant="caption" color="text.disabled" display="block">
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
               Assignee
             </Typography>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {assignee}
             </Typography>
           </Box>
         )}
         {columnId && (
           <Box>
-            <Typography variant="caption" color="text.disabled" display="block">
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
               Column
             </Typography>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {columns.find((c) => c.id === columnId)?.title ?? '-'}
             </Typography>
           </Box>
@@ -250,7 +250,7 @@ export const KanbanItemModal = ({
           <MarkdownWrapper>{description}</MarkdownWrapper>
         </Box>
       ) : (
-        <Typography variant="body2" color="text.disabled" fontStyle="italic">
+        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
           No description.
         </Typography>
       )}
@@ -279,7 +279,7 @@ export const KanbanItemModal = ({
             <Select value={priority} onChange={(e) => setPriority(e.target.value as TypeKanbanPriority)}>
               {PRIORITY_OPTIONS.map((p) => (
                 <MenuItem key={p} value={p}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
                     <Box
                       sx={{
                         width: 10,
@@ -337,12 +337,7 @@ export const KanbanItemModal = ({
           onChange={(_, v) => setLabels(v as string[])}
           inputValue={labelsInput}
           onInputChange={(_, v) => setLabelsInput(v)}
-          renderTags={(value, getTagProps) =>
-            value.map((option, idx) => {
-              const { key, ...props } = getTagProps({ index: idx });
-              return <Chip key={key} label={option} size="small" {...props} />;
-            })
-          }
+          slotProps={{ chip: { size: 'small' } }}
           renderInput={(params) => (
             <TextField {...params} variant="filled" label="Labels" placeholder="Type a label and press Enter" />
           )}

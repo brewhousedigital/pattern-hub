@@ -358,7 +358,7 @@ function RouteComponent() {
                       <ListItemButton key={r.place_id} onClick={() => handlePickResult(r)} divider>
                         <ListItemText
                           primary={r.display_name}
-                          primaryTypographyProps={{ fontSize: '0.8125rem', noWrap: false }}
+                          slotProps={{ primary: { sx: { fontSize: '0.8125rem' } } }}
                         />
                       </ListItemButton>
                     ))}
@@ -480,16 +480,16 @@ function RouteComponent() {
                     >
                       <Popup minWidth={200} maxWidth={280}>
                         <Box sx={{ py: 0.5 }}>
-                          <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
                             {store.name}
                           </Typography>
                           {store.street_address && (
-                            <Typography variant="caption" color="text.secondary" display="block">
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               {store.street_address}
                             </Typography>
                           )}
                           {store.phone && (
-                            <Typography variant="caption" color="text.secondary" display="block">
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               {store.phone}
                             </Typography>
                           )}
@@ -500,8 +500,7 @@ function RouteComponent() {
                               href={store.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              display="block"
-                              sx={{ color: 'primary.main', mt: 0.25 }}
+                              sx={{ display: 'block', color: 'primary.main', mt: 0.25 }}
                             >
                               Visit website ↗
                             </Typography>
@@ -587,7 +586,7 @@ function StoreListCard({
     >
       <CardContent sx={{ pb: '12px !important' }}>
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-          <Typography variant="body2" fontWeight={700}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
             {store.name}
           </Typography>
           <Stack direction="row" sx={{ alignItems: 'center', gap: 0.75, flexShrink: 0, ml: 1 }}>

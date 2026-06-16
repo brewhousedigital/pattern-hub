@@ -77,7 +77,7 @@ export const CreateCollectionDialog = ({ open, onClose, onSuccess, initialPatter
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <BookmarksOutlinedIcon fontSize="small" color="primary" />
           <Box>
-            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
               New Collection
             </Typography>
             {initialPatternId && (
@@ -104,7 +104,7 @@ export const CreateCollectionDialog = ({ open, onClose, onSuccess, initialPatter
             placeholder="e.g. My Flower Patterns"
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 100))}
-            inputProps={{ maxLength: 100 }}
+            slotProps={{ htmlInput: { maxLength: 100 } }}
             helperText={`${name.length}/100`}
             size="small"
             variant="filled"
