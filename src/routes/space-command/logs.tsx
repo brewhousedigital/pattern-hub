@@ -12,6 +12,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 
 import {
   Alert,
@@ -62,9 +63,9 @@ function RouteComponent() {
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
   const [detailLog, setDetailLog] = React.useState<TypeAdminLog | null>(null);
 
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search, 600);
 
-  const { data, isFetching } = useQueryGetAdminLogs({
+  const { data, isFetching, refetch } = useQueryGetAdminLogs({
     page: paginationModel.page,
     pageSize: paginationModel.pageSize,
     search: debouncedSearch,
@@ -98,7 +99,7 @@ function RouteComponent() {
             {row.admin_name}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {row.id}
+            {row.admin_id}
           </Typography>
         </Stack>
       ),
@@ -158,7 +159,13 @@ function RouteComponent() {
 
   return (
     <>
-      <AdminHeaderContainer title="Audit Log" />
+      <AdminHeaderContainer
+        title="Audit Log"
+        action={() => void refetch()}
+        actionText="Refresh Logs"
+        actionIcon={<RefreshRoundedIcon />}
+        actionLoading={isFetching}
+      />
 
       {/*<HistoryRoundedIcon />*/}
 
