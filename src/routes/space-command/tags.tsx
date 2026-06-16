@@ -1024,7 +1024,7 @@ const TagManagementPage = () => {
           entity_id: '',
           entity_name: `${tags.length} tags`,
           changes: {},
-          metadata: { tags, affected_patterns: total },
+          metadata: { tags, affected_patterns: tags.length },
         });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
