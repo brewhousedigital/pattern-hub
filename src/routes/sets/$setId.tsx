@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetSetById } from '@/functions/database/sets';
@@ -5,6 +6,7 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
+import { PatternListDrawer } from '@/components/PatternListDrawer';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
@@ -27,7 +29,8 @@ function RouteComponent() {
   const { data: set, isPending, isError } = useQueryGetSetById(setId);
 
   const patterns = set?.expand?.patterns ?? [];
-  const patternIdArray = patterns.map((item) => item.id);
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
     <GeneralLayout>
@@ -115,9 +118,9 @@ function RouteComponent() {
               </Box>
             ) : (
               <Grid container spacing={2}>
-                {patterns.map((pattern) => (
+                {patterns.map((pattern, i) => (
                   <Grid key={pattern.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <PatternTileCard pattern={pattern} patternIdArray={patternIdArray} />
+                    <PatternTileCard pattern={pattern} onSelect={() => setSelectedIndex(i)} />
                   </Grid>
                 ))}
               </Grid>
@@ -125,6 +128,13 @@ function RouteComponent() {
           </>
         )}
       </Container>
+
+      <PatternListDrawer
+        patterns={patterns}
+        selectedIndex={selectedIndex}
+        onNavigate={setSelectedIndex}
+        onClose={() => setSelectedIndex(null)}
+      />
     </GeneralLayout>
   );
 }

@@ -6,20 +6,16 @@ import type { TypePatternResponse } from '@/functions/database/patterns';
 
 type Props = {
   pattern: TypePatternResponse;
-  patternIdArray: string[];
+  patternIdArray?: string[];
+  onSelect?: () => void;
 };
 
-export function PatternTileCard({ pattern, patternIdArray }: Props) {
+export function PatternTileCard({ pattern, patternIdArray, onSelect }: Props) {
   const linkedAuthors = pattern.expand?.authors?.map((a) => a.name).filter(Boolean) ?? [];
   const manualAuthors = pattern.author_manual?.filter(Boolean) ?? [];
   const authors = [...linkedAuthors, ...manualAuthors].join(', ');
 
-  return (
-    <Link
-      to="/"
-      search={{ id: patternIdArray, patternId: pattern.id }}
-      style={{ textDecoration: 'none', display: 'block' }}
-    >
+  const card = (
       <Card
         elevation={0}
         sx={{
@@ -87,6 +83,23 @@ export function PatternTileCard({ pattern, patternIdArray }: Props) {
           )}
         </Box>
       </Card>
+  );
+
+  if (onSelect) {
+    return (
+      <Box onClick={onSelect} sx={{ cursor: 'pointer', display: 'block' }}>
+        {card}
+      </Box>
+    );
+  }
+
+  return (
+    <Link
+      to="/"
+      search={{ id: patternIdArray ?? [], patternId: pattern.id }}
+      style={{ textDecoration: 'none', display: 'block' }}
+    >
+      {card}
     </Link>
   );
 }

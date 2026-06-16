@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
@@ -11,6 +12,7 @@ import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
+import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { alpha } from '@mui/material/styles';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
@@ -35,7 +37,8 @@ function RouteComponent() {
   const { isPending, isError, data: collection } = useQueryGetCollectionById(collectionId);
 
   const patterns = collection?.expand?.patterns ?? [];
-  const patternIdArray = patterns.map((item) => item.id);
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Follow state
   const isOwner = !!authData && !!collection && authData.id === collection.owner_id;
@@ -192,9 +195,9 @@ function RouteComponent() {
               </Box>
             ) : (
               <Grid container spacing={2}>
-                {patterns.map((pattern) => (
+                {patterns.map((pattern, i) => (
                   <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={pattern.id}>
-                    <PatternTileCard pattern={pattern} patternIdArray={patternIdArray} />
+                    <PatternTileCard pattern={pattern} onSelect={() => setSelectedIndex(i)} />
                   </Grid>
                 ))}
               </Grid>
@@ -202,6 +205,13 @@ function RouteComponent() {
           </>
         )}
       </Container>
+
+      <PatternListDrawer
+        patterns={patterns}
+        selectedIndex={selectedIndex}
+        onNavigate={setSelectedIndex}
+        onClose={() => setSelectedIndex(null)}
+      />
     </GeneralLayout>
   );
 }
