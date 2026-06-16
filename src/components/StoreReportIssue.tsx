@@ -86,7 +86,7 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
     setTurnstileToken(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (reason.length < 25) {

@@ -81,7 +81,7 @@ function RouteComponent() {
   const passwordMismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
   const isValid = !!token && password.length >= 8 && password === passwordConfirm && !loading;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isValid || !token) return;
     setFormError('');

@@ -43,6 +43,60 @@ type Props = {
 
 const EMPTY_TAGS: string[] = [];
 
+const STORE_TAGS = [
+  'Mosaic molds',
+  'Mosaic mortar',
+  'Glue',
+  'Lead came',
+  'Copper came',
+  'Zinc came',
+  'Brass came',
+  'Reinforcing bar',
+  'Cement',
+  'Whitening/chalk',
+  'Sawdust',
+  'Wood framing',
+  'Glass stands',
+  'Precut kits',
+  'Precut shapes',
+  'Scraps',
+  'Fusing scraps',
+  'Dichroic',
+  'Glass manufactures stocked',
+  'Bevels',
+  'bevel clusters',
+  'Solder brands',
+  'Foil brands',
+  'Kiln sales',
+  'Kiln rental',
+  'Torch rental',
+  'Torch classes',
+  'Kiln classes',
+  'Kiln make & fire',
+  'Tool brands',
+  'Soldering iron brands',
+  'Glass cutter brands/styles',
+  'Runner types',
+  'Foiling devices',
+  'Fusing glass',
+  'Lamp parts',
+  'Lamp bases',
+  'Kiln furniture',
+  'Fusing supply',
+  'Torch working supply',
+  'Torch glass',
+  'Rondels',
+  'China glass',
+  'Patterns',
+  'Commissions',
+  'Repairs',
+  'Consulting',
+  'Lead classes',
+  'Foil classes',
+  'Pattern classes',
+  'Cutting classes',
+];
+
 export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) => {
   const isEdit = !!store;
 
@@ -113,7 +167,7 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
     enqueueSnackbar('Coordinates set from geocode result.', { variant: 'success' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -144,8 +198,20 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
           entity_id: store.id,
           entity_name: payload.name,
           changes: diffAdminChanges(
-            { name: store.name, description: store.description, street_address: store.street_address, phone: store.phone, website: store.website } as Record<string, unknown>,
-            { name: payload.name, description: payload.description, street_address: payload.street_address, phone: payload.phone, website: payload.website } as Record<string, unknown>,
+            {
+              name: store.name,
+              description: store.description,
+              street_address: store.street_address,
+              phone: store.phone,
+              website: store.website,
+            } as Record<string, unknown>,
+            {
+              name: payload.name,
+              description: payload.description,
+              street_address: payload.street_address,
+              phone: payload.phone,
+              website: payload.website,
+            } as Record<string, unknown>,
             ['name', 'description', 'street_address', 'phone', 'website'],
           ),
           metadata: { lat: payload.location.lat, lon: payload.location.lon },
@@ -294,7 +360,16 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
                 onChange={(e) => setLon(e.target.value)}
                 fullWidth
                 variant="filled"
-                slotProps={{ htmlInput: { step: 'any' } }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <MyLocationIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      </InputAdornment>
+                    ),
+                  },
+                  htmlInput: { step: 'any' },
+                }}
               />
             </Grid>
           </Grid>
@@ -325,18 +400,25 @@ export const AdminStoreEditorModal = ({ open, onClose, store, onSaved }: Props) 
             multiple
             freeSolo
             disableClearable
-            options={[]}
+            options={STORE_TAGS}
             value={tags}
             onChange={(_, newValue) => setTags(newValue as string[])}
-            slotProps={{ chip: { size: 'small' } }}
+            slotProps={{
+              chip: { size: 'small' },
+              popper: {
+                placement: 'top',
+                popperOptions: {
+                  modifiers: [
+                    {
+                      name: 'flip',
+                      enabled: false,
+                    },
+                  ],
+                },
+              },
+            }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="filled"
-                label="Product Tags"
-                placeholder="Type a tag and press Enter"
-                helperText='e.g. "supplies", "restoration", "classes"'
-              />
+              <TextField {...params} variant="filled" label="Product Tags" placeholder="Type or select tags…" />
             )}
           />
         </DialogContent>

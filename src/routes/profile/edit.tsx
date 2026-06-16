@@ -188,7 +188,7 @@ function RouteComponent() {
 
   // ─── Submit ───────────────────────────────────────────────────────────────
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaveError(null);
     setSaving(true);

@@ -364,10 +364,8 @@ function RouteComponent() {
       action: 'Kanban Column Updated',
       entity_type: 'Kanban Column',
       entity_id: col.id,
-      entity_name: (patch.title ?? col.title),
-      changes: Object.fromEntries(
-        Object.entries(patch).map(([k, v]) => [k, { from: (col as any)[k], to: v }]),
-      ),
+      entity_name: patch.title ?? col.title,
+      changes: Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, { from: (col as any)[k], to: v }])),
       metadata: {},
     });
     void refetchColumns();
@@ -1067,7 +1065,7 @@ function AddColumnDialog({ open, onClose, onAdd, loading }: AddColumnDialogProps
     if (open) setTitle('');
   }, [open]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     try {
@@ -1134,7 +1132,7 @@ function EditColumnDialog({ open, column, onClose, onSave, loading }: EditColumn
     }
   }, [column]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!column || !title.trim()) return;
     try {

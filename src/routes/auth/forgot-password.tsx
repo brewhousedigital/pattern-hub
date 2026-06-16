@@ -27,7 +27,7 @@ function RouteComponent() {
 
   const isValid = email.trim().length > 0 && email.includes('@');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isValid || loading) return;
     setLoading(true);

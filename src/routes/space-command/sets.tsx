@@ -144,9 +144,7 @@ function RouteComponent() {
           {params.row.color && (
             <Box sx={{ width: 4, height: 28, borderRadius: 1, backgroundColor: params.row.color, flexShrink: 0 }} />
           )}
-          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-            {params.row.title}
-          </Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{params.row.title}</Typography>
         </Stack>
       ),
     },
@@ -416,7 +414,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
   const updateSet = useMutationUpdateSet();
   const { log } = useAdminLogger();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
@@ -648,11 +646,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
               }
             >
               <ListItemText
-                primary={
-                  <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
-                    {p.name}
-                  </Typography>
-                }
+                primary={<Typography sx={{ fontSize: 13, fontWeight: 500 }}>{p.name}</Typography>}
                 secondary={
                   <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                     {p.id}
