@@ -100,7 +100,7 @@ const PageContent = () => {
 
   if (id && id !== authData?.id) {
     if (isPending) return <ProfileSkeleton />;
-    if (isError) return <ProfileError onRetry={refetch} />;
+    if (isError) return <ProfileError />;
     return <ProfileContent userData={data} />;
   }
 
@@ -1470,7 +1470,7 @@ const ProfileSkeleton = () => (
 
 // ─── Error ────────────────────────────────────────────────────────────────────
 
-const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
+const ProfileError = () => (
   <GeneralLayout>
     <PageRoot>
       <Box sx={{ minHeight: 320, backgroundColor: 'primary.dark' }} />
@@ -1483,9 +1483,14 @@ const ProfileError = ({ onRetry }: { onRetry: () => void }) => (
           <Typography variant="body2" color="text.secondary">
             This user doesn't exist or their profile is unavailable.
           </Typography>
-          <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>
-            Try again
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
+            <Button variant="outlined" onClick={() => window.history.back()}>
+              Go back
+            </Button>
+            <Button variant="contained" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+          </Box>
         </Box>
       </Container>
     </PageRoot>

@@ -1,7 +1,6 @@
-import { useNavigate } from '@tanstack/react-router';
 import { Box, Typography, Button, Stack } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 const shimmer = keyframes`
   0%, 100% { opacity: 0.55; filter: brightness(1); }
@@ -227,20 +226,9 @@ interface ErrorPageProps {
 }
 
 export default function ErrorPage({ error, onReset }: ErrorPageProps) {
-  const navigate = useNavigate();
-  const canGoBack = useRef(window.history.length > 1);
-
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const handleGoHome = () => navigate({ to: '/' });
-
-  const handleGoBack = () => {
-    if (canGoBack.current) window.history.back();
-    else navigate({ to: '/' }).then();
-  };
 
   return (
     <Box
@@ -369,32 +357,30 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
             spacing={2}
             sx={{ pt: 1, justifyContent: { xs: 'center', md: 'flex-start' } }}
           >
-            {onReset && (
-              <Button
-                variant="contained"
-                size="large"
-                onClick={onReset}
-                sx={{
-                  fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  textTransform: 'none',
-                  backgroundColor: '#16a34a',
-                  color: '#f0fdf4',
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: '2px',
-                  animation: `${pulse} 2.5s ease-in-out infinite`,
-                  '&:hover': { backgroundColor: '#15803d' },
-                }}
-              >
-                Try again
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => window.location.reload()}
+              sx={{
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'none',
+                backgroundColor: '#16a34a',
+                color: '#f0fdf4',
+                px: 4,
+                py: 1.5,
+                borderRadius: '2px',
+                animation: `${pulse} 2.5s ease-in-out infinite`,
+                '&:hover': { backgroundColor: '#15803d' },
+              }}
+            >
+              Try again
+            </Button>
 
             <Button
               variant="outlined"
               size="large"
-              onClick={handleGoHome}
+              onClick={() => { window.location.href = '/'; }}
               sx={{
                 fontWeight: 600,
                 letterSpacing: '0.06em',
@@ -413,7 +399,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
             <Button
               variant="text"
               size="large"
-              onClick={handleGoBack}
+              onClick={() => window.history.back()}
               sx={{
                 fontWeight: 500,
                 letterSpacing: '0.06em',
