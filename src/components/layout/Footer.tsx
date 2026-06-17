@@ -37,7 +37,7 @@ export const Footer = () => {
                   width="88"
                   height="71"
                   style={{ border: 0, maxWidth: 24, width: '100%', height: 'auto' }}
-                  src="/kofi-logo.png"
+                  src="/images/icons/kofi-logo.png"
                   alt="Support the developer of Pattern Archive"
                 />
               }
