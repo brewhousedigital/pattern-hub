@@ -15,7 +15,8 @@
   command = "npm install --include=optional && npm run build"
 
 [functions]
-  external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-wasm32", "@img/colour"]
+  external_node_modules = ["sharp"]
+  included_files = ["node_modules/sharp/**/*"]
 
 [dev]
   framework = "vite"
