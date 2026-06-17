@@ -10,6 +10,7 @@ import { AdminFAQEditorModal } from '@/components/admin/AdminFAQEditorModal';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { stripMarkdown } from '@/functions/utilities/markdown';
 
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -43,21 +44,6 @@ export const Route = createFileRoute('/space-command/faq')({
     meta: generateSEO('FAQ - Admin', '', match.pathname),
   }),
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/#{1,6}\s+/g, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/`{1,3}[^`]*`{1,3}/g, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/^\s*[-*+]\s/gm, '')
-    .replace(/^\s*\d+\.\s/gm, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-}
 
 // ─── Sortable card ────────────────────────────────────────────────────────────
 

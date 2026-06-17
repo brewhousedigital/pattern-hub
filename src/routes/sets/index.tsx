@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQueryGetPublishedSets } from '@/functions/database/sets';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { stripMarkdown } from '@/functions/utilities/markdown';
 
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
@@ -130,7 +131,7 @@ function RouteComponent() {
                               overflow: 'hidden',
                             }}
                           >
-                            {set.description}
+                            {stripMarkdown(set.description)}
                           </Typography>
                         )}
 
