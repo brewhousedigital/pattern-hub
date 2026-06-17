@@ -124,8 +124,6 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const [difficultyPage, setDifficultyPage] = React.useState(1);
   const [galleryPage, setGalleryPage] = React.useState(1);
   const [collectionsPage, setCollectionsPage] = React.useState(1);
-  const [artistPage, setArtistPage] = React.useState(1);
-
   const {
     isPending,
     isError,
@@ -139,7 +137,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     difficultyPage,
     galleryPage,
     collectionsPage,
-    artistPage,
+    artistPage: 1,
     isOwner: !isPublicView,
     isArtist,
   });
@@ -449,7 +447,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 <Box>
                   <OverlineLabel>Contributed Patterns</OverlineLabel>
                   <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, letterSpacing: '-0.3px' }}>
-                    {displayName}'s work
+                    {displayName}'s latest work
                   </Typography>
                 </Box>
                 {artistPatterns?.totalItems != null && artistPatterns.totalItems > 0 && (
@@ -469,8 +467,19 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 displayName={displayName}
               />
 
-              {artistPatterns && artistPatterns.totalItems > 0 && (
-                <PaginationBox data={artistPatterns} value={artistPage} setter={setArtistPage} />
+              {(artistPatterns?.totalItems ?? 0) > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                  <Button
+                    component={Link as any}
+                    to="/"
+                    search={{ authors: [displayName] }}
+                    variant="outlined"
+                    size="large"
+                    sx={{ borderRadius: 3, px: 4, fontWeight: 600 }}
+                  >
+                    View all {displayName}'s work
+                  </Button>
+                </Box>
               )}
             </Box>
           </Container>
