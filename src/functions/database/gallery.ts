@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types.ts';
@@ -39,7 +39,31 @@ export const useQueryGetUserGallery = (userId: string, pageNumber: number) => {
   });
 };
 
-// ─── Pattern search (used in GalleryUploadDialog) ─────────────────────────────
+// ─── Mutations ────────────────────────────────────────────────────────────────
+
+export type UpdateGalleryPayload = {
+  id: string;
+  title: string;
+  description: string;
+  pattern_id: string; // empty string = clear the relation
+};
+
+export const useMutationUpdateGallery = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: UpdateGalleryPayload) =>
+      pocketbase.collection('gallery').update(payload.id, {
+        title: payload.title,
+        description: payload.description,
+        pattern_id: payload.pattern_id || null,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['GetUserGallery'] });
+    },
+  });
+};
+
+// ─── Pattern search (used in GalleryUploadDialog / GalleryEditDialog) ─────────
 
 export type TypePatternSearchResult = {
   id: string;

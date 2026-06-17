@@ -14,6 +14,7 @@ import { useQueryGetUserById } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useQueryGetUserGallery, type TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
+import { GalleryEditDialog } from '@/components/GalleryEditDialog';
 import { useQueryGetUserCollections, useQueryGetUserFollowedCollections } from '@/functions/database/collections';
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
@@ -702,6 +703,10 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           void refetchGallery();
           setLightboxPhoto(null);
         }}
+        onEditSuccess={() => {
+          void refetchGallery();
+          setLightboxPhoto(null);
+        }}
         isOwner={!isPublicView}
       />
       <GalleryUploadDialog
@@ -919,12 +924,14 @@ type GalleryLightboxProps = {
   onClose: () => void;
   onNavigate: (p: TypeGalleryResponse) => void;
   onDeleteSuccess: () => void;
+  onEditSuccess: () => void;
   isOwner: boolean;
 };
 
-const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, isOwner }: GalleryLightboxProps) => {
+const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, onEditSuccess, isOwner }: GalleryLightboxProps) => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
 
   const idx = photo ? photos.findIndex((p) => p.id === photo.id) : -1;
   const hasPrev = idx > 0;
@@ -1043,8 +1050,50 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
               <Typography variant="caption" color="text.disabled" gutterBottom sx={{ display: 'block' }}>
                 Tagged pattern
               </Typography>
-              <Link to="/" search={{ id: [patternExpand.id], patternId: patternExpand.id }} onClick={onClose}>
-                <Chip label={patternExpand.name} size="small" color="primary" variant="outlined" clickable />
+              <Link
+                to="/"
+                search={{ id: [patternExpand.id], patternId: patternExpand.id }}
+                onClick={onClose}
+                style={{ textDecoration: 'none' }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    p: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    transition: 'border-color 0.15s, background-color 0.15s',
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={generatePbImage(patternExpand)}
+                    alt={patternExpand.name}
+                    sx={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0, borderRadius: 1 }}
+                  />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      {patternExpand.name}
+                    </Typography>
+                    {patternExpand.description && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {patternExpand.description}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
               </Link>
             </Box>
           )}
@@ -1058,20 +1107,43 @@ const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, 
             </Alert>
           )}
           {isOwner && (
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              onClick={handleDelete}
-              disabled={deleting}
-              startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlinedIcon />}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {deleting ? 'Deleting…' : 'Delete photo'}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setEditOpen(true)}
+                startIcon={<EditRoundedIcon />}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Edit photo
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={handleDelete}
+                disabled={deleting}
+                startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlinedIcon />}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                {deleting ? 'Deleting…' : 'Delete photo'}
+              </Button>
+            </Box>
           )}
         </Box>
       </DialogContent>
+
+      {photo && (
+        <GalleryEditDialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSuccess={() => {
+            setEditOpen(false);
+            onEditSuccess();
+          }}
+          photo={photo}
+        />
+      )}
     </Dialog>
   );
 };
