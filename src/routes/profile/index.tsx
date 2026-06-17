@@ -1005,6 +1005,11 @@ const GalleryLightbox = ({
 
   async function handleDelete() {
     if (!photo) return;
+
+    const confirmDelete = confirm('Are you sure you want to delete this photo?');
+
+    if (!confirmDelete) return;
+
     setDeleting(true);
     setDeleteError('');
     try {
@@ -1159,7 +1164,7 @@ const GalleryLightbox = ({
             </Alert>
           )}
           {isOwner && (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'space-between' }}>
               <Button
                 variant="outlined"
                 size="small"
@@ -1169,6 +1174,7 @@ const GalleryLightbox = ({
               >
                 Edit photo
               </Button>
+
               <Button
                 variant="outlined"
                 color="error"
