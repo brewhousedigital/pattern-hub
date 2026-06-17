@@ -326,9 +326,7 @@ export function parseRawInput(raw: string): Token {
 // cause social-media link parsers to truncate the URL.
 // These replacements use repeated params instead: ?authors=Raine — no quotes.
 
-const ARRAY_KEYS = new Set([
-  'tags', 'authors', 'id', 'title', 'description', 'parts', 'width', 'height', 'filesize',
-]);
+const ARRAY_KEYS = new Set(['tags', 'authors', 'id', 'title', 'description', 'parts', 'width', 'height', 'filesize']);
 
 export function stringifySearch(search: Record<string, unknown>): string {
   const params = new URLSearchParams();
@@ -363,7 +361,9 @@ export function parseSearch(searchStr: string): Record<string, unknown> {
         try {
           result[key] = JSON.parse(values[0]);
           continue;
-        } catch { /* fall through to repeated-param handling */ }
+        } catch {
+          /* fall through to repeated-param handling */
+        }
       }
       result[key] = values;
     } else {
@@ -385,18 +385,24 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
 
   for (const token of tokens) {
     if (token.type === 'text') {
+      // Wrap the value in double-quotes so we match the JSON element boundary.
+      // tags JSON: ["cat","suncatcher"] — searching for '"cat"' matches "cat"
+      // but not "suncatcher" because '"cat"' is not a substring of '"suncatcher"'.
       if (token.exclude) {
-        parts.push(`(tags !~ "${token.value}")`);
+        parts.push(`(tags !~ '"${token.value}"')`);
       } else {
-        parts.push(`(tags ~ "${token.value}")`);
+        parts.push(`(tags ~ '"${token.value}"')`);
       }
     }
 
     if (token.type === 'tag') {
+      // Wrap the value in double-quotes so we match the JSON element boundary.
+      // tags JSON: ["cat","suncatcher"] — searching for '"cat"' matches "cat"
+      // but not "suncatcher" because '"cat"' is not a substring of '"suncatcher"'.
       if (token.exclude) {
-        parts.push(`(tags !~ "${token.value}")`);
+        parts.push(`(tags !~ '"${token.value}"')`);
       } else {
-        parts.push(`(tags ~ "${token.value}")`);
+        parts.push(`(tags ~ '"${token.value}"')`);
       }
     }
 
