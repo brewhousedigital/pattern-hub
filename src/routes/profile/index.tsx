@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
@@ -18,10 +18,23 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import { generateSEO } from '@/functions/utilities/seo.ts';
-import { generateUserAvatarUrl, generateUserHeaderUrl } from '@/functions/utilities/generate-pb-image';
+import {
+  generateUserAvatarUrl,
+  generateUserHeaderUrl,
+  generateUserBgImageUrl,
+} from '@/functions/utilities/generate-pb-image';
 import { useQueryGetProfileData } from '@/functions/database/profile-data';
+import {
+  PROFILE_FONTS,
+  SOCIAL_PLATFORMS,
+  CURSOR_OPTIONS,
+  getCssPattern,
+  getAvatarShapeStyles,
+  hexToRgba,
+  extractYouTubeId,
+} from '@/constants/profile-customization';
 
-import { styled, alpha } from '@mui/material/styles';
+import { styled, alpha, keyframes } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -60,13 +73,36 @@ import {
   Skeleton,
   Tooltip,
   Rating,
+  Stack,
 } from '@mui/material';
+
+// ─── Keyframes ────────────────────────────────────────────────────────────────
+
+const nameGradientAnim = keyframes`
+  from { background-position: 0% center; }
+  to   { background-position: 300% center; }
+`;
+
+const shimmerAnim = keyframes`
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+`;
+
+const rainbowAnim = keyframes`
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+`;
+
+const sparkleAnim = keyframes`
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  50%       { opacity: 1; transform: scale(1.2) rotate(20deg); }
+`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type UserSearch = {
   id?: string;
-  tab?: number;
+  tab: number;
 };
 
 // ─── Route ────────────────────────────────────────────────────────────────────
@@ -183,17 +219,135 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     }
   }
 
-  if (!thisAuthData) return <ProfileSkeleton />;
-
   const rawName = thisAuthData?.name ?? '';
   const displayName = (rawName.startsWith('NewUser_') ? 'New User' : rawName) || 'New User';
-  const initial = displayName[0].toUpperCase();
+  const initial = displayName[0]?.toUpperCase() ?? '?';
   const galleryItems = dataGallery?.items ?? [];
 
-  const avatarUrl = generateUserAvatarUrl(thisAuthData);
-  const headerUrl = generateUserHeaderUrl(thisAuthData);
+  const avatarUrl = generateUserAvatarUrl(thisAuthData ?? undefined);
+  const headerUrl = generateUserHeaderUrl(thisAuthData ?? undefined);
 
-  const stats = [
+  // ─── Customization derived values ─────────────────────────────────────────
+
+  const siteColor = thisAuthData?.site_color ?? '#0b6536';
+  const siteColorSecondary = thisAuthData?.site_color_secondary ?? '#cfe1b9';
+  const bgType = thisAuthData?.profile_bg_type ?? 'solid';
+  const bgColor = thisAuthData?.profile_bg_color ?? '';
+  const bgGradEnd = thisAuthData?.profile_bg_gradient_end ?? '#ffffff';
+  const bgAngle = thisAuthData?.profile_bg_gradient_angle ?? 135;
+  const bgPattern = thisAuthData?.profile_bg_pattern ?? 'dots';
+  const bgImageUrl = generateUserBgImageUrl(thisAuthData ?? undefined);
+  const profileFont = PROFILE_FONTS.some((f) => f.value === thisAuthData?.profile_font)
+    ? thisAuthData?.profile_font
+    : null;
+  const nameEffect = thisAuthData?.profile_name_effect ?? 'none';
+  const avatarShape = thisAuthData?.profile_avatar_shape ?? 'circle';
+  const cursorKey = thisAuthData?.profile_cursor ?? 'default';
+  const sparkles = !!thisAuthData?.profile_sparkles;
+  const moodEmoji = thisAuthData?.profile_mood_emoji?.slice(0, 4) ?? '';
+  const moodText = thisAuthData?.profile_mood_text?.slice(0, 50) ?? '';
+  const youtubeUrl = thisAuthData?.profile_youtube_url ?? '';
+  const socialLinks = thisAuthData?.social_links ?? [];
+
+  const tabVisibility = {
+    0: thisAuthData?.tab_show_favorites !== false,
+    1: thisAuthData?.tab_show_done !== false,
+    2: thisAuthData?.tab_show_ratings !== false,
+    3: thisAuthData?.tab_show_difficulty !== false,
+    4: thisAuthData?.tab_show_gallery !== false,
+    5: thisAuthData?.tab_show_collections !== false,
+  } as Record<number, boolean>;
+
+  // Load custom Google Font
+  useEffect(() => {
+    if (!profileFont) return;
+    const linkId = 'profile-custom-font';
+    let link = document.getElementById(linkId) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    const encoded = profileFont.replace(/ /g, '+');
+    link.href = `https://fonts.googleapis.com/css2?family=${encoded}:wght@400;600;700;800&display=swap`;
+    document.body.style.fontFamily = `'${profileFont}', sans-serif`;
+    return () => {
+      document.getElementById(linkId)?.remove();
+      document.body.style.fontFamily = '';
+    };
+  }, [profileFont]);
+
+  // Apply page background
+  const computedBg = useMemo((): string | undefined => {
+    if (!bgType || bgType === 'solid') return bgColor || undefined;
+    if (bgType === 'gradient' && bgColor) return `linear-gradient(${bgAngle}deg, ${bgColor}, ${bgGradEnd})`;
+    if (bgType === 'pattern' && bgColor) return getCssPattern(bgPattern, hexToRgba(siteColor, 0.18), bgColor);
+    if (bgType === 'image' && bgImageUrl) return `url(${bgImageUrl}) center/cover no-repeat scroll`;
+    return undefined;
+  }, [bgType, bgColor, bgGradEnd, bgAngle, bgPattern, bgImageUrl, siteColor]);
+
+  useEffect(() => {
+    if (!computedBg) return;
+    document.body.style.background = computedBg;
+    if (bgColor) document.body.style.backgroundColor = bgColor;
+    return () => {
+      document.body.style.background = '';
+      document.body.style.backgroundColor = '';
+    };
+  }, [computedBg, bgColor]);
+
+  // Apply custom cursor
+  useEffect(() => {
+    const option = CURSOR_OPTIONS.find((c) => c.key === cursorKey);
+    const css = option?.css ?? 'auto';
+    if (css === 'auto') return;
+    document.body.style.cursor = css;
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, [cursorKey]);
+
+  // Avatar shape styles
+  const avatarShapeSx = useMemo(() => getAvatarShapeStyles(avatarShape), [avatarShape]);
+
+  // Name effect sx
+  const nameEffectSx = useMemo(() => {
+    switch (nameEffect) {
+      case 'gradient':
+        return {
+          background: `linear-gradient(90deg, white 0%, ${siteColorSecondary} 40%, white 70%, ${siteColorSecondary} 100%)`,
+          backgroundSize: '300% auto',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          animation: `${nameGradientAnim} 5s linear infinite`,
+        };
+      case 'glow':
+        return { textShadow: `0 0 18px ${siteColor}, 0 0 36px ${siteColor}80`, color: 'white' };
+      case 'shadow':
+        return { textShadow: '2px 4px 10px rgba(0,0,0,0.6)', color: 'white' };
+      case 'shimmer':
+        return {
+          background: `linear-gradient(90deg, white 35%, ${siteColorSecondary} 50%, white 65%)`,
+          backgroundSize: '300% auto',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          animation: `${shimmerAnim} 3s linear infinite`,
+        };
+      case 'rainbow':
+        return { color: siteColor, animation: `${rainbowAnim} 3s linear infinite` };
+      default:
+        return {};
+    }
+  }, [nameEffect, siteColor, siteColorSecondary]);
+
+  if (!thisAuthData) return <ProfileSkeleton />;
+
+  const videoId = extractYouTubeId(youtubeUrl);
+
+  const allStats = [
     { Icon: FavoriteIcon, value: dataFav?.totalItems ?? 0, label: 'Saved', color: '#ef5350', tab: 0 },
     { Icon: CheckCircleIcon, value: dataDone?.totalItems ?? 0, label: 'Completed', color: '#66bb6a', tab: 1 },
     { Icon: StarOutlinedIcon, value: dataRatings?.totalItems ?? 0, label: 'Rated', color: '#ffa726', tab: 2 },
@@ -208,7 +362,10 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     { Icon: BookmarksOutlinedIcon, value: dataCols?.totalItems ?? 0, label: 'Collections', color: '#ab47bc', tab: 5 },
   ];
 
-  const tabConfig = [
+  // Filter stats and tabs based on visibility settings
+  const stats = allStats.filter((s) => tabVisibility[s.tab]);
+
+  const allTabConfig = [
     { label: 'Favorites', Icon: FavoriteBorderOutlinedIcon, count: dataFav?.totalItems },
     { label: 'Completed', Icon: TaskAltOutlinedIcon, count: dataDone?.totalItems },
     { label: 'Rated', Icon: StarOutlinedIcon, count: dataRatings?.totalItems },
@@ -216,28 +373,45 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     { label: 'Gallery', Icon: PhotoLibraryOutlinedIcon, count: dataGallery?.totalItems },
     { label: 'Collections', Icon: BookmarksOutlinedIcon, count: dataCols?.totalItems },
   ];
+  const tabConfig = allTabConfig.filter((_, i) => tabVisibility[i]);
+
+  // Map the URL tab index to visible position index
+  const logicalToVisible = Object.fromEntries(
+    allTabConfig
+      .map((_, i) => i)
+      .filter((i) => tabVisibility[i])
+      .map((logicalIdx, visPos) => [logicalIdx, visPos]),
+  );
+  const visibleToLogical = Object.fromEntries(
+    allTabConfig
+      .map((_, i) => i)
+      .filter((i) => tabVisibility[i])
+      .map((logicalIdx, visPos) => [visPos, logicalIdx]),
+  );
+  const visibleTab = logicalToVisible[tab] ?? 0;
+  const setVisibleTab = (visPos: number) => setTab(visibleToLogical[visPos] ?? 0);
 
   const shouldShowAbout = !!(thisAuthData.about || thisAuthData.interests || !isPublicView);
+
+  // Hero background: use site_color if no header image
+  const heroSxOverride = headerUrl
+    ? {
+        backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%), url(${headerUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        '&::before': { display: 'none' },
+        '&::after': { display: 'none' },
+      }
+    : {
+        backgroundColor: siteColor,
+        '&::before': { background: alpha(siteColor, 0.5) },
+        '&::after': { background: alpha(siteColorSecondary, 0.35) },
+      };
 
   return (
     <PageRoot>
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
-      <HeroSection
-        sx={
-          headerUrl
-            ? {
-                backgroundImage: `
-            linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%),
-            url(${headerUrl})
-          `,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                '&::before': { display: 'none' },
-                '&::after': { display: 'none' },
-              }
-            : {}
-        }
-      >
+      <HeroSection sx={heroSxOverride}>
         {/* Top-right action buttons */}
         <Box
           sx={{
@@ -263,6 +437,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           )}
         </Box>
 
+        {sparkles && <SparkleOverlay />}
+
         {/* Identity anchored to hero bottom */}
         <Box sx={{ flex: 1 }} />
         <Container
@@ -270,13 +446,22 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 }, position: 'relative', zIndex: 1 }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
-            <HeroAvatar isArtist={isArtist}>
+            <HeroAvatar
+              isArtist={isArtist}
+              sx={{
+                ...avatarShapeSx,
+                overflow: 'hidden',
+                background: isArtist
+                  ? `linear-gradient(135deg, ${alpha(siteColorSecondary, 0.8)}, ${siteColorSecondary})`
+                  : `linear-gradient(135deg, ${alpha(siteColor, 0.7)}, ${siteColor})`,
+              }}
+            >
               {avatarUrl ? (
                 <Box
                   component="img"
                   src={avatarUrl}
                   alt={displayName}
-                  sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover', ...avatarShapeSx }}
                 />
               ) : (
                 <Typography
@@ -318,10 +503,22 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   lineHeight: 1.05,
                   mb: 0.75,
                   wordBreak: 'break-word',
+                  ...nameEffectSx,
                 }}
               >
                 {displayName}
               </Typography>
+
+              {(moodEmoji || moodText) && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.75 }}>
+                  {moodEmoji && <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{moodEmoji}</Typography>}
+                  {moodText && (
+                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
+                      {moodText}
+                    </Typography>
+                  )}
+                </Box>
+              )}
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                 <CalendarTodayOutlinedIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }} />
@@ -433,6 +630,9 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 </Box>
               </Box>
             )}
+
+            {/* Social links */}
+            {socialLinks.length > 0 && <ProfileSocialLinks links={socialLinks} />}
           </Box>
         </Container>
       )}
@@ -511,58 +711,88 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         </>
       )}
 
+      {/* ─── YOUTUBE ──────────────────────────────────────────────────────── */}
+      {videoId && (
+        <>
+          <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />
+          <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
+            <Box sx={{ pt: 5, pb: 5 }}>
+              <OverlineLabel sx={{ mb: 2 }}>Featured Video</OverlineLabel>
+              <Box sx={{ maxWidth: 560 }}>
+                <Box
+                  component="iframe"
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                  title={`${displayName}'s featured video`}
+                  sx={{ width: '100%', aspectRatio: '16/9', border: 0, borderRadius: 3, display: 'block' }}
+                />
+              </Box>
+            </Box>
+          </Container>
+        </>
+      )}
+
       {/* ─── ACTIVITY ─────────────────────────────────────────────────────── */}
       <Box ref={tabSectionRef} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
           <Box sx={{ pt: 4, pb: 10 }}>
             <OverlineLabel sx={{ mb: 3 }}>Activity</OverlineLabel>
 
-            <Tabs
-              value={tab}
-              onChange={(_, v) => setTab(v)}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                mb: 4,
-                minHeight: 'unset',
-                '& .MuiTabs-indicator': { display: 'none' },
-                '& .MuiTabs-list': { gap: 1 },
-                '& .MuiTab-root': {
-                  borderRadius: '20px',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  minHeight: 38,
-                  px: 2,
-                  py: 0,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  color: 'text.secondary',
-                  transition: 'all 0.15s ease',
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.main',
-                    color: 'primary.contrastText',
-                    borderColor: 'primary.main',
+            {tabConfig.length === 0 && (
+              <Typography color="text.disabled" sx={{ fontStyle: 'italic', py: 6, textAlign: 'center' }}>
+                No activity sections are visible on this profile.
+              </Typography>
+            )}
+            {tabConfig.length > 0 && (
+              <Tabs
+                value={visibleTab}
+                onChange={(_, v) => setVisibleTab(v)}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  mb: 4,
+                  minHeight: 'unset',
+                  '& .MuiTabs-indicator': { display: 'none' },
+                  '& .MuiTabs-list': { gap: 1 },
+                  '& .MuiTab-root': {
+                    borderRadius: '20px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    minHeight: 38,
+                    px: 2,
+                    py: 0,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                    transition: 'all 0.15s ease',
+                    '&.Mui-selected': {
+                      backgroundColor: 'primary.main',
+                      color: 'primary.contrastText',
+                      borderColor: 'primary.main',
+                    },
                   },
-                },
-              }}
-            >
-              {tabConfig.map((t) => (
-                <Tab
-                  key={t.label}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <t.Icon sx={{ fontSize: 16 }} />
-                      <span>{t.label}</span>
-                      {(t.count ?? 0) > 0 && <TabCount>{t.count}</TabCount>}
-                    </Box>
-                  }
-                />
-              ))}
-            </Tabs>
+                }}
+              >
+                {tabConfig.map((t) => (
+                  <Tab
+                    key={t.label}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <t.Icon sx={{ fontSize: 16 }} />
+                        <span>{t.label}</span>
+                        {(t.count ?? 0) > 0 && <TabCount>{t.count}</TabCount>}
+                      </Box>
+                    }
+                  />
+                ))}
+              </Tabs>
+            )}
 
             {/* Favorites */}
-            {tab === 0 && (
+            {visibleTab === logicalToVisible[0] && tabVisibility[0] && (
               <>
                 <ActivityPatternGrid
                   patterns={dataFav?.items}
@@ -578,7 +808,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Completed */}
-            {tab === 1 && (
+            {visibleTab === logicalToVisible[1] && tabVisibility[1] && (
               <>
                 <ActivityPatternGrid
                   patterns={dataDone?.items}
@@ -595,7 +825,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Rated */}
-            {tab === 2 && (
+            {visibleTab === logicalToVisible[2] && tabVisibility[2] && (
               <>
                 <ActivityPatternGrid
                   patterns={dataRatings?.items}
@@ -612,7 +842,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Difficulty Votes */}
-            {tab === 3 && (
+            {visibleTab === logicalToVisible[3] && tabVisibility[3] && (
               <>
                 <ActivityPatternGrid
                   patterns={dataDifficulty?.items}
@@ -629,7 +859,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Gallery */}
-            {tab === 4 && (
+            {visibleTab === logicalToVisible[4] && tabVisibility[4] && (
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
@@ -660,7 +890,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Collections */}
-            {tab === 5 && (
+            {visibleTab === logicalToVisible[5] && tabVisibility[5] && (
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
@@ -1237,6 +1467,78 @@ const GalleryLightbox = ({
         />
       )}
     </Dialog>
+  );
+};
+
+// ─── SparkleOverlay ───────────────────────────────────────────────────────────
+
+const SPARKLE_POSITIONS = [
+  { x: 8, y: 15, s: 10, d: 0 },
+  { x: 20, y: 55, s: 7, d: 0.6 },
+  { x: 35, y: 20, s: 12, d: 1.2 },
+  { x: 55, y: 70, s: 8, d: 0.3 },
+  { x: 68, y: 30, s: 11, d: 0.9 },
+  { x: 80, y: 60, s: 9, d: 1.5 },
+  { x: 90, y: 18, s: 7, d: 0.5 },
+  { x: 45, y: 82, s: 10, d: 1.1 },
+];
+
+const SparkleOverlay = () => (
+  <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+    {SPARKLE_POSITIONS.map((sp, i) => (
+      <Box
+        key={i}
+        sx={{
+          position: 'absolute',
+          left: `${sp.x}%`,
+          top: `${sp.y}%`,
+          fontSize: sp.s,
+          color: 'rgba(255,255,255,0.8)',
+          animation: `${sparkleAnim} ${2 + sp.d}s ease-in-out ${sp.d}s infinite`,
+          userSelect: 'none',
+          lineHeight: 1,
+        }}
+      >
+        ✦
+      </Box>
+    ))}
+  </Box>
+);
+
+// ─── ProfileSocialLinks ───────────────────────────────────────────────────────
+
+const ProfileSocialLinks = ({ links }: { links: Array<{ platform: string; url: string }> }) => {
+  if (!links.length) return null;
+  return (
+    <Box sx={{ mt: 4 }}>
+      <OverlineLabel>Socials</OverlineLabel>
+      <Stack direction="row" sx={{ mt: 1.5, flexWrap: 'wrap', gap: 1 }}>
+        {links.map((link, i) => {
+          const platform = SOCIAL_PLATFORMS.find((p) => p.key === link.platform);
+          if (!platform || !link.url.startsWith('https://')) return null;
+          return (
+            <Chip
+              key={i}
+              component="a"
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              label={platform.label}
+              size="small"
+              clickable
+              sx={{
+                borderRadius: 2,
+                fontWeight: 600,
+                backgroundColor: platform.color + '18',
+                color: platform.color,
+                border: `1px solid ${platform.color}40`,
+                '&:hover': { backgroundColor: platform.color + '30' },
+              }}
+            />
+          );
+        })}
+      </Stack>
+    </Box>
   );
 };
 

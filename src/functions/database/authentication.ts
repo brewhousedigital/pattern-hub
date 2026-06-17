@@ -131,11 +131,43 @@ export type TypeAuthData = {
   avatar?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
   header_image?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
   level?: TypeLevelsAdmin[];
+  // Base accent colors (used for hero and accent theming)
   site_color?: string;
   site_color_secondary?: string;
   verified?: boolean;
   admin?: boolean;
   showAdminBanner?: boolean;
+  // ─── Profile Customization ────────────────────────────────────────────────
+  // Background
+  profile_bg_type?: 'solid' | 'gradient' | 'pattern' | 'image';
+  profile_bg_color?: string;
+  profile_bg_gradient_end?: string;
+  profile_bg_gradient_angle?: number;
+  profile_bg_pattern?: string;
+  profile_bg_image?: string; // PocketBase filename
+  profile_card_bg?: string;
+  // Typography
+  profile_font?: string;
+  profile_font_size?: 'small' | 'medium' | 'large';
+  profile_name_effect?: string;
+  // Layout & Shape
+  profile_avatar_shape?: 'circle' | 'squircle' | 'square' | 'hexagon';
+  // Effects
+  profile_cursor?: string;
+  profile_sparkles?: boolean;
+  // Mood / Status
+  profile_mood_emoji?: string;
+  profile_mood_text?: string;
+  // Media & Social
+  profile_youtube_url?: string;
+  social_links?: Array<{ platform: string; url: string }>;
+  // Tab Visibility (default: true when undefined)
+  tab_show_favorites?: boolean;
+  tab_show_done?: boolean;
+  tab_show_ratings?: boolean;
+  tab_show_difficulty?: boolean;
+  tab_show_gallery?: boolean;
+  tab_show_collections?: boolean;
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;

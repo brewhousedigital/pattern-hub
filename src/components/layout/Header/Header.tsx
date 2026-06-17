@@ -118,6 +118,7 @@ const ExtraLinks = () => {
 };
 
 const navbarStyles = {
+  backgroundColor: '#fff',
   display: 'grid',
   gridTemplateColumns: 'auto 1fr auto',
   gap: 4,
@@ -127,8 +128,9 @@ const navbarStyles = {
 };
 
 const mobileNavbarContainerStyles = {
+  backgroundColor: '#fff',
   paddingX: 2,
-  mb: 2,
+  pb: 2,
 };
 
 const mobileNavbarStyles = {
