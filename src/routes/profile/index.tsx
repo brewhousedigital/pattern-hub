@@ -5,6 +5,7 @@ import { createPrettyDate } from '@/functions/utilities/dates';
 import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
 import { useQueryGetUserMarkedDoneByPagination } from '@/functions/database/marked-done';
 import { useQueryGetUserRatingsByPagination } from '@/functions/database/ratings';
+import { useQueryGetUserDifficultyRatingsByPagination } from '@/functions/database/difficulty_ratings';
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
@@ -33,6 +34,7 @@ import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
+import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded';
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
@@ -79,7 +81,7 @@ export const Route = createFileRoute('/profile/')({
     const tab = Number(search.tab);
     return {
       id: search.id as string | undefined,
-      tab: Number.isFinite(tab) && tab >= 0 && tab <= 4 ? tab : 0,
+      tab: Number.isFinite(tab) && tab >= 0 && tab <= 5 ? tab : 0,
     };
   },
   head: ({ match }) => ({
@@ -123,6 +125,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const [favoritePage, setFavoritePage] = React.useState(1);
   const [donePage, setDonePage] = React.useState(1);
   const [ratingsPage, setRatingsPage] = React.useState(1);
+  const [difficultyPage, setDifficultyPage] = React.useState(1);
   const [galleryPage, setGalleryPage] = React.useState(1);
   const [collectionsPage, setCollectionsPage] = React.useState(1);
   const [artistPage, setArtistPage] = React.useState(1);
@@ -147,6 +150,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     data: dataRatings,
     refetch: refetchRatings,
   } = useQueryGetUserRatingsByPagination(thisAuthData?.id ?? '', ratingsPage);
+
+  const {
+    isPending: isPendingDifficulty,
+    isError: isErrDifficulty,
+    data: dataDifficulty,
+  } = useQueryGetUserDifficultyRatingsByPagination(thisAuthData?.id ?? '', difficultyPage);
 
   const {
     isPending: isPendingGallery,
@@ -179,6 +188,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: '/profile/' });
   const setTab = (v: number) => void navigate({ search: (p) => ({ ...p, tab: v }), resetScroll: false });
+  const tabSectionRef = React.useRef<HTMLDivElement>(null);
+
+  const handleStatClick = (tabIndex: number) => {
+    setTab(tabIndex);
+    setTimeout(() => tabSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
   async function handleShare() {
     const url = `https://patternarchive.net/profile?id=${thisAuthData?.id}`;
@@ -209,17 +224,25 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const headerUrl = generateUserHeaderUrl(thisAuthData);
 
   const stats = [
-    { Icon: FavoriteIcon, value: dataFav?.totalItems ?? 0, label: 'Saved', color: '#ef5350' },
-    { Icon: CheckCircleIcon, value: dataDone?.totalItems ?? 0, label: 'Completed', color: '#66bb6a' },
-    { Icon: StarOutlinedIcon, value: dataRatings?.totalItems ?? 0, label: 'Rated', color: '#ffa726' },
-    { Icon: PhotoLibraryOutlinedIcon, value: dataGallery?.totalItems ?? 0, label: 'Photos', color: '#42a5f5' },
-    { Icon: BookmarksOutlinedIcon, value: dataCols?.totalItems ?? 0, label: 'Collections', color: '#ab47bc' },
+    { Icon: FavoriteIcon, value: dataFav?.totalItems ?? 0, label: 'Saved', color: '#ef5350', tab: 0 },
+    { Icon: CheckCircleIcon, value: dataDone?.totalItems ?? 0, label: 'Completed', color: '#66bb6a', tab: 1 },
+    { Icon: StarOutlinedIcon, value: dataRatings?.totalItems ?? 0, label: 'Rated', color: '#ffa726', tab: 2 },
+    {
+      Icon: SpeedRoundedIcon,
+      value: dataDifficulty?.totalItems ?? 0,
+      label: 'Difficulty Votes',
+      color: '#26c6da',
+      tab: 3,
+    },
+    { Icon: PhotoLibraryOutlinedIcon, value: dataGallery?.totalItems ?? 0, label: 'Photos', color: '#42a5f5', tab: 4 },
+    { Icon: BookmarksOutlinedIcon, value: dataCols?.totalItems ?? 0, label: 'Collections', color: '#ab47bc', tab: 5 },
   ];
 
   const tabConfig = [
     { label: 'Favorites', Icon: FavoriteBorderOutlinedIcon, count: dataFav?.totalItems },
     { label: 'Completed', Icon: TaskAltOutlinedIcon, count: dataDone?.totalItems },
     { label: 'Rated', Icon: StarOutlinedIcon, count: dataRatings?.totalItems },
+    { label: 'Difficulty Votes', Icon: SpeedRoundedIcon, count: dataDifficulty?.totalItems },
     { label: 'Gallery', Icon: PhotoLibraryOutlinedIcon, count: dataGallery?.totalItems },
     { label: 'Collections', Icon: BookmarksOutlinedIcon, count: dataCols?.totalItems },
   ];
@@ -346,17 +369,26 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         <Container maxWidth="lg" sx={{ px: { xs: 0, md: 4 } }}>
           <Grid container sx={{ justifyContent: 'center' }}>
             {stats.map((stat, i) => (
-              <Grid size={{ xs: 4, md: 2.4 }} key={stat.label}>
+              <Grid
+                size={{ xs: 4, md: 2 }}
+                key={stat.label}
+                sx={{ borderRight: i < stats.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}
+              >
                 <Box
+                  component="button"
+                  onClick={() => handleStatClick(stat.tab)}
                   sx={{
-                    flex: 1,
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     py: { xs: 2.5, md: 3 },
-                    borderRight: i < stats.length - 1 ? '1px solid' : 'none',
-                    borderColor: 'divider',
                     gap: 0.75,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s',
+                    '&:hover': { backgroundColor: 'action.hover' },
                   }}
                 >
                   <Typography
@@ -474,7 +506,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       )}
 
       {/* ─── ACTIVITY ─────────────────────────────────────────────────────── */}
-      <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box ref={tabSectionRef} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
           <Box sx={{ pt: 4, pb: 10 }}>
             <OverlineLabel sx={{ mb: 3 }}>Activity</OverlineLabel>
@@ -573,8 +605,25 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               </>
             )}
 
-            {/* Gallery */}
+            {/* Difficulty Votes */}
             {tab === 3 && (
+              <>
+                <ActivityPatternGrid
+                  patterns={dataDifficulty?.items}
+                  isPending={isPendingDifficulty}
+                  isError={isErrDifficulty}
+                  emptyMessage="No difficulty votes yet."
+                  emptyIcon={<SpeedRoundedIcon />}
+                  showDifficulty
+                />
+                {dataDifficulty && dataDifficulty.totalItems > 0 && (
+                  <PaginationBox data={dataDifficulty} value={difficultyPage} setter={setDifficultyPage} />
+                )}
+              </>
+            )}
+
+            {/* Gallery */}
+            {tab === 4 && (
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
@@ -605,7 +654,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             )}
 
             {/* Collections */}
-            {tab === 4 && (
+            {tab === 5 && (
               <Box>
                 {!isPublicView && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
@@ -802,6 +851,7 @@ type ActivityPatternGridProps = {
   isError: boolean;
   showRating?: boolean;
   showCompleted?: boolean;
+  showDifficulty?: boolean;
 };
 
 const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
@@ -843,6 +893,28 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
                   </Typography>
                 )}
                 {props.showRating && <Rating value={item.rating} readOnly size="small" />}
+                {props.showDifficulty &&
+                  (() => {
+                    const r = item.rating;
+                    const chip =
+                      r <= 1
+                        ? { label: 'Beginner', color: 'success' as const }
+                        : r <= 2
+                          ? { label: 'Easy', color: 'success' as const }
+                          : r <= 3
+                            ? { label: 'Intermediate', color: 'warning' as const }
+                            : r <= 4
+                              ? { label: 'Hard', color: 'warning' as const }
+                              : { label: 'Expert', color: 'error' as const };
+                    return (
+                      <Chip
+                        size="small"
+                        label={chip.label}
+                        color={chip.color}
+                        sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
+                      />
+                    );
+                  })()}
               </Box>
             </PatternCard>
           </Link>
@@ -928,7 +1000,15 @@ type GalleryLightboxProps = {
   isOwner: boolean;
 };
 
-const GalleryLightbox = ({ photo, photos, onClose, onNavigate, onDeleteSuccess, onEditSuccess, isOwner }: GalleryLightboxProps) => {
+const GalleryLightbox = ({
+  photo,
+  photos,
+  onClose,
+  onNavigate,
+  onDeleteSuccess,
+  onEditSuccess,
+  isOwner,
+}: GalleryLightboxProps) => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [editOpen, setEditOpen] = useState(false);
