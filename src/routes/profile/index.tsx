@@ -468,17 +468,42 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               />
 
               {(artistPatterns?.totalItems ?? 0) > 0 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                  <Button
-                    component={Link as any}
-                    to="/"
-                    search={{ authors: [displayName] }}
-                    variant="outlined"
-                    size="large"
-                    sx={{ borderRadius: 3, px: 4, fontWeight: 600 }}
-                  >
-                    View all {displayName}'s work
-                  </Button>
+                <Box
+                  component={Link as any}
+                  to="/"
+                  search={{ authors: [displayName] }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    mt: 3,
+                    p: { xs: 3, md: 4 },
+                    borderRadius: 4,
+                    background: (t) =>
+                      `linear-gradient(135deg, ${t.palette.primary.dark} 0%, ${t.palette.primary.main} 60%, ${t.palette.secondary.main} 100%)`,
+                    textDecoration: 'none',
+                    boxShadow: (t) => `0 8px 32px ${alpha(t.palette.primary.main, 0.35)}`,
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: (t) => `0 14px 40px ${alpha(t.palette.primary.main, 0.45)}`,
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: { xs: '1.25rem', md: '1.5rem' },
+                        fontWeight: 800,
+                        color: 'white',
+                        letterSpacing: '-0.3px',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      View all of {displayName}'s work →
+                    </Typography>
+                  </Box>
                 </Box>
               )}
             </Box>
