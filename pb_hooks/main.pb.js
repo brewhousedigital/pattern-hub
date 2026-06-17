@@ -222,3 +222,223 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
     return c.json(500, { error: 'something went wrong', message: error?.message });
   }
 });
+
+// Consolidates all profile-page data fetches into a single HTTP call.
+// Each section is independently try/caught so one failure doesn't block others.
+routerAdd('GET', '/api/profile-data', (c) => {
+  const q      = c.request.url.query();
+  const userId = q.get('userId') || '';
+  if (!userId) return c.json(400, { error: 'userId is required' });
+
+  const PER_PAGE        = 10;
+  const PER_PAGE_ARTIST = 8;
+  const favPage      = Math.max(1, parseInt(q.get('favPage')      || '1', 10));
+  const donePage     = Math.max(1, parseInt(q.get('donePage')     || '1', 10));
+  const ratingPage   = Math.max(1, parseInt(q.get('ratingPage')   || '1', 10));
+  const diffPage     = Math.max(1, parseInt(q.get('diffPage')     || '1', 10));
+  const galleryPage  = Math.max(1, parseInt(q.get('galleryPage')  || '1', 10));
+  const colsPage     = Math.max(1, parseInt(q.get('colsPage')     || '1', 10));
+  const artistPage   = Math.max(1, parseInt(q.get('artistPage')   || '1', 10));
+  const isOwner      = q.get('isOwner')  === 'true';
+  const isArtist     = q.get('isArtist') === 'true';
+
+  // Patterns collection ID is needed by the client to build image URLs
+  let patternsColId = '';
+  try { patternsColId = $app.findCollectionByNameOrId('patterns').id; } catch (_) {}
+
+  // Parameterised COUNT using raw SQL (safe — table names are hardcoded, only userId is bound)
+  function countRows(table, whereSQL, params) {
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app.db()
+        .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+        .bind(params)
+        .all(rows);
+      return parseInt(rows[0]?.count || 0, 10);
+    } catch (_) { return 0; }
+  }
+
+  function buildPaged(totalItems, page, perPage, items) {
+    return { page, perPage, totalItems, totalPages: Math.max(1, Math.ceil(totalItems / perPage)), items };
+  }
+
+  function serializePatternExpand(r) {
+    if (!r) return null;
+    return {
+      id:                    r.id,
+      collectionId:          patternsColId,
+      name:                  r.getString('name'),
+      pattern_file:          r.getString('pattern_file'),
+      pattern_file_external: r.getBool('pattern_file_external'),
+      description:           r.getString('description'),
+    };
+  }
+
+  // Favorites / Done / Ratings / Difficulty all share the same shape
+  function fetchActivity(table, page) {
+    const where  = "owner_id = {:uid} AND pattern_id != ''";
+    const filter = "owner_id = {:uid} && pattern_id != ''";
+    const params = { uid: userId };
+    const total  = countRows(table, where, params);
+    const offset = (page - 1) * PER_PAGE;
+    const items  = [];
+    try {
+      const records = $app.findRecordsByFilter(table, filter, '-created', PER_PAGE, offset, params);
+      $app.expandRecords(records, ['pattern_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r   = records[i];
+        const exp = r.expandedOne('pattern_id');
+        items.push({
+          id:           r.id,
+          collectionId: '',
+          owner_id:     r.getString('owner_id'),
+          pattern_id:   r.getString('pattern_id'),
+          rating:       r.getFloat('rating'),
+          rating_notes: r.getString('rating_notes'),
+          created:      r.getString('created'),
+          updated:      r.getString('updated'),
+          expand:       { pattern_id: serializePatternExpand(exp) },
+        });
+      }
+    } catch (_) {}
+    return buildPaged(total, page, PER_PAGE, items);
+  }
+
+  function fetchGallery(page) {
+    const total  = countRows('gallery', "owner_id = {:uid}", { uid: userId });
+    const offset = (page - 1) * PER_PAGE;
+    const items  = [];
+    try {
+      const records = $app.findRecordsByFilter('gallery', "owner_id = {:uid}", '-created', PER_PAGE, offset, { uid: userId });
+      $app.expandRecords(records, ['pattern_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r   = records[i];
+        const exp = r.expandedOne('pattern_id');
+        items.push({
+          id:               r.id,
+          collectionId:     '',
+          collectionName:   'gallery',
+          title:            r.getString('title'),
+          description:      r.getString('description'),
+          src:              r.getString('src'),
+          imagekit_file_id: r.getString('imagekit_file_id'),
+          owner_id:         r.getString('owner_id'),
+          pattern_id:       r.getString('pattern_id'),
+          created:          r.getString('created'),
+          updated:          r.getString('updated'),
+          expand:           { pattern_id: serializePatternExpand(exp) },
+        });
+      }
+    } catch (_) {}
+    return buildPaged(total, page, PER_PAGE, items);
+  }
+
+  function fetchCollections(page) {
+    const total  = countRows('user_collections', "owner_id = {:uid}", { uid: userId });
+    const offset = (page - 1) * PER_PAGE;
+    const items  = [];
+    try {
+      const records = $app.findRecordsByFilter('user_collections', "owner_id = {:uid}", '-created', PER_PAGE, offset, { uid: userId });
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        items.push({
+          id:             r.id,
+          collectionId:   '',
+          collectionName: 'user_collections',
+          name:           r.getString('name'),
+          description:    r.getString('description'),
+          owner_id:       r.getString('owner_id'),
+          patterns:       Array.isArray(r.get('patterns')) ? r.get('patterns') : [],
+          created:        r.getString('created'),
+          updated:        r.getString('updated'),
+        });
+      }
+    } catch (_) {}
+    return buildPaged(total, page, PER_PAGE, items);
+  }
+
+  function fetchFollowedCollections() {
+    if (!isOwner) return null;
+    const items = [];
+    try {
+      const records = $app.findRecordsByFilter('user_followed_collections', "owner_id = {:uid}", '-created', 0, 0, { uid: userId });
+      $app.expandRecords(records, ['collection_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r   = records[i];
+        const col = r.expandedOne('collection_id');
+        items.push({
+          id:                   r.id,
+          collectionId:         '',
+          collectionName:       'user_followed_collections',
+          owner_id:             r.getString('owner_id'),
+          collection_id:        r.getString('collection_id'),
+          last_checked_updated: r.getString('last_checked_updated'),
+          created:              r.getString('created'),
+          updated:              r.getString('updated'),
+          expand: col ? {
+            collection_id: {
+              id:             col.id,
+              collectionId:   '',
+              collectionName: 'user_collections',
+              name:           col.getString('name'),
+              description:    col.getString('description'),
+              owner_id:       col.getString('owner_id'),
+              patterns:       Array.isArray(col.get('patterns')) ? col.get('patterns') : [],
+              created:        col.getString('created'),
+              updated:        col.getString('updated'),
+            },
+          } : null,
+        });
+      }
+    } catch (_) {}
+    return items;
+  }
+
+  function fetchArtistPatterns(page) {
+    if (!isArtist) return null;
+    // Count patterns where userId appears in the JSON authors array
+    const total  = countRows(
+      'patterns',
+      "authors LIKE {:likeUid} AND isDeleted = 0 AND is_draft = 0",
+      { likeUid: '%"' + userId + '"%' }
+    );
+    const offset = (page - 1) * PER_PAGE_ARTIST;
+    const items  = [];
+    try {
+      const records = $app.findRecordsByFilter(
+        'patterns',
+        "authors ~ {:uid} && isDeleted = false && is_draft = false",
+        '-created', PER_PAGE_ARTIST, offset,
+        { uid: userId }
+      );
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        items.push({
+          id:                    r.id,
+          collectionId:          patternsColId,
+          name:                  r.getString('name'),
+          pattern_file:          r.getString('pattern_file'),
+          pattern_file_external: r.getBool('pattern_file_external'),
+          pieces:                r.getInt('pieces'),
+        });
+      }
+    } catch (_) {}
+    return buildPaged(total, page, PER_PAGE_ARTIST, items);
+  }
+
+  try {
+    return c.json(200, {
+      favorites:           fetchActivity('user_favorites',          favPage),
+      done:                fetchActivity('user_marked_done',        donePage),
+      ratings:             fetchActivity('user_ratings',            ratingPage),
+      difficulty:          fetchActivity('user_difficulty_ratings', diffPage),
+      gallery:             fetchGallery(galleryPage),
+      collections:         fetchCollections(colsPage),
+      followedCollections: fetchFollowedCollections(),
+      artistPatterns:      fetchArtistPatterns(artistPage),
+    });
+  } catch (err) {
+    console.log('>>>profile-data error', err?.message);
+    return c.json(500, { error: 'internal error' });
+  }
+});

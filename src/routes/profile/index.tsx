@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
-import { useQueryGetUserFavoritesByPagination } from '@/functions/database/favorites';
-import { useQueryGetUserMarkedDoneByPagination } from '@/functions/database/marked-done';
-import { useQueryGetUserRatingsByPagination } from '@/functions/database/ratings';
-import { useQueryGetUserDifficultyRatingsByPagination } from '@/functions/database/difficulty_ratings';
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
@@ -13,17 +9,17 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useQueryGetUserById } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
-import { useQueryGetUserGallery, type TypeGalleryResponse } from '@/functions/database/gallery';
+import type { TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
 import { GalleryEditDialog } from '@/components/GalleryEditDialog';
-import { useQueryGetUserCollections, useQueryGetUserFollowedCollections } from '@/functions/database/collections';
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
-import { useQueryGetPatternsByAuthor, type TypePatternResponse } from '@/functions/database/patterns';
+import type { TypePatternResponse } from '@/functions/database/patterns';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import { generateUserAvatarUrl, generateUserHeaderUrl } from '@/functions/utilities/generate-pb-image';
+import { useQueryGetProfileData } from '@/functions/database/profile-data';
 
 import { styled, alpha } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -131,55 +127,31 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const [artistPage, setArtistPage] = React.useState(1);
 
   const {
-    isPending: isPendingFav,
-    isError: isErrFav,
-    data: dataFav,
-    refetch: refetchFav,
-  } = useQueryGetUserFavoritesByPagination(thisAuthData?.id ?? '', favoritePage);
+    isPending,
+    isError,
+    data: profileData,
+    refetch,
+  } = useQueryGetProfileData({
+    userId:         thisAuthData?.id ?? '',
+    favPage:        favoritePage,
+    donePage,
+    ratingsPage,
+    difficultyPage,
+    galleryPage,
+    collectionsPage,
+    artistPage,
+    isOwner:        !isPublicView,
+    isArtist,
+  });
 
-  const {
-    isPending: isPendingDone,
-    isError: isErrDone,
-    data: dataDone,
-    refetch: refetchDone,
-  } = useQueryGetUserMarkedDoneByPagination(thisAuthData?.id ?? '', donePage);
-
-  const {
-    isPending: isPendingRatings,
-    isError: isErrRatings,
-    data: dataRatings,
-    refetch: refetchRatings,
-  } = useQueryGetUserRatingsByPagination(thisAuthData?.id ?? '', ratingsPage);
-
-  const {
-    isPending: isPendingDifficulty,
-    isError: isErrDifficulty,
-    data: dataDifficulty,
-  } = useQueryGetUserDifficultyRatingsByPagination(thisAuthData?.id ?? '', difficultyPage);
-
-  const {
-    isPending: isPendingGallery,
-    isError: isErrGallery,
-    data: dataGallery,
-    refetch: refetchGallery,
-  } = useQueryGetUserGallery(thisAuthData?.id ?? '', galleryPage);
-
-  const {
-    isPending: isPendingCols,
-    isError: isErrCols,
-    data: dataCols,
-    refetch: refetchCols,
-  } = useQueryGetUserCollections(thisAuthData?.id ?? '', collectionsPage);
-
-  const { data: followedCols = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
-    !isPublicView ? (thisAuthData?.id ?? '') : '',
-  );
-
-  const {
-    data: artistPatterns,
-    isPending: isPendingArtist,
-    isError: isErrArtist,
-  } = useQueryGetPatternsByAuthor(isArtist ? (thisAuthData?.id ?? '') : '', artistPage);
+  const dataFav        = profileData?.favorites;
+  const dataDone       = profileData?.done;
+  const dataRatings    = profileData?.ratings;
+  const dataDifficulty = profileData?.difficulty;
+  const dataGallery    = profileData?.gallery;
+  const dataCols       = profileData?.collections;
+  const followedCols   = profileData?.followedCollections ?? [];
+  const artistPatterns = profileData?.artistPatterns ?? undefined;
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<TypeGalleryResponse | null>(null);
@@ -492,8 +464,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
               <ArtistPatternGrid
                 patterns={artistPatterns?.items}
-                isPending={isPendingArtist}
-                isError={isErrArtist}
+                isPending={isPending}
+                isError={isError}
                 displayName={displayName}
               />
 
@@ -560,8 +532,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <>
                 <ActivityPatternGrid
                   patterns={dataFav?.items}
-                  isPending={isPendingFav}
-                  isError={isErrFav}
+                  isPending={isPending}
+                  isError={isError}
                   emptyMessage="No favorited patterns yet."
                   emptyIcon={<FavoriteBorderOutlinedIcon />}
                 />
@@ -576,8 +548,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <>
                 <ActivityPatternGrid
                   patterns={dataDone?.items}
-                  isPending={isPendingDone}
-                  isError={isErrDone}
+                  isPending={isPending}
+                  isError={isError}
                   emptyMessage="No completed patterns yet."
                   emptyIcon={<TaskAltOutlinedIcon />}
                   showCompleted
@@ -593,8 +565,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <>
                 <ActivityPatternGrid
                   patterns={dataRatings?.items}
-                  isPending={isPendingRatings}
-                  isError={isErrRatings}
+                  isPending={isPending}
+                  isError={isError}
                   emptyMessage="No rated patterns yet."
                   emptyIcon={<StarOutlinedIcon />}
                   showRating
@@ -610,8 +582,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <>
                 <ActivityPatternGrid
                   patterns={dataDifficulty?.items}
-                  isPending={isPendingDifficulty}
-                  isError={isErrDifficulty}
+                  isPending={isPending}
+                  isError={isError}
                   emptyMessage="No difficulty votes yet."
                   emptyIcon={<SpeedRoundedIcon />}
                   showDifficulty
@@ -636,11 +608,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     </Button>
                   </Box>
                 )}
-                {isPendingGallery ? (
+                {isPending ? (
                   <Centered>
                     <CircularProgress />
                   </Centered>
-                ) : isErrGallery ? (
+                ) : isError ? (
                   <Alert severity="error">Unable to load gallery photos.</Alert>
                 ) : galleryItems.length === 0 ? (
                   <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
@@ -667,11 +639,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     </Button>
                   </Box>
                 )}
-                {isPendingCols ? (
+                {isPending ? (
                   <Centered>
                     <CircularProgress />
                   </Centered>
-                ) : isErrCols ? (
+                ) : isError ? (
                   <Alert severity="error">Unable to load collections.</Alert>
                 ) : !dataCols?.items.length ? (
                   <EmptyState
@@ -686,8 +658,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                           <CollectionCard
                             collection={col}
                             isOwner={!isPublicView}
-                            onDeleted={() => void refetchCols()}
-                            onEdited={() => void refetchCols()}
+                            onDeleted={() => void refetch()}
+                            onEdited={() => void refetch()}
                           />
                         </Grid>
                       ))}
@@ -739,7 +711,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         open={createColOpen}
         onClose={() => setCreateColOpen(false)}
         onSuccess={() => {
-          void refetchCols();
+          void refetch();
           setCreateColOpen(false);
         }}
       />
@@ -749,11 +721,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         onClose={() => setLightboxPhoto(null)}
         onNavigate={setLightboxPhoto}
         onDeleteSuccess={() => {
-          void refetchGallery();
+          void refetch();
           setLightboxPhoto(null);
         }}
         onEditSuccess={() => {
-          void refetchGallery();
+          void refetch();
           setLightboxPhoto(null);
         }}
         isOwner={!isPublicView}
@@ -762,7 +734,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onSuccess={() => {
-          void refetchGallery();
+          void refetch();
           setUploadOpen(false);
         }}
       />
