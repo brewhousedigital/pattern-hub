@@ -7,6 +7,7 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
 
@@ -133,6 +134,15 @@ export const MainPageContent = () => {
                           label={(pattern.avg_rating ?? 0).toFixed(1)}
                           sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
                         />
+                        {!!pattern.pieces && (
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            icon={<ExtensionRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                            label={pattern.pieces}
+                            sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                          />
+                        )}
                         <Chip
                           size="small"
                           label={diffChip ? diffChip.label : 'No ratings'}
