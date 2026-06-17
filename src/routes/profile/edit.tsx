@@ -14,16 +14,13 @@ import {
   generateUserHeaderUrl,
   generateUserBgImageUrl,
 } from '@/functions/utilities/generate-pb-image';
-import {
-  PROFILE_FONTS,
-  SOCIAL_PLATFORMS,
-  BG_PATTERNS,
-  AVATAR_SHAPES,
-  CURSOR_OPTIONS,
-  NAME_EFFECTS,
-  sanitizeHex,
-  extractYouTubeId,
-} from '@/constants/profile-customization';
+import { sanitizeHex, extractYouTubeId } from '@/constants/profile-customization';
+import { type CustomizationForm, DEFAULT_CUSTOMIZATION, SectionCard, SectionTitle } from './edit-sections/_shared';
+import { ColorsSection } from './edit-sections/ColorsSection';
+import { TypographySection } from './edit-sections/TypographySection';
+import { MoodSection } from './edit-sections/MoodSection';
+import { VisibilitySection } from './edit-sections/VisibilitySection';
+import { SocialSection } from './edit-sections/SocialSection';
 
 import { styled, alpha } from '@mui/material/styles';
 import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
@@ -33,8 +30,6 @@ import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternate
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import WallpaperRoundedIcon from '@mui/icons-material/WallpaperRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
 
 import {
   Box,
@@ -45,19 +40,12 @@ import {
   Container,
   FormControlLabel,
   Grid,
-  IconButton,
   InputAdornment,
-  MenuItem,
   Paper,
-  Select,
   Skeleton,
-  Slider,
   Stack,
   Switch,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
   Typography,
 } from '@mui/material';
 
@@ -81,60 +69,6 @@ interface ProfileFormErrors {
   username?: string;
 }
 
-interface CustomizationForm {
-  site_color: string;
-  site_color_secondary: string;
-  profile_bg_type: 'solid' | 'gradient' | 'pattern' | 'image';
-  profile_bg_color: string;
-  profile_bg_gradient_end: string;
-  profile_bg_gradient_angle: number;
-  profile_bg_pattern: string;
-  profile_card_bg: string;
-  profile_font: string;
-  profile_font_size: 'small' | 'medium' | 'large';
-  profile_name_effect: string;
-  profile_avatar_shape: 'circle' | 'squircle' | 'square' | 'hexagon';
-  profile_cursor: string;
-  profile_sparkles: boolean;
-  profile_mood_emoji: string;
-  profile_mood_text: string;
-  profile_youtube_url: string;
-  social_links: Array<{ platform: string; url: string }>;
-  tab_show_favorites: boolean;
-  tab_show_done: boolean;
-  tab_show_ratings: boolean;
-  tab_show_difficulty: boolean;
-  tab_show_gallery: boolean;
-  tab_show_collections: boolean;
-}
-
-const DEFAULT_CUSTOMIZATION: CustomizationForm = {
-  site_color: PRIMARY_COLOR,
-  site_color_secondary: '#cfe1b9',
-  profile_bg_type: 'solid',
-  profile_bg_color: '',
-  profile_bg_gradient_end: '#ffffff',
-  profile_bg_gradient_angle: 135,
-  profile_bg_pattern: 'dots',
-  profile_card_bg: '',
-  profile_font: '',
-  profile_font_size: 'medium',
-  profile_name_effect: 'none',
-  profile_avatar_shape: 'circle',
-  profile_cursor: 'default',
-  profile_sparkles: false,
-  profile_mood_emoji: '',
-  profile_mood_text: '',
-  profile_youtube_url: '',
-  social_links: [],
-  tab_show_favorites: true,
-  tab_show_done: true,
-  tab_show_ratings: true,
-  tab_show_difficulty: true,
-  tab_show_gallery: true,
-  tab_show_collections: true,
-};
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function RouteComponent() {
@@ -156,8 +90,15 @@ function RouteComponent() {
     is_artist: false,
   });
   const [customization, setCustomization] = useState<CustomizationForm>(DEFAULT_CUSTOMIZATION);
+
   const setCust = <K extends keyof CustomizationForm>(key: K, value: CustomizationForm[K]) =>
     setCustomization((p) => ({ ...p, [key]: value }));
+
+  const resetSection = (keys: (keyof CustomizationForm)[]) =>
+    setCustomization((p) => {
+      const patch = Object.fromEntries(keys.map((k) => [k, DEFAULT_CUSTOMIZATION[k]]));
+      return { ...p, ...patch } as CustomizationForm;
+    });
 
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [loading, setLoading] = useState(true);
@@ -165,7 +106,6 @@ function RouteComponent() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | undefined>(undefined);
 
-  // Pending image files (processed, ready to upload on save)
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [pendingAvatarPreview, setPendingAvatarPreview] = useState<string | null>(null);
   const [avatarCleared, setAvatarCleared] = useState(false);
@@ -218,7 +158,6 @@ function RouteComponent() {
     setLoading(false);
   }, [authData]);
 
-  // Revoke object URLs when component unmounts
   useEffect(() => {
     return () => {
       if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
@@ -240,7 +179,6 @@ function RouteComponent() {
       setImageError(`File is too large: maximum ${maxMB} MB.`);
       return;
     }
-
     setProcessingImage(type);
     try {
       const [maxW, maxH, quality] =
@@ -248,7 +186,6 @@ function RouteComponent() {
       const blob = await resizeAndConvertToWebP(file, maxW, maxH, quality);
       const processed = new File([blob], `${type}.webp`, { type: 'image/webp' });
       const preview = URL.createObjectURL(processed);
-
       if (type === 'avatar') {
         if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
         setPendingAvatar(processed);
@@ -266,7 +203,7 @@ function RouteComponent() {
         setBgImageCleared(false);
       }
     } catch {
-      setImageError('Could not process this image,  please try another file.');
+      setImageError('Could not process this image, please try another file.');
     } finally {
       setProcessingImage(null);
     }
@@ -311,7 +248,7 @@ function RouteComponent() {
 
   // ─── Submit ───────────────────────────────────────────────────────────────
 
-  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaveError(null);
     setSaving(true);
@@ -337,7 +274,6 @@ function RouteComponent() {
     if (pendingBgImage) fd.append('profile_bg_image', pendingBgImage, 'bg_image.webp');
     else if (bgImageCleared) fd.append('profile_bg_image', '');
 
-    // Customization fields
     fd.append('site_color', sanitizeHex(customization.site_color, PRIMARY_COLOR));
     fd.append('site_color_secondary', sanitizeHex(customization.site_color_secondary, '#cfe1b9'));
     fd.append('profile_bg_type', customization.profile_bg_type);
@@ -423,7 +359,6 @@ function RouteComponent() {
                   </Alert>
                 )}
 
-                {/* Mini hero preview */}
                 <HeroPreview
                   sx={{
                     backgroundImage: activeHeaderSrc
@@ -432,8 +367,6 @@ function RouteComponent() {
                   }}
                 >
                   {!activeHeaderSrc && <WallpaperPlaceholder />}
-
-                  {/* Avatar preview inside hero */}
                   <Box
                     sx={{ position: 'absolute', bottom: 12, left: 16, display: 'flex', alignItems: 'center', gap: 1.5 }}
                   >
@@ -473,7 +406,6 @@ function RouteComponent() {
                 </HeroPreview>
 
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                  {/* Avatar upload */}
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <input
                       ref={avatarInputRef}
@@ -525,7 +457,6 @@ function RouteComponent() {
                     </Typography>
                   </Grid>
 
-                  {/* Header upload */}
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <input
                       ref={headerInputRef}
@@ -608,7 +539,6 @@ function RouteComponent() {
                     htmlInput: { maxLength: 32, minLength: 4, pattern: '^[a-zA-Z0-9_]+$' },
                   }}
                 />
-
                 <Grid container sx={{ alignItems: 'center', pt: 2 }}>
                   <Grid size={{ xs: 7 }}>
                     {usernameAvailable === true && (
@@ -736,564 +666,67 @@ function RouteComponent() {
                 </Box>
               </SectionCard>
 
-              {/* ─── COLORS & BACKGROUND ──────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Colors &amp; Background</SectionTitle>
-
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-                    >
-                      Primary Accent
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box
-                        component="input"
-                        type="color"
-                        value={customization.site_color}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCust('site_color', e.target.value)}
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          p: 0.25,
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        variant="filled"
-                        value={customization.site_color}
-                        onChange={(e) => setCust('site_color', e.target.value)}
-                        slotProps={{ htmlInput: { maxLength: 7 } }}
-                        sx={{ flex: 1 }}
-                      />
-                    </Box>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-                    >
-                      Secondary Accent
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box
-                        component="input"
-                        type="color"
-                        value={customization.site_color_secondary}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setCust('site_color_secondary', e.target.value)
-                        }
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          p: 0.25,
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        variant="filled"
-                        value={customization.site_color_secondary}
-                        onChange={(e) => setCust('site_color_secondary', e.target.value)}
-                        slotProps={{ htmlInput: { maxLength: 7 } }}
-                        sx={{ flex: 1 }}
-                      />
-                    </Box>
-                  </Grid>
-                </Grid>
-
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontWeight: 600, display: 'block', mt: 2.5, mb: 1 }}
-                >
-                  Page Background
-                </Typography>
-                <ToggleButtonGroup
-                  exclusive
-                  value={customization.profile_bg_type}
-                  onChange={(_, v) => {
-                    if (v) setCust('profile_bg_type', v);
-                  }}
-                  size="small"
-                  sx={{ mb: 2 }}
-                >
-                  {(['solid', 'gradient', 'pattern', 'image'] as const).map((t) => (
-                    <ToggleButton key={t} value={t} sx={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                      {t}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-
-                {(customization.profile_bg_type === 'solid' ||
-                  customization.profile_bg_type === 'gradient' ||
-                  customization.profile_bg_type === 'pattern') && (
-                  <Grid container spacing={2} sx={{ mb: 1 }}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-                      >
-                        {customization.profile_bg_type === 'solid' ? 'Background Color' : 'Start Color'}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Box
-                          component="input"
-                          type="color"
-                          value={customization.profile_bg_color || '#f4f7f5'}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setCust('profile_bg_color', e.target.value)
-                          }
-                          sx={{
-                            width: 44,
-                            height: 44,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            p: 0.25,
-                            cursor: 'pointer',
-                          }}
-                        />
-                        <TextField
-                          size="small"
-                          variant="filled"
-                          value={customization.profile_bg_color}
-                          onChange={(e) => setCust('profile_bg_color', e.target.value)}
-                          slotProps={{ htmlInput: { maxLength: 7 } }}
-                          sx={{ flex: 1 }}
-                        />
-                      </Box>
-                    </Grid>
-                    {customization.profile_bg_type === 'gradient' && (
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-                        >
-                          End Color
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Box
-                            component="input"
-                            type="color"
-                            value={customization.profile_bg_gradient_end}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              setCust('profile_bg_gradient_end', e.target.value)
-                            }
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              borderRadius: 1,
-                              p: 0.25,
-                              cursor: 'pointer',
-                            }}
-                          />
-                          <TextField
-                            size="small"
-                            variant="filled"
-                            value={customization.profile_bg_gradient_end}
-                            onChange={(e) => setCust('profile_bg_gradient_end', e.target.value)}
-                            slotProps={{ htmlInput: { maxLength: 7 } }}
-                            sx={{ flex: 1 }}
-                          />
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
-                )}
-
-                {customization.profile_bg_type === 'gradient' && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      Angle: {customization.profile_bg_gradient_angle}°
-                    </Typography>
-                    <Slider
-                      min={0}
-                      max={360}
-                      value={customization.profile_bg_gradient_angle}
-                      onChange={(_, v) => setCust('profile_bg_gradient_angle', v as number)}
-                      size="small"
-                      sx={{ mt: 1 }}
-                    />
-                  </Box>
-                )}
-
-                {customization.profile_bg_type === 'pattern' && (
-                  <Box sx={{ mb: 1 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ fontWeight: 600, display: 'block', mb: 1 }}
-                    >
-                      Pattern Style
-                    </Typography>
-                    <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
-                      {BG_PATTERNS.map((p) => (
-                        <Chip
-                          key={p.key}
-                          label={p.label}
-                          size="small"
-                          clickable
-                          onClick={() => setCust('profile_bg_pattern', p.key)}
-                          color={customization.profile_bg_pattern === p.key ? 'primary' : 'default'}
-                          variant={customization.profile_bg_pattern === p.key ? 'filled' : 'outlined'}
-                          sx={{ borderRadius: 2 }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-
-                {customization.profile_bg_type === 'image' && (
-                  <Box sx={{ mt: 1 }}>
-                    <input
-                      ref={bgImageInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) void handleImageSelect(f, 'bgimage');
-                      }}
-                    />
-                    {activeBgImageSrc && (
-                      <Box
-                        component="img"
-                        src={activeBgImageSrc}
-                        alt="Background preview"
-                        sx={{
-                          width: '100%',
-                          maxHeight: 120,
-                          objectFit: 'cover',
-                          borderRadius: 2,
-                          mb: 1,
-                          display: 'block',
-                        }}
-                      />
-                    )}
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      onClick={() => bgImageInputRef.current?.click()}
-                      disabled={processingImage === 'bgimage'}
-                      startIcon={
-                        processingImage === 'bgimage' ? (
-                          <CircularProgress size={14} color="inherit" />
-                        ) : (
-                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                        )
-                      }
-                      sx={{ borderStyle: 'dashed' }}
-                    >
-                      {processingImage === 'bgimage'
-                        ? 'Processing…'
-                        : activeBgImageSrc
-                          ? 'Replace'
-                          : 'Upload background image'}
-                    </Button>
-                    {activeBgImageSrc && !bgImageCleared && (
-                      <Button
-                        fullWidth
-                        size="small"
-                        color="error"
-                        startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                        onClick={() => clearImage('bgimage')}
-                        sx={{ mt: 0.75 }}
-                      >
-                        Remove background image
-                      </Button>
-                    )}
-                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                      Landscape image · max 5 MB · resized to 1920×1080 px
-                    </Typography>
-                  </Box>
-                )}
-              </SectionCard>
-
-              {/* ─── TYPOGRAPHY & STYLE ───────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Typography &amp; Style</SectionTitle>
-
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                  Profile Font
-                </Typography>
-                <Select
-                  fullWidth
-                  size="small"
-                  variant="filled"
-                  value={customization.profile_font}
-                  onChange={(e) => setCust('profile_font', e.target.value)}
-                  displayEmpty
-                  renderValue={(v) => v || 'Default font'}
-                  sx={{ mb: 2 }}
-                >
-                  <MenuItem value="">
-                    <em>Default font</em>
-                  </MenuItem>
-                  {PROFILE_FONTS.map((f) => (
-                    <MenuItem key={f.value} value={f.value} sx={{ fontFamily: `'${f.value}', sans-serif` }}>
-                      <Box>
-                        <Typography sx={{ fontFamily: `'${f.value}', sans-serif`, fontWeight: 600 }}>
-                          {f.label}
-                        </Typography>
-                        <Typography variant="caption" color="text.disabled">
-                          {f.category}
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                  Name Effect
-                </Typography>
-                <Stack direction="row" sx={{ mb: 2, gap: 1, flexWrap: 'wrap' }}>
-                  {NAME_EFFECTS.map((ef) => (
-                    <Chip
-                      key={ef.key}
-                      label={ef.label}
-                      size="small"
-                      clickable
-                      onClick={() => setCust('profile_name_effect', ef.key)}
-                      color={customization.profile_name_effect === ef.key ? 'primary' : 'default'}
-                      variant={customization.profile_name_effect === ef.key ? 'filled' : 'outlined'}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  ))}
-                </Stack>
-
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                  Avatar Shape
-                </Typography>
-                <Stack direction="row" sx={{ mb: 2, gap: 1, flexWrap: 'wrap' }}>
-                  {AVATAR_SHAPES.map((s) => (
-                    <Chip
-                      key={s.key}
-                      label={s.label}
-                      size="small"
-                      clickable
-                      onClick={() =>
-                        setCust('profile_avatar_shape', s.key as CustomizationForm['profile_avatar_shape'])
-                      }
-                      color={customization.profile_avatar_shape === s.key ? 'primary' : 'default'}
-                      variant={customization.profile_avatar_shape === s.key ? 'filled' : 'outlined'}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  ))}
-                </Stack>
-
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                  Cursor Style
-                </Typography>
-                <Stack direction="row" sx={{ mb: 2, gap: 1, flexWrap: 'wrap' }}>
-                  {CURSOR_OPTIONS.map((c) => (
-                    <Chip
-                      key={c.key}
-                      label={c.label}
-                      size="small"
-                      clickable
-                      onClick={() => setCust('profile_cursor', c.key)}
-                      color={customization.profile_cursor === c.key ? 'primary' : 'default'}
-                      variant={customization.profile_cursor === c.key ? 'filled' : 'outlined'}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  ))}
-                </Stack>
-
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={customization.profile_sparkles}
-                      onChange={(e) => setCust('profile_sparkles', e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Sparkle effect ✦
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Adds animated star sparkles to your hero section.
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </SectionCard>
-
-              {/* ─── MOOD & STATUS ────────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Status</SectionTitle>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 3, sm: 2 }}>
-                    <TextField
-                      label="Emoji"
-                      variant="filled"
-                      fullWidth
-                      value={customization.profile_mood_emoji}
-                      onChange={(e) => setCust('profile_mood_emoji', e.target.value)}
-                      slotProps={{ htmlInput: { maxLength: 4 } }}
-                      helperText="emoji"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 9, sm: 10 }}>
-                    <TextField
-                      label="Status text"
-                      variant="filled"
-                      fullWidth
-                      placeholder="Working on a new piece…"
-                      value={customization.profile_mood_text}
-                      onChange={(e) => setCust('profile_mood_text', e.target.value.slice(0, 50))}
-                      slotProps={{ htmlInput: { maxLength: 50 } }}
-                      helperText={`${customization.profile_mood_text.length}/50`}
-                    />
-                  </Grid>
-                </Grid>
-              </SectionCard>
-
-              {/* ─── SECTION VISIBILITY ───────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Section Visibility</SectionTitle>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                  Toggle which activity tabs appear on your public profile.
-                </Typography>
-                <Grid container spacing={1.5}>
-                  {(
-                    [
-                      { key: 'tab_show_favorites', label: 'Favorites' },
-                      { key: 'tab_show_done', label: 'Completed' },
-                      { key: 'tab_show_ratings', label: 'Ratings' },
-                      { key: 'tab_show_difficulty', label: 'Difficulty Votes' },
-                      { key: 'tab_show_gallery', label: 'Gallery' },
-                      { key: 'tab_show_collections', label: 'Collections' },
-                    ] as const
-                  ).map(({ key, label }) => (
-                    <Grid key={key} size={{ xs: 12, sm: 6 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={customization[key]}
-                            onChange={(e) => setCust(key, e.target.checked)}
-                            size="small"
-                          />
-                        }
-                        label={<Typography variant="body2">{label}</Typography>}
-                        sx={{ m: 0, width: '100%', justifyContent: 'space-between', flexDirection: 'row-reverse' }}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              </SectionCard>
-
-              {/* ─── MEDIA & SOCIAL ───────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Media &amp; Social Links</SectionTitle>
-
-                <TextField
-                  fullWidth
-                  label="YouTube Video URL"
-                  variant="filled"
-                  placeholder="https://youtube.com/watch?v=… or https://youtu.be/…"
-                  value={customization.profile_youtube_url}
-                  onChange={(e) => setCust('profile_youtube_url', e.target.value.trim())}
-                  helperText={
-                    customization.profile_youtube_url
-                      ? extractYouTubeId(customization.profile_youtube_url)
-                        ? '✓ Valid YouTube URL'
-                        : '⚠ Could not find a video ID in this URL'
-                      : 'Paste a YouTube video link to embed it on your profile.'
-                  }
-                  sx={{ mb: 3 }}
-                />
-
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                  Social Links (up to 8)
-                </Typography>
-                <Stack spacing={1.5} sx={{ mb: 1.5 }}>
-                  {customization.social_links.map((link, i) => (
-                    <Grid key={i} container spacing={1} sx={{ alignItems: 'center' }}>
-                      <Grid size={{ xs: 4 }}>
-                        <Select
-                          fullWidth
-                          size="small"
-                          variant="filled"
-                          value={link.platform}
-                          onChange={(e) => {
-                            const updated = [...customization.social_links];
-                            updated[i] = { ...updated[i], platform: e.target.value };
-                            setCust('social_links', updated);
-                          }}
-                        >
-                          {SOCIAL_PLATFORMS.map((p) => (
-                            <MenuItem key={p.key} value={p.key}>
-                              {p.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </Grid>
-                      <Grid size="grow">
-                        <TextField
-                          fullWidth
-                          size="small"
-                          variant="filled"
-                          placeholder={SOCIAL_PLATFORMS.find((p) => p.key === link.platform)?.placeholder ?? 'https://'}
-                          value={link.url}
-                          onChange={(e) => {
-                            const updated = [...customization.social_links];
-                            updated[i] = { ...updated[i], url: e.target.value.trim() };
-                            setCust('social_links', updated);
-                          }}
-                        />
-                      </Grid>
-                      <Grid size="auto">
-                        <Tooltip title="Remove">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => {
-                              const updated = [...customization.social_links];
-                              updated.splice(i, 1);
-                              setCust('social_links', updated);
-                            }}
-                          >
-                            <RemoveCircleOutlineRoundedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Grid>
-                    </Grid>
-                  ))}
-                </Stack>
-                {customization.social_links.length < 8 && (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<AddRoundedIcon />}
-                    onClick={() =>
-                      setCust('social_links', [...customization.social_links, { platform: 'instagram', url: '' }])
-                    }
-                    sx={{ borderStyle: 'dashed' }}
-                  >
-                    Add social link
-                  </Button>
-                )}
-              </SectionCard>
+              {/* ─── CUSTOMIZATION SECTIONS ──────────────────────────────── */}
+              <ColorsSection
+                customization={customization}
+                setCust={setCust}
+                onReset={() =>
+                  resetSection([
+                    'site_color',
+                    'site_color_secondary',
+                    'profile_bg_type',
+                    'profile_bg_color',
+                    'profile_bg_gradient_end',
+                    'profile_bg_gradient_angle',
+                    'profile_bg_pattern',
+                    'profile_card_bg',
+                  ])
+                }
+                bgImageInputRef={bgImageInputRef}
+                processingImage={processingImage}
+                activeBgImageSrc={activeBgImageSrc}
+                bgImageCleared={bgImageCleared}
+                onImageSelect={(f, type) => void handleImageSelect(f, type)}
+                onClearImage={clearImage}
+              />
+              <TypographySection
+                customization={customization}
+                setCust={setCust}
+                onReset={() =>
+                  resetSection([
+                    'profile_font',
+                    'profile_font_size',
+                    'profile_name_effect',
+                    'profile_avatar_shape',
+                    'profile_cursor',
+                    'profile_sparkles',
+                  ])
+                }
+              />
+              <MoodSection
+                customization={customization}
+                setCust={setCust}
+                onReset={() => resetSection(['profile_mood_emoji', 'profile_mood_text'])}
+              />
+              <VisibilitySection
+                customization={customization}
+                setCust={setCust}
+                onReset={() =>
+                  resetSection([
+                    'tab_show_favorites',
+                    'tab_show_done',
+                    'tab_show_ratings',
+                    'tab_show_difficulty',
+                    'tab_show_gallery',
+                    'tab_show_collections',
+                  ])
+                }
+              />
+              <SocialSection
+                customization={customization}
+                setCust={setCust}
+                onReset={() => resetSection(['profile_youtube_url', 'social_links'])}
+              />
 
               {/* ─── ACTIONS ─────────────────────────────────────────────── */}
               {saveError && (
@@ -1301,7 +734,6 @@ function RouteComponent() {
                   {saveError}
                 </Alert>
               )}
-
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                 <Button
                   component={Link}
@@ -1331,30 +763,6 @@ const PageWrapper = styled(Box)(({ theme }) => ({
   paddingBottom: theme.spacing(12),
 }));
 
-const SectionCard = styled(Paper)(({ theme }) => ({
-  borderRadius: 16,
-  border: `1px solid ${theme.palette.divider}`,
-  padding: theme.spacing(3.5, 4),
-  marginBottom: theme.spacing(3),
-  boxShadow: 'none',
-}));
-
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <Typography
-    variant="overline"
-    sx={{
-      fontSize: '0.65rem',
-      fontWeight: 700,
-      letterSpacing: '0.12em',
-      color: 'text.disabled',
-      display: 'block',
-      mb: 2,
-    }}
-  >
-    {children}
-  </Typography>
-);
-
 const HeroPreview = styled(Box)(({ theme }) => ({
   width: '100%',
   height: 120,
@@ -1365,7 +773,6 @@ const HeroPreview = styled(Box)(({ theme }) => ({
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   border: `1px solid ${theme.palette.divider}`,
-  // Decorative circles when no image
   '&::before': {
     content: '""',
     position: 'absolute',
@@ -1399,8 +806,6 @@ const AvatarPreview = styled(Box, {
   flexShrink: 0,
   overflow: hasPhoto ? 'hidden' : 'visible',
 }));
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const EditSkeleton = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
