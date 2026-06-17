@@ -327,7 +327,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <Stack direction="row" divider={<>·</>} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
               {viewData?.expand?.authors?.map((author, index) => {
                 return (
-                  <Link key={`designed-by-${index}`} to="/profile" search={{ id: author.id }}>
+                  <Link key={`designed-by-${index}`} to="/profile" search={{ id: author.id, tab: 0 }}>
                     <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
                       {author.name || 'Not Listed'}
                     </Typography>

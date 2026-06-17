@@ -82,7 +82,7 @@ const authenticatedMenuItems = [
     label: 'Profile',
     icon: <PersonRoundedIcon />,
     onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-      navigateTo({ to: '/profile' });
+      navigateTo({ to: '/profile', search: { tab: 0 } });
     },
     disabled: true,
   },

@@ -15,12 +15,17 @@ import {
   generateUserBgImageUrl,
 } from '@/functions/utilities/generate-pb-image';
 import { sanitizeHex, extractYouTubeId } from '@/constants/profile-customization';
-import { type CustomizationForm, DEFAULT_CUSTOMIZATION, SectionCard, SectionTitle } from './edit-sections/_shared';
-import { ColorsSection } from './edit-sections/ColorsSection';
-import { TypographySection } from './edit-sections/TypographySection';
-import { MoodSection } from './edit-sections/MoodSection';
-import { VisibilitySection } from './edit-sections/VisibilitySection';
-import { SocialSection } from './edit-sections/SocialSection';
+import {
+  type CustomizationForm,
+  DEFAULT_CUSTOMIZATION,
+  SectionCard,
+  SectionTitle,
+} from '../../components/profile/_shared';
+import { ColorsSection } from '../../components/profile/ColorsSection';
+import { TypographySection } from '../../components/profile/TypographySection';
+import { MoodSection } from '../../components/profile/MoodSection';
+import { VisibilitySection } from '../../components/profile/VisibilitySection';
+import { SocialSection } from '../../components/profile/SocialSection';
 
 import { styled, alpha } from '@mui/material/styles';
 import ReportRoundedIcon from '@mui/icons-material/ReportRounded';

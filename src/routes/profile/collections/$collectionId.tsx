@@ -121,7 +121,7 @@ function RouteComponent() {
                       {collection.expand?.owner_id && (
                         <Typography sx={{ mb: 2 }}>
                           By:{' '}
-                          <Link to="/profile" search={{ id: collection.owner_id }}>
+                          <Link to="/profile" search={{ id: collection.owner_id, tab: 0 }}>
                             {collection.expand.owner_id.name || 'Unknown'}
                           </Link>
                         </Typography>

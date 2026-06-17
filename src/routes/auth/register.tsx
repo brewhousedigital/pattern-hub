@@ -79,6 +79,7 @@ function RouteComponent() {
 
       navigate({
         to: '/profile',
+        search: { tab: 0 },
       }).then();
     } catch {
       enqueueSnackbar('Something went wrong registering an account. Try again in a few minutes.');

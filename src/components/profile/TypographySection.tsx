@@ -20,12 +20,16 @@ export const TypographySection = ({ customization, setCust, onReset }: SectionCu
       renderValue={(v) => v || 'Default font'}
       sx={{ mb: 2 }}
     >
-      <MenuItem value=""><em>Default font</em></MenuItem>
+      <MenuItem value="">
+        <em>Default font</em>
+      </MenuItem>
       {PROFILE_FONTS.map((f) => (
         <MenuItem key={f.value} value={f.value} sx={{ fontFamily: `'${f.value}', sans-serif` }}>
           <Box>
             <Typography sx={{ fontFamily: `'${f.value}', sans-serif`, fontWeight: 600 }}>{f.label}</Typography>
-            <Typography variant="caption" color="text.disabled">{f.category}</Typography>
+            <Typography variant="caption" color="text.disabled">
+              {f.category}
+            </Typography>
           </Box>
         </MenuItem>
       ))}
@@ -95,7 +99,9 @@ export const TypographySection = ({ customization, setCust, onReset }: SectionCu
       }
       label={
         <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>Sparkle effect ✦</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Sparkle effect ✦
+          </Typography>
           <Typography variant="caption" color="text.secondary">
             Adds animated star sparkles to your hero section.
           </Typography>

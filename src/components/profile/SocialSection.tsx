@@ -1,16 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Grid, IconButton, MenuItem, Select, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
 import { SOCIAL_PLATFORMS, extractYouTubeId } from '@/constants/profile-customization';
@@ -34,14 +23,6 @@ export const SocialSection = ({ customization, setCust, onReset }: SectionCustPr
             : '⚠ Could not find a video ID in this URL'
           : 'Paste a YouTube video link to embed it on your profile.'
       }
-      FormHelperTextProps={{
-        sx: {
-          color:
-            customization.profile_youtube_url && !extractYouTubeId(customization.profile_youtube_url)
-              ? 'error.main'
-              : undefined,
-        },
-      }}
       sx={{ mb: 3 }}
     />
 
@@ -64,7 +45,9 @@ export const SocialSection = ({ customization, setCust, onReset }: SectionCustPr
               }}
             >
               {SOCIAL_PLATFORMS.map((p) => (
-                <MenuItem key={p.key} value={p.key}>{p.label}</MenuItem>
+                <MenuItem key={p.key} value={p.key}>
+                  {p.label}
+                </MenuItem>
               ))}
             </Select>
           </Grid>
@@ -106,9 +89,7 @@ export const SocialSection = ({ customization, setCust, onReset }: SectionCustPr
         size="small"
         variant="outlined"
         startIcon={<AddRoundedIcon />}
-        onClick={() =>
-          setCust('social_links', [...customization.social_links, { platform: 'instagram', url: '' }])
-        }
+        onClick={() => setCust('social_links', [...customization.social_links, { platform: 'instagram', url: '' }])}
         sx={{ borderStyle: 'dashed' }}
       >
         Add social link

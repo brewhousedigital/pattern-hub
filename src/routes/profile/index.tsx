@@ -597,7 +597,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   <Box
                     component={Link}
                     to="/profile/edit"
-                    sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    sx={{ color: siteColor, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                   >
                     Add a bio
                   </Box>{' '}
@@ -622,8 +622,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                         label={tag}
                         size="small"
                         variant="outlined"
-                        color="primary"
-                        sx={{ borderRadius: 2, fontWeight: 500 }}
+                        sx={{ borderRadius: 2, fontWeight: 500, borderColor: siteColor, color: siteColor }}
                       />
                     );
                   })}
@@ -654,8 +653,14 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   <Chip
                     label={`${artistPatterns.totalItems} pattern${artistPatterns.totalItems !== 1 ? 's' : ''}`}
                     size="small"
-                    color="secondary"
-                    sx={{ fontWeight: 700, mt: 0.5, flexShrink: 0 }}
+                    sx={{
+                      fontWeight: 700,
+                      mt: 0.5,
+                      flexShrink: 0,
+                      backgroundColor: alpha(siteColorSecondary, 0.18),
+                      color: siteColor,
+                      border: `1px solid ${alpha(siteColorSecondary, 0.5)}`,
+                    }}
                   />
                 )}
               </Box>
@@ -680,14 +685,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     mt: 3,
                     p: { xs: 3, md: 4 },
                     borderRadius: 4,
-                    background: (t) =>
-                      `linear-gradient(135deg, ${t.palette.primary.dark} 0%, ${t.palette.primary.main} 60%, ${t.palette.secondary.main} 100%)`,
+                    background: `linear-gradient(135deg, ${alpha(siteColor, 0.75)} 0%, ${siteColor} 60%, ${siteColorSecondary} 100%)`,
                     textDecoration: 'none',
-                    boxShadow: (t) => `0 8px 32px ${alpha(t.palette.primary.main, 0.35)}`,
+                    boxShadow: `0 8px 32px ${alpha(siteColor, 0.35)}`,
                     transition: 'transform 0.18s ease, box-shadow 0.18s ease',
                     '&:hover': {
                       transform: 'translateY(-3px)',
-                      boxShadow: (t) => `0 14px 40px ${alpha(t.palette.primary.main, 0.45)}`,
+                      boxShadow: `0 14px 40px ${alpha(siteColor, 0.45)}`,
                     },
                   }}
                 >
@@ -769,9 +773,9 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     color: 'text.secondary',
                     transition: 'all 0.15s ease',
                     '&.Mui-selected': {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                      borderColor: 'primary.main',
+                      backgroundColor: siteColor,
+                      color: 'white',
+                      borderColor: siteColor,
                     },
                   },
                 }}
@@ -783,7 +787,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <t.Icon sx={{ fontSize: 16 }} />
                         <span>{t.label}</span>
-                        {(t.count ?? 0) > 0 && <TabCount>{t.count}</TabCount>}
+                        {(t.count ?? 0) > 0 && <TabCount accentColor={siteColor}>{t.count}</TabCount>}
                       </Box>
                     }
                   />
@@ -867,6 +871,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                       startIcon={<AddPhotoAlternateOutlinedIcon />}
                       variant="contained"
                       onClick={() => setUploadOpen(true)}
+                      sx={{ backgroundColor: siteColor, '&:hover': { backgroundColor: alpha(siteColor, 0.85) } }}
                     >
                       Upload Photo
                     </Button>
@@ -898,6 +903,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                       startIcon={<BookmarksOutlinedIcon />}
                       variant="contained"
                       onClick={() => setCreateColOpen(true)}
+                      sx={{ backgroundColor: siteColor, '&:hover': { backgroundColor: alpha(siteColor, 0.85) } }}
                     >
                       New Collection
                     </Button>
@@ -1647,15 +1653,17 @@ const PatternCard = styled(Paper)(({ theme }) => ({
   },
 }));
 
-const TabCount = styled(Box)(({ theme }) => ({
+const TabCount = styled(Box, {
+  shouldForwardProp: (p) => p !== 'accentColor',
+})<{ accentColor?: string }>(({ theme, accentColor }) => ({
   fontSize: '0.68rem',
   fontWeight: 700,
   lineHeight: '18px',
   minWidth: 18,
   padding: '0 5px',
   borderRadius: 9,
-  backgroundColor: alpha(theme.palette.primary.main, 0.12),
-  color: theme.palette.primary.main,
+  backgroundColor: alpha(accentColor ?? theme.palette.primary.main, 0.12),
+  color: accentColor ?? theme.palette.primary.main,
   '.Mui-selected &': {
     backgroundColor: 'rgba(255,255,255,0.25)',
     color: 'white',

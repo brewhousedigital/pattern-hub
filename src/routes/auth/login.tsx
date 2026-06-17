@@ -57,6 +57,7 @@ function RouteComponent() {
 
       navigate({
         to: '/profile',
+        search: { tab: 0 },
       }).then();
     } catch (error: any) {
       console.error('Error loading your user data:', error);
