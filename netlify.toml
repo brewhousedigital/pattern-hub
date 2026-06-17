@@ -12,7 +12,7 @@
 
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "npm install --include=optional && npm run build"
 
 [functions]
   external_node_modules = ["sharp"]
