@@ -132,25 +132,25 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     data: profileData,
     refetch,
   } = useQueryGetProfileData({
-    userId:         thisAuthData?.id ?? '',
-    favPage:        favoritePage,
+    userId: thisAuthData?.id ?? '',
+    favPage: favoritePage,
     donePage,
     ratingsPage,
     difficultyPage,
     galleryPage,
     collectionsPage,
     artistPage,
-    isOwner:        !isPublicView,
+    isOwner: !isPublicView,
     isArtist,
   });
 
-  const dataFav        = profileData?.favorites;
-  const dataDone       = profileData?.done;
-  const dataRatings    = profileData?.ratings;
+  const dataFav = profileData?.favorites;
+  const dataDone = profileData?.done;
+  const dataRatings = profileData?.ratings;
   const dataDifficulty = profileData?.difficulty;
-  const dataGallery    = profileData?.gallery;
-  const dataCols       = profileData?.collections;
-  const followedCols   = profileData?.followedCollections ?? [];
+  const dataGallery = profileData?.gallery;
+  const dataCols = profileData?.collections;
+  const followedCols = profileData?.followedCollections ?? [];
   const artistPatterns = profileData?.artistPatterns ?? undefined;
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -1058,10 +1058,10 @@ const GalleryLightbox = ({
               onClick={() => onNavigate(photos[idx - 1])}
               sx={{
                 position: 'absolute',
-                left: -3,
-                backgroundColor: 'rgba(0,0,0,0.45)',
+                left: 3,
+                backgroundColor: 'rgba(0,0,0,0.6)',
                 color: 'white',
-                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
               }}
             >
               <ChevronLeftRoundedIcon />
@@ -1072,10 +1072,10 @@ const GalleryLightbox = ({
               onClick={() => onNavigate(photos[idx + 1])}
               sx={{
                 position: 'absolute',
-                right: -3,
-                backgroundColor: 'rgba(0,0,0,0.45)',
+                right: 3,
+                backgroundColor: 'rgba(0,0,0,0.6)',
                 color: 'white',
-                '&:hover': { backgroundColor: 'rgba(0,0,0,0.65)' },
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
               }}
             >
               <ChevronRightRoundedIcon />
