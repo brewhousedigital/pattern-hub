@@ -96,8 +96,9 @@ async function sleep(ms: number) {
 }
 
 /**
- * Fetch ALL patterns that contain a specific tag.
- * PocketBase filter syntax for array fields: tags ~ "value"
+ * Fetch ALL patterns that contain a specific tag (exact element match).
+ * Wrapping in double-quotes matches the JSON storage format ["tag1","tag2"],
+ * so '"cat"' matches "cat" but not "suncatcher".
  */
 async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
   const records: TypePatternRecord[] = [];
@@ -107,7 +108,7 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
   while (true) {
     const result = await pocketbase
       .collection('patterns')
-      .getList<TypePatternRecord>(page, perPage, { filter: `tags ~ "${tag}"`, fields: 'id,tags' });
+      .getList<TypePatternRecord>(page, perPage, { filter: `tags ~ '"${tag}"'`, fields: 'id,tags' });
     records.push(...result.items);
     if (records.length >= result.totalItems) break;
     page++;
