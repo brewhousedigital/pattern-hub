@@ -1,6 +1,7 @@
 import React from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useQuerySearchPatternsByName, type TypePatternSearchResult } from '@/functions/database/gallery';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { enqueueSnackbar } from 'notistack';
@@ -355,7 +356,23 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
                           setPatternSearch('');
                           setPatternDropdownOpen(false);
                         }}
+                        sx={{ gap: 1.5 }}
                       >
+                        <Box
+                          component="img"
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          src={generatePbImage(p as any)}
+                          alt=""
+                          aria-hidden="true"
+                          sx={{
+                            display: 'block',
+                            width: 100,
+                            height: 100,
+                            objectFit: 'contain',
+                            flexShrink: 0,
+                            borderRadius: 0.5,
+                          }}
+                        />
                         <ListItemText primary={p.name} />
                       </ListItemButton>
                     ))}

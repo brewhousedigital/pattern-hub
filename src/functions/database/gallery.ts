@@ -67,16 +67,21 @@ export const useMutationUpdateGallery = () => {
 
 export type TypePatternSearchResult = {
   id: string;
+  collectionId: string;
   name: string;
+  pattern_file: string;
+  pattern_file_external: string;
 };
 
 export const useQuerySearchPatternsByName = (term: string) => {
   return useQuery({
     queryKey: ['SearchPatternsByName', term],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternSearchResult>> => {
+      let includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
+
       return await pocketbase.collection('patterns').getList(1, 8, {
-        filter: `name ~ "${term.replace(/"/g, '')}"`,
-        fields: 'id,name',
+        filter: `name ~ "${term.replace(/"/g, '')}" && ${includeIsDeletedFilter}`,
+        fields: 'id,collectionId,name,pattern_file,pattern_file_external',
         sort: 'name',
       });
     },
