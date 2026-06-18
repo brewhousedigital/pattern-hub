@@ -258,15 +258,9 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     5: thisAuthData?.tab_show_collections !== false,
   } as Record<number, boolean>;
 
-  // Apply custom system font
-  useEffect(() => {
-    if (!profileFont) return;
-    const font = PROFILE_FONTS.find((f) => f.value === profileFont);
-    document.body.style.fontFamily = font?.cssStack ?? `'${profileFont}', sans-serif`;
-    return () => {
-      document.body.style.fontFamily = '';
-    };
-  }, [profileFont]);
+  const fontStack = profileFont
+    ? (PROFILE_FONTS.find((f) => f.value === profileFont)?.cssStack ?? `'${profileFont}', sans-serif`)
+    : undefined;
 
   // Apply page background
   const computedBg = useMemo((): string | undefined => {
@@ -398,8 +392,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         '&::after': { background: alpha(siteColorSecondary, 0.35) },
       };
 
+  const pageRootSx = fontStack
+    ? { fontFamily: fontStack, '& *': { fontFamily: 'inherit !important' } }
+    : {};
+
   return (
-    <PageRoot>
+    <PageRoot sx={pageRootSx}>
       {/* ─── HERO ─────────────────────────────────────────────────────────── */}
       <HeroSection sx={heroSxOverride}>
         {/* Top-right action buttons */}
