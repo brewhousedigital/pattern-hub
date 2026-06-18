@@ -90,3 +90,11 @@ export const useMutationUpdatePatternDifficultyRating = () => {
     },
   });
 };
+
+export const useMutationDeletePatternDifficultyRating = () => {
+  return useMutation({
+    mutationFn: async (recordId: string) => {
+      await pocketbase.collection('user_difficulty_ratings').delete(recordId);
+    },
+  });
+};

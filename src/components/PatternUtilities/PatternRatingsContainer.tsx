@@ -7,22 +7,21 @@ import { enqueueSnackbar } from 'notistack';
 import {
   useMutationCreatePatternRating,
   useMutationUpdatePatternRating,
+  useMutationRemovePatternRating,
   type TypeRatingPayload,
 } from '@/functions/database/ratings';
 
 import {
   useMutationCreatePatternDifficultyRating,
   useMutationUpdatePatternDifficultyRating,
+  useMutationDeletePatternDifficultyRating,
   type TypeDifficultyRatingPayload,
 } from '@/functions/database/difficulty_ratings';
 
-import {
-  useQueryGetPatternDrawerData,
-  useInvalidateDrawerData,
-} from '@/functions/database/pattern-drawer-data';
+import { useQueryGetPatternDrawerData, useInvalidateDrawerData } from '@/functions/database/pattern-drawer-data';
 
 import { alpha } from '@mui/material/styles';
-import { Box, Typography, Rating, Chip, Stack } from '@mui/material';
+import { Box, Button, Typography, Rating, Chip, Stack } from '@mui/material';
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 
@@ -61,8 +60,10 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
 
   const createRating = useMutationCreatePatternRating();
   const updateRating = useMutationUpdatePatternRating();
+  const removeRating = useMutationRemovePatternRating();
   const createDifficulty = useMutationCreatePatternDifficultyRating();
   const updateDifficulty = useMutationUpdatePatternDifficultyRating();
+  const deleteDifficulty = useMutationDeletePatternDifficultyRating();
 
   React.useEffect(() => {
     setUserStarRating(userRatingData ? userRatingData.rating : 0);
@@ -120,6 +121,27 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
       await invalidateDrawerData();
     } catch {
       enqueueSnackbar("Couldn't save your difficulty rating. Try again in a few minutes.", { variant: 'error' });
+    }
+  };
+
+  const handleClearRating = async () => {
+    if (!userRatingData) return;
+    try {
+      await removeRating.mutateAsync(userRatingData.id);
+      setUserStarRating(0);
+      await invalidateDrawerData();
+    } catch {
+      enqueueSnackbar("Couldn't remove your rating. Try again in a few minutes.", { variant: 'error' });
+    }
+  };
+
+  const handleClearDifficulty = async () => {
+    if (!userDifficultyData) return;
+    try {
+      await deleteDifficulty.mutateAsync(userDifficultyData.id);
+      await invalidateDrawerData();
+    } catch {
+      enqueueSnackbar("Couldn't remove your difficulty rating. Try again in a few minutes.", { variant: 'error' });
     }
   };
 
@@ -201,7 +223,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
         <CollapsibleCard title="Give this a rating">
           <SectionLabel>Your Rating</SectionLabel>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mb: 2.5 }}>
             <Rating
               precision={1}
               value={userStarRating}
@@ -212,12 +234,24 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                 '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
               }}
             />
+            {userRatingData && (
+              <Button
+                size="small"
+                color="error"
+                variant="text"
+                onClick={handleClearRating}
+                loading={removeRating.isPending}
+                sx={{ minWidth: 0, px: 1, fontSize: '0.75rem' }}
+              >
+                Clear
+              </Button>
+            )}
           </Box>
 
           <SectionLabel>Your Difficulty</SectionLabel>
 
           <Box sx={{ mb: 0 }}>
-            <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1.5}>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }} spacing={1.5}>
               <Rating
                 precision={0.5}
                 value={userDifficultyVal}
@@ -235,19 +269,40 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                   '& .MuiRating-iconEmpty': { color: alpha('#888888', 0.35) },
                 }}
               />
+
               {activeDiffLabel && (
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, color: activeDiffInfo?.hex ?? 'text.secondary', minWidth: 90 }}
+                  sx={{
+                    fontWeight: 600,
+                    color: activeDiffInfo?.hex ?? 'text.secondary',
+                    minWidth: 90,
+                    textAlign: 'right',
+                  }}
                 >
                   {activeDiffLabel}
                 </Typography>
               )}
             </Stack>
 
-            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-              Easy to Hard
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 0.5 }}>
+              <Typography variant="caption" color="text.disabled">
+                Easy to Hard
+              </Typography>
+
+              {userDifficultyData && (
+                <Button
+                  size="small"
+                  color="error"
+                  variant="text"
+                  onClick={handleClearDifficulty}
+                  loading={deleteDifficulty.isPending}
+                  sx={{ minWidth: 0, px: 1, fontSize: '0.75rem', ml: 'auto' }}
+                >
+                  Clear
+                </Button>
+              )}
+            </Box>
           </Box>
         </CollapsibleCard>
       )}
