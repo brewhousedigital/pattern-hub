@@ -438,6 +438,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
         {/* Identity anchored to hero bottom */}
         <Box sx={{ flex: 1 }} />
+
         <Container
           maxWidth="lg"
           sx={{ px: { xs: 2, md: 4 }, pb: { xs: 3.5, md: 4.5 }, position: 'relative', zIndex: 1 }}
@@ -558,6 +559,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'background-color 0.15s',
+                    color: isDark ? 'rgba(255,255,255,0.92)' : 'text.primary',
                     '&:hover': { backgroundColor: 'action.hover' },
                   }}
                 >
@@ -571,9 +573,16 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   >
                     {stat.value}
                   </Typography>
+
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <stat.Icon sx={{ fontSize: 14, color: stat.color, opacity: 0.9 }} />
-                    <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', fontWeight: 500 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.7rem',
+                        color: isDark ? 'rgba(255,255,255,0.45)' : 'text.disabled',
+                        fontWeight: 500,
+                      }}
+                    >
                       {stat.label}
                     </Typography>
                   </Box>
@@ -643,6 +652,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       {isArtist && (
         <>
           <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />
+
           <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
             <Box sx={{ pt: 5, pb: 5 }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 4 }}>
@@ -652,6 +662,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     {displayName}'s latest work
                   </Typography>
                 </Box>
+
                 {artistPatterns?.totalItems != null && artistPatterns.totalItems > 0 && (
                   <Chip
                     label={`${artistPatterns.totalItems} pattern${artistPatterns.totalItems !== 1 ? 's' : ''}`}
@@ -681,6 +692,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   to="/"
                   search={{ authors: [displayName] }}
                   sx={{
+                    color: isDark ? 'rgba(255,255,255,0.92)' : 'text.primary',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -766,14 +778,14 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   '& .MuiTab-root': {
                     borderRadius: '20px',
                     border: '1px solid',
-                    borderColor: 'divider',
+                    borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'divider',
                     minHeight: 38,
                     px: 2,
                     py: 0,
                     textTransform: 'none',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: 'text.secondary',
+                    color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
                     transition: 'all 0.15s ease',
                     '&.Mui-selected': {
                       backgroundColor: siteColor,
