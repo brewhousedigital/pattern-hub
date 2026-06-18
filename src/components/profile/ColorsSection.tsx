@@ -6,6 +6,8 @@ import {
   CircularProgress,
   FormControlLabel,
   Grid,
+  MenuItem,
+  Select,
   Slider,
   Stack,
   Switch,
@@ -19,7 +21,14 @@ import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternate
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
-import { BG_PATTERNS, BG_IMAGE_SIZE_OPTIONS, BG_POSITION_GRID, getBgImageCss, getCssPattern, hexToRgba } from '@/constants/profile-customization';
+import {
+  BG_PATTERNS,
+  BG_IMAGE_SIZE_OPTIONS,
+  BG_POSITION_GRID,
+  getBgImageCss,
+  getCssPattern,
+  hexToRgba,
+} from '@/constants/profile-customization';
 import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
@@ -41,7 +50,7 @@ const ColorsPreview = ({
   } else if (bgType === 'pattern' && bgColor) {
     pageBg = getCssPattern(customization.profile_bg_pattern, hexToRgba(primary, 0.18), bgColor);
   } else if (bgType === 'image' && activeBgImageSrc) {
-    const sz  = customization.profile_bg_image_size ?? 'cover';
+    const sz = customization.profile_bg_image_size ?? 'cover';
     const pos = customization.profile_bg_image_position ?? 'center center';
     const { bgSize, bgRepeat } = getBgImageCss(sz);
     // No `fixed` in the mini preview — it doesn't apply to a small constrained box
@@ -104,7 +113,16 @@ const ColorsPreview = ({
           <Box sx={{ width: 68, height: 9, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.9)', mb: 0.6 }} />
           <Box sx={{ width: 44, height: 5, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.4)' }} />
         </Box>
-        <Box sx={{ ml: 'auto', px: 1.25, py: 0.5, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
+        <Box
+          sx={{
+            ml: 'auto',
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 1.5,
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.3)',
+          }}
+        >
           <Box sx={{ width: 26, height: 5, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.8)' }} />
         </Box>
       </Box>
@@ -123,8 +141,25 @@ const ColorsPreview = ({
       >
         {(['12', '4', '7'] as const).map((n, i) => (
           <Box key={i} sx={{ textAlign: 'center' }}>
-            <Box sx={{ width: 18, height: 7, borderRadius: 1, backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)', mx: 'auto', mb: 0.4 }} />
-            <Box sx={{ width: 24, height: 4, borderRadius: 1, backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)', mx: 'auto' }} />
+            <Box
+              sx={{
+                width: 18,
+                height: 7,
+                borderRadius: 1,
+                backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)',
+                mx: 'auto',
+                mb: 0.4,
+              }}
+            />
+            <Box
+              sx={{
+                width: 24,
+                height: 4,
+                borderRadius: 1,
+                backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)',
+                mx: 'auto',
+              }}
+            />
           </Box>
         ))}
       </Box>
@@ -152,7 +187,7 @@ const ColorsPreview = ({
               fontWeight: 700,
               lineHeight: 1.7,
               backgroundColor: i === 0 ? primary : 'transparent',
-              color: i === 0 ? 'white' : (customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : primary),
+              color: i === 0 ? 'white' : customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : primary,
               border: `1px solid ${i === 0 ? primary : alpha(primary, 0.4)}`,
             }}
           >
@@ -243,7 +278,9 @@ export const ColorsSection = ({
     <ToggleButtonGroup
       exclusive
       value={customization.profile_dark_mode ? 'dark' : 'light'}
-      onChange={(_, v) => { if (v) setCust('profile_dark_mode', v === 'dark'); }}
+      onChange={(_, v) => {
+        if (v) setCust('profile_dark_mode', v === 'dark');
+      }}
       size="small"
       sx={{ mb: 3 }}
     >
@@ -423,19 +460,20 @@ export const ColorsSection = ({
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 2.5, mb: 1 }}>
           Display
         </Typography>
-        <ToggleButtonGroup
-          exclusive
-          value={customization.profile_bg_image_size}
-          onChange={(_, v) => { if (v) setCust('profile_bg_image_size', v); }}
+        <Select
+          fullWidth
           size="small"
-          sx={{ flexWrap: 'wrap', mb: 2.5 }}
+          variant="filled"
+          value={customization.profile_bg_image_size}
+          onChange={(e) => setCust('profile_bg_image_size', e.target.value)}
+          sx={{ mb: 2.5 }}
         >
           {BG_IMAGE_SIZE_OPTIONS.map((opt) => (
-            <ToggleButton key={opt.key} value={opt.key} sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' }}>
+            <MenuItem key={opt.key} value={opt.key}>
               {opt.label}
-            </ToggleButton>
+            </MenuItem>
           ))}
-        </ToggleButtonGroup>
+        </Select>
 
         {/* Position grid */}
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
@@ -473,7 +511,10 @@ export const ColorsSection = ({
                   justifyContent: 'center',
                   fontSize: '0.9rem',
                   transition: 'all 0.12s ease',
-                  '&:hover': { borderColor: 'primary.main', backgroundColor: selected ? 'primary.main' : 'action.hover' },
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    backgroundColor: selected ? 'primary.main' : 'action.hover',
+                  },
                 }}
               >
                 {pos.label}
@@ -486,27 +527,29 @@ export const ColorsSection = ({
         </Typography>
 
         {/* Parallax */}
-        <FormControlLabel
-          sx={{ mt: 2 }}
-          control={
-            <Switch
-              checked={customization.profile_bg_image_fixed}
-              onChange={(e) => setCust('profile_bg_image_fixed', e.target.checked)}
-              color="primary"
-              size="small"
-            />
-          }
-          label={
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                Parallax (fixed)
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Background stays still as the page scrolls
-              </Typography>
-            </Box>
-          }
-        />
+        <Box>
+          <FormControlLabel
+            sx={{ mt: 2 }}
+            control={
+              <Switch
+                checked={customization.profile_bg_image_fixed}
+                onChange={(e) => setCust('profile_bg_image_fixed', e.target.checked)}
+                color="primary"
+                size="small"
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                  Parallax (fixed)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Background stays still as the page scrolls
+                </Typography>
+              </Box>
+            }
+          />
+        </Box>
       </Box>
     )}
   </SectionCard>
