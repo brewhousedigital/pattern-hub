@@ -5,13 +5,16 @@ import remarkGfm from 'remark-gfm';
 import { alpha, styled } from '@mui/material/styles';
 import { Box } from '@mui/material';
 
+import type { SxProps, Theme } from '@mui/material/styles';
+
 type MarkdownWrapperProps = {
   children: string;
+  sx?: SxProps<Theme>;
 };
 
 export const MarkdownWrapper = (props: MarkdownWrapperProps) => {
   return (
-    <StyledMarkdownWrapper>
+    <StyledMarkdownWrapper sx={props.sx}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

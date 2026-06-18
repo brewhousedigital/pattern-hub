@@ -602,7 +602,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
             <Box sx={{ mt: 2 }}>
               {thisAuthData.about ? (
                 <AboutBody>
-                  <MarkdownWrapper>{thisAuthData.about}</MarkdownWrapper>
+                  <MarkdownWrapper
+                    sx={isDark ? {
+                      color: 'rgba(255,255,255,0.75)',
+                      '& h1, & h2, & h3, & h4, & h5, & h6': { color: 'rgba(255,255,255,0.92)' },
+                      '& td': { color: 'rgba(255,255,255,0.75)' },
+                      '& th': { color: 'rgba(255,255,255,0.92)' },
+                      '& del': { color: 'rgba(255,255,255,0.38)' },
+                      '& dt': { color: 'rgba(255,255,255,0.92)' },
+                    } : undefined}
+                  >
+                    {thisAuthData.about}
+                  </MarkdownWrapper>
                 </AboutBody>
               ) : !isPublicView ? (
                 <Typography color="text.disabled" sx={{ fontStyle: 'italic', fontSize: '1rem' }}>
