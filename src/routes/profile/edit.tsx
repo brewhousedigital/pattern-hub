@@ -700,7 +700,6 @@ function RouteComponent() {
                 onReset={() =>
                   resetSection([
                     'profile_font',
-                    'profile_font_size',
                     'profile_name_effect',
                     'profile_avatar_shape',
                     'profile_cursor',

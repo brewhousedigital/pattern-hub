@@ -258,22 +258,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     5: thisAuthData?.tab_show_collections !== false,
   } as Record<number, boolean>;
 
-  // Load custom Google Font
+  // Apply custom system font
   useEffect(() => {
     if (!profileFont) return;
-    const linkId = 'profile-custom-font';
-    let link = document.getElementById(linkId) as HTMLLinkElement | null;
-    if (!link) {
-      link = document.createElement('link');
-      link.id = linkId;
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    }
-    const encoded = profileFont.replace(/ /g, '+');
-    link.href = `https://fonts.googleapis.com/css2?family=${encoded}:wght@400;600;700;800&display=swap`;
-    document.body.style.fontFamily = `'${profileFont}', sans-serif`;
+    const font = PROFILE_FONTS.find((f) => f.value === profileFont);
+    document.body.style.fontFamily = font?.cssStack ?? `'${profileFont}', sans-serif`;
     return () => {
-      document.getElementById(linkId)?.remove();
       document.body.style.fontFamily = '';
     };
   }, [profileFont]);

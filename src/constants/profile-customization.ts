@@ -1,28 +1,42 @@
 // ─── Font Options ─────────────────────────────────────────────────────────────
 
-export type ProfileFont = { value: string; label: string; category: string };
+export type ProfileFont = {
+  value: string;
+  label: string;
+  category: string;
+  /** Override the CSS font-family stack (e.g. for fonts with different names on Mac vs Windows) */
+  cssStack?: string;
+};
 
 export const PROFILE_FONTS: ProfileFont[] = [
-  { value: 'Playfair Display',    label: 'Playfair Display',     category: 'Elegant' },
-  { value: 'Dancing Script',      label: 'Dancing Script',       category: 'Handwritten' },
-  { value: 'Lobster',             label: 'Lobster',              category: 'Display' },
-  { value: 'Pacifico',            label: 'Pacifico',             category: 'Handwritten' },
-  { value: 'Josefin Sans',        label: 'Josefin Sans',         category: 'Modern' },
-  { value: 'Space Mono',          label: 'Space Mono',           category: 'Monospace' },
-  { value: 'Cinzel',              label: 'Cinzel',               category: 'Serif' },
-  { value: 'Bebas Neue',          label: 'Bebas Neue',           category: 'Display' },
-  { value: 'Architects Daughter', label: "Architect's Daughter", category: 'Handwritten' },
-  { value: 'Fredoka One',         label: 'Fredoka One',          category: 'Friendly' },
-  { value: 'Abril Fatface',       label: 'Abril Fatface',        category: 'Display' },
-  { value: 'Comfortaa',           label: 'Comfortaa',            category: 'Rounded' },
-  { value: 'Satisfy',             label: 'Satisfy',              category: 'Handwritten' },
-  { value: 'Righteous',           label: 'Righteous',            category: 'Display' },
-  { value: 'Indie Flower',        label: 'Indie Flower',         category: 'Handwritten' },
-  { value: 'Exo 2',               label: 'Exo 2',               category: 'Sci-Fi' },
-  { value: 'Special Elite',       label: 'Special Elite',        category: 'Typewriter' },
-  { value: 'Permanent Marker',    label: 'Permanent Marker',     category: 'Handwritten' },
-  { value: 'Press Start 2P',      label: 'Press Start 2P',       category: 'Retro' },
-  { value: 'Unbounded',           label: 'Unbounded',            category: 'Bold' },
+  // ── Cross-platform ──────────────────────────────────────────────────────────
+  { value: 'Georgia',                  label: 'Georgia',             category: 'Serif' },
+  { value: 'Trebuchet MS',             label: 'Trebuchet MS',        category: 'Sans-serif' },
+  { value: 'Impact',                   label: 'Impact',              category: 'Display' },
+  { value: 'Courier New',              label: 'Courier New',         category: 'Monospace' },
+  { value: 'Brush Script MT',          label: 'Brush Script',        category: 'Script' },
+  { value: 'Comic Sans MS',            label: 'Comic Sans',          category: 'Playful' },
+  { value: 'Papyrus',                  label: 'Papyrus',             category: 'Decorative' },
+
+  // ── Mac ─────────────────────────────────────────────────────────────────────
+  { value: 'Baskerville',              label: 'Baskerville',         category: 'Mac · Serif' },
+  { value: 'Didot',                    label: 'Didot',               category: 'Mac · Elegant Serif' },
+  { value: 'Hoefler Text',             label: 'Hoefler Text',        category: 'Mac · Serif' },
+  { value: 'Optima',                   label: 'Optima',              category: 'Mac · Humanist Sans' },
+  { value: 'Gill Sans',                label: 'Gill Sans',           category: 'Mac · Sans-serif',   cssStack: "'Gill Sans', 'Gill Sans MT', sans-serif" },
+  { value: 'American Typewriter',      label: 'American Typewriter', category: 'Mac · Typewriter' },
+  { value: 'Copperplate',              label: 'Copperplate',         category: 'Mac · Display' },
+  { value: 'Chalkboard SE',            label: 'Chalkboard',          category: 'Mac · Casual' },
+  { value: 'Bradley Hand',             label: 'Bradley Hand',        category: 'Mac · Handwritten' },
+  { value: 'Marker Felt',              label: 'Marker Felt',         category: 'Mac · Handwritten' },
+
+  // ── Windows ─────────────────────────────────────────────────────────────────
+  { value: 'Garamond',                 label: 'Garamond',            category: 'Windows · Serif' },
+  { value: 'Cambria',                  label: 'Cambria',             category: 'Windows · Serif' },
+  { value: 'Constantia',               label: 'Constantia',          category: 'Windows · Elegant Serif' },
+  { value: 'Calibri',                  label: 'Calibri',             category: 'Windows · Modern Sans' },
+  { value: 'Candara',                  label: 'Candara',             category: 'Windows · Humanist Sans' },
+  { value: 'Franklin Gothic Medium',   label: 'Franklin Gothic',     category: 'Windows · Display' },
 ];
 
 // ─── Social Platforms ─────────────────────────────────────────────────────────

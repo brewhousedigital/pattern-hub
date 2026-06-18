@@ -24,12 +24,14 @@ export const TypographySection = ({ customization, setCust, onReset }: SectionCu
         <em>Default font</em>
       </MenuItem>
       {PROFILE_FONTS.map((f) => (
-        <MenuItem key={f.value} value={f.value} sx={{ fontFamily: `'${f.value}', sans-serif` }}>
+        <MenuItem key={f.value} value={f.value}>
           <Box>
-            <Typography sx={{ fontFamily: `'${f.value}', sans-serif`, fontWeight: 600 }}>{f.label}</Typography>
-            <Typography variant="caption" color="text.disabled">
-              {f.category}
+            <Typography sx={{ fontFamily: f.cssStack ?? `'${f.value}', sans-serif`, fontWeight: 600 }}>
+              {f.label}
             </Typography>
+            {/*<Typography variant="caption" color="text.disabled">
+              {f.category}
+            </Typography>*/}
           </Box>
         </MenuItem>
       ))}
