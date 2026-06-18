@@ -17,7 +17,7 @@ import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternate
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
-import { BG_PATTERNS, getCssPattern, hexToRgba } from '@/constants/profile-customization';
+import { BG_PATTERNS, BG_IMAGE_SIZE_OPTIONS, BG_POSITION_GRID, getCssPattern, hexToRgba } from '@/constants/profile-customization';
 import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
@@ -39,7 +39,11 @@ const ColorsPreview = ({
   } else if (bgType === 'pattern' && bgColor) {
     pageBg = getCssPattern(customization.profile_bg_pattern, hexToRgba(primary, 0.18), bgColor);
   } else if (bgType === 'image' && activeBgImageSrc) {
-    pageBg = `url(${activeBgImageSrc}) center/cover no-repeat`;
+    const sz = customization.profile_bg_image_size ?? 'cover';
+    const pos = customization.profile_bg_image_position ?? 'center center';
+    const bgSize   = sz === 'cover' ? 'cover' : 'auto';
+    const bgRepeat = sz === 'cover' ? 'no-repeat' : sz;
+    pageBg = `url(${activeBgImageSrc}) ${pos} / ${bgSize} ${bgRepeat}`;
   } else if (bgColor) {
     pageBg = bgColor;
   }
@@ -401,8 +405,82 @@ export const ColorsSection = ({
             Remove background image
           </Button>
         )}
-        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75, mb: 2.5 }}>
           Landscape image · max 5 MB · resized to 1920×1080 px
+        </Typography>
+
+        {/* Fallback / transparent fill color */}
+        <ColorPicker
+          label="Background Fill Color (shows through transparent areas)"
+          value={customization.profile_bg_color}
+          fallback="#ffffff"
+          onChange={(v) => setCust('profile_bg_color', v)}
+        />
+
+        {/* Size / repeat */}
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 2.5, mb: 1 }}>
+          Display
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          value={customization.profile_bg_image_size}
+          onChange={(_, v) => { if (v) setCust('profile_bg_image_size', v); }}
+          size="small"
+          sx={{ flexWrap: 'wrap', mb: 2.5 }}
+        >
+          {BG_IMAGE_SIZE_OPTIONS.map((opt) => (
+            <ToggleButton key={opt.key} value={opt.key} sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' }}>
+              {opt.label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+
+        {/* Position grid */}
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+          Starting Position
+        </Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 0.5,
+            width: 120,
+            mb: 1,
+          }}
+        >
+          {BG_POSITION_GRID.map((pos) => {
+            const selected = customization.profile_bg_image_position === pos.key;
+            return (
+              <Box
+                key={pos.key}
+                component="button"
+                type="button"
+                onClick={() => setCust('profile_bg_image_position', pos.key)}
+                title={pos.key}
+                sx={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  border: '1px solid',
+                  borderColor: selected ? 'primary.main' : 'divider',
+                  borderRadius: 1,
+                  backgroundColor: selected ? 'primary.main' : 'transparent',
+                  color: selected ? 'white' : 'text.secondary',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.9rem',
+                  transition: 'all 0.12s ease',
+                  '&:hover': { borderColor: 'primary.main', backgroundColor: selected ? 'primary.main' : 'action.hover' },
+                }}
+              >
+                {pos.label}
+              </Box>
+            );
+          })}
+        </Box>
+        <Typography variant="caption" color="text.disabled">
+          {customization.profile_bg_image_position}
         </Typography>
       </Box>
     )}

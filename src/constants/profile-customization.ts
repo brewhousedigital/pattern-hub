@@ -62,6 +62,37 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   { key: 'website',    label: 'Website',     placeholder: 'https://yourwebsite.com',           domain: '*',              color: '#555555' },
 ];
 
+// ─── Background Image Options ─────────────────────────────────────────────────
+
+export const BG_IMAGE_SIZE_OPTIONS = [
+  { key: 'cover',    label: 'Stretch full screen' },
+  { key: 'repeat',   label: 'Repeat' },
+  { key: 'repeat-x', label: 'Repeat horizontally' },
+  { key: 'repeat-y', label: 'Repeat vertically' },
+] as const;
+
+export type BgImageSize = (typeof BG_IMAGE_SIZE_OPTIONS)[number]['key'];
+
+export const BG_POSITION_GRID = [
+  { key: 'left top',      label: '↖' },
+  { key: 'center top',    label: '↑' },
+  { key: 'right top',     label: '↗' },
+  { key: 'left center',   label: '←' },
+  { key: 'center center', label: '○' },
+  { key: 'right center',  label: '→' },
+  { key: 'left bottom',   label: '↙' },
+  { key: 'center bottom', label: '↓' },
+  { key: 'right bottom',  label: '↘' },
+] as const;
+
+export type BgPosition = (typeof BG_POSITION_GRID)[number]['key'];
+
+export function buildImageBg(url: string, size: BgImageSize, position: BgPosition): string {
+  const bgSize   = size === 'cover' ? 'cover' : 'auto';
+  const bgRepeat = size === 'cover' ? 'no-repeat' : size;
+  return `url(${url}) ${position} / ${bgSize} ${bgRepeat}`;
+}
+
 // ─── Background Patterns ──────────────────────────────────────────────────────
 
 export type BgPattern = { key: string; label: string };

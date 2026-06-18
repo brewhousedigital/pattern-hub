@@ -145,6 +145,8 @@ export type TypeAuthData = {
   profile_bg_gradient_angle?: number;
   profile_bg_pattern?: string;
   profile_bg_image?: string; // PocketBase filename
+  profile_bg_image_size?: string;
+  profile_bg_image_position?: string;
   profile_card_bg?: string;
   // Typography
   profile_font?: string;

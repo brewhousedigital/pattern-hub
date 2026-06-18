@@ -236,6 +236,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const bgGradEnd = thisAuthData?.profile_bg_gradient_end ?? '#ffffff';
   const bgAngle = thisAuthData?.profile_bg_gradient_angle ?? 135;
   const bgPattern = thisAuthData?.profile_bg_pattern ?? 'dots';
+  const bgImageSize = thisAuthData?.profile_bg_image_size ?? 'cover';
+  const bgImagePosition = thisAuthData?.profile_bg_image_position ?? 'center center';
   const bgImageUrl = generateUserBgImageUrl(thisAuthData ?? undefined);
   const profileFont = PROFILE_FONTS.some((f) => f.value === thisAuthData?.profile_font)
     ? thisAuthData?.profile_font
@@ -267,9 +269,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     if (!bgType || bgType === 'solid') return bgColor || undefined;
     if (bgType === 'gradient' && bgColor) return `linear-gradient(${bgAngle}deg, ${bgColor}, ${bgGradEnd})`;
     if (bgType === 'pattern' && bgColor) return getCssPattern(bgPattern, hexToRgba(siteColor, 0.18), bgColor);
-    if (bgType === 'image' && bgImageUrl) return `url(${bgImageUrl}) center/cover no-repeat scroll`;
+    if (bgType === 'image' && bgImageUrl) {
+      const bgSize   = bgImageSize === 'cover' ? 'cover' : 'auto';
+      const bgRepeat = bgImageSize === 'cover' ? 'no-repeat scroll' : `${bgImageSize} scroll`;
+      return `url(${bgImageUrl}) ${bgImagePosition} / ${bgSize} ${bgRepeat}`;
+    }
     return undefined;
-  }, [bgType, bgColor, bgGradEnd, bgAngle, bgPattern, bgImageUrl, siteColor]);
+  }, [bgType, bgColor, bgGradEnd, bgAngle, bgPattern, bgImageUrl, bgImageSize, bgImagePosition, siteColor]);
 
   useEffect(() => {
     if (!computedBg) return;
