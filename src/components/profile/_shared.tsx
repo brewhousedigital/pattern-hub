@@ -21,6 +21,7 @@ export interface CustomizationForm {
   profile_avatar_shape: 'circle' | 'squircle' | 'square' | 'hexagon';
   profile_cursor: string;
   profile_sparkles: boolean;
+  profile_dark_mode: boolean;
   profile_mood_emoji: string;
   profile_mood_text: string;
   profile_youtube_url: string;
@@ -48,6 +49,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   profile_avatar_shape: 'circle',
   profile_cursor: 'default',
   profile_sparkles: false,
+  profile_dark_mode: false,
   profile_mood_emoji: '',
   profile_mood_text: '',
   profile_youtube_url: '',

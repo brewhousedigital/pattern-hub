@@ -149,6 +149,7 @@ function RouteComponent() {
       profile_avatar_shape: authData.profile_avatar_shape ?? 'circle',
       profile_cursor: authData.profile_cursor ?? 'default',
       profile_sparkles: authData.profile_sparkles ?? false,
+      profile_dark_mode: authData.profile_dark_mode ?? false,
       profile_mood_emoji: authData.profile_mood_emoji ?? '',
       profile_mood_text: authData.profile_mood_text ?? '',
       profile_youtube_url: authData.profile_youtube_url ?? '',
@@ -296,6 +297,7 @@ function RouteComponent() {
     fd.append('profile_avatar_shape', customization.profile_avatar_shape);
     fd.append('profile_cursor', customization.profile_cursor);
     fd.append('profile_sparkles', String(customization.profile_sparkles));
+    fd.append('profile_dark_mode', String(customization.profile_dark_mode));
     fd.append('profile_mood_emoji', customization.profile_mood_emoji.slice(0, 4));
     fd.append('profile_mood_text', customization.profile_mood_text.slice(0, 50));
     fd.append(
@@ -679,6 +681,7 @@ function RouteComponent() {
                   resetSection([
                     'site_color',
                     'site_color_secondary',
+                    'profile_dark_mode',
                     'profile_bg_type',
                     'profile_bg_color',
                     'profile_bg_gradient_end',

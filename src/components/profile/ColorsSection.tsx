@@ -15,6 +15,8 @@ import {
 import { alpha } from '@mui/material/styles';
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
 import { BG_PATTERNS, getCssPattern, hexToRgba } from '@/constants/profile-customization';
 import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
 
@@ -101,12 +103,32 @@ const ColorsPreview = ({
         </Box>
       </Box>
 
+      {/* Stat bar */}
+      <Box
+        sx={{
+          height: 44,
+          backgroundColor: customization.profile_dark_mode ? '#1c1c1e' : '#ffffff',
+          borderBottom: `1px solid ${customization.profile_dark_mode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          px: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+        }}
+      >
+        {(['12', '4', '7'] as const).map((n, i) => (
+          <Box key={i} sx={{ textAlign: 'center' }}>
+            <Box sx={{ width: 18, height: 7, borderRadius: 1, backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)', mx: 'auto', mb: 0.4 }} />
+            <Box sx={{ width: 24, height: 4, borderRadius: 1, backgroundColor: customization.profile_dark_mode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)', mx: 'auto' }} />
+          </Box>
+        ))}
+      </Box>
+
       {/* Page background area */}
       <Box
         sx={{
-          height: 68,
+          height: 52,
           background: pageBg,
-          backgroundColor: !pageBg ? 'background.default' : undefined,
+          backgroundColor: !pageBg ? (customization.profile_dark_mode ? '#121212' : '#f5f5f5') : undefined,
           px: 2,
           display: 'flex',
           alignItems: 'center',
@@ -124,7 +146,7 @@ const ColorsPreview = ({
               fontWeight: 700,
               lineHeight: 1.7,
               backgroundColor: i === 0 ? primary : 'transparent',
-              color: i === 0 ? 'white' : primary,
+              color: i === 0 ? 'white' : (customization.profile_dark_mode ? 'rgba(255,255,255,0.85)' : primary),
               border: `1px solid ${i === 0 ? primary : alpha(primary, 0.4)}`,
             }}
           >
@@ -207,6 +229,27 @@ export const ColorsSection = ({
     <SectionHeader title="Colors & Background" onReset={onReset} />
 
     <ColorsPreview customization={customization} activeBgImageSrc={activeBgImageSrc} />
+
+    {/* Dark / Light mode */}
+    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+      Profile Theme
+    </Typography>
+    <ToggleButtonGroup
+      exclusive
+      value={customization.profile_dark_mode ? 'dark' : 'light'}
+      onChange={(_, v) => { if (v) setCust('profile_dark_mode', v === 'dark'); }}
+      size="small"
+      sx={{ mb: 3 }}
+    >
+      <ToggleButton value="light" sx={{ gap: 0.75, fontWeight: 600, textTransform: 'none', px: 2 }}>
+        <LightModeRoundedIcon fontSize="small" />
+        Light
+      </ToggleButton>
+      <ToggleButton value="dark" sx={{ gap: 0.75, fontWeight: 600, textTransform: 'none', px: 2 }}>
+        <DarkModeRoundedIcon fontSize="small" />
+        Dark
+      </ToggleButton>
+    </ToggleButtonGroup>
 
     <Grid container spacing={2} sx={{ mb: 2 }}>
       <Grid size={{ xs: 12, sm: 6 }}>

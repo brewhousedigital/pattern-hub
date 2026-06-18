@@ -392,9 +392,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         '&::after': { background: alpha(siteColorSecondary, 0.35) },
       };
 
-  const pageRootSx = fontStack
-    ? { fontFamily: fontStack, '& *': { fontFamily: 'inherit !important' } }
-    : {};
+  const isDark = thisAuthData?.profile_dark_mode ?? false;
+
+  const pageRootSx: Record<string, unknown> = {
+    ...(fontStack ? { fontFamily: fontStack, '& *': { fontFamily: 'inherit !important' } } : {}),
+    ...(isDark
+      ? {
+          color: 'rgba(255,255,255,0.92)',
+          '& .MuiTypography-root': { color: 'inherit' },
+          '& .MuiChip-label': { color: 'inherit' },
+        }
+      : {}),
+  };
 
   return (
     <PageRoot sx={pageRootSx}>
@@ -520,7 +529,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       </HeroSection>
 
       {/* ─── STAT BAR ─────────────────────────────────────────────────────── */}
-      <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }}>
+      <Box
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+          backgroundColor: isDark ? '#1c1c1e' : 'background.paper',
+        }}
+      >
         <Container maxWidth="lg" sx={{ px: { xs: 0, md: 4 } }}>
           <Grid container sx={{ justifyContent: 'center' }}>
             {stats.map((stat, i) => (

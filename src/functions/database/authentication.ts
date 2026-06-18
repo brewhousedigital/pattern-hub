@@ -155,6 +155,7 @@ export type TypeAuthData = {
   // Effects
   profile_cursor?: string;
   profile_sparkles?: boolean;
+  profile_dark_mode?: boolean;
   // Mood / Status
   profile_mood_emoji?: string;
   profile_mood_text?: string;
