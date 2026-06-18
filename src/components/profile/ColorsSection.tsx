@@ -12,10 +12,134 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import { BG_PATTERNS } from '@/constants/profile-customization';
-import { SectionCard, SectionHeader, type SectionCustProps } from './_shared';
+import { BG_PATTERNS, getCssPattern, hexToRgba } from '@/constants/profile-customization';
+import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
+
+// ─── Preview ──────────────────────────────────────────────────────────────────
+
+const ColorsPreview = ({
+  customization,
+  activeBgImageSrc,
+}: {
+  customization: CustomizationForm;
+  activeBgImageSrc: string | null;
+}) => {
+  const primary = customization.site_color || '#0b6536';
+  const secondary = customization.site_color_secondary || '#cfe1b9';
+
+  let pageBg: string | undefined;
+  const { profile_bg_type: bgType, profile_bg_color: bgColor } = customization;
+  if (bgType === 'gradient' && bgColor) {
+    pageBg = `linear-gradient(${customization.profile_bg_gradient_angle}deg, ${bgColor}, ${customization.profile_bg_gradient_end})`;
+  } else if (bgType === 'pattern' && bgColor) {
+    pageBg = getCssPattern(customization.profile_bg_pattern, hexToRgba(primary, 0.18), bgColor);
+  } else if (bgType === 'image' && activeBgImageSrc) {
+    pageBg = `url(${activeBgImageSrc}) center/cover no-repeat`;
+  } else if (bgColor) {
+    pageBg = bgColor;
+  }
+
+  return (
+    <Box
+      sx={{
+        borderRadius: 2.5,
+        overflow: 'hidden',
+        border: '1px solid',
+        borderColor: 'divider',
+        mb: 3,
+        userSelect: 'none',
+        pointerEvents: 'none',
+      }}
+    >
+      {/* Hero strip */}
+      <Box
+        sx={{
+          height: 76,
+          backgroundColor: primary,
+          background: `linear-gradient(135deg, ${alpha(primary, 0.78)} 0%, ${primary} 55%, ${secondary} 100%)`,
+          position: 'relative',
+          overflow: 'hidden',
+          px: 2,
+          display: 'flex',
+          alignItems: 'flex-end',
+          pb: 1.25,
+          gap: 1.25,
+        }}
+      >
+        {/* decorative orb */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -28,
+            right: -28,
+            width: 90,
+            height: 90,
+            borderRadius: '50%',
+            backgroundColor: alpha(primary, 0.45),
+          }}
+        />
+        {/* avatar */}
+        <Box
+          sx={{
+            width: 38,
+            height: 38,
+            borderRadius: '50%',
+            backgroundColor: secondary,
+            border: '2px solid rgba(255,255,255,0.5)',
+            flexShrink: 0,
+          }}
+        />
+        <Box sx={{ pb: 0.25 }}>
+          <Box sx={{ width: 68, height: 9, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.9)', mb: 0.6 }} />
+          <Box sx={{ width: 44, height: 5, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+        </Box>
+        <Box sx={{ ml: 'auto', px: 1.25, py: 0.5, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <Box sx={{ width: 26, height: 5, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.8)' }} />
+        </Box>
+      </Box>
+
+      {/* Page background area */}
+      <Box
+        sx={{
+          height: 68,
+          background: pageBg,
+          backgroundColor: !pageBg ? 'background.default' : undefined,
+          px: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+        }}
+      >
+        {(['Favorites', 'Gallery', 'Collections'] as const).map((label, i) => (
+          <Box
+            key={label}
+            sx={{
+              px: 1.25,
+              py: 0.3,
+              borderRadius: 10,
+              fontSize: '0.58rem',
+              fontWeight: 700,
+              lineHeight: 1.7,
+              backgroundColor: i === 0 ? primary : 'transparent',
+              color: i === 0 ? 'white' : primary,
+              border: `1px solid ${i === 0 ? primary : alpha(primary, 0.4)}`,
+            }}
+          >
+            {label}
+          </Box>
+        ))}
+        <Box sx={{ ml: 'auto', px: 1.25, py: 0.375, borderRadius: 1, backgroundColor: primary }}>
+          <Box sx={{ width: 34, height: 5, borderRadius: 1, backgroundColor: 'white' }} />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+// ─── Color picker ─────────────────────────────────────────────────────────────
 
 type ColorPickerProps = {
   label: string;
@@ -57,6 +181,8 @@ const ColorPicker = ({ label, value, fallback, onChange }: ColorPickerProps) => 
   </Box>
 );
 
+// ─── Section ──────────────────────────────────────────────────────────────────
+
 type ColorsSectionProps = SectionCustProps & {
   bgImageInputRef: React.RefObject<HTMLInputElement | null>;
   processingImage: 'avatar' | 'header' | 'bgimage' | null;
@@ -79,6 +205,8 @@ export const ColorsSection = ({
 }: ColorsSectionProps) => (
   <SectionCard elevation={0}>
     <SectionHeader title="Colors & Background" onReset={onReset} />
+
+    <ColorsPreview customization={customization} activeBgImageSrc={activeBgImageSrc} />
 
     <Grid container spacing={2} sx={{ mb: 2 }}>
       <Grid size={{ xs: 12, sm: 6 }}>
