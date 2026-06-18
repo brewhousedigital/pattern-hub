@@ -144,6 +144,7 @@ function RouteComponent() {
       profile_bg_pattern: authData.profile_bg_pattern ?? 'dots',
       profile_bg_image_size: authData.profile_bg_image_size ?? 'cover',
       profile_bg_image_position: authData.profile_bg_image_position ?? 'center center',
+      profile_bg_image_fixed: authData.profile_bg_image_fixed ?? false,
       profile_card_bg: authData.profile_card_bg ?? '',
       profile_font: authData.profile_font ?? '',
       profile_font_size: authData.profile_font_size ?? 'medium',
@@ -294,6 +295,7 @@ function RouteComponent() {
     fd.append('profile_bg_pattern', customization.profile_bg_pattern);
     fd.append('profile_bg_image_size', customization.profile_bg_image_size);
     fd.append('profile_bg_image_position', customization.profile_bg_image_position);
+    fd.append('profile_bg_image_fixed', String(customization.profile_bg_image_fixed));
     fd.append('profile_card_bg', customization.profile_card_bg ? sanitizeHex(customization.profile_card_bg, '') : '');
     fd.append('profile_font', customization.profile_font);
     fd.append('profile_font_size', customization.profile_font_size);
@@ -693,6 +695,7 @@ function RouteComponent() {
                     'profile_bg_pattern',
                     'profile_bg_image_size',
                     'profile_bg_image_position',
+                    'profile_bg_image_fixed',
                     'profile_card_bg',
                   ])
                 }

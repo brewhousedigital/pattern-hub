@@ -65,10 +65,13 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
 // ─── Background Image Options ─────────────────────────────────────────────────
 
 export const BG_IMAGE_SIZE_OPTIONS = [
-  { key: 'cover',    label: 'Stretch full screen' },
-  { key: 'repeat',   label: 'Repeat' },
-  { key: 'repeat-x', label: 'Repeat horizontally' },
-  { key: 'repeat-y', label: 'Repeat vertically' },
+  { key: 'cover',     label: 'Stretch full screen' },
+  { key: 'contain',   label: 'Fit to screen' },
+  { key: 'stretch',   label: 'Stretch to fill' },
+  { key: 'no-repeat', label: 'Original size' },
+  { key: 'repeat',    label: 'Tile' },
+  { key: 'repeat-x',  label: 'Tile horizontally' },
+  { key: 'repeat-y',  label: 'Tile vertically' },
 ] as const;
 
 export type BgImageSize = (typeof BG_IMAGE_SIZE_OPTIONS)[number]['key'];
@@ -87,10 +90,16 @@ export const BG_POSITION_GRID = [
 
 export type BgPosition = (typeof BG_POSITION_GRID)[number]['key'];
 
-export function buildImageBg(url: string, size: BgImageSize, position: BgPosition): string {
-  const bgSize   = size === 'cover' ? 'cover' : 'auto';
-  const bgRepeat = size === 'cover' ? 'no-repeat' : size;
-  return `url(${url}) ${position} / ${bgSize} ${bgRepeat}`;
+export function getBgImageCss(size: string): { bgSize: string; bgRepeat: string } {
+  switch (size) {
+    case 'contain':   return { bgSize: 'contain',   bgRepeat: 'no-repeat' };
+    case 'stretch':   return { bgSize: '100% 100%', bgRepeat: 'no-repeat' };
+    case 'no-repeat': return { bgSize: 'auto',      bgRepeat: 'no-repeat' };
+    case 'repeat':    return { bgSize: 'auto',      bgRepeat: 'repeat' };
+    case 'repeat-x':  return { bgSize: 'auto',      bgRepeat: 'repeat-x' };
+    case 'repeat-y':  return { bgSize: 'auto',      bgRepeat: 'repeat-y' };
+    default:          return { bgSize: 'cover',     bgRepeat: 'no-repeat' };
+  }
 }
 
 // ─── Background Patterns ──────────────────────────────────────────────────────

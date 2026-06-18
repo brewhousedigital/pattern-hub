@@ -16,6 +16,7 @@ export interface CustomizationForm {
   profile_bg_pattern: string;
   profile_bg_image_size: string;
   profile_bg_image_position: string;
+  profile_bg_image_fixed: boolean;
   profile_card_bg: string;
   profile_font: string;
   profile_font_size: 'small' | 'medium' | 'large';
@@ -46,6 +47,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   profile_bg_pattern: 'dots',
   profile_bg_image_size: 'cover',
   profile_bg_image_position: 'center center',
+  profile_bg_image_fixed: false,
   profile_card_bg: '',
   profile_font: '',
   profile_font_size: 'medium',

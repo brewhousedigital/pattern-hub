@@ -4,9 +4,11 @@ import {
   Button,
   Chip,
   CircularProgress,
+  FormControlLabel,
   Grid,
   Slider,
   Stack,
+  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -17,7 +19,7 @@ import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternate
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
-import { BG_PATTERNS, BG_IMAGE_SIZE_OPTIONS, BG_POSITION_GRID, getCssPattern, hexToRgba } from '@/constants/profile-customization';
+import { BG_PATTERNS, BG_IMAGE_SIZE_OPTIONS, BG_POSITION_GRID, getBgImageCss, getCssPattern, hexToRgba } from '@/constants/profile-customization';
 import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
@@ -39,10 +41,10 @@ const ColorsPreview = ({
   } else if (bgType === 'pattern' && bgColor) {
     pageBg = getCssPattern(customization.profile_bg_pattern, hexToRgba(primary, 0.18), bgColor);
   } else if (bgType === 'image' && activeBgImageSrc) {
-    const sz = customization.profile_bg_image_size ?? 'cover';
+    const sz  = customization.profile_bg_image_size ?? 'cover';
     const pos = customization.profile_bg_image_position ?? 'center center';
-    const bgSize   = sz === 'cover' ? 'cover' : 'auto';
-    const bgRepeat = sz === 'cover' ? 'no-repeat' : sz;
+    const { bgSize, bgRepeat } = getBgImageCss(sz);
+    // No `fixed` in the mini preview — it doesn't apply to a small constrained box
     pageBg = `url(${activeBgImageSrc}) ${pos} / ${bgSize} ${bgRepeat}`;
   } else if (bgColor) {
     pageBg = bgColor;
@@ -482,6 +484,29 @@ export const ColorsSection = ({
         <Typography variant="caption" color="text.disabled">
           {customization.profile_bg_image_position}
         </Typography>
+
+        {/* Parallax */}
+        <FormControlLabel
+          sx={{ mt: 2 }}
+          control={
+            <Switch
+              checked={customization.profile_bg_image_fixed}
+              onChange={(e) => setCust('profile_bg_image_fixed', e.target.checked)}
+              color="primary"
+              size="small"
+            />
+          }
+          label={
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                Parallax (fixed)
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Background stays still as the page scrolls
+              </Typography>
+            </Box>
+          }
+        />
       </Box>
     )}
   </SectionCard>
