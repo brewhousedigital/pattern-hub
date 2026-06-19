@@ -16,6 +16,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatingsContainer } from '@/components/PatternUtilities/PatternRatingsContainer';
+import { LayerSelectionHint } from '@/components/PatternUtilities/LayerSelectionHint';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -191,9 +192,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                           />
                         ))}
                     </Stack>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      Layer selections affect your downloaded and printed files.
-                    </Typography>
+                    <LayerSelectionHint sx={{ mt: 1 }} />
                   </Grid>
                 )}
               </Grid>
@@ -210,12 +209,16 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <Tabs
               value={exportTab}
               onChange={(_, v) => setExportTab(v)}
-              sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+              sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
             >
               <Tab label="Export SVG" value="svg" />
               <Tab label="Print Pattern" value="print" />
               <Tab label="Export Image" value="image" />
             </Tabs>
+
+            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
+              <LayerSelectionHint sx={{ mb: 2 }} />
+            )}
 
             <Suspense fallback={<Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />}>
               {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
@@ -227,6 +230,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
         {!viewData?.pattern_file_external && (
           <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>
+            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
+              <LayerSelectionHint sx={{ mb: 2 }} />
+            )}
             <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
               <PatternViewer3DLazy viewData={viewData} hiddenLayers={hiddenLayers} />
             </Suspense>
