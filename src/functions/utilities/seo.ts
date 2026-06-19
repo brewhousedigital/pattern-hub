@@ -7,11 +7,14 @@ export const seoTitle = (title?: string) => {
 };
 
 export const seoDescription = (description?: string) => {
-  if (!description) {
-    return [{ property: 'og:description', content: `Find a pattern for your stained glass project.` }];
-  }
+  const content = description
+    ? `${description} Find a pattern for your stained glass project.`
+    : `Find a pattern for your stained glass project.`;
 
-  return [{ property: 'og:description', content: `${description} Find a pattern for your stained glass project.` }];
+  return [
+    { name: 'description', content },
+    { property: 'og:description', content },
+  ];
 };
 
 export const seoUrl = (url?: string) => {
@@ -30,7 +33,8 @@ export const generateSEO = (title?: string, description?: string, url?: string) 
     ...seoDescription(description),
     ...seoUrl(url),
     { property: 'og:image', content: `https://patternarchive.net/poster.png` },
-    { property: 'twitter:image', content: `https://patternarchive.net/poster.png` },
     { property: 'og:site_name', content: `Pattern Archive` },
+    { name: 'twitter:card', content: `summary_large_image` },
+    { name: 'twitter:image', content: `https://patternarchive.net/poster.png` },
   ];
 };

@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /space-command/
+Disallow: /auth/
+Disallow: /profile/edit
+
+Sitemap: https://patternarchive.net/sitemap.xml
