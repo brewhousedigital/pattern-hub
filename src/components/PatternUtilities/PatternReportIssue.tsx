@@ -9,7 +9,7 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 import { Alert, Box, Button, Collapse, MenuItem, Stack, TextField } from '@mui/material';
 
 const COOLDOWN_KEY = 'report_last_submit';
-const COOLDOWN_MS = 30 * 1000; // 30 seconds
+const COOLDOWN_MS = 2 * 1000; // 2 seconds
 
 export const PatternReportIssue = (props: TypeViewData) => {
   const viewData = props.viewData;
