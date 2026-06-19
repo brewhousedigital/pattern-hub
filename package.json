@@ -30,7 +30,7 @@
     "@types/file-saver": "2.0.7",
     "@types/node": "25.9.3",
     "dayjs": "1.11.21",
-    "dompurify": "3.4.10",
+    "dompurify": "3.4.11",
     "file-saver": "2.0.5",
     "fuse.js": "7.4.2",
     "html2canvas": "1.4.1",
