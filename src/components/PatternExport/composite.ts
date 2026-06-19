@@ -45,13 +45,15 @@ export interface TypeCompositeInput {
 }
 
 function computeLayout(input: TypeCompositeInput) {
-  const legendH = input.legend?.height ?? 0;
-  const instructionsH = input.instructions?.height ?? 0;
   const patternH = input.targetHeightPx;
 
-  const legendY = patternH + 100 + LEGEND_MARGIN;
-  const instructionsY = legendY + legendH + INSTRUCTIONS_GAP;
-  const totalH = instructionsY + instructionsH + LEGEND_MARGIN;
+  const legendY = patternH + (input.legend ? 100 + LEGEND_MARGIN : 0);
+  const legendH = input.legend?.height ?? 0;
+
+  const instructionsY = legendY + legendH + (input.instructions ? INSTRUCTIONS_GAP : 0);
+  const instructionsH = input.instructions?.height ?? 0;
+
+  const totalH = instructionsY + instructionsH + (input.legend || input.instructions ? LEGEND_MARGIN : 0);
 
   return { legendY, instructionsY, totalH, totalW: mathClamp(input.targetWidthPx, 700, Infinity) };
 }

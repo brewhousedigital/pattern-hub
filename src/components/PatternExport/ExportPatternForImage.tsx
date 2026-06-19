@@ -25,6 +25,7 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Typography,
+  Stack,
 } from '@mui/material';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,7 +87,10 @@ function slugify(s: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
+export const ExportPatternForImage = ({
+  viewData,
+  hiddenLayers = new Set<string>(),
+}: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
   const baseHIn = viewData ? dbToIn(viewData.design_height, viewData.design_height_unit) : 1;
   const aspectRatio = baseWIn > 0 && baseHIn > 0 ? baseHIn / baseWIn : 1;
@@ -98,6 +102,7 @@ export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>
   const [widthInput, setWidthInput] = useState(() => fmt(baseWIn, 'in'));
   const [heightInput, setHeightInput] = useState(() => fmt(baseHIn, 'in'));
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
+  const [includeLegend, setIncludeLegend] = useState(true);
 
   const { runExport, isExporting, error } = useExportPattern();
 
@@ -175,6 +180,7 @@ export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>
           dpi,
           jpgBackground,
           includeInstructions,
+          includeLegend,
         },
       );
 
@@ -195,6 +201,7 @@ export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>
     heightInput,
     widthIn,
     includeInstructions,
+    includeLegend,
     hiddenLayers,
     runExport,
   ]);
@@ -314,23 +321,37 @@ export const ExportPatternForImage = ({ viewData, hiddenLayers = new Set<string>
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2 }} />
 
-      {viewData?.instructions && (
+      <Stack>
         <FormControlLabel
           control={
-            <Checkbox
-              checked={includeInstructions}
-              onChange={(e) => setIncludeInstructions(e.target.checked)}
-              size="small"
-            />
+            <Checkbox checked={includeLegend} onChange={(e) => setIncludeLegend(e.target.checked)} size="small" />
           }
           label={
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Append pattern instructions
+              Include legend
             </Typography>
           }
-          sx={{ mb: 2, ml: 0 }}
+          sx={{ mb: 1, ml: 0 }}
         />
-      )}
+
+        {viewData?.instructions && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={includeInstructions}
+                onChange={(e) => setIncludeInstructions(e.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Append pattern instructions
+              </Typography>
+            }
+            sx={{ mb: 2, ml: 0 }}
+          />
+        )}
+      </Stack>
 
       <Collapse in={!!error}>
         <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>

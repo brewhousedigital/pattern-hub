@@ -34,6 +34,7 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Typography,
+  Stack,
 } from '@mui/material';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -230,6 +231,7 @@ interface SinglePdfArgs {
   pageWIn: number;
   pageHIn: number;
   orientation: Orientation;
+  includeLegend: boolean;
   legendSvg: string;
   legendHIn: number;
   includeInstructions: boolean;
@@ -256,13 +258,15 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
   pdf.addImage(patPng, 'PNG', patX, M, a.patternWIn, a.patternHIn);
 
   // Legend below the pattern, left-aligned to margin
-  const legendY = M + a.patternHIn + LEGEND_GAP_IN;
-  const legendPng = await svgToPng(
-    a.legendSvg,
-    Math.round(LEGEND_W_IN * DPI_SINGLE),
-    Math.round(a.legendHIn * DPI_SINGLE),
-  );
-  pdf.addImage(legendPng, 'PNG', M, legendY, LEGEND_W_IN, a.legendHIn);
+  if (a.includeLegend) {
+    const legendY = M + a.patternHIn + LEGEND_GAP_IN;
+    const legendPng = await svgToPng(
+      a.legendSvg,
+      Math.round(LEGEND_W_IN * DPI_SINGLE),
+      Math.round(a.legendHIn * DPI_SINGLE),
+    );
+    pdf.addImage(legendPng, 'PNG', M, legendY, LEGEND_W_IN, a.legendHIn);
+  }
 
   if (a.includeInstructions && a.instructionsMarkdown) {
     await addInstructionPages(pdf, a.instructionsMarkdown, fw, fh, M);
@@ -279,6 +283,7 @@ interface TiledPdfArgs {
   patternWIn: number;
   patternHIn: number;
   lineWidthIn: number;
+  includeLegend: boolean;
   legendSvg: string;
   legendHIn: number;
   includeInstructions: boolean;
@@ -286,9 +291,10 @@ interface TiledPdfArgs {
 }
 
 async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
-  // Each sheet: top + bottom margin, then pattern tile area, then gap + legend
+  // Each sheet: top + bottom margin, then pattern tile area, then optional gap + legend
   const tileW = TILE_SHEET_W - 2 * TILE_MARGIN;
-  const tileH = TILE_SHEET_H - 2 * TILE_MARGIN - LEGEND_GAP_IN - a.legendHIn;
+  const reservedForLegend = a.includeLegend ? LEGEND_GAP_IN + a.legendHIn : 0;
+  const tileH = TILE_SHEET_H - 2 * TILE_MARGIN - reservedForLegend;
 
   const cols = Math.ceil(a.patternWIn / tileW);
   const rows = Math.ceil(a.patternHIn / tileH);
@@ -300,12 +306,10 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
   const preparedSvg = prepareSvgForPrint(a.svgString, fullWPx, fullHPx, a.patternWIn, a.lineWidthIn);
   const fullPng = await svgToPng(preparedSvg, fullWPx, fullHPx);
 
-  // Rasterize legend once; reuse across all pages
-  const legendPng = await svgToPng(
-    a.legendSvg,
-    Math.round(LEGEND_W_IN * DPI_TILED),
-    Math.round(a.legendHIn * DPI_TILED),
-  );
+  // Rasterize legend once; reuse across all pages (only when included)
+  const legendPng = a.includeLegend
+    ? await svgToPng(a.legendSvg, Math.round(LEGEND_W_IN * DPI_TILED), Math.round(a.legendHIn * DPI_TILED))
+    : null;
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: [TILE_SHEET_W, TILE_SHEET_H] });
   let first = true;
@@ -356,20 +360,17 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
         const bgY = legendY - padY;
         const bgW = Math.max(LEGEND_W_IN, labelWidth) + padX * 2;
         const bgH = hintY - legendY + padY * 2;
-        //const bgW = Math.max(LEGEND_W_IN, labelWidth, hintWidth) + padX * 2;
-        //const bgH = hintY - legendY + hintHeight + padY * 2;
 
         pdf.setFillColor(255, 255, 255);
         pdf.rect(bgX, bgY, bgW, bgH, 'F');
 
-        pdf.addImage(legendPng, 'PNG', TILE_MARGIN, legendY - BOTTOM_MARGIN, LEGEND_W_IN, a.legendHIn);
+        if (a.includeLegend && legendPng) {
+          pdf.addImage(legendPng, 'PNG', TILE_MARGIN, legendY - BOTTOM_MARGIN, LEGEND_W_IN, a.legendHIn);
+        }
 
         pdf.setFontSize(7);
         pdf.setTextColor(150, 130, 90);
         pdf.text(labelText, TILE_MARGIN, labelY);
-
-        //pdf.setFontSize(6);
-        //pdf.text(hintText, TILE_MARGIN, hintY);
       } else {
         // White bg behind label only
         const bgX = TILE_MARGIN - padX;
@@ -433,7 +434,10 @@ async function addInstructionPages(
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
+export const ExportPatternForPrintV3 = ({
+  viewData,
+  hiddenLayers = new Set<string>(),
+}: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
@@ -451,6 +455,7 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
   const [customPageH, setCustomPageH] = useState('');
   const [paperUnit, setPaperUnit] = useState<PrintUnit>('in');
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
+  const [includeLegend, setIncludeLegend] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [svgString, setSvgString] = useState('');
@@ -540,17 +545,19 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
   // Legend dimensions
   const keyCount = viewData?.pattern_key_reference_list?.length ?? 0;
   const legendHIn = legendPhysicalHeightIn(keyCount);
+  const effectiveLegendHIn = includeLegend ? legendHIn : 0;
+  const effectiveLegendGapIn = includeLegend ? LEGEND_GAP_IN : 0;
 
   // Fits check for single page
   const availW = finalPageW - 2 * PAGE_MARGIN_IN;
   const availH = finalPageH - 2 * PAGE_MARGIN_IN;
-  const requiredH = patternHIn + LEGEND_GAP_IN + legendHIn;
+  const requiredH = patternHIn + effectiveLegendGapIn + effectiveLegendHIn;
   const fitsCheck: 'ok' | 'warn' | null =
     finalPageW > 0 && patternWIn > 0 ? (patternWIn <= availW && requiredH <= availH ? 'ok' : 'warn') : null;
 
   // Tile info
   const tileW = TILE_SHEET_W - 2 * TILE_MARGIN;
-  const tileH = TILE_SHEET_H - 2 * TILE_MARGIN - LEGEND_GAP_IN - legendHIn;
+  const tileH = TILE_SHEET_H - 2 * TILE_MARGIN - effectiveLegendGapIn - effectiveLegendHIn;
   const tileCols = patternWIn > 0 ? Math.ceil(patternWIn / tileW) : 0;
   const tileRows = patternHIn > 0 ? Math.ceil(patternHIn / tileH) : 0;
   const tilePages = tileCols * tileRows;
@@ -569,18 +576,20 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
       const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
 
-      const legendOutput = await buildLegend({
-        patternName: viewData.name,
-        authorLine,
-        projectSizeLabel,
-        pieces: viewData.pieces,
-        lineWidthLabel,
-        designDate: viewData.design_date as Date | null,
-        keys: viewData.pattern_key_reference_list ?? [],
-        queryClient,
-      });
+      const legendOutput = includeLegend
+        ? await buildLegend({
+            patternName: viewData.name,
+            authorLine,
+            projectSizeLabel,
+            pieces: viewData.pieces,
+            lineWidthLabel,
+            designDate: viewData.design_date as Date | null,
+            keys: viewData.pattern_key_reference_list ?? [],
+            queryClient,
+          })
+        : null;
 
-      const resolvedLegendHIn = legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX);
+      const resolvedLegendHIn = legendOutput ? legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX) : 0;
 
       const filteredSvgString = applyHiddenLayers(svgString, hiddenLayers);
 
@@ -591,7 +600,8 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
           patternWIn,
           patternHIn,
           lineWidthIn,
-          legendSvg: legendOutput.svg,
+          includeLegend,
+          legendSvg: legendOutput?.svg ?? '',
           legendHIn: resolvedLegendHIn,
           includeInstructions,
           instructionsMarkdown: viewData.instructions ?? '',
@@ -606,7 +616,8 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
           pageWIn: paperWIn!,
           pageHIn: paperHIn!,
           orientation,
-          legendSvg: legendOutput.svg,
+          includeLegend,
+          legendSvg: legendOutput?.svg ?? '',
           legendHIn: resolvedLegendHIn,
           includeInstructions,
           instructionsMarkdown: viewData.instructions ?? '',
@@ -630,6 +641,7 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
     patternHIn,
     lineWidthIn,
     legendHIn,
+    includeLegend,
     includeInstructions,
     queryClient,
     unit,
@@ -837,8 +849,10 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
 
               <Typography variant="caption" sx={{ lineHeight: 1.5 }}>
                 {fitsCheck === 'ok'
-                  ? `Pattern + legend fit on ${paperPreset || 'custom paper'} (${orientation}).`
-                  : `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}") and legend (${r2(legendHIn)}" tall) need ${r2(requiredH + 2 * PAGE_MARGIN_IN)}" of height but the ${orientation} page provides only ${r2(availH)}". Try a larger paper size or a different orientation.`}
+                  ? `Pattern${includeLegend ? ' + legend' : ''} fits on ${paperPreset || 'custom paper'} (${orientation}).`
+                  : includeLegend
+                    ? `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}") and legend (${r2(legendHIn)}" tall) need ${r2(requiredH + 2 * PAGE_MARGIN_IN)}" of height but the ${orientation} page provides only ${r2(availH)}". Try a larger paper size or a different orientation.`
+                    : `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}") needs ${r2(requiredH + 2 * PAGE_MARGIN_IN)}" of height but the ${orientation} page provides only ${r2(availH)}". Try a larger paper size or a different orientation.`}
               </Typography>
             </Box>
           )}
@@ -870,24 +884,38 @@ export const ExportPatternForPrintV3 = ({ viewData, hiddenLayers = new Set<strin
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2 }} />
 
-      {/* Include instructions toggle */}
-      {viewData?.instructions && (
+      <Stack>
+        {/* Include legend / instructions toggles */}
         <FormControlLabel
           control={
-            <Checkbox
-              checked={includeInstructions}
-              onChange={(e) => setIncludeInstructions(e.target.checked)}
-              size="small"
-            />
+            <Checkbox checked={includeLegend} onChange={(e) => setIncludeLegend(e.target.checked)} size="small" />
           }
           label={
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Append pattern instructions as a separate page
+              Include legend
             </Typography>
           }
-          sx={{ mb: 2, ml: 0 }}
+          sx={{ mb: 1, ml: 0 }}
         />
-      )}
+
+        {viewData?.instructions && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={includeInstructions}
+                onChange={(e) => setIncludeInstructions(e.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Append pattern instructions as a separate page
+              </Typography>
+            }
+            sx={{ mb: 2, ml: 0 }}
+          />
+        )}
+      </Stack>
 
       {/* Error */}
       <Collapse in={!!error}>

@@ -26,6 +26,7 @@ export interface TypeExportFormState {
   dpi: number;
   jpgBackground: JpgBackground;
   includeInstructions: boolean;
+  includeLegend: boolean;
 }
 
 // Pulled from your pattern DTO + a couple resolved fields the caller passes in.
@@ -89,16 +90,18 @@ export function useExportPattern() {
       const lineWidthLabel = `${ctx.lineWidth}${ctx.lineWidthUnit}`;
 
       const [legend, instructions] = await Promise.all([
-        buildLegend({
-          patternName: ctx.patternName,
-          authorLine: ctx.authorLine,
-          projectSizeLabel,
-          pieces: ctx.pieces,
-          lineWidthLabel,
-          designDate: ctx.designDate,
-          keys: ctx.patternKeys,
-          queryClient,
-        }),
+        form.includeLegend
+          ? buildLegend({
+              patternName: ctx.patternName,
+              authorLine: ctx.authorLine,
+              projectSizeLabel,
+              pieces: ctx.pieces,
+              lineWidthLabel,
+              designDate: ctx.designDate,
+              keys: ctx.patternKeys,
+              queryClient,
+            })
+          : Promise.resolve(null),
         form.includeInstructions && ctx.instructionsMarkdown
           ? renderInstructions(ctx.instructionsMarkdown)
           : Promise.resolve(null),

@@ -29,6 +29,7 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Typography,
+  Stack,
 } from '@mui/material';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -130,7 +131,10 @@ function normalizeSvgStrokes(svgString: string, patternWIn: number, lineWidthIn:
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>() }: TypeViewData & { hiddenLayers?: Set<string> }) => {
+export const ExportPatternForSVG = ({
+  viewData,
+  hiddenLayers = new Set<string>(),
+}: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
@@ -143,6 +147,7 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
   const [patternHeightInput, setPatternHeightInput] = useState(() => String(r3(baseHIn)));
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
+  const [includeLegend, setIncludeLegend] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [svgString, setSvgString] = useState('');
@@ -214,47 +219,51 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
       const projectSizeLabel = `${r2(patternWIn)}in × ${r2(patternHIn)}in`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
 
-      const legendOutput = await buildLegend({
-        patternName: viewData.name,
-        authorLine,
-        projectSizeLabel,
-        pieces: viewData.pieces,
-        lineWidthLabel,
-        designDate: viewData.design_date as Date | null,
-        keys: viewData.pattern_key_reference_list ?? [],
-        queryClient,
-      });
+      const legendOutput = includeLegend
+        ? await buildLegend({
+            patternName: viewData.name,
+            authorLine,
+            projectSizeLabel,
+            pieces: viewData.pieces,
+            lineWidthLabel,
+            designDate: viewData.design_date as Date | null,
+            keys: viewData.pattern_key_reference_list ?? [],
+            queryClient,
+          })
+        : null;
 
-      const resolvedLegendHIn = legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX);
+      const resolvedLegendHIn = legendOutput ? legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX) : 0;
 
       // Rasterize the legend SVG to a PNG so it renders consistently across all
       // SVG tools (Inkscape, Illustrator, Adobe XD, etc.), not just Chrome.
-      const legendPngDataUri = await new Promise<string>((resolve, reject) => {
-        const scale = 2; // 2× oversample for crisp output
-        const canvasW = Math.ceil(LEGEND_SVG_PX * scale);
-        const canvasH = Math.ceil(legendOutput.height * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = canvasW;
-        canvas.height = canvasH;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas 2D context unavailable'));
-          return;
-        }
-        const svgBlob = new Blob([legendOutput.svg], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvasW, canvasH);
-          URL.revokeObjectURL(svgUrl);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(svgUrl);
-          reject(new Error('Failed to rasterize legend SVG to PNG'));
-        };
-        img.src = svgUrl;
-      });
+      const legendPngDataUri = legendOutput
+        ? await new Promise<string>((resolve, reject) => {
+            const scale = 2; // 2× oversample for crisp output
+            const canvasW = Math.ceil(LEGEND_SVG_PX * scale);
+            const canvasH = Math.ceil(legendOutput.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasW;
+            canvas.height = canvasH;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Canvas 2D context unavailable'));
+              return;
+            }
+            const svgBlob = new Blob([legendOutput.svg], { type: 'image/svg+xml;charset=utf-8' });
+            const svgUrl = URL.createObjectURL(svgBlob);
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, canvasW, canvasH);
+              URL.revokeObjectURL(svgUrl);
+              resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(svgUrl);
+              reject(new Error('Failed to rasterize legend SVG to PNG'));
+            };
+            img.src = svgUrl;
+          })
+        : null;
 
       const baseSvg = applyHiddenLayers(svgString, hiddenLayers);
 
@@ -268,8 +277,8 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
       const gapUU = LEGEND_GAP_IN * userUnitsPerInch;
       const legendWUU = LEGEND_W_IN * userUnitsPerInch;
       const legendHUU = resolvedLegendHIn * userUnitsPerInch;
-      const effectiveVbW = Math.max(vb.vbW, legendWUU);
-      const effectiveWIn = Math.max(patternWIn, LEGEND_W_IN);
+      const effectiveVbW = legendOutput ? Math.max(vb.vbW, legendWUU) : vb.vbW;
+      const effectiveWIn = legendOutput ? Math.max(patternWIn, LEGEND_W_IN) : patternWIn;
 
       // Instructions: rendered as a rasterized PNG image block below the legend.
       // Width matches the pattern's full width; height scales from the canvas ratio.
@@ -282,14 +291,15 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
         const instrPhysHIn = patternWIn * (logicH / logicW);
         const instrWUU = vb.vbW; // span the full pattern width in user units
         const instrHUU = instrPhysHIn * userUnitsPerInch;
-        const instrY = vb.vbY + vb.vbH + gapUU + legendHUU + gapUU;
+        // instrY accounts for whether the legend is present
+        const instrY = vb.vbY + vb.vbH + gapUU + (legendOutput ? legendHUU + gapUU : 0);
         instrImageElement = `<image x="${vb.vbX}" y="${instrY}" width="${instrWUU}" height="${instrHUU.toFixed(3)}" href="${instrDataUri}"/>`;
         instrExtraVbH = gapUU + instrHUU;
         instrExtraHIn = LEGEND_GAP_IN + instrPhysHIn;
       }
 
-      const totalVbH = vb.vbH + gapUU + legendHUU + instrExtraVbH;
-      const totalHIn = patternHIn + LEGEND_GAP_IN + resolvedLegendHIn + instrExtraHIn;
+      const totalVbH = vb.vbH + (legendOutput ? gapUU + legendHUU : 0) + instrExtraVbH;
+      const totalHIn = patternHIn + (legendOutput ? LEGEND_GAP_IN + resolvedLegendHIn : 0) + instrExtraHIn;
 
       // Custom mode: normalize stroke widths to the target physical size
       let processedSvg = baseSvg;
@@ -304,10 +314,13 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
 
       const patternInner = extractSvgInner(processedSvg);
 
-      // Build composite: pattern inner content + legend PNG image + optional instructions PNG image.
+      // Build composite: pattern inner content + optional legend PNG image + optional instructions PNG image.
       // Both legend and instructions are embedded as flat <image> elements so the output renders
       // consistently in all SVG tools, not just Chrome (no nested <svg> coordinate systems needed).
-      const legendImageElement = `<image x="${vb.vbX}" y="${vb.vbY + vb.vbH + gapUU}" width="${legendWUU}" height="${legendHUU}" href="${legendPngDataUri}"/>`;
+      const legendImageElement =
+        legendOutput && legendPngDataUri
+          ? `<image x="${vb.vbX}" y="${vb.vbY + vb.vbH + gapUU}" width="${legendWUU}" height="${legendHUU}" href="${legendPngDataUri}"/>`
+          : '';
 
       const composite = [
         `<svg xmlns="http://www.w3.org/2000/svg"`,
@@ -345,6 +358,7 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
     patternHIn,
     lineWidthIn,
     legendHIn,
+    includeLegend,
     includeInstructions,
     queryClient,
   ]);
@@ -428,23 +442,37 @@ export const ExportPatternForSVG = ({ viewData, hiddenLayers = new Set<string>()
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2 }} />
 
-      {viewData?.instructions && (
+      <Stack>
         <FormControlLabel
           control={
-            <Checkbox
-              checked={includeInstructions}
-              onChange={(e) => setIncludeInstructions(e.target.checked)}
-              size="small"
-            />
+            <Checkbox checked={includeLegend} onChange={(e) => setIncludeLegend(e.target.checked)} size="small" />
           }
           label={
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Append pattern instructions
+              Include legend
             </Typography>
           }
-          sx={{ mb: 2, ml: 0 }}
+          sx={{ mb: 1, ml: 0 }}
         />
-      )}
+
+        {viewData?.instructions && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={includeInstructions}
+                onChange={(e) => setIncludeInstructions(e.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Append pattern instructions
+              </Typography>
+            }
+            sx={{ mb: 2, ml: 0 }}
+          />
+        )}
+      </Stack>
 
       <Collapse in={!!error}>
         <Alert severity="error" sx={{ mb: 1.5, fontSize: '0.82rem' }}>
