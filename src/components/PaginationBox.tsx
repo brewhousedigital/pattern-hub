@@ -30,7 +30,22 @@ export const PaginationBox = (props: PaginationBoxProps) => {
         count={props.data?.totalPages || 0}
         variant="outlined"
         color="primary"
-        sx={{ mx: 'auto' }}
+        sx={{
+          mx: 'auto',
+          ...(props.isDark ? {
+            '& .MuiPaginationItem-root': {
+              color: 'rgba(255,255,255,0.75)',
+              borderColor: 'rgba(255,255,255,0.15)',
+            },
+            '& .MuiPaginationItem-root.Mui-selected': {
+              color: 'white',
+              borderColor: 'primary.main',
+            },
+            '& .MuiPaginationItem-root.Mui-disabled': {
+              color: 'rgba(255,255,255,0.25)',
+            },
+          } : {}),
+        }}
         page={props.value}
         onChange={handleChangePage}
       />
