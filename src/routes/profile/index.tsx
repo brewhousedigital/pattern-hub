@@ -279,7 +279,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
       return `url(${bgImageUrl}) ${bgImagePosition} / ${bgSize} ${bgRepeat} ${attachment}`;
     }
     return undefined;
-  }, [bgType, bgColor, bgGradEnd, bgAngle, bgPattern, bgImageUrl, bgImageSize, bgImagePosition, bgImageFixed, siteColor]);
+  }, [
+    bgType,
+    bgColor,
+    bgGradEnd,
+    bgAngle,
+    bgPattern,
+    bgImageUrl,
+    bgImageSize,
+    bgImagePosition,
+    bgImageFixed,
+    siteColor,
+  ]);
 
   useEffect(() => {
     if (!computedBg) return;
@@ -396,21 +407,25 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const effectiveMobileUrl = mobileHeaderUrl ?? headerUrl;
   const hasBothHeaders = !!(mobileHeaderUrl && headerUrl);
 
-  const heroSxOverride = effectiveMobileUrl || effectiveDesktopUrl
-    ? {
-        backgroundImage: hasBothHeaders
-          ? ({ xs: `${gradientOverlay}url(${effectiveMobileUrl})`, md: `${gradientOverlay}url(${effectiveDesktopUrl})` } as Record<string, string>)
-          : `${gradientOverlay}url(${effectiveMobileUrl ?? effectiveDesktopUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        '&::before': { display: 'none' },
-        '&::after': { display: 'none' },
-      }
-    : {
-        backgroundColor: siteColor,
-        '&::before': { background: alpha(siteColor, 0.5) },
-        '&::after': { background: alpha(siteColorSecondary, 0.35) },
-      };
+  const heroSxOverride =
+    effectiveMobileUrl || effectiveDesktopUrl
+      ? {
+          backgroundImage: hasBothHeaders
+            ? ({
+                xs: `${gradientOverlay}url(${effectiveMobileUrl})`,
+                md: `${gradientOverlay}url(${effectiveDesktopUrl})`,
+              } as Record<string, string>)
+            : `${gradientOverlay}url(${effectiveMobileUrl ?? effectiveDesktopUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          '&::before': { display: 'none' },
+          '&::after': { display: 'none' },
+        }
+      : {
+          backgroundColor: siteColor,
+          '&::before': { background: alpha(siteColor, 0.5) },
+          '&::after': { background: alpha(siteColorSecondary, 0.35) },
+        };
 
   const isDark = thisAuthData?.profile_dark_mode ?? false;
 
@@ -623,14 +638,18 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               {thisAuthData.about ? (
                 <AboutBody>
                   <MarkdownWrapper
-                    sx={isDark ? {
-                      color: 'rgba(255,255,255,0.75)',
-                      '& h1, & h2, & h3, & h4, & h5, & h6': { color: 'rgba(255,255,255,0.92)' },
-                      '& td': { color: 'rgba(255,255,255,0.75)' },
-                      '& th': { color: 'rgba(255,255,255,0.92)' },
-                      '& del': { color: 'rgba(255,255,255,0.38)' },
-                      '& dt': { color: 'rgba(255,255,255,0.92)' },
-                    } : undefined}
+                    sx={
+                      isDark
+                        ? {
+                            color: 'rgba(255,255,255,0.75)',
+                            '& h1, & h2, & h3, & h4, & h5, & h6': { color: 'rgba(255,255,255,0.92)' },
+                            '& td': { color: 'rgba(255,255,255,0.75)' },
+                            '& th': { color: 'rgba(255,255,255,0.92)' },
+                            '& del': { color: 'rgba(255,255,255,0.38)' },
+                            '& dt': { color: 'rgba(255,255,255,0.92)' },
+                          }
+                        : undefined
+                    }
                   >
                     {thisAuthData.about}
                   </MarkdownWrapper>
@@ -665,7 +684,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                         label={tag}
                         size="small"
                         variant="outlined"
-                        sx={{ borderRadius: 2, fontWeight: 500, borderColor: siteColor, color: siteColor }}
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: 500,
+                          borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'divider',
+                          color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
+                        }}
                       />
                     );
                   })}
