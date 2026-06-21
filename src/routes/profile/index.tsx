@@ -22,6 +22,7 @@ import {
   generateUserAvatarUrl,
   generateUserHeaderUrl,
   generateUserBgImageUrl,
+  generateUserMobileHeaderUrl,
 } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetProfileData } from '@/functions/database/profile-data';
 import {
@@ -227,6 +228,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
   const avatarUrl = generateUserAvatarUrl(thisAuthData ?? undefined);
   const headerUrl = generateUserHeaderUrl(thisAuthData ?? undefined);
+  const mobileHeaderUrl = generateUserMobileHeaderUrl(thisAuthData ?? undefined);
 
   // ─── Customization derived values ─────────────────────────────────────────
 
@@ -386,9 +388,19 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const shouldShowAbout = !!(thisAuthData.about || thisAuthData.interests || !isPublicView);
 
   // Hero background: use site_color if no header image
-  const heroSxOverride = headerUrl
+  const showGradient = thisAuthData?.header_gradient !== false;
+  const gradientOverlay = showGradient
+    ? 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%), '
+    : '';
+  const effectiveDesktopUrl = headerUrl;
+  const effectiveMobileUrl = mobileHeaderUrl ?? headerUrl;
+  const hasBothHeaders = !!(mobileHeaderUrl && headerUrl);
+
+  const heroSxOverride = effectiveMobileUrl || effectiveDesktopUrl
     ? {
-        backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%), url(${headerUrl})`,
+        backgroundImage: hasBothHeaders
+          ? ({ xs: `${gradientOverlay}url(${effectiveMobileUrl})`, md: `${gradientOverlay}url(${effectiveDesktopUrl})` } as Record<string, string>)
+          : `${gradientOverlay}url(${effectiveMobileUrl ?? effectiveDesktopUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         '&::before': { display: 'none' },

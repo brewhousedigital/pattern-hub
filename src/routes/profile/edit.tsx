@@ -13,6 +13,7 @@ import {
   generateUserAvatarUrl,
   generateUserHeaderUrl,
   generateUserBgImageUrl,
+  generateUserMobileHeaderUrl,
 } from '@/functions/utilities/generate-pb-image';
 import { sanitizeHex, extractYouTubeId } from '@/constants/profile-customization';
 import {
@@ -86,6 +87,7 @@ function RouteComponent() {
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
+  const mobileHeaderInputRef = useRef<HTMLInputElement>(null);
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProfileFormData>({
@@ -119,12 +121,16 @@ function RouteComponent() {
   const [pendingHeaderPreview, setPendingHeaderPreview] = useState<string | null>(null);
   const [headerCleared, setHeaderCleared] = useState(false);
 
+  const [pendingMobileHeader, setPendingMobileHeader] = useState<File | null>(null);
+  const [pendingMobileHeaderPreview, setPendingMobileHeaderPreview] = useState<string | null>(null);
+  const [mobileHeaderCleared, setMobileHeaderCleared] = useState(false);
+
   const [pendingBgImage, setPendingBgImage] = useState<File | null>(null);
   const [pendingBgImagePreview, setPendingBgImagePreview] = useState<string | null>(null);
   const [bgImageCleared, setBgImageCleared] = useState(false);
 
   const [imageError, setImageError] = useState('');
-  const [processingImage, setProcessingImage] = useState<'avatar' | 'header' | 'bgimage' | null>(null);
+  const [processingImage, setProcessingImage] = useState<'avatar' | 'header' | 'mobileheader' | 'bgimage' | null>(null);
 
   useEffect(() => {
     if (!authData) return;
@@ -163,6 +169,7 @@ function RouteComponent() {
       tab_show_difficulty: authData.tab_show_difficulty !== false,
       tab_show_gallery: authData.tab_show_gallery !== false,
       tab_show_collections: authData.tab_show_collections !== false,
+      header_gradient: authData.header_gradient ?? true,
     });
     setLoading(false);
   }, [authData]);
@@ -171,13 +178,14 @@ function RouteComponent() {
     return () => {
       if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
       if (pendingHeaderPreview) URL.revokeObjectURL(pendingHeaderPreview);
+      if (pendingMobileHeaderPreview) URL.revokeObjectURL(pendingMobileHeaderPreview);
       if (pendingBgImagePreview) URL.revokeObjectURL(pendingBgImagePreview);
     };
-  }, [pendingAvatarPreview, pendingHeaderPreview, pendingBgImagePreview]);
+  }, [pendingAvatarPreview, pendingHeaderPreview, pendingMobileHeaderPreview, pendingBgImagePreview]);
 
   // ─── Image handlers ──────────────────────────────────────────────────────
 
-  async function handleImageSelect(file: File, type: 'avatar' | 'header' | 'bgimage') {
+  async function handleImageSelect(file: File, type: 'avatar' | 'header' | 'mobileheader' | 'bgimage') {
     setImageError('');
     if (!file.type.startsWith('image/')) {
       setImageError('Only image files are supported.');
@@ -191,7 +199,13 @@ function RouteComponent() {
     setProcessingImage(type);
     try {
       const [maxW, maxH, quality] =
-        type === 'avatar' ? [400, 400, 0.87] : type === 'header' ? [1920, 500, 0.82] : [1920, 1080, 0.82];
+        type === 'avatar'
+          ? [400, 400, 0.87]
+          : type === 'header'
+            ? [1920, 500, 0.82]
+            : type === 'mobileheader'
+              ? [900, 500, 0.82]
+              : [1920, 1080, 0.82];
       const blob = await resizeAndConvertToWebP(file, maxW, maxH, quality);
       const processed = new File([blob], `${type}.webp`, { type: 'image/webp' });
       const preview = URL.createObjectURL(processed);
@@ -205,6 +219,11 @@ function RouteComponent() {
         setPendingHeader(processed);
         setPendingHeaderPreview(preview);
         setHeaderCleared(false);
+      } else if (type === 'mobileheader') {
+        if (pendingMobileHeaderPreview) URL.revokeObjectURL(pendingMobileHeaderPreview);
+        setPendingMobileHeader(processed);
+        setPendingMobileHeaderPreview(preview);
+        setMobileHeaderCleared(false);
       } else {
         if (pendingBgImagePreview) URL.revokeObjectURL(pendingBgImagePreview);
         setPendingBgImage(processed);
@@ -218,7 +237,7 @@ function RouteComponent() {
     }
   }
 
-  function clearImage(type: 'avatar' | 'header' | 'bgimage') {
+  function clearImage(type: 'avatar' | 'header' | 'mobileheader' | 'bgimage') {
     if (type === 'avatar') {
       if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
       setPendingAvatar(null);
@@ -231,6 +250,12 @@ function RouteComponent() {
       setPendingHeaderPreview(null);
       setHeaderCleared(true);
       if (headerInputRef.current) headerInputRef.current.value = '';
+    } else if (type === 'mobileheader') {
+      if (pendingMobileHeaderPreview) URL.revokeObjectURL(pendingMobileHeaderPreview);
+      setPendingMobileHeader(null);
+      setPendingMobileHeaderPreview(null);
+      setMobileHeaderCleared(true);
+      if (mobileHeaderInputRef.current) mobileHeaderInputRef.current.value = '';
     } else {
       if (pendingBgImagePreview) URL.revokeObjectURL(pendingBgImagePreview);
       setPendingBgImage(null);
@@ -280,6 +305,9 @@ function RouteComponent() {
     if (pendingHeader) fd.append('header_image', pendingHeader, 'header_image.webp');
     else if (headerCleared) fd.append('header_image', '');
 
+    if (pendingMobileHeader) fd.append('mobile_header_image', pendingMobileHeader, 'mobile_header_image.webp');
+    else if (mobileHeaderCleared) fd.append('mobile_header_image', '');
+
     if (pendingBgImage) fd.append('profile_bg_image', pendingBgImage, 'bg_image.webp');
     else if (bgImageCleared) fd.append('profile_bg_image', '');
 
@@ -317,6 +345,7 @@ function RouteComponent() {
     fd.append('tab_show_difficulty', String(customization.tab_show_difficulty));
     fd.append('tab_show_gallery', String(customization.tab_show_gallery));
     fd.append('tab_show_collections', String(customization.tab_show_collections));
+    fd.append('header_gradient', String(customization.header_gradient));
 
     try {
       await updateUser.mutateAsync({ id: authData?.id ?? '', formData: fd });
@@ -339,10 +368,12 @@ function RouteComponent() {
 
   const existingAvatarUrl = generateUserAvatarUrl(authData ?? undefined);
   const existingHeaderUrl = generateUserHeaderUrl(authData ?? undefined);
+  const existingMobileHeaderUrl = generateUserMobileHeaderUrl(authData ?? undefined);
   const existingBgImageUrl = generateUserBgImageUrl(authData ?? undefined);
 
   const activeAvatarSrc = avatarCleared ? null : (pendingAvatarPreview ?? existingAvatarUrl);
   const activeHeaderSrc = headerCleared ? null : (pendingHeaderPreview ?? existingHeaderUrl);
+  const activeMobileHeaderSrc = mobileHeaderCleared ? null : (pendingMobileHeaderPreview ?? existingMobileHeaderUrl);
   const activeBgImageSrc = bgImageCleared ? null : (pendingBgImagePreview ?? existingBgImageUrl);
 
   const displayName = (authData?.name?.startsWith('NewUser_') ? '' : authData?.name) || '';
@@ -517,8 +548,82 @@ function RouteComponent() {
                       </Button>
                     )}
                     <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                      Wide landscape image · max 10 MB · resized to 1920×500 px
+                      Wide landscape · max 10 MB · resized to 1920×500 px
                     </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <input
+                      ref={mobileHeaderInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void handleImageSelect(f, 'mobileheader');
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
+                        Mobile Header Image
+                      </Typography>
+                    </Box>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      onClick={() => mobileHeaderInputRef.current?.click()}
+                      disabled={processingImage === 'mobileheader'}
+                      startIcon={
+                        processingImage === 'mobileheader' ? (
+                          <CircularProgress size={14} color="inherit" />
+                        ) : (
+                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                        )
+                      }
+                      sx={{ borderStyle: 'dashed' }}
+                    >
+                      {processingImage === 'mobileheader' ? 'Processing…' : activeMobileHeaderSrc ? 'Replace' : 'Upload'}
+                    </Button>
+                    {activeMobileHeaderSrc && !mobileHeaderCleared && (
+                      <Button
+                        fullWidth
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
+                        onClick={() => clearImage('mobileheader')}
+                        sx={{ mt: 0.75 }}
+                      >
+                        Remove image
+                      </Button>
+                    )}
+                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+                      Shown on small screens · defaults to header image · max 10 MB · resized to 900×500 px
+                    </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={customization.header_gradient}
+                          onChange={(e) => setCust('header_gradient', e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+                            Show gradient overlay on header image
+                          </Typography>
+                          <Typography variant="caption" color="text.disabled">
+                            Adds a dark fade at the bottom of the header to keep text readable
+                          </Typography>
+                        </Box>
+                      }
+                      sx={{ m: 0, alignItems: 'flex-start', gap: 1 }}
+                    />
                   </Grid>
                 </Grid>
               </SectionCard>

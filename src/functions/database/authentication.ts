@@ -130,6 +130,8 @@ export type TypeAuthData = {
   is_artist?: boolean;
   avatar?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
   header_image?: string; // PocketBase filename,  use generateUserFileUrl() to build the URL
+  mobile_header_image?: string; // PocketBase filename, mobile-specific header (fallback to header_image)
+  header_gradient?: boolean; // show dark gradient overlay on header image (default: true)
   level?: TypeLevelsAdmin[];
   // Base accent colors (used for hero and accent theming)
   site_color?: string;

@@ -248,7 +248,7 @@ const ColorPicker = ({ label, value, fallback, onChange }: ColorPickerProps) => 
 
 type ColorsSectionProps = SectionCustProps & {
   bgImageInputRef: React.RefObject<HTMLInputElement | null>;
-  processingImage: 'avatar' | 'header' | 'bgimage' | null;
+  processingImage: 'avatar' | 'header' | 'bgimage' | 'mobileheader' | null;
   activeBgImageSrc: string | null;
   bgImageCleared: boolean;
   onImageSelect: (f: File, type: 'bgimage') => void;

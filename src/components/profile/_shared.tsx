@@ -35,6 +35,7 @@ export interface CustomizationForm {
   tab_show_difficulty: boolean;
   tab_show_gallery: boolean;
   tab_show_collections: boolean;
+  header_gradient: boolean;
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
@@ -66,6 +67,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   tab_show_difficulty: true,
   tab_show_gallery: true,
   tab_show_collections: true,
+  header_gradient: true,
 };
 
 export type SetCust = <K extends keyof CustomizationForm>(key: K, value: CustomizationForm[K]) => void;

@@ -41,3 +41,8 @@ export const generateUserBgImageUrl = (user?: TypeAuthData): string | null => {
   if (!user?.profile_bg_image || !user.collectionId || !user.id) return null;
   return `${pocketbaseDomain}/api/files/${user.collectionId}/${user.id}/${user.profile_bg_image}`;
 };
+
+export const generateUserMobileHeaderUrl = (user?: TypeAuthData): string | null => {
+  if (!user?.mobile_header_image || !user.collectionId || !user.id) return null;
+  return `${pocketbaseDomain}/api/files/${user.collectionId}/${user.id}/${user.mobile_header_image}`;
+};
