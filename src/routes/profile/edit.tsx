@@ -449,7 +449,7 @@ function RouteComponent() {
                   </Box>
                 </HeroPreview>
 
-                <Grid container spacing={2} sx={{ mt: 2 }}>
+                <Grid container spacing={6} sx={{ mt: 2 }}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <input
                       ref={avatarInputRef}

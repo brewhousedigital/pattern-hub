@@ -17,7 +17,8 @@ export const VisibilitySection = ({ customization, setCust, onReset }: SectionCu
     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
       Toggle which activity tabs appear on your public profile.
     </Typography>
-    <Grid container spacing={1.5}>
+
+    <Grid container spacing={3}>
       {VISIBILITY_FIELDS.map(({ key, label }) => (
         <Grid key={key} size={{ xs: 12, sm: 6 }}>
           <FormControlLabel
@@ -25,7 +26,7 @@ export const VisibilitySection = ({ customization, setCust, onReset }: SectionCu
               <Switch checked={customization[key]} onChange={(e) => setCust(key, e.target.checked)} size="small" />
             }
             label={<Typography variant="body2">{label}</Typography>}
-            sx={{ m: 0, width: '100%', justifyContent: 'space-between', flexDirection: 'row-reverse' }}
+            sx={{ m: 0, width: '100%' }}
           />
         </Grid>
       ))}
