@@ -160,6 +160,7 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
           const excerpt = stripMarkdown(page.content).slice(0, 150);
           const description =
             excerpt || `Read ${page.title} in the ${categoryName} section of the ${SITE_NAME} wiki.`;
+          const ogImage = `${SITE_URL}/api/og-image?type=wiki&title=${encodeURIComponent(page.title)}&category=${encodeURIComponent(categoryName)}`;
           return {
             ...base,
             title: `${page.title} - ${SITE_NAME}`,
@@ -167,6 +168,8 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
             'og:title': `${page.title} - ${SITE_NAME}`,
             'og:description': description,
             'og:url': `${SITE_URL}${pathname}`,
+            'og:image': ogImage,
+            'twitter:image': ogImage,
           };
         }
       }
@@ -232,6 +235,7 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
           const description = set.description
             ? stripMarkdown(set.description).slice(0, 150)
             : 'A curated collection of stained glass patterns on Pattern Archive.';
+          const ogImage = `${SITE_URL}/api/og-image?type=set&title=${encodeURIComponent(set.title)}`;
           return {
             ...base,
             title: `${set.title} - ${SITE_NAME}`,
@@ -239,6 +243,8 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
             'og:title': `${set.title} - ${SITE_NAME}`,
             'og:description': description,
             'og:url': `${SITE_URL}${pathname}`,
+            'og:image': ogImage,
+            'twitter:image': ogImage,
           };
         }
       }
@@ -370,8 +376,8 @@ export default async function handler(request: Request, context: Context): Promi
 
   const { pathname } = new URL(request.url);
 
-  // Only handle HTML page routes, not assets or API calls
-  if (pathname.match(/\.(js|css|png|jpg|svg|ico|json|woff2?)$/)) {
+  // Only handle HTML page routes, not assets, API calls, or the OG image generator itself
+  if (pathname.startsWith('/api/') || pathname.match(/\.(js|css|png|jpg|svg|ico|json|woff2?)$/)) {
     return context.next();
   }
 
