@@ -881,7 +881,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isDark={isDark}
                 />
                 {dataFav && dataFav.totalItems > 0 && (
-                  <PaginationBox data={dataFav} value={favoritePage} setter={setFavoritePage} />
+                  <PaginationBox data={dataFav} value={favoritePage} setter={setFavoritePage} isDark={isDark} />
                 )}
               </>
             )}
@@ -900,7 +900,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isDark={isDark}
                 />
                 {dataDone && dataDone.totalItems > 0 && (
-                  <PaginationBox data={dataDone} value={donePage} setter={setDonePage} />
+                  <PaginationBox data={dataDone} value={donePage} setter={setDonePage} isDark={isDark} />
                 )}
               </>
             )}
@@ -919,7 +919,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isDark={isDark}
                 />
                 {dataRatings && dataRatings.totalItems > 0 && (
-                  <PaginationBox data={dataRatings} value={ratingsPage} setter={setRatingsPage} />
+                  <PaginationBox data={dataRatings} value={ratingsPage} setter={setRatingsPage} isDark={isDark} />
                 )}
               </>
             )}
@@ -938,7 +938,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isDark={isDark}
                 />
                 {dataDifficulty && dataDifficulty.totalItems > 0 && (
-                  <PaginationBox data={dataDifficulty} value={difficultyPage} setter={setDifficultyPage} />
+                  <PaginationBox data={dataDifficulty} value={difficultyPage} setter={setDifficultyPage} isDark={isDark} />
                 )}
               </>
             )}
@@ -969,7 +969,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 ) : (
                   <>
                     <GalleryGrid photos={galleryItems} onPhotoClick={setLightboxPhoto} />
-                    <PaginationBox data={dataGallery} value={galleryPage} setter={setGalleryPage} />
+                    <PaginationBox data={dataGallery} value={galleryPage} setter={setGalleryPage} isDark={isDark} />
                   </>
                 )}
               </Box>
@@ -1018,7 +1018,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                       ))}
                     </Grid>
                     {dataCols.totalItems > 0 && (
-                      <PaginationBox data={dataCols} value={collectionsPage} setter={setCollectionsPage} />
+                      <PaginationBox data={dataCols} value={collectionsPage} setter={setCollectionsPage} isDark={isDark} />
                     )}
                   </>
                 )}

@@ -6,6 +6,7 @@ type PaginationBoxProps = {
   data?: TypePaginationDatabaseResponse<any>;
   value: number;
   setter: (value: number) => void;
+  isDark?: boolean;
 };
 
 export const PaginationBox = (props: PaginationBoxProps) => {
@@ -16,7 +17,7 @@ export const PaginationBox = (props: PaginationBoxProps) => {
   return (
     <Stack
       sx={{
-        backgroundColor: '#fff',
+        backgroundColor: props.isDark ? '#242424' : '#fff',
         alignItems: 'center',
         justifyContent: 'center',
         px: 2,
