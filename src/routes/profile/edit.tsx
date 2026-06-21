@@ -501,6 +501,8 @@ function RouteComponent() {
                     </Typography>
                   </Grid>
 
+                  <Grid size={{ xs: 12, sm: 6 }}></Grid>
+
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <input
                       ref={headerInputRef}
@@ -584,7 +586,11 @@ function RouteComponent() {
                       }
                       sx={{ borderStyle: 'dashed' }}
                     >
-                      {processingImage === 'mobileheader' ? 'Processing…' : activeMobileHeaderSrc ? 'Replace' : 'Upload'}
+                      {processingImage === 'mobileheader'
+                        ? 'Processing…'
+                        : activeMobileHeaderSrc
+                          ? 'Replace'
+                          : 'Upload'}
                     </Button>
                     {activeMobileHeaderSrc && !mobileHeaderCleared && (
                       <Button
