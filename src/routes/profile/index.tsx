@@ -428,6 +428,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         };
 
   const isDark = thisAuthData?.profile_dark_mode ?? false;
+  const cardBg = thisAuthData?.profile_card_bg ?? '';
 
   const pageRootSx: Record<string, unknown> = {
     ...(fontStack ? { fontFamily: fontStack, '& *': { fontFamily: 'inherit !important' } } : {}),
@@ -739,6 +740,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 isPending={isPending}
                 isError={isError}
                 displayName={displayName}
+                cardBg={cardBg}
+                isDark={isDark}
               />
 
               {(artistPatterns?.totalItems ?? 0) > 0 && (
@@ -874,6 +877,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isError={isError}
                   emptyMessage="No favorited patterns yet."
                   emptyIcon={<FavoriteBorderOutlinedIcon />}
+                  cardBg={cardBg}
+                  isDark={isDark}
                 />
                 {dataFav && dataFav.totalItems > 0 && (
                   <PaginationBox data={dataFav} value={favoritePage} setter={setFavoritePage} />
@@ -891,6 +896,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   emptyMessage="No completed patterns yet."
                   emptyIcon={<TaskAltOutlinedIcon />}
                   showCompleted
+                  cardBg={cardBg}
+                  isDark={isDark}
                 />
                 {dataDone && dataDone.totalItems > 0 && (
                   <PaginationBox data={dataDone} value={donePage} setter={setDonePage} />
@@ -908,6 +915,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   emptyMessage="No rated patterns yet."
                   emptyIcon={<StarOutlinedIcon />}
                   showRating
+                  cardBg={cardBg}
+                  isDark={isDark}
                 />
                 {dataRatings && dataRatings.totalItems > 0 && (
                   <PaginationBox data={dataRatings} value={ratingsPage} setter={setRatingsPage} />
@@ -925,6 +934,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   emptyMessage="No difficulty votes yet."
                   emptyIcon={<SpeedRoundedIcon />}
                   showDifficulty
+                  cardBg={cardBg}
+                  isDark={isDark}
                 />
                 {dataDifficulty && dataDifficulty.totalItems > 0 && (
                   <PaginationBox data={dataDifficulty} value={difficultyPage} setter={setDifficultyPage} />
@@ -1000,6 +1011,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                             isOwner={!isPublicView}
                             onDeleted={() => void refetch()}
                             onEdited={() => void refetch()}
+                            cardBg={cardBg}
+                            isDark={isDark}
                           />
                         </Grid>
                       ))}
@@ -1033,7 +1046,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                         const hasUpdate = new Date(col.updated) > new Date(followRecord.last_checked_updated);
                         return (
                           <Grid key={followRecord.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                            <CollectionCard collection={col} isOwner={false} hasUpdate={hasUpdate} />
+                            <CollectionCard collection={col} isOwner={false} hasUpdate={hasUpdate} cardBg={cardBg} isDark={isDark} />
                           </Grid>
                         );
                       })}
@@ -1089,9 +1102,11 @@ type ArtistPatternGridProps = {
   isPending: boolean;
   isError: boolean;
   displayName: string;
+  cardBg?: string;
+  isDark?: boolean;
 };
 
-const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: ArtistPatternGridProps) => {
+const ArtistPatternGrid = ({ patterns, isPending, isError, displayName, cardBg, isDark }: ArtistPatternGridProps) => {
   if (isPending) {
     return (
       <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -1116,6 +1131,14 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
     return <EmptyState icon={<BrushRoundedIcon />} message={`${displayName} hasn't contributed any patterns yet.`} />;
   }
 
+  const cardSx = {
+    backgroundColor: cardBg || (isDark ? '#242424' : undefined),
+    ...(isDark ? {
+      borderColor: 'rgba(255,255,255,0.08)',
+      '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+    } : {}),
+  };
+
   return (
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {patterns.map((pattern) => (
@@ -1125,7 +1148,7 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName }: Artist
             search={{ patternId: pattern.id, authors: [displayName] }}
             style={{ textDecoration: 'none', display: 'block' }}
           >
-            <PatternCard>
+            <PatternCard sx={cardSx}>
               <Box sx={{ p: 1.5, pb: 0 }}>
                 <Box
                   component="img"
@@ -1164,6 +1187,8 @@ type ActivityPatternGridProps = {
   showRating?: boolean;
   showCompleted?: boolean;
   showDifficulty?: boolean;
+  cardBg?: string;
+  isDark?: boolean;
 };
 
 const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
@@ -1176,6 +1201,14 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
   if (props.isError) return <Alert severity="error">Unable to load your list 😔</Alert>;
   if (!props.patterns?.length) return <EmptyState icon={props.emptyIcon} message={props.emptyMessage} />;
 
+  const cardSx = {
+    backgroundColor: props.cardBg || (props.isDark ? '#242424' : undefined),
+    ...(props.isDark ? {
+      borderColor: 'rgba(255,255,255,0.08)',
+      '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+    } : {}),
+  };
+
   return (
     <Grid container spacing={2} sx={{ mb: 2.5 }}>
       {props.patterns.map((item) => (
@@ -1185,7 +1218,7 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
             search={{ id: [item.pattern_id], patternId: item.pattern_id }}
             style={{ textDecoration: 'none', display: 'block' }}
           >
-            <PatternCard>
+            <PatternCard sx={cardSx}>
               <Box sx={{ p: 2, pb: 0 }}>
                 <Box
                   component="img"

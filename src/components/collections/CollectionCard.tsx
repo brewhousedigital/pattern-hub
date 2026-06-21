@@ -48,11 +48,13 @@ type CollectionCardProps = {
   onDeleted?: () => void;
   onEdited?: () => void;
   hasUpdate?: boolean;
+  isDark?: boolean;
+  cardBg?: string;
 };
 
 type PatternEntry = { id: string; name: string };
 
-export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUpdate }: CollectionCardProps) => {
+export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUpdate, isDark, cardBg }: CollectionCardProps) => {
   const [deleteAnchor, setDeleteAnchor] = React.useState<HTMLButtonElement | null>(null);
   const [editOpen, setEditOpen] = React.useState(false);
   const [editName, setEditName] = React.useState('');
@@ -137,6 +139,14 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
           height: '100%',
           transition: 'box-shadow 0.15s',
           '&:hover': { boxShadow: 2 },
+          ...(isDark ? {
+            borderColor: 'rgba(255,255,255,0.08)',
+            backgroundColor: cardBg || '#242424',
+            '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+            '& .MuiDivider-root': { borderColor: 'rgba(255,255,255,0.08)' },
+            '& .MuiIconButton-root': { color: 'rgba(255,255,255,0.38)' },
+            '& .MuiButton-root': { color: 'rgba(255,255,255,0.75)' },
+          } : cardBg ? { backgroundColor: cardBg } : {}),
         }}
       >
         {/* Card header */}

@@ -311,6 +311,17 @@ export const ColorsSection = ({
           onChange={(v) => setCust('site_color_secondary', v)}
         />
       </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <ColorPicker
+          label="Pattern Card Background"
+          value={customization.profile_card_bg}
+          fallback="#ffffff"
+          onChange={(v) => setCust('profile_card_bg', v)}
+        />
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+          Applied to pattern cards in the Contributed & Activity sections
+        </Typography>
+      </Grid>
     </Grid>
 
     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
