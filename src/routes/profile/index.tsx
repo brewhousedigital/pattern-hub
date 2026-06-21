@@ -1082,6 +1082,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           setLightboxPhoto(null);
         }}
         isOwner={!isPublicView}
+        isDark={isDark}
       />
       <GalleryUploadDialog
         open={uploadOpen}
@@ -1343,6 +1344,7 @@ type GalleryLightboxProps = {
   onDeleteSuccess: () => void;
   onEditSuccess: () => void;
   isOwner: boolean;
+  isDark?: boolean;
 };
 
 const GalleryLightbox = ({
@@ -1353,6 +1355,7 @@ const GalleryLightbox = ({
   onDeleteSuccess,
   onEditSuccess,
   isOwner,
+  isDark,
 }: GalleryLightboxProps) => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -1408,7 +1411,18 @@ const GalleryLightbox = ({
   const patternExpand = photo?.expand?.pattern_id;
 
   return (
-    <Dialog open={!!photo} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 6 } }}>
+    <Dialog
+      open={!!photo}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          borderRadius: 6,
+          ...(isDark ? { backgroundColor: '#1e1e1e' } : {}),
+        },
+      }}
+    >
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400 }}>
         <Box
           sx={{
@@ -1461,12 +1475,23 @@ const GalleryLightbox = ({
           )}
         </Box>
 
-        <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minWidth: 0 }}>
+        <Box
+          sx={{
+            flex: 1,
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            overflowY: 'auto',
+            minWidth: 0,
+            ...(isDark ? { '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' } } : {}),
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
-            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0 }}>
+            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0, ...(isDark ? { color: 'rgba(255,255,255,0.6)' } : {}) }}>
               <CloseRoundedIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -1492,10 +1517,10 @@ const GalleryLightbox = ({
                     gap: 1.5,
                     p: 1,
                     border: '1px solid',
-                    borderColor: 'divider',
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider',
                     borderRadius: 2,
                     transition: 'border-color 0.15s, background-color 0.15s',
-                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'action.hover' },
                   }}
                 >
                   <Box
