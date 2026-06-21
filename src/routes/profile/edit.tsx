@@ -406,7 +406,7 @@ function RouteComponent() {
                 <HeroPreview
                   sx={{
                     backgroundImage: activeHeaderSrc
-                      ? `linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), url(${activeHeaderSrc})`
+                      ? `${customization.header_gradient ? 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), ' : ''}url(${activeHeaderSrc})`
                       : undefined,
                   }}
                 >
