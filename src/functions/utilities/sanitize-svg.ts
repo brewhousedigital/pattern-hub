@@ -72,9 +72,13 @@ export const sanitizeSvg = (code: string) => {
 //      pulling in attacker-controlled markup.
 //   2. External `clip-path`/`mask`/`filter`/`fill` `url(https://…)` → same remote fetch.
 //   3. `<image href="https://…">` → displays arbitrary remote content inside the pattern.
-//   4. Recursive / self-referencing `<use>` chains → exponential node expansion
-//      ("A Billion Laughs") → tab freeze / DoS, including in the admin's own browser
-//      during the upload-time getBBox() measurement (which injects via innerHTML).
+//   4. Recursive / self-referencing `<use>` chains AND acyclic fan-out ("A Billion
+//      Laughs": each level references many copies of a distinct lower group, so node
+//      count explodes without any id repeating) → tab freeze / DoS. Both are detected
+//      below by computing the theoretical expanded node count (memoized DFS over the
+//      reference graph). The upload-time getBBox() measurement additionally renders in
+//      an isolated, CSP-locked, script-disabled iframe (see computeBBox) so nothing can
+//      fetch or execute there.
 //   5. `javascript:` URIs / `on*` handlers / `<script>` / `<foreignObject>` → neutralized
 //      by DOMPurify, but their presence means the file was crafted, not exported by a tool.
 //
@@ -241,38 +245,78 @@ export function analyzeSvgThreats(svgText: string): SvgThreat[] {
     }
   }
 
-  // Recursive <use> chains → exponential expansion (DoS).
-  const uses = all.filter((el) => el.tagName.toLowerCase() === 'use');
-  for (const u of uses) {
-    const start = (u.getAttribute('href') || u.getAttribute('xlink:href') || '').trim();
-    if (!start.startsWith('#')) continue;
-    const seen = new Set<string>();
-    let cursor: Element | undefined = byId.get(start.slice(1));
-    let depth = 0;
-    let cyclic = false;
-    while (cursor && depth < 200) {
-      const inner = cursor.tagName.toLowerCase() === 'use' ? cursor : cursor.querySelector('use');
-      const innerHref = (inner?.getAttribute('href') || inner?.getAttribute('xlink:href') || '').trim();
-      if (!innerHref.startsWith('#')) break;
-      const targetId = innerHref.slice(1);
-      if (seen.has(targetId)) {
-        cyclic = true;
-        break;
+  // <use> expansion cost — catches BOTH cyclic references and the classic
+  // "Billion Laughs" attack (acyclic, fan-out: each level references many copies
+  // of a distinct lower-level group, so node count grows exponentially without
+  // any id ever repeating). We compute the THEORETICAL expanded node count via a
+  // memoized DFS over the reference graph: only the resulting number grows — each
+  // element is costed once, so the analysis itself stays cheap and never expands
+  // the nodes for real.
+  const MAX_EXPANDED_NODES = 100_000;
+  const costMemo = new Map<Element, number>();
+  const inStack = new Set<Element>();
+  let cyclicUse = false;
+  let overflowUse = false;
+
+  const expandedCost = (el: Element): number => {
+    if (inStack.has(el)) {
+      cyclicUse = true;
+      return 0; // break the cycle; flagged separately
+    }
+    const cached = costMemo.get(el);
+    if (cached !== undefined) return cached;
+
+    inStack.add(el);
+    let total = 1; // the element itself
+
+    if (el.tagName.toLowerCase() === 'use') {
+      const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim();
+      if (href.startsWith('#')) {
+        const target = byId.get(href.slice(1));
+        if (target) total += expandedCost(target);
       }
-      seen.add(targetId);
-      cursor = byId.get(targetId);
-      depth++;
     }
-    if (cyclic) {
-      add({
-        id: 'use-recursion',
-        severity: 'high',
-        title: 'Recursive <use> chain',
-        detail:
-          'A <use> element references itself through a chain of other elements. This can cause exponential expansion (denial of service) when the pattern is rendered.',
-      });
-      break;
+
+    for (const child of Array.from(el.children)) {
+      total += expandedCost(child);
+      if (total > MAX_EXPANDED_NODES) break;
     }
+
+    if (total > MAX_EXPANDED_NODES) {
+      overflowUse = true;
+      total = MAX_EXPANDED_NODES + 1; // clamp so the number can't run away
+    }
+
+    inStack.delete(el);
+    costMemo.set(el, total);
+    return total;
+  };
+
+  // Costing the root walks every definition and every rendered <use>, so a
+  // malicious structure trips the threshold regardless of where it sits.
+  try {
+    expandedCost(doc.documentElement);
+  } catch {
+    // Pathologically deep nesting could overflow the call stack — treat as a threat.
+    overflowUse = true;
+  }
+
+  if (cyclicUse) {
+    add({
+      id: 'use-cycle',
+      severity: 'high',
+      title: 'Recursive <use> cycle',
+      detail:
+        'A <use> element references itself through a chain of other elements. This loops infinitely and can hang or crash the renderer.',
+    });
+  }
+  if (overflowUse) {
+    add({
+      id: 'use-expansion',
+      severity: 'high',
+      title: 'Excessive <use> expansion',
+      detail: `Nested <use> references expand to more than ${MAX_EXPANDED_NODES.toLocaleString()} elements (a "billion laughs" pattern). Rendering this can freeze or crash the browser.`,
+    });
   }
 
   return threats;
@@ -293,24 +337,57 @@ export const sanitizeSvgFile = async (file: File): Promise<File> => {
   return new File([blob], file.name, { type: 'image/svg+xml' });
 };
 
+// Measures the rendered bounding box of an SVG WITHOUT live-mounting it in the
+// admin's own document. getBBox() requires the element to be laid out in a real
+// DOM (it can't be read from an <img>), so we render into an isolated iframe:
+//   • sandbox WITHOUT allow-scripts → no JavaScript executes inside the frame
+//   • allow-same-origin → the parent can reach contentDocument to call getBBox()
+//     (safe to combine here precisely because allow-scripts is omitted)
+//   • CSP `default-src 'none'` → blocks every remote fetch the SVG might attempt
+//     (external <use>/<image>, clip-path url(http), CSS @import/url) so a crafted
+//     file can't beacon out from the admin's browser during measurement.
+// A timeout guards against a frame that never settles; the recursive-<use>
+// expansion risk is still caught earlier by analyzeSvgThreats at upload time.
 const computeBBox = (svgString: string): Promise<DOMRect | null> =>
   new Promise((resolve) => {
-    const container = document.createElement('div');
-    container.style.cssText = 'position:absolute;visibility:hidden;left:-9999px;top:-9999px;width:auto;height:auto';
-    container.innerHTML = svgString;
-    document.body.appendChild(container);
-    const svgEl = container.querySelector('svg') as SVGSVGElement | null;
-    requestAnimationFrame(() => {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-same-origin');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:1200px;height:1200px;opacity:0;border:0;pointer-events:none;';
+
+    const csp =
+      `<meta http-equiv="Content-Security-Policy" ` +
+      `content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:">`;
+    iframe.srcdoc = `<!DOCTYPE html><html><head>${csp}</head><body style="margin:0">${svgString}</body></html>`;
+
+    let settled = false;
+    const finish = (rect: DOMRect | null) => {
+      if (settled) return;
+      settled = true;
+      iframe.remove();
+      resolve(rect);
+    };
+
+    iframe.onload = () => {
       requestAnimationFrame(() => {
-        try {
-          resolve(svgEl?.getBBox() ?? null);
-        } catch {
-          resolve(null);
-        } finally {
-          container.remove();
-        }
+        requestAnimationFrame(() => {
+          try {
+            const svgEl = iframe.contentDocument?.querySelector('svg') as SVGSVGElement | null;
+            const b = svgEl?.getBBox();
+            // Copy into a detached DOMRect before the iframe is torn down.
+            finish(b ? new DOMRect(b.x, b.y, b.width, b.height) : null);
+          } catch {
+            finish(null);
+          }
+        });
       });
-    });
+    };
+
+    // Safety net: never leave a measurement hanging (e.g. a frame that fails to load).
+    setTimeout(() => finish(null), 3000);
+
+    document.body.appendChild(iframe);
   });
 
 const getMaxStrokeWidth = (root: Element): number => {

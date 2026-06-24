@@ -1563,14 +1563,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       {/* SVG safety warning — shown when a selected file contains risky constructs */}
       <Dialog open={!!pendingSvg} onClose={() => setPendingSvg(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
-          <WarningAmberRoundedIcon /> Potentially unsafe SVG
+          <WarningAmberRoundedIcon /> Unsafe SVG
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            This SVG contains constructs that could harm the site or its visitors when the pattern is displayed.
-            Review the findings below — only upload it if you trust the source and know these are legitimate parts
-            of the design.
-          </Typography>
           <Stack spacing={1.5}>
             {pendingSvg?.threats.map((t, i) => (
               <Box
@@ -1599,10 +1594,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPendingSvg(null)} color="inherit">
-            Cancel
+          <Button variant="outlined" onClick={() => setPendingSvg(null)} color="inherit">
+            Close and try again...
           </Button>
-          <Button
+          {/*<Button
             color="error"
             variant="contained"
             onClick={() => {
@@ -1611,7 +1606,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
             }}
           >
             Upload anyway
-          </Button>
+          </Button>*/}
         </DialogActions>
       </Dialog>
     </>
