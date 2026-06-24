@@ -17,7 +17,6 @@
 // only if instructions exceed pattern width, which they won't since cap=700px).
 
 import { scaleSVG } from './scaling-SVG';
-import { mathClamp } from '@/functions/utilities/math';
 
 export type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 export type SvgVariant = 'scaled' | 'original';
@@ -55,7 +54,17 @@ function computeLayout(input: TypeCompositeInput) {
 
   const totalH = instructionsY + instructionsH + (input.legend || input.instructions ? LEGEND_MARGIN : 0);
 
-  return { legendY, instructionsY, totalH, totalW: mathClamp(input.targetWidthPx, 700, Infinity) };
+  // Width fits the actual content: the pattern itself, widened only when a legend
+  // or instructions block is included (instructions are already capped at 700px
+  // by renderInstructions). Previously this was clamped to a flat 700px minimum,
+  // which padded smaller patterns with blank space on the side.
+  const totalW = Math.max(
+    input.targetWidthPx,
+    input.legend ? input.legend.width + LEGEND_MARGIN * 2 : 0,
+    input.instructions ? input.instructions.width : 0,
+  );
+
+  return { legendY, instructionsY, totalH, totalW };
 }
 
 export async function compositeExport(input: TypeCompositeInput): Promise<Blob> {
