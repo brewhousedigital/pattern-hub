@@ -85,6 +85,21 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
       return next;
     });
   };
+
+  // Render the layered SVG through an <img> (secure static mode: no scripts and no
+  // external sub-resource loading) rather than inline. We feed it a blob URL built
+  // from the sanitized, layer-toggled markup and revoke the previous URL on change.
+  const [displaySvgUrl, setDisplaySvgUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!displaySvg) {
+      setDisplaySvgUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([displaySvg], { type: 'image/svg+xml' }));
+    setDisplaySvgUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [displaySvg]);
   // ──────────────────────────────────────────────────────────────────────────
 
   const svgImageUrl = generatePbImage(viewData);
@@ -125,14 +140,12 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             />
           ) : (
             <>
-              {displaySvg ? (
-                <Box
-                  sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
-                    '& svg': { width: '100%', height: '100%', display: 'block' },
-                  }}
-                  dangerouslySetInnerHTML={{ __html: displaySvg }}
+              {displaySvgUrl ? (
+                <img
+                  loading="lazy"
+                  src={displaySvgUrl}
+                  alt={`pattern template for ${viewData?.name}`}
+                  style={{ width: '100%', height: '100%', aspectRatio: '1/1', display: 'block' }}
                 />
               ) : (
                 <img
