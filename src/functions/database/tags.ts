@@ -12,9 +12,11 @@ export const useQueryGetAllTags = () => {
   return useQuery({
     queryKey: ['GetAllTags'],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
-      return await pocketbase.collection('tags').getFullList({
+      const items = await pocketbase.collection('tags').getFullList<TypeReadOnlyDatabaseItem>({
         sort: '-count',
       });
+      // Defense-in-depth: ensure numeric-looking tags (e.g. "2007") are strings.
+      return items.map((item) => ({ ...item, tag: String(item.tag) }));
     },
   });
 };
@@ -28,7 +30,8 @@ export const useQuerySearchTags = (searchTerm: string, enabled = true) => {
         sort: '-count',
         ...(safe ? { filter: `tag ~ "${safe}"` } : {}),
       });
-      return result.items;
+      // Defense-in-depth: ensure numeric-looking tags (e.g. "2007") are strings.
+      return result.items.map((item) => ({ ...item, tag: String(item.tag) }));
     },
     enabled,
     staleTime: 1000 * 60 * 2,
