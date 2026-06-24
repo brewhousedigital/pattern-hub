@@ -241,7 +241,12 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
           ...(filter ? { filter } : {}),
         });
 
-      return { items: result.items, totalItems: result.totalItems };
+      // All-digit tag values (e.g. "2007") can deserialize as JS numbers, which
+      // breaks downstream string operations (.endsWith, .toLowerCase). Coerce the
+      // tag to a string at the boundary so every consumer gets a real string.
+      const items = result.items.map((item) => ({ ...item, tag: String(item.tag) }));
+
+      return { items, totalItems: result.totalItems };
     },
     staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
