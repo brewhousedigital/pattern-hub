@@ -225,6 +225,7 @@ function drawCropMarks(pdf: jsPDF, x: number, y: number, w: number, h: number) {
 interface SinglePdfArgs {
   svgString: string;
   patternName: string;
+  sizeLabel: string;
   patternWIn: number;
   patternHIn: number;
   lineWidthIn: number;
@@ -272,7 +273,7 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
     await addInstructionPages(pdf, a.instructionsMarkdown, fw, fh, M);
   }
 
-  pdf.save(`${slugify(a.patternName)}-print.pdf`);
+  pdf.save(`${slugify(a.patternName)}-${a.sizeLabel}-print.pdf`);
 }
 
 // ─── PDF builder: tiled ───────────────────────────────────────────────────────
@@ -280,6 +281,7 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
 interface TiledPdfArgs {
   svgString: string;
   patternName: string;
+  sizeLabel: string;
   patternWIn: number;
   patternHIn: number;
   lineWidthIn: number;
@@ -392,7 +394,7 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
     await addInstructionPages(pdf, a.instructionsMarkdown, TILE_SHEET_W, TILE_SHEET_H, 0.25);
   }
 
-  pdf.save(`${slugify(a.patternName)}-tiled.pdf`);
+  pdf.save(`${slugify(a.patternName)}-${a.sizeLabel}-tiled.pdf`);
 }
 
 // ─── Instructions pages ───────────────────────────────────────────────────────
@@ -574,6 +576,7 @@ export const ExportPatternForPrintV3 = ({
         viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
 
       const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
+      const fileSizeLabel = `${r2(fromIn(patternWIn, unit))}x${r2(fromIn(patternHIn, unit))}${unit}`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
 
       const legendOutput = includeLegend
@@ -597,6 +600,7 @@ export const ExportPatternForPrintV3 = ({
         await buildTiledPdf({
           svgString: filteredSvgString,
           patternName: viewData.name,
+          sizeLabel: fileSizeLabel,
           patternWIn,
           patternHIn,
           lineWidthIn,
@@ -610,6 +614,7 @@ export const ExportPatternForPrintV3 = ({
         await buildSinglePdf({
           svgString: filteredSvgString,
           patternName: viewData.name,
+          sizeLabel: fileSizeLabel,
           patternWIn,
           patternHIn,
           lineWidthIn,

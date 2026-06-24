@@ -185,7 +185,9 @@ export const ExportPatternForImage = ({
       );
 
       const sizeLabel =
-        unit === 'px' ? `${Math.round(widthVal)}x${Math.round(heightVal)}px` : `${r2(widthIn)}in-${dpi}dpi`;
+        unit === 'px'
+          ? `${Math.round(widthVal)}x${Math.round(heightVal)}px`
+          : `${r2(widthIn)}x${r2(toIn(heightVal, unit, dpi))}in-${dpi}dpi`;
       downloadBlob(blob, `${slugify(viewData.name)}-${sizeLabel}.${format}`);
     } catch {
       // error state managed by useExportPattern
