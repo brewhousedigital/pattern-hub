@@ -7,15 +7,25 @@ type GenericMarkdownEditorProps = {
   content: string;
   setContent: (val: string) => void;
   characterLimit?: number;
+  /** Initial number of visible rows in the editor pane. Defaults to 12. */
+  minRows?: number;
+  /** Maximum rows the editor pane grows to before scrolling. Defaults to 35. */
+  maxRows?: number;
+  /** Caption shown above the editor (e.g. "Description"). Defaults to "Content". */
+  label?: string;
 };
 
 export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
   const maxCharacterLimit = props.characterLimit ? props.characterLimit : 5000;
+  const minRows = props.minRows ?? 12;
+  const maxRows = props.maxRows ?? 35;
+  const label = props.label ?? 'Content';
+  const overLimit = (props.content?.length || 0) > maxCharacterLimit;
 
   return (
     <Box>
       <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: 'block' }}>
-        Content -{' '}
+        {label} -{' '}
         <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">
           Markdown supported
         </a>
@@ -59,8 +69,8 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
             multiline
             value={props.content}
             onChange={(e) => props.setContent(e.target.value)}
-            minRows={12}
-            maxRows={35}
+            minRows={minRows}
+            maxRows={maxRows}
             variant="outlined"
             slotProps={{
               input: {
@@ -153,7 +163,7 @@ export const GenericMarkdownEditor = (props: GenericMarkdownEditorProps) => {
         </Box>
       </Box>
 
-      <Typography variant="caption">
+      <Typography variant="caption" sx={{ color: overLimit ? 'error.main' : 'text.secondary' }}>
         {props?.content?.length || 0}/{maxCharacterLimit} characters
       </Typography>
     </Box>

@@ -488,7 +488,17 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   is_draft: isDraft,
                   has_layers: hasLayers,
                 } as Record<string, unknown>,
-                ['name', 'description', 'source_url', 'pieces', 'tags', 'authors', 'author_manual', 'is_draft', 'has_layers'],
+                [
+                  'name',
+                  'description',
+                  'source_url',
+                  'pieces',
+                  'tags',
+                  'authors',
+                  'author_manual',
+                  'is_draft',
+                  'has_layers',
+                ],
               ),
         metadata: {
           ...(file ? { pattern_file: '[file uploaded]' } : {}),
@@ -761,34 +771,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     error={name?.length > 100}
                   />
 
-                  <TextField
-                    multiline
-                    fullWidth
-                    variant="filled"
+                  <GenericMarkdownEditor
+                    content={description}
+                    setContent={setDescription}
+                    characterLimit={2000}
                     minRows={2}
                     label="Description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    helperText={
-                      <Stack
-                        component="span"
-                        direction="row"
-                        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <Typography variant="caption">
-                          {description?.length > 2000
-                            ? `Description is too long: ${description?.length}/2000`
-                            : `${description?.length}/2000`}
-                        </Typography>
-                        <Typography variant="caption">
-                          Supports{' '}
-                          <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
-                            Markdown
-                          </a>
-                        </Typography>
-                      </Stack>
-                    }
-                    error={description?.length > 2000}
                   />
 
                   <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
@@ -1311,7 +1299,12 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
                   {/* ── Instructions ── */}
                   <FormSection label="Instructions" />
-                  <GenericMarkdownEditor content={instructions} setContent={setInstructions} characterLimit={10000} />
+                  <GenericMarkdownEditor
+                    content={instructions}
+                    setContent={setInstructions}
+                    characterLimit={10000}
+                    minRows={2}
+                  />
 
                   {/* ── Metadata ── */}
                   <FormSection label="Metadata" />
