@@ -303,6 +303,16 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
           <PatternRatingsContainer viewData={viewData} />
 
+          {/* ── Community ─────────────────────────────────────── */}
+          <PanelSectionTitle>Community</PanelSectionTitle>
+
+          <CompactRow label="Favorited">{(viewData?.favorite_count ?? 0).toLocaleString()}</CompactRow>
+          <CompactRow label="Completed">{(viewData?.done_count ?? 0).toLocaleString()}</CompactRow>
+          <CompactRow label="Ratings">{(viewData?.total_ratings ?? 0).toLocaleString()}</CompactRow>
+          <CompactRow label="Difficulty Votes">
+            {(viewData?.total_difficulty_ratings ?? 0).toLocaleString()}
+          </CompactRow>
+
           {/* ── Details ───────────────────────────────────────── */}
           <PanelSectionTitle>Details</PanelSectionTitle>
 

@@ -160,6 +160,14 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
       favMap[pid] = (favMap[pid] || 0) + 1;
     }
 
+    // --- Build done map: pattern_id → count ---
+    const doneRecords = $app.findRecordsByFilter('user_marked_done', "id != ''", '', 0, 0);
+    const doneMap = {};
+    for (let i = 0; i < doneRecords.length; i++) {
+      const pid = doneRecords[i].getString('pattern_id');
+      doneMap[pid] = (doneMap[pid] || 0) + 1;
+    }
+
     // --- Resolve storage path for file-size reads ---
     const patternsCollection = $app.findCollectionByNameOrId('patterns');
     const collectionId = patternsCollection.id;
@@ -187,6 +195,7 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
         p.set('avg_difficulty', diffData.avg_difficulty);
         p.set('total_difficulty_ratings', diffData.total_difficulty_ratings);
         p.set('favorite_count', favMap[id] || 0);
+        p.set('done_count', doneMap[id] || 0);
         p.set('tag_count', tagCount);
 
         // --- Dimension conversions ---

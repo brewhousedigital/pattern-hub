@@ -46,6 +46,7 @@ export type TypePatternResponse = {
   avg_difficulty?: number;
   total_difficulty_ratings?: number;
   favorite_count?: number;
+  done_count?: number;
   created: string;
   updated: string;
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
