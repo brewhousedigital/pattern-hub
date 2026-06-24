@@ -33,7 +33,13 @@ import {
   useQueryGetAllPatternKeys,
   useQueryGetAllPatternKeyCollections,
 } from '@/functions/database/patterns';
-import { sanitizeSvgFile, extractSvgLayerIds, extractSvgDimensions } from '@/functions/utilities/sanitize-svg';
+import {
+  sanitizeSvgFile,
+  extractSvgLayerIds,
+  extractSvgDimensions,
+  analyzeSvgThreats,
+  type SvgThreat,
+} from '@/functions/utilities/sanitize-svg';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
@@ -44,6 +50,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -294,6 +301,26 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // SVG Upload
   const [file, setFile] = React.useState<File | undefined>();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  // Pending SVG held back for an admin safety confirmation when threats are detected.
+  const [pendingSvg, setPendingSvg] = React.useState<{ file: File; text: string; threats: SvgThreat[] } | null>(null);
+
+  // Applies a selected SVG to the form (preview, dimensions, layer map).
+  const commitSvgFile = (f: File, text: string) => {
+    setPreviewUrl(URL.createObjectURL(f));
+    setFile(f);
+
+    const dims = extractSvgDimensions(text);
+    if (dims) {
+      setDesignWidth(String(dims.width));
+      setDesignWidthUnit(dims.widthUnit);
+      setDesignHeight(String(dims.height));
+      setDesignHeightUnit(dims.heightUnit);
+    }
+
+    if (hasLayers) {
+      setLayersMap((prev) => replaceLayerIds(prev, extractSvgLayerIds(text)));
+    }
+  };
 
   // External file upload
   const [externalFile, setExternalFile] = React.useState<File | undefined>();
@@ -398,6 +425,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(undefined);
+    setPendingSvg(null);
     setDesignWidth(String(props?.design_width) || '0');
     setDesignWidthUnit(String(props?.design_width_unit) || 'in');
     setDesignHeight(String(props?.design_height) || '0');
@@ -955,22 +983,18 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                                   alert('Please upload an SVG file');
                                   return;
                                 }
-                                setPreviewUrl(URL.createObjectURL(f));
-                                setFile(f);
 
                                 const text = await f.text();
 
-                                const dims = extractSvgDimensions(text);
-                                if (dims) {
-                                  setDesignWidth(String(dims.width));
-                                  setDesignWidthUnit(dims.widthUnit);
-                                  setDesignHeight(String(dims.height));
-                                  setDesignHeightUnit(dims.heightUnit);
+                                // Warn the admin before accepting a file that contains
+                                // potentially unsafe constructs (external refs, recursion, etc).
+                                const threats = analyzeSvgThreats(text);
+                                if (threats.length > 0) {
+                                  setPendingSvg({ file: f, text, threats });
+                                  return;
                                 }
 
-                                if (hasLayers) {
-                                  setLayersMap((prev) => replaceLayerIds(prev, extractSvgLayerIds(text)));
-                                }
+                                commitSvgFile(f, text);
                               }}
                             />
                           </>
@@ -1533,6 +1557,61 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
               Save
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* SVG safety warning — shown when a selected file contains risky constructs */}
+      <Dialog open={!!pendingSvg} onClose={() => setPendingSvg(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
+          <WarningAmberRoundedIcon /> Potentially unsafe SVG
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            This SVG contains constructs that could harm the site or its visitors when the pattern is displayed.
+            Review the findings below — only upload it if you trust the source and know these are legitimate parts
+            of the design.
+          </Typography>
+          <Stack spacing={1.5}>
+            {pendingSvg?.threats.map((t, i) => (
+              <Box
+                key={`${t.id}-${i}`}
+                sx={{
+                  borderLeft: '3px solid',
+                  borderColor: t.severity === 'high' ? 'error.main' : 'warning.main',
+                  pl: 1.5,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  {t.title}
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{ ml: 1, color: t.severity === 'high' ? 'error.main' : 'warning.main', fontWeight: 700 }}
+                  >
+                    {t.severity === 'high' ? 'HIGH' : 'REVIEW'}
+                  </Typography>
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t.detail}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingSvg(null)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              if (pendingSvg) commitSvgFile(pendingSvg.file, pendingSvg.text);
+              setPendingSvg(null);
+            }}
+          >
+            Upload anyway
+          </Button>
         </DialogActions>
       </Dialog>
     </>
