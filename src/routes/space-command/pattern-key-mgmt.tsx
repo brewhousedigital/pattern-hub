@@ -495,6 +495,8 @@ function RouteComponent() {
                         placeholder="Name…"
                         value={thisCustomName?.name || ''}
                         disabled={!isSelected}
+                        required={isSelected}
+                        error={isSelected && !thisCustomName?.name?.trim()}
                         onChange={(e) => handleCustomNamePerKeyForNewCollection(e, legend.name)}
                         onClick={(e) => e.stopPropagation()}
                         fullWidth
