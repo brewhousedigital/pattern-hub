@@ -58,6 +58,7 @@ export const useQueryGetSetById = (id?: string) => {
     queryFn: async (): Promise<TypePatternSet> =>
       pocketbase.collection('pattern_sets').getOne<TypePatternSet>(id!, {
         expand: 'patterns,patterns.authors',
+        sort: '-created',
       }),
     enabled: !!id,
   });
@@ -69,7 +70,9 @@ export const useQuerySearchPatternsForPicker = (search: string) => {
     queryKey: ['PatternPickerSearch', search],
     queryFn: async (): Promise<TypePatternResponse[]> => {
       const safe = search.trim().replace(/"/g, '\\"');
-      const filter = safe ? `isDeleted=false && is_draft=false && (name~"${safe}" || description~"${safe}")` : 'isDeleted=false && is_draft=false';
+      const filter = safe
+        ? `isDeleted=false && is_draft=false && (name~"${safe}" || description~"${safe}")`
+        : 'isDeleted=false && is_draft=false';
       const result = await pocketbase.collection('patterns').getList<TypePatternResponse>(1, 20, {
         filter,
         sort: 'name',

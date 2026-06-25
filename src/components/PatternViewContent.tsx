@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useMatch } from '@tanstack/react-router';
 const ExportPatternForPrintV3 = React.lazy(() =>
   import('@/components/PatternExport/ExportPatternForPrintV3').then((m) => ({ default: m.ExportPatternForPrintV3 })),
 );
@@ -50,6 +50,8 @@ type PatternViewContentProps = {
 
 export const PatternViewContent = (props: PatternViewContentProps) => {
   const { viewData, sidebar, showStandaloneTags } = props;
+
+  const onPatternPage = useMatch({ from: '/pattern/$patternId', shouldThrow: false });
 
   const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('svg');
 
@@ -276,15 +278,25 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               {viewData?.name}
             </Typography>
 
-            <Tooltip title="Copy ID" arrow>
-              <Typography
-                onClick={handleCopyId}
-                variant="caption"
-                sx={{ color: 'text.disabled', letterSpacing: '0.08em', cursor: 'pointer', fontSize: '0.7rem' }}
-              >
-                {viewData?.id}
-              </Typography>
-            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip title="Copy ID" arrow>
+                <Typography
+                  onClick={handleCopyId}
+                  variant="caption"
+                  sx={{ color: 'text.disabled', letterSpacing: '0.08em', cursor: 'pointer', fontSize: '0.7rem' }}
+                >
+                  {viewData?.id}
+                </Typography>
+              </Tooltip>
+
+              {!onPatternPage && viewData?.id && (
+                <Tooltip title="Open full page" arrow>
+                  <Link to="/pattern/$patternId" params={{ patternId: viewData.id }}>
+                    <LaunchRoundedIcon sx={{ fontSize: '0.85rem', color: 'text.disabled', display: 'block', '&:hover': { color: 'primary.main' } }} />
+                  </Link>
+                </Tooltip>
+              )}
+            </Box>
           </Box>
 
           <Box sx={{ mb: 3 }}>
