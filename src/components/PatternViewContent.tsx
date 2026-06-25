@@ -18,6 +18,7 @@ import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveC
 import { PatternRatingsContainer } from '@/components/PatternUtilities/PatternRatingsContainer';
 import { LayerSelectionHint } from '@/components/PatternUtilities/LayerSelectionHint';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
+import { useQueryGetPublishedManualAuthors, nameToSlug } from '@/functions/database/manual-authors';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
 import { BorderedCard } from '@/components/cards/BorderedCard';
@@ -52,6 +53,8 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const { viewData, sidebar, showStandaloneTags } = props;
 
   const onPatternPage = useMatch({ from: '/pattern/$patternId', shouldThrow: false });
+
+  const { data: publishedManualAuthors = [] } = useQueryGetPublishedManualAuthors();
 
   const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('svg');
 
@@ -379,11 +382,22 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                 );
               })}
 
-              {viewData?.author_manual?.map((author, i) => (
-                <Typography key={`manual-${i}`} sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500 }}>
-                  {author || 'Not Listed'}
-                </Typography>
-              ))}
+              {viewData?.author_manual?.map((author, i) => {
+                const page = publishedManualAuthors.find(
+                  (a) => a.name === author || nameToSlug(a.name) === nameToSlug(author),
+                );
+                return page ? (
+                  <Link key={`manual-${i}`} to="/authors/$slug" params={{ slug: page.slug }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
+                      {author}
+                    </Typography>
+                  </Link>
+                ) : (
+                  <Typography key={`manual-${i}`} sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500 }}>
+                    {author || 'Not Listed'}
+                  </Typography>
+                );
+              })}
             </Stack>
           </CompactRow>
 

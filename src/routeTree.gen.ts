@@ -24,6 +24,7 @@ import { Route as SpaceCommandSetsRouteImport } from './routes/space-command/set
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
 import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-command/pattern-key-mgmt'
 import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
+import { Route as SpaceCommandManualAuthorsRouteImport } from './routes/space-command/manual-authors'
 import { Route as SpaceCommandLogsRouteImport } from './routes/space-command/logs'
 import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
@@ -36,6 +37,7 @@ import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-pol
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
 import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpAboutRouteImport } from './routes/help/about'
+import { Route as AuthorsSlugRouteImport } from './routes/authors/$slug'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -126,6 +128,12 @@ const SpaceCommandMapRoute = SpaceCommandMapRouteImport.update({
   path: '/map',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandManualAuthorsRoute =
+  SpaceCommandManualAuthorsRouteImport.update({
+    id: '/manual-authors',
+    path: '/manual-authors',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandLogsRoute = SpaceCommandLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -184,6 +192,11 @@ const HelpContactRoute = HelpContactRouteImport.update({
 const HelpAboutRoute = HelpAboutRouteImport.update({
   id: '/help/about',
   path: '/help/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthorsSlugRoute = AuthorsSlugRouteImport.update({
+  id: '/authors/$slug',
+  path: '/authors/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
@@ -260,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/authors/$slug': typeof AuthorsSlugRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -272,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
+  '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -300,6 +315,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/authors/$slug': typeof AuthorsSlugRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -312,6 +328,7 @@ export interface FileRoutesByTo {
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
+  '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -342,6 +359,7 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/authors/$slug': typeof AuthorsSlugRoute
   '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
@@ -354,6 +372,7 @@ export interface FileRoutesById {
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
+  '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
   '/space-command/pattern-key-mgmt': typeof SpaceCommandPatternKeyMgmtRoute
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
@@ -385,6 +404,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/authors/$slug'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -397,6 +417,7 @@ export interface FileRouteTypes {
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/logs'
+    | '/space-command/manual-authors'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -425,6 +446,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/authors/$slug'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -437,6 +459,7 @@ export interface FileRouteTypes {
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/logs'
+    | '/space-command/manual-authors'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -466,6 +489,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/authors/$slug'
     | '/help/about'
     | '/help/contact'
     | '/help/faq'
@@ -478,6 +502,7 @@ export interface FileRouteTypes {
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/logs'
+    | '/space-command/manual-authors'
     | '/space-command/map'
     | '/space-command/pattern-key-mgmt'
     | '/space-command/patterns'
@@ -508,6 +533,7 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  AuthorsSlugRoute: typeof AuthorsSlugRoute
   HelpAboutRoute: typeof HelpAboutRoute
   HelpContactRoute: typeof HelpContactRoute
   HelpFaqRoute: typeof HelpFaqRoute
@@ -633,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandMapRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/manual-authors': {
+      id: '/space-command/manual-authors'
+      path: '/manual-authors'
+      fullPath: '/space-command/manual-authors'
+      preLoaderRoute: typeof SpaceCommandManualAuthorsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/logs': {
       id: '/space-command/logs'
       path: '/logs'
@@ -715,6 +748,13 @@ declare module '@tanstack/react-router' {
       path: '/help/about'
       fullPath: '/help/about'
       preLoaderRoute: typeof HelpAboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authors/$slug': {
+      id: '/authors/$slug'
+      path: '/authors/$slug'
+      fullPath: '/authors/$slug'
+      preLoaderRoute: typeof AuthorsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/reset-password': {
@@ -809,6 +849,7 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
   SpaceCommandKanbanRoute: typeof SpaceCommandKanbanRoute
   SpaceCommandLogsRoute: typeof SpaceCommandLogsRoute
+  SpaceCommandManualAuthorsRoute: typeof SpaceCommandManualAuthorsRoute
   SpaceCommandMapRoute: typeof SpaceCommandMapRoute
   SpaceCommandPatternKeyMgmtRoute: typeof SpaceCommandPatternKeyMgmtRoute
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
@@ -829,6 +870,7 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandFaqRoute: SpaceCommandFaqRoute,
   SpaceCommandKanbanRoute: SpaceCommandKanbanRoute,
   SpaceCommandLogsRoute: SpaceCommandLogsRoute,
+  SpaceCommandManualAuthorsRoute: SpaceCommandManualAuthorsRoute,
   SpaceCommandMapRoute: SpaceCommandMapRoute,
   SpaceCommandPatternKeyMgmtRoute: SpaceCommandPatternKeyMgmtRoute,
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
@@ -854,6 +896,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  AuthorsSlugRoute: AuthorsSlugRoute,
   HelpAboutRoute: HelpAboutRoute,
   HelpContactRoute: HelpContactRoute,
   HelpFaqRoute: HelpFaqRoute,

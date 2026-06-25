@@ -1,6 +1,7 @@
 import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypePatternResponse, TypePatternKeyTableResponse } from '@/functions/database/patterns.ts';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import type { TypeManualAuthor } from '@/functions/database/manual-authors';
 
 export const generatePbImage = (pattern?: TypePatternResponse) => {
   const thisPatternFile = pattern?.pattern_file ? pattern?.pattern_file : pattern?.pattern_file_external;
@@ -45,4 +46,9 @@ export const generateUserBgImageUrl = (user?: TypeAuthData): string | null => {
 export const generateUserMobileHeaderUrl = (user?: TypeAuthData): string | null => {
   if (!user?.mobile_header_image || !user.collectionId || !user.id) return null;
   return `${pocketbaseDomain}/api/files/${user.collectionId}/${user.id}/${user.mobile_header_image}`;
+};
+
+export const generateManualAuthorAvatarUrl = (author?: TypeManualAuthor): string | null => {
+  if (!author?.avatar || !author.collectionId || !author.id) return null;
+  return `${pocketbaseDomain}/api/files/${author.collectionId}/${author.id}/${author.avatar}`;
 };
