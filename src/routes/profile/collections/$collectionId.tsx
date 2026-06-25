@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
-import { BrowseSearchBar } from '@/components/browse/BrowseSearchBar';
+import { BrowseSearchBar, type BrowseSortValue, applyBrowseSort } from '@/components/browse/BrowseSearchBar';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
 import {
@@ -44,6 +44,7 @@ function RouteComponent() {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [patternSearch, setPatternSearch] = useState('');
+  const [patternSort, setPatternSort] = useState<BrowseSortValue>('-created');
 
   const fuse = useMemo(
     () =>
@@ -62,7 +63,10 @@ function RouteComponent() {
     [patterns],
   );
 
-  const filteredPatterns = patternSearch.trim() ? fuse.search(patternSearch).map((r) => r.item) : patterns;
+  const filteredPatterns = useMemo(() => {
+    const results = patternSearch.trim() ? fuse.search(patternSearch).map((r) => r.item) : patterns;
+    return applyBrowseSort(results, patternSort);
+  }, [patternSearch, fuse, patterns, patternSort]);
 
   // Follow state
   const isOwner = !!authData && !!collection && authData.id === collection.owner_id;
@@ -257,6 +261,8 @@ function RouteComponent() {
                   placeholder="Search patterns by name, tag, description…"
                   totalCount={patterns.length}
                   resultCount={filteredPatterns.length}
+                  sortValue={patternSort}
+                  onSortChange={setPatternSort}
                 />
 
                 {filteredPatterns.length === 0 ? (
