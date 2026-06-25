@@ -292,7 +292,14 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               {!onPatternPage && viewData?.id && (
                 <Tooltip title="Open full page" arrow>
                   <Link to="/pattern/$patternId" params={{ patternId: viewData.id }}>
-                    <LaunchRoundedIcon sx={{ fontSize: '0.85rem', color: 'text.disabled', display: 'block', '&:hover': { color: 'primary.main' } }} />
+                    <LaunchRoundedIcon
+                      sx={{
+                        fontSize: '0.85rem',
+                        color: 'text.disabled',
+                        display: 'block',
+                        '&:hover': { color: 'primary.main' },
+                      }}
+                    />
                   </Link>
                 </Tooltip>
               )}
@@ -472,7 +479,7 @@ const PatternLegendCard = ({ viewData }: TypeViewData) => {
     .filter(Boolean)
     .join(', ');
 
-  const sizeLabel = `${viewData.design_width}${viewData.design_width_unit} × ${viewData.design_height}${viewData.design_height_unit}`;
+  const sizeLabel = `${viewData.design_width.toFixed(3)}${viewData.design_width_unit} × ${viewData.design_height.toFixed(3)}${viewData.design_height_unit}`;
   const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
   const dateLabel = createPrettyDate(viewData.design_date || '');
 

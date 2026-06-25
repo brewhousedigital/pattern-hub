@@ -378,7 +378,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
   const [color, setColor] = useState('');
   const [position, setPosition] = useState<number | ''>('');
   const [isPublished, setIsPublished] = useState(false);
-  const [selectedPatterns, setSelectedPatterns] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedPatterns, setSelectedPatterns] = useState<Array<{ id: string; name: string; imageUrl?: string }>>([]);
   const [saving, setSaving] = useState(false);
 
   // Populate form when editing
@@ -390,7 +390,7 @@ function SetEditorDialog(props: SetEditorDialogProps) {
       setPosition(existingSet.position ?? '');
       setIsPublished(existingSet.is_published ?? false);
       setSelectedPatterns(
-        existingSet.expand?.patterns?.map((p) => ({ id: p.id, name: p.name })) ??
+        existingSet.expand?.patterns?.map((p) => ({ id: p.id, name: p.name, imageUrl: generatePbImage(p) })) ??
           existingSet.patterns?.map((id) => ({ id, name: id })) ??
           [],
       );
@@ -591,8 +591,8 @@ function SetEditorDialog(props: SetEditorDialogProps) {
 // ─── PatternPicker ────────────────────────────────────────────────────────────
 
 type PatternPickerProps = {
-  selected: Array<{ id: string; name: string }>;
-  onChange: (next: Array<{ id: string; name: string }>) => void;
+  selected: Array<{ id: string; name: string; imageUrl?: string }>;
+  onChange: (next: Array<{ id: string; name: string; imageUrl?: string }>) => void;
 };
 
 function PatternPicker({ selected, onChange }: PatternPickerProps) {
@@ -603,9 +603,9 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
 
   const selectedIds = new Set(selected.map((p) => p.id));
 
-  function add(id: string, name: string) {
+  function add(id: string, name: string, imageUrl?: string) {
     if (!selectedIds.has(id)) {
-      onChange([...selected, { id, name }]);
+      onChange([...selected, { id, name, imageUrl }]);
     }
   }
 
@@ -645,6 +645,19 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
                 </IconButton>
               }
             >
+              <ListItemAvatar sx={{ minWidth: 40 }}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    backgroundImage: p.imageUrl ? `url("${p.imageUrl}")` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundColor: 'action.disabledBackground',
+                  }}
+                />
+              </ListItemAvatar>
               <ListItemText
                 primary={<Typography sx={{ fontSize: 13, fontWeight: 500 }}>{p.name}</Typography>}
                 secondary={
@@ -697,7 +710,7 @@ function PatternPicker({ selected, onChange }: PatternPickerProps) {
                   <IconButton
                     edge="end"
                     size="small"
-                    onClick={() => add(p.id, p.name)}
+                    onClick={() => add(p.id, p.name, generatePbImage(p))}
                     disabled={alreadyAdded}
                     color="success"
                   >

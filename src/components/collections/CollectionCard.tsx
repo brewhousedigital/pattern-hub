@@ -8,6 +8,7 @@ import {
   type TypeCollectionResponse,
 } from '@/functions/database/collections';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
+import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { enqueueSnackbar } from 'notistack';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
@@ -33,6 +34,7 @@ import {
   IconButton,
   List,
   ListItem,
+  ListItemAvatar,
   ListItemText,
   Popover,
   Skeleton,
@@ -52,7 +54,7 @@ type CollectionCardProps = {
   cardBg?: string;
 };
 
-type PatternEntry = { id: string; name: string };
+type PatternEntry = { id: string; name: string; imageUrl?: string };
 
 export const CollectionCard = ({
   collection,
@@ -83,7 +85,7 @@ export const CollectionCard = ({
   React.useEffect(() => {
     if (!editOpen || !fullCollection) return;
     const patterns =
-      fullCollection.expand?.patterns?.map((p) => ({ id: p.id, name: p.name })) ??
+      fullCollection.expand?.patterns?.map((p) => ({ id: p.id, name: p.name, imageUrl: generatePbImage(p) })) ??
       fullCollection.patterns.map((id) => ({ id, name: id }));
     setEditPatterns(patterns);
   }, [editOpen, fullCollection]);
@@ -358,6 +360,19 @@ export const CollectionCard = ({
                       </Tooltip>
                     }
                   >
+                    <ListItemAvatar sx={{ minWidth: 40 }}>
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 1,
+                          backgroundImage: pattern.imageUrl ? `url("${pattern.imageUrl}")` : undefined,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: 'action.disabledBackground',
+                        }}
+                      />
+                    </ListItemAvatar>
                     <ListItemText
                       primary={<Typography sx={{ fontSize: 13, fontWeight: 500 }}>{pattern.name}</Typography>}
                       secondary={
