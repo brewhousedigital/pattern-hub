@@ -4,7 +4,7 @@ import { useQueryGetPublishedSets } from '@/functions/database/sets';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown } from '@/functions/utilities/markdown';
-import { generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { PatternAvatarStack } from '@/components/browse/PatternAvatarStack';
 import { alpha } from '@mui/material/styles';
 
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
@@ -20,7 +20,6 @@ import {
   Grid,
   Skeleton,
   Stack,
-  Tooltip,
   Typography,
 } from '@mui/material';
 
@@ -36,13 +35,11 @@ export const Route = createFileRoute('/sets/')({
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PREVIEW_LIMIT = 5;
-const AVATAR_SIZE = 56;
-const AVATAR_OVERLAP = 14;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function RouteComponent() {
-  const { data: sets, isPending, isError } = useQueryGetPublishedSets();
+  const { data: sets = [], isPending, isError } = useQueryGetPublishedSets();
 
   return (
     <GeneralLayout>
@@ -55,7 +52,7 @@ function RouteComponent() {
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560 }}>
             Curated collections of patterns handpicked by our team
           </Typography>
-          {sets && sets.length > 0 && (
+          {!isPending && sets.length > 0 && (
             <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
               {sets.length} set{sets.length !== 1 ? 's' : ''} available
             </Typography>
@@ -78,7 +75,7 @@ function RouteComponent() {
           </Grid>
         )}
 
-        {!isPending && !isError && sets?.length === 0 && (
+        {!isPending && !isError && sets.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 10 }}>
             <StyleRoundedIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -90,13 +87,12 @@ function RouteComponent() {
           </Box>
         )}
 
-        {sets && sets.length > 0 && (
+        {sets.length > 0 && (
           <Grid container spacing={3}>
             {sets.map((set) => {
               const accentColor = set.color || '#1976d2';
               const previews = (set.expand?.patterns ?? []).slice(0, PREVIEW_LIMIT);
               const patternCount = set.patterns?.length ?? 0;
-              const overflow = patternCount - previews.length;
 
               return (
                 <Grid key={set.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -169,7 +165,6 @@ function RouteComponent() {
                             '&:last-child': { pb: 2.5 },
                           }}
                         >
-                          {/* Description */}
                           {set.description && (
                             <Typography
                               variant="body2"
@@ -187,65 +182,14 @@ function RouteComponent() {
                             </Typography>
                           )}
 
-                          {/* Pattern thumbnail previews — own dedicated row */}
+                          {/* Pattern thumbnail previews — own row */}
                           {previews.length > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
-                              {previews.map((p, i) => (
-                                <Tooltip key={p.id} title={p.name} arrow placement="top">
-                                  <Box
-                                    sx={{
-                                      position: 'relative',
-                                      zIndex: PREVIEW_LIMIT - i,
-                                      width: AVATAR_SIZE,
-                                      height: AVATAR_SIZE,
-                                      borderRadius: '50%',
-                                      backgroundImage: `url("${generatePbImage(p)}")`,
-                                      backgroundSize: 'cover',
-                                      backgroundPosition: 'center',
-                                      backgroundColor: alpha(accentColor, 0.1),
-                                      border: '3px solid',
-                                      borderColor: 'background.paper',
-                                      ml: i === 0 ? 0 : `-${AVATAR_OVERLAP}px`,
-                                      transition: 'transform 0.15s',
-                                      '&:hover': {
-                                        transform: 'scale(1.12) translateY(-4px)',
-                                        zIndex: PREVIEW_LIMIT + 1,
-                                      },
-                                    }}
-                                  />
-                                </Tooltip>
-                              ))}
-
-                              {/* +N overflow badge */}
-                              {overflow > 0 && (
-                                <Box
-                                  sx={{
-                                    position: 'relative',
-                                    zIndex: 0,
-                                    width: AVATAR_SIZE,
-                                    height: AVATAR_SIZE,
-                                    borderRadius: '50%',
-                                    backgroundColor: alpha(accentColor, 0.12),
-                                    border: '3px solid',
-                                    borderColor: 'background.paper',
-                                    ml: `-${AVATAR_OVERLAP}px`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <Typography
-                                    sx={{
-                                      fontSize: '0.72rem',
-                                      fontWeight: 700,
-                                      color: accentColor,
-                                      lineHeight: 1,
-                                    }}
-                                  >
-                                    +{overflow}
-                                  </Typography>
-                                </Box>
-                              )}
+                            <Box sx={{ mb: 2.5 }}>
+                              <PatternAvatarStack
+                                patterns={previews}
+                                totalCount={patternCount}
+                                accentColor={accentColor}
+                              />
                             </Box>
                           )}
 
@@ -254,10 +198,7 @@ function RouteComponent() {
                             direction="row"
                             sx={{ alignItems: 'center', justifyContent: 'space-between', mt: 'auto' }}
                           >
-                            <Typography
-                              variant="caption"
-                              sx={{ fontWeight: 600, color: '#222', opacity: 0.55 }}
-                            >
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#222', opacity: 0.55 }}>
                               {patternCount} pattern{patternCount !== 1 ? 's' : ''}
                             </Typography>
                             <ArrowForwardRoundedIcon sx={{ fontSize: 18, color: accentColor }} />

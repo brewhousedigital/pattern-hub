@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { createFileRoute } from '@tanstack/react-router';
+import Fuse from 'fuse.js';
+import { BrowseSearchBar } from '@/components/browse/BrowseSearchBar';
 import {
   useQueryGetSetById,
   useQueryGetUserFollowedSets,
@@ -56,6 +58,26 @@ function RouteComponent() {
   const patterns = set?.expand?.patterns ?? [];
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [patternSearch, setPatternSearch] = useState('');
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(patterns, {
+        keys: [
+          { name: 'name', weight: 1.0 },
+          { name: 'description', weight: 0.7 },
+          { name: 'tags', weight: 0.8 },
+          { name: 'author_manual', weight: 0.5 },
+          { name: 'difficulty', weight: 0.3 },
+        ],
+        threshold: 0.35,
+        minMatchCharLength: 2,
+        ignoreLocation: true,
+      }),
+    [patterns],
+  );
+
+  const filteredPatterns = patternSearch.trim() ? fuse.search(patternSearch).map((r) => r.item) : patterns;
 
   // ── Follow state ──────────────────────────────────────────────────────────
   const canFollow = !!authData;
@@ -235,20 +257,39 @@ function RouteComponent() {
                 </Typography>
               </Box>
             ) : (
-              <Grid container spacing={2}>
-                {patterns.map((pattern, i) => (
-                  <Grid key={pattern.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <PatternTileCard pattern={pattern} onSelect={() => setSelectedIndex(i)} />
+              <>
+                <BrowseSearchBar
+                  value={patternSearch}
+                  onChange={(v) => { setPatternSearch(v); setSelectedIndex(null); }}
+                  placeholder="Search patterns by name, tag, description…"
+                  totalCount={patterns.length}
+                  resultCount={filteredPatterns.length}
+                />
+
+                {filteredPatterns.length === 0 ? (
+                  <Box sx={{ py: 8, textAlign: 'center', border: '1.5px dashed', borderColor: 'divider', borderRadius: 3 }}>
+                    <StyleRoundedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                    <Typography variant="body1" color="text.disabled">
+                      No patterns match your search.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Grid container spacing={2}>
+                    {filteredPatterns.map((pattern, i) => (
+                      <Grid key={pattern.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                        <PatternTileCard pattern={pattern} onSelect={() => setSelectedIndex(i)} />
+                      </Grid>
+                    ))}
                   </Grid>
-                ))}
-              </Grid>
+                )}
+              </>
             )}
           </>
         )}
       </Container>
 
       <PatternListDrawer
-        patterns={patterns}
+        patterns={filteredPatterns}
         selectedIndex={selectedIndex}
         onNavigate={setSelectedIndex}
         onClose={() => setSelectedIndex(null)}
