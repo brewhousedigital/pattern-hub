@@ -6,29 +6,53 @@ import {
   useMutationDismissCollectionNotification,
   type TypeFollowedCollectionResponse,
 } from '@/functions/database/collections';
+import {
+  useQueryGetUserFollowedSets,
+  useMutationDismissSetNotification,
+  type TypeFollowedSetResponse,
+} from '@/functions/database/sets';
 
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
+import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 import { Badge, Box, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
+
+type CollectionUpdate = { type: 'collection'; record: TypeFollowedCollectionResponse };
+type SetUpdate = { type: 'set'; record: TypeFollowedSetResponse };
+type AnyUpdate = CollectionUpdate | SetUpdate;
 
 export const NotificationBell = () => {
   const { authData } = useGlobalAuthData();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const { data: followedCollections = [], refetch } = useQueryGetUserFollowedCollections(authData?.id || '');
-  const dismissNotification = useMutationDismissCollectionNotification();
+  const { data: followedCollections = [], refetch: refetchCollections } = useQueryGetUserFollowedCollections(
+    authData?.id || '',
+  );
+  const { data: followedSets = [], refetch: refetchSets } = useQueryGetUserFollowedSets(authData?.id || '');
+
+  const dismissCollectionNotification = useMutationDismissCollectionNotification();
+  const dismissSetNotification = useMutationDismissSetNotification();
   const navigate = useNavigate();
 
-  // Collections whose updated timestamp is newer than last_checked_updated
-  const updates = followedCollections.filter((f) => {
-    const collectionUpdated = f.expand?.collection_id?.updated;
-    if (!collectionUpdated) return false;
-    return new Date(collectionUpdated) > new Date(f.last_checked_updated);
-  });
+  const collectionUpdates: AnyUpdate[] = followedCollections
+    .filter((f) => {
+      const ts = f.expand?.collection_id?.updated;
+      return ts && new Date(ts) > new Date(f.last_checked_updated);
+    })
+    .map((record) => ({ type: 'collection', record }));
+
+  const setUpdates: AnyUpdate[] = followedSets
+    .filter((f) => {
+      const ts = f.expand?.set_id?.updated;
+      return ts && new Date(ts) > new Date(f.last_checked_updated);
+    })
+    .map((record) => ({ type: 'set', record }));
+
+  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates];
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -38,24 +62,42 @@ export const NotificationBell = () => {
     setAnchorEl(null);
   };
 
-  const handleNotificationClick = async (followRecord: TypeFollowedCollectionResponse) => {
+  const handleNotificationClick = async (update: AnyUpdate) => {
     handleClose();
-    const collectionUpdated = followRecord.expand?.collection_id?.updated;
-    if (collectionUpdated) {
+
+    if (update.type === 'collection') {
+      const collectionUpdated = update.record.expand?.collection_id?.updated;
+      if (!collectionUpdated) return;
       try {
-        await dismissNotification.mutateAsync({
-          followRecordId: followRecord.id,
+        await dismissCollectionNotification.mutateAsync({
+          followRecordId: update.record.id,
           collectionUpdated,
         });
-        await refetch();
+        await refetchCollections();
+        void navigate({
+          to: '/profile/collections/$collectionId',
+          params: { collectionId: update.record.collection_id },
+        });
       } catch {
-        // Silent - navigation still proceeds
+        // Silent — badge will reappear on next mount if dismiss failed
+      }
+    } else {
+      const setUpdated = update.record.expand?.set_id?.updated;
+      if (!setUpdated) return;
+      try {
+        await dismissSetNotification.mutateAsync({
+          followRecordId: update.record.id,
+          setUpdated,
+        });
+        await refetchSets();
+        void navigate({
+          to: '/sets/$setId',
+          params: { setId: update.record.set_id },
+        });
+      } catch {
+        // Silent — badge will reappear on next mount if dismiss failed
       }
     }
-    void navigate({
-      to: '/profile/collections/$collectionId',
-      params: { collectionId: followRecord.collection_id },
-    });
   };
 
   const menuItemStyles = {
@@ -63,7 +105,6 @@ export const NotificationBell = () => {
     maxWidth: 320,
   };
 
-  // Don't render the bell at all if user isn't logged in
   if (!authData) return null;
 
   return (
@@ -98,7 +139,7 @@ export const NotificationBell = () => {
           </Typography>
           {updates.length > 0 && (
             <Typography variant="caption" color="text.secondary">
-              {updates.length} collection{updates.length !== 1 ? 's' : ''} updated
+              {updates.length} update{updates.length !== 1 ? 's' : ''}
             </Typography>
           )}
         </Box>
@@ -110,32 +151,57 @@ export const NotificationBell = () => {
             </Typography>
           </MenuItem>
         ) : (
-          updates.map((followRecord) => {
-            const col = followRecord.expand?.collection_id;
-            const ownerName = col?.expand?.owner_id?.name;
-
-            return (
-              <MenuItem
-                key={followRecord.id}
-                onClick={() => handleNotificationClick(followRecord)}
-                sx={{ ...menuItemStyles, alignItems: 'flex-start' }}
-              >
-                <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
-                  <BookmarksOutlinedIcon fontSize="small" color="primary" />
-                </ListItemIcon>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
-                      {col?.name ?? 'Collection'}
+          updates.map((update) => {
+            if (update.type === 'collection') {
+              const col = update.record.expand?.collection_id;
+              const ownerName = col?.expand?.owner_id?.name;
+              return (
+                <MenuItem
+                  key={update.record.id}
+                  onClick={() => handleNotificationClick(update)}
+                  sx={{ ...menuItemStyles, alignItems: 'flex-start' }}
+                >
+                  <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
+                    <BookmarksOutlinedIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+                        {col?.name ?? 'Collection'}
+                      </Typography>
+                      <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {ownerName ? `by ${ownerName} · ` : ''}Updated with new patterns
                     </Typography>
-                    <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
                   </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {ownerName ? `by ${ownerName} · ` : ''}Updated with new patterns
-                  </Typography>
-                </Box>
-              </MenuItem>
-            );
+                </MenuItem>
+              );
+            } else {
+              const set = update.record.expand?.set_id;
+              return (
+                <MenuItem
+                  key={update.record.id}
+                  onClick={() => handleNotificationClick(update)}
+                  sx={{ ...menuItemStyles, alignItems: 'flex-start' }}
+                >
+                  <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
+                    <StyleRoundedIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+                        {set?.title ?? 'Set'}
+                      </Typography>
+                      <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Updated with new patterns
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              );
+            }
           })
         )}
       </Menu>

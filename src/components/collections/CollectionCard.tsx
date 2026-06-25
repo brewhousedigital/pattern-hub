@@ -54,7 +54,15 @@ type CollectionCardProps = {
 
 type PatternEntry = { id: string; name: string };
 
-export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUpdate, isDark, cardBg }: CollectionCardProps) => {
+export const CollectionCard = ({
+  collection,
+  isOwner,
+  onDeleted,
+  onEdited,
+  hasUpdate,
+  isDark,
+  cardBg,
+}: CollectionCardProps) => {
   const [deleteAnchor, setDeleteAnchor] = React.useState<HTMLButtonElement | null>(null);
   const [editOpen, setEditOpen] = React.useState(false);
   const [editName, setEditName] = React.useState('');
@@ -113,6 +121,8 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
         patterns: editPatterns.map((p) => p.id),
       });
 
+      // Refetch the data so if the user clicks into the card, the UI has the latest state
+      // Otherwise the GET still has the old data
       await refetchCollection();
 
       enqueueSnackbar(`"${editName.trim()}" updated`, { variant: 'success' });
@@ -139,14 +149,18 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
           height: '100%',
           transition: 'box-shadow 0.15s',
           '&:hover': { boxShadow: 2 },
-          ...(isDark ? {
-            borderColor: 'rgba(255,255,255,0.08)',
-            backgroundColor: cardBg || '#242424',
-            '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
-            '& .MuiDivider-root': { borderColor: 'rgba(255,255,255,0.08)' },
-            '& .MuiIconButton-root': { color: 'rgba(255,255,255,0.38)' },
-            '& .MuiButton-root': { color: 'rgba(255,255,255,0.75)' },
-          } : cardBg ? { backgroundColor: cardBg } : {}),
+          ...(isDark
+            ? {
+                borderColor: 'rgba(255,255,255,0.08)',
+                backgroundColor: cardBg || '#242424',
+                '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+                '& .MuiDivider-root': { borderColor: 'rgba(255,255,255,0.08)' },
+                '& .MuiIconButton-root': { color: 'rgba(255,255,255,0.38)' },
+                '& .MuiButton-root': { color: 'rgba(255,255,255,0.75)' },
+              }
+            : cardBg
+              ? { backgroundColor: cardBg }
+              : {}),
         }}
       >
         {/* Card header */}
@@ -345,11 +359,7 @@ export const CollectionCard = ({ collection, isOwner, onDeleted, onEdited, hasUp
                     }
                   >
                     <ListItemText
-                      primary={
-                        <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
-                          {pattern.name}
-                        </Typography>
-                      }
+                      primary={<Typography sx={{ fontSize: 13, fontWeight: 500 }}>{pattern.name}</Typography>}
                       secondary={
                         <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
                           {pattern.id}

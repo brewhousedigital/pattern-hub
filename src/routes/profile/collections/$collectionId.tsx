@@ -14,6 +14,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { alpha } from '@mui/material/styles';
+import { enqueueSnackbar } from 'notistack';
 
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
@@ -44,18 +45,21 @@ function RouteComponent() {
   const isOwner = !!authData && !!collection && authData.id === collection.owner_id;
   const canFollow = !!authData && !isOwner;
 
-  const { data: followedCollections = [], refetch: refetchFollowed } = useQueryGetUserFollowedCollections(
-    authData?.id || '',
-  );
+  const {
+    data: followedCollections = [],
+    isLoading: followedLoading,
+    refetch: refetchFollowed,
+  } = useQueryGetUserFollowedCollections(authData?.id || '');
   const followRecord = followedCollections.find((f) => f.collection_id === collectionId);
   const isFollowing = !!followRecord;
 
   const followMutation = useMutationFollowCollection();
   const unfollowMutation = useMutationUnfollowCollection();
-  const followLoading = followMutation.isPending || unfollowMutation.isPending;
+  // Also disabled while followedLoading to prevent a double-follow race during the initial fetch window
+  const followLoading = followMutation.isPending || unfollowMutation.isPending || followedLoading;
 
   const handleFollowToggle = async () => {
-    if (!collection) return;
+    if (!collection || !canFollow) return;
     try {
       if (isFollowing && followRecord) {
         await unfollowMutation.mutateAsync(followRecord.id);
@@ -64,7 +68,9 @@ function RouteComponent() {
       }
       await refetchFollowed();
     } catch {
-      // notistack not imported here - silent; user can retry
+      enqueueSnackbar('Something went wrong trying to follow this collection... try again in a minute or two.', {
+        variant: 'error',
+      });
     }
   };
 

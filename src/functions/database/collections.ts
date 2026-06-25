@@ -5,6 +5,11 @@ import type { TypePatternResponse } from '@/functions/database/patterns';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
 
+// ─── Query key constants ──────────────────────────────────────────────────────
+
+export const COLLECTIONS_QUERY_KEY = ['UserCollections'] as const;
+export const FOLLOWED_COLLECTIONS_QUERY_KEY = ['UserFollowedCollections'] as const;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type TypeCollectionResponse = {
@@ -41,7 +46,7 @@ export type TypeFollowedCollectionResponse = {
 
 export const useQueryGetUserCollections = (userId: string, pageNumber: number) => {
   return useQuery({
-    queryKey: ['GetUserCollections', userId, pageNumber],
+    queryKey: [...COLLECTIONS_QUERY_KEY, userId, pageNumber],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeCollectionResponse>> => {
       return await pocketbase.collection('user_collections').getList(pageNumber, 10, {
         sort: '-created',
@@ -56,7 +61,7 @@ export const useQueryGetUserCollections = (userId: string, pageNumber: number) =
 
 export const useQueryGetCollectionById = (collectionId: string) => {
   return useQuery({
-    queryKey: ['GetCollectionById', collectionId],
+    queryKey: [...COLLECTIONS_QUERY_KEY, 'byId', collectionId],
     queryFn: async (): Promise<TypeCollectionResponse> => {
       return await pocketbase.collection('user_collections').getOne(collectionId, {
         expand: 'patterns,patterns.authors,owner_id',
@@ -69,7 +74,7 @@ export const useQueryGetCollectionById = (collectionId: string) => {
 /** Fetch all collections that the logged-in user owns - lightweight, no expand. */
 export const useQueryGetUserCollectionsAll = (userId: string) => {
   return useQuery({
-    queryKey: ['GetUserCollectionsAll', userId],
+    queryKey: [...COLLECTIONS_QUERY_KEY, 'all', userId],
     queryFn: async (): Promise<TypeCollectionResponse[]> => {
       return await pocketbase.collection('user_collections').getFullList({
         sort: '-created',
@@ -84,7 +89,7 @@ export const useQueryGetUserCollectionsAll = (userId: string) => {
 /** Fetch all collections the logged-in user follows, with the collection expanded. */
 export const useQueryGetUserFollowedCollections = (userId: string) => {
   return useQuery({
-    queryKey: ['GetUserFollowedCollections', userId],
+    queryKey: [...FOLLOWED_COLLECTIONS_QUERY_KEY, userId],
     queryFn: async (): Promise<TypeFollowedCollectionResponse[]> => {
       return await pocketbase.collection('user_followed_collections').getFullList({
         filter: `owner_id = "${userId}"`,
@@ -104,10 +109,11 @@ export const useMutationCreateCollection = () => {
 
   return useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      if (!authData?.id) throw new Error('Not authenticated');
       return await pocketbase.collection('user_collections').create({
         name,
         description,
-        owner_id: authData?.id,
+        owner_id: authData.id,
         patterns: [],
       });
     },
@@ -159,8 +165,9 @@ export const useMutationFollowCollection = () => {
 
   return useMutation({
     mutationFn: async ({ collectionId, collectionUpdated }: { collectionId: string; collectionUpdated: string }) => {
+      if (!authData?.id) throw new Error('Not authenticated');
       return await pocketbase.collection('user_followed_collections').create({
-        owner_id: authData?.id,
+        owner_id: authData.id,
         collection_id: collectionId,
         last_checked_updated: collectionUpdated,
       });
