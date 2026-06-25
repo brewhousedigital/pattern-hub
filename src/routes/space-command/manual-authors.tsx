@@ -18,6 +18,7 @@ import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor'
 import { useQueryClient } from '@tanstack/react-query';
 import { enqueueSnackbar } from 'notistack';
 import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
+import { resizeAndConvertToWebP } from '@/functions/utilities/image-processing';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -119,11 +120,18 @@ function RouteComponent() {
     setModalOpen(true);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    try {
+      const blob = await resizeAndConvertToWebP(file, 400, 400, 0.87);
+      const processed = new File([blob], 'avatar.webp', { type: 'image/webp' });
+      if (avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+      setAvatarFile(processed);
+      setAvatarPreview(URL.createObjectURL(processed));
+    } catch {
+      enqueueSnackbar('Could not process this image, please try another file.', { variant: 'error' });
+    }
   };
 
   const handleSave = async () => {
