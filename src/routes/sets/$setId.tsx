@@ -59,7 +59,7 @@ function RouteComponent() {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [patternSearch, setPatternSearch] = useState('');
-  const [patternSort, setPatternSort] = useState<BrowseSortValue>('-created');
+  const [patternSort, setPatternSort] = useState<BrowseSortValue>('-updated');
 
   const fuse = useMemo(
     () =>
@@ -264,7 +264,10 @@ function RouteComponent() {
               <>
                 <BrowseSearchBar
                   value={patternSearch}
-                  onChange={(v) => { setPatternSearch(v); setSelectedIndex(null); }}
+                  onChange={(v) => {
+                    setPatternSearch(v);
+                    setSelectedIndex(null);
+                  }}
                   placeholder="Search patterns by name, tag, description…"
                   totalCount={patterns.length}
                   resultCount={filteredPatterns.length}
@@ -273,7 +276,9 @@ function RouteComponent() {
                 />
 
                 {filteredPatterns.length === 0 ? (
-                  <Box sx={{ py: 8, textAlign: 'center', border: '1.5px dashed', borderColor: 'divider', borderRadius: 3 }}>
+                  <Box
+                    sx={{ py: 8, textAlign: 'center', border: '1.5px dashed', borderColor: 'divider', borderRadius: 3 }}
+                  >
                     <StyleRoundedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
                     <Typography variant="body1" color="text.disabled">
                       No patterns match your search.
