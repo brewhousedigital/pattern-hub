@@ -29,6 +29,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import {
   Box,
   Checkbox,
+  Chip,
   FormControlLabel,
   Typography,
   Button,
@@ -44,10 +45,11 @@ type PatternViewContentProps = {
   viewData: TypePatternResponse | undefined;
   /** Optional sidebar to render in the left column (e.g. ViewDrawerPatternSidebar). Omitting it collapses the left column. */
   sidebar?: React.ReactNode;
+  showStandaloneTags?: boolean;
 };
 
 export const PatternViewContent = (props: PatternViewContentProps) => {
-  const { viewData, sidebar } = props;
+  const { viewData, sidebar, showStandaloneTags } = props;
 
   const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('svg');
 
@@ -229,9 +231,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               <Tab label="Export Image" value="image" />
             </Tabs>
 
-            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
-              <LayerSelectionHint sx={{ mb: 2 }} />
-            )}
+            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && <LayerSelectionHint sx={{ mb: 2 }} />}
 
             <Suspense fallback={<Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />}>
               {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
@@ -243,9 +243,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
         {!viewData?.pattern_file_external && (
           <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>
-            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && (
-              <LayerSelectionHint sx={{ mb: 2 }} />
-            )}
+            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && <LayerSelectionHint sx={{ mb: 2 }} />}
             <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
               <PatternViewer3DLazy viewData={viewData} hiddenLayers={hiddenLayers} />
             </Suspense>
@@ -322,9 +320,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <CompactRow label="Favorited">{(viewData?.favorite_count ?? 0).toLocaleString()}</CompactRow>
           <CompactRow label="Completed">{(viewData?.done_count ?? 0).toLocaleString()}</CompactRow>
           <CompactRow label="Ratings">{(viewData?.total_ratings ?? 0).toLocaleString()}</CompactRow>
-          <CompactRow label="Difficulty Votes">
-            {(viewData?.total_difficulty_ratings ?? 0).toLocaleString()}
-          </CompactRow>
+          <CompactRow label="Difficulty Votes">{(viewData?.total_difficulty_ratings ?? 0).toLocaleString()}</CompactRow>
 
           {/* ── Details ───────────────────────────────────────── */}
           <PanelSectionTitle>Details</PanelSectionTitle>
@@ -381,6 +377,31 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <CompactRow label="File size">{formatByteSize(viewData?.pattern_file_size)}</CompactRow>
           ) : (
             <></>
+          )}
+
+          {showStandaloneTags && (viewData?.tags?.length ?? 0) > 0 && (
+            <Box sx={{ px: 1, pt: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  color: 'text.disabled',
+                  pb: 0.75,
+                }}
+              >
+                Tags
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {viewData!.tags!.map((tag) => (
+                  <Link key={tag} to="/" search={{ tags: [tag] }}>
+                    <Chip label={tag} size="small" variant="outlined" clickable />
+                  </Link>
+                ))}
+              </Box>
+            </Box>
           )}
 
           <Box sx={{ px: 1, pt: 2, pb: 1 }}>

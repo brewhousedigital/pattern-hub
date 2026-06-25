@@ -31,7 +31,8 @@ export const PatternListDrawer = ({ patterns, selectedIndex, onNavigate, onClose
         target.tagName === 'TEXTAREA' ||
         target.tagName === 'SELECT' ||
         target.isContentEditable
-      ) return;
+      )
+        return;
       if (e.key === 'ArrowLeft' && hasPrev && selectedIndex !== null) onNavigate(selectedIndex - 1);
       else if (e.key === 'ArrowRight' && hasNext && selectedIndex !== null) onNavigate(selectedIndex + 1);
       else if (e.key === 'Escape') onClose();
@@ -85,13 +86,7 @@ export const PatternListDrawer = ({ patterns, selectedIndex, onNavigate, onClose
               </Box>
 
               <Box sx={{ order: { xs: 3, md: 2 }, gridColumn: 'span 2', textAlign: 'center' }}>
-                <Button
-                  fullWidth
-                  startIcon={<CloseIcon />}
-                  variant="outlined"
-                  size="small"
-                  onClick={onClose}
-                >
+                <Button fullWidth startIcon={<CloseIcon />} variant="outlined" size="small" onClick={onClose}>
                   Close
                 </Button>
                 {selectedIndex !== null && (
@@ -116,7 +111,7 @@ export const PatternListDrawer = ({ patterns, selectedIndex, onNavigate, onClose
             </Box>
           </Container>
 
-          <PatternViewContent viewData={pattern} />
+          <PatternViewContent viewData={pattern} showStandaloneTags />
         </Container>
       </Box>
     </SwipeableDrawer>

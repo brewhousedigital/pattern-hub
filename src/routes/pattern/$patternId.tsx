@@ -54,7 +54,7 @@ function RouteComponent() {
             </Alert>
           )}
 
-          <PatternViewContent viewData={data} />
+          <PatternViewContent viewData={data} showStandaloneTags />
         </Container>
       </Box>
     </GeneralLayout>
