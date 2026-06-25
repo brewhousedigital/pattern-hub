@@ -51,7 +51,7 @@ export const useQueryGetAllSets = () => {
   });
 };
 
-/** Public - only published sets, sorted by position then title. */
+/** Public - only published sets, sorted by position then title. Expands patterns with minimal fields for thumbnail previews. */
 export const useQueryGetPublishedSets = () => {
   return useQuery({
     queryKey: [...PATTERN_SETS_QUERY_KEY, 'published'],
@@ -59,6 +59,10 @@ export const useQueryGetPublishedSets = () => {
       pocketbase.collection('pattern_sets').getFullList<TypePatternSet>({
         filter: 'is_published = true',
         sort: 'position,title',
+        expand: 'patterns',
+        fields:
+          'id,title,description,patterns,position,color,is_published,created,updated,' +
+          'expand.patterns.id,expand.patterns.collectionId,expand.patterns.pattern_file,expand.patterns.pattern_file_external,expand.patterns.name',
       }),
   });
 };
