@@ -10,6 +10,7 @@ import {
 } from '@/functions/database/collections';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
+import { generateUserAvatarUrl } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
@@ -22,7 +23,7 @@ import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneR
 import ExtensionIcon from '@mui/icons-material/Extension';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 
-import { Alert, Box, Button, Container, Paper, Skeleton, Stack, Typography, Grid } from '@mui/material';
+import { Alert, Avatar, Box, Button, Container, Paper, Skeleton, Stack, Typography, Grid } from '@mui/material';
 
 export const Route = createFileRoute('/profile/collections/$collectionId')({
   component: RouteComponent,
@@ -123,15 +124,6 @@ function RouteComponent() {
                           <MarkdownWrapper>{collection.description}</MarkdownWrapper>
                         </Box>
                       )}
-
-                      {collection.expand?.owner_id && (
-                        <Typography sx={{ mb: 2 }}>
-                          By:{' '}
-                          <Link to="/profile" search={{ id: collection.owner_id, tab: 0 }}>
-                            {collection.expand.owner_id.name || 'Unknown'}
-                          </Link>
-                        </Typography>
-                      )}
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'right' } }}>
@@ -157,6 +149,42 @@ function RouteComponent() {
                   </Grid>
 
                   <Stack direction="row" sx={{ flexWrap: 'wrap', width: '100%', gap: 2.5, alignItems: 'center' }}>
+                    {collection.expand?.owner_id && (
+                      <Link
+                        to="/profile"
+                        search={{ id: collection.owner_id, tab: 0 }}
+                        style={{ textDecoration: 'none', display: 'block' }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            px: 1.25,
+                            py: 0.5,
+                            borderRadius: 6,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            transition: 'border-color 0.15s, background-color 0.15s',
+                            '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                          }}
+                        >
+                          <Avatar
+                            src={generateUserAvatarUrl(collection.expand.owner_id) ?? undefined}
+                            sx={{ width: 22, height: 22, fontSize: '0.65rem' }}
+                          >
+                            {(collection.expand.owner_id.name || '?')[0].toUpperCase()}
+                          </Avatar>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500 }}
+                          >
+                            {collection.expand.owner_id.name || 'Unknown'}
+                          </Typography>
+                        </Box>
+                      </Link>
+                    )}
+
                     <Typography
                       variant="body2"
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem' }}
