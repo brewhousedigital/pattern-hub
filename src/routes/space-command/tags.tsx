@@ -108,7 +108,7 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
   while (true) {
     const result = await pocketbase
       .collection('patterns')
-      .getList<TypePatternRecord>(page, perPage, { filter: `tags ~ '"${tag}"'`, fields: 'id,tags' });
+      .getList<TypePatternRecord>(page, perPage, { filter: `tags ~ '"${tag}"'`, fields: 'id,tags,name' });
     records.push(...result.items);
     if (records.length >= result.totalItems) break;
     page++;
@@ -902,6 +902,9 @@ const TagManagementPage = () => {
 
         const records = await fetchPatternsWithTag(tag);
 
+        const tagsAffected: string[] = [];
+        const patternsAffected: { id: string; name: string }[] = [];
+
         if (records.length > 0) {
           setProgress((p) => ({ ...p, total: records.length }));
 
@@ -910,6 +913,8 @@ const TagManagementPage = () => {
             async (record) => {
               let updatedTags: string[];
               if (type === 'delete') {
+                tagsAffected.push(tag);
+                patternsAffected.push({ id: record.id, name: record.name || '' });
                 updatedTags = record.tags.filter((t) => t !== tag);
               } else {
                 // rename or merge: replace the old tag with newTag
@@ -940,7 +945,11 @@ const TagManagementPage = () => {
           entity_id: tag,
           entity_name: tag,
           changes: newTag ? { tag: { from: tag, to: newTag } } : {},
-          metadata: { affected_patterns: records.length, type },
+          metadata: {
+            number_of_affected_patterns: records.length,
+            type,
+            patterns: patternsAffected,
+          },
         });
 
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });

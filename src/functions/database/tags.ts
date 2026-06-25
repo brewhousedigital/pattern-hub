@@ -161,6 +161,7 @@ export function getDescendants(tagName: string, hierarchy: TypeTagHierarchyRecor
 export interface TypePatternRecord {
   id: string;
   tags: string[];
+  name: string;
   [key: string]: unknown;
 }
 
