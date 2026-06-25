@@ -1470,6 +1470,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                               <Button
                                 variant="outlined"
                                 color="success"
+                                disabled={!newPatternKey.fullPath || !newPatternKey.name.trim()}
                                 onClick={() => handleAddPatternKey(newPatternKey)}
                               >
                                 Add key
