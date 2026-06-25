@@ -46,16 +46,21 @@ function RouteComponent() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const { data: author, isPending: authorPending, isError: authorError } = useQueryGetManualAuthorBySlug(slug);
-  const {
-    data: patternsData,
-    isPending: patternsPending,
-  } = useQueryGetPatternsByManualAuthorName(author?.name ?? '', page);
+  const { data: patternsData, isPending: patternsPending } = useQueryGetPatternsByManualAuthorName(
+    author?.name ?? '',
+    page,
+  );
 
   const patterns = patternsData?.items ?? [];
   const totalPages = patternsData?.totalPages ?? 1;
   const totalItems = patternsData?.totalItems ?? 0;
 
-  if (authorPending) return <GeneralLayout><AuthorSkeleton /></GeneralLayout>;
+  if (authorPending)
+    return (
+      <GeneralLayout>
+        <AuthorSkeleton />
+      </GeneralLayout>
+    );
 
   if (authorError || !author) {
     return (
@@ -79,12 +84,9 @@ function RouteComponent() {
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={3}
-            alignItems={{ xs: 'center', sm: 'flex-start' }}
+            sx={{ alignItems: { xs: 'center', sm: 'flex-start' } }}
           >
-            <Avatar
-              src={avatarUrl ?? undefined}
-              sx={{ width: 100, height: 100, flexShrink: 0, fontSize: '2.5rem' }}
-            >
+            <Avatar src={avatarUrl ?? undefined} sx={{ width: 100, height: 100, flexShrink: 0, fontSize: '2.5rem' }}>
               <PersonRoundedIcon sx={{ fontSize: 52 }} />
             </Avatar>
 
@@ -136,9 +138,7 @@ function RouteComponent() {
             ))}
           </Grid>
         ) : patterns.length === 0 ? (
-          <Box
-            sx={{ py: 8, textAlign: 'center', border: '1.5px dashed', borderColor: 'divider', borderRadius: 3 }}
-          >
+          <Box sx={{ py: 8, textAlign: 'center', border: '1.5px dashed', borderColor: 'divider', borderRadius: 3 }}>
             <ExtensionIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
             <Typography variant="body1" color="text.disabled">
               No patterns found for this artist yet.
@@ -155,11 +155,14 @@ function RouteComponent() {
             </Grid>
 
             {totalPages > 1 && (
-              <Stack alignItems="center" sx={{ mt: 4 }}>
+              <Stack sx={{ mt: 4, alignItems: 'center' }}>
                 <Pagination
                   count={totalPages}
                   page={page}
-                  onChange={(_, v) => { setPage(v); setSelectedIndex(null); }}
+                  onChange={(_, v) => {
+                    setPage(v);
+                    setSelectedIndex(null);
+                  }}
                   color="primary"
                   shape="rounded"
                 />
@@ -184,7 +187,7 @@ function RouteComponent() {
 const AuthorSkeleton = () => (
   <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
     <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 3, md: 4 }, mb: 4 }}>
-      <Stack direction="row" spacing={3} alignItems="flex-start">
+      <Stack direction="row" spacing={3} sx={{ alignItems: 'flex-start' }}>
         <Skeleton variant="circular" width={100} height={100} />
         <Box sx={{ flex: 1 }}>
           <Skeleton variant="text" width="40%" sx={{ fontSize: '2rem', mb: 1 }} />

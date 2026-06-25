@@ -34,8 +34,6 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -62,17 +60,18 @@ export const Route = createFileRoute('/space-command/manual-authors')({
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function RouteComponent() {
-  const canView = useCheckAdminAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AR);
-  const canCreate = useCheckAdminAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AC);
-  const canEdit = useCheckAdminAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AU);
-  const canDelete = useCheckAdminAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AD);
+  const { checkAccess } = useCheckAdminAccess();
+  const canView = checkAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AR);
+  const canCreate = checkAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AC);
+  const canEdit = checkAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AU);
+  const canDelete = checkAccess(EnumLevelsAdmin.MANUAL_AUTHOR_AD);
 
   const { data: authors = [], isPending, isError } = useQueryGetAllManualAuthors();
   const createMutation = useMutationCreateManualAuthor();
   const updateMutation = useMutationUpdateManualAuthor();
   const deleteMutation = useMutationDeleteManualAuthor();
   const queryClient = useQueryClient();
-  const { logAdminAction } = useAdminLogger();
+  const { log } = useAdminLogger();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<TypeManualAuthor | null>(null);
@@ -144,15 +143,40 @@ function RouteComponent() {
     try {
       if (editTarget) {
         const updated = await updateMutation.mutateAsync({ id: editTarget.id, formData });
-        const changes = diffAdminChanges(
-          { name: editTarget.name, slug: editTarget.slug, is_published: editTarget.is_published },
-          { name: updated.name, slug: updated.slug, is_published: updated.is_published },
-        );
-        if (changes) await logAdminAction(`Updated manual author "${updated.name}": ${changes}`);
+        log({
+          action: 'Manual Author Updated',
+          entity_type: 'Manual Author',
+          entity_id: editTarget.id,
+          entity_name: updated.name,
+          changes: diffAdminChanges(
+            {
+              name: editTarget.name,
+              slug: editTarget.slug,
+              is_published: String(editTarget.is_published),
+              external_url: editTarget.external_url,
+            } as Record<string, unknown>,
+            {
+              name: updated.name,
+              slug: updated.slug,
+              is_published: String(updated.is_published),
+              external_url: updated.external_url,
+            } as Record<string, unknown>,
+            ['name', 'slug', 'is_published', 'external_url'],
+            avatarFile ? ['avatar'] : [],
+          ),
+          metadata: {},
+        });
         enqueueSnackbar(`"${updated.name}" updated.`, { variant: 'success' });
       } else {
         const created = await createMutation.mutateAsync(formData);
-        await logAdminAction(`Created manual author "${created.name}" (slug: ${created.slug})`);
+        log({
+          action: 'Manual Author Created',
+          entity_type: 'Manual Author',
+          entity_id: created.id,
+          entity_name: created.name,
+          changes: {},
+          metadata: { slug: created.slug, is_published: created.is_published },
+        });
         enqueueSnackbar(`"${created.name}" created.`, { variant: 'success' });
       }
       setModalOpen(false);
@@ -167,7 +191,14 @@ function RouteComponent() {
     if (!deleteTarget) return;
     try {
       await deleteMutation.mutateAsync(deleteTarget.id);
-      await logAdminAction(`Deleted manual author "${deleteTarget.name}"`);
+      log({
+        action: 'Manual Author Deleted',
+        entity_type: 'Manual Author',
+        entity_id: deleteTarget.id,
+        entity_name: deleteTarget.name,
+        changes: {},
+        metadata: {},
+      });
       enqueueSnackbar(`"${deleteTarget.name}" deleted.`, { variant: 'success' });
       setDeleteTarget(null);
     } catch {
@@ -185,10 +216,7 @@ function RouteComponent() {
       width: 56,
       sortable: false,
       renderCell: (params: GridRenderCellParams<TypeManualAuthor>) => (
-        <Avatar
-          src={generateManualAuthorAvatarUrl(params.row) ?? undefined}
-          sx={{ width: 36, height: 36 }}
-        >
+        <Avatar src={generateManualAuthorAvatarUrl(params.row) ?? undefined} sx={{ width: 36, height: 36 }}>
           <PersonRoundedIcon fontSize="small" />
         </Avatar>
       ),
@@ -273,7 +301,7 @@ function RouteComponent() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             {/* Avatar upload */}
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
               <Avatar
                 src={avatarPreview ?? undefined}
                 sx={{ width: 72, height: 72, cursor: 'pointer' }}
@@ -290,17 +318,11 @@ function RouteComponent() {
                 >
                   {avatarPreview ? 'Change Photo' : 'Upload Photo'}
                 </Button>
-                <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.5 }}>
+                <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
                   JPG or PNG, max 2 MB
                 </Typography>
               </Box>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleAvatarChange}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
             </Stack>
 
             <TextField
@@ -316,7 +338,10 @@ function RouteComponent() {
             <TextField
               label="Slug"
               value={slug}
-              onChange={(e) => { setSlug(e.target.value); setSlugManuallyEdited(true); }}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugManuallyEdited(true);
+              }}
               required
               fullWidth
               size="small"
@@ -336,10 +361,7 @@ function RouteComponent() {
               <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                 Description (Markdown)
               </Typography>
-              <GenericMarkdownEditor
-                value={description}
-                onChange={setDescription}
-              />
+              <GenericMarkdownEditor content={description} setContent={setDescription} />
             </Box>
 
             <FormControlLabel
@@ -349,7 +371,9 @@ function RouteComponent() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setModalOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button onClick={() => setModalOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleSave} loading={isSaving}>
             {editTarget ? 'Save Changes' : 'Create'}
           </Button>
@@ -367,12 +391,7 @@ function RouteComponent() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            loading={deleteMutation.isPending}
-            onClick={handleDelete}
-          >
+          <Button color="error" variant="contained" loading={deleteMutation.isPending} onClick={handleDelete}>
             Delete
           </Button>
         </DialogActions>
