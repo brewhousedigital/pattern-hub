@@ -10,17 +10,32 @@ import {
 import { useGlobalAuthData } from '@/data/auth-data';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { createPrettyDate } from '@/functions/utilities/dates';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { enqueueSnackbar } from 'notistack';
+import { alpha } from '@mui/material/styles';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
+import ExtensionIcon from '@mui/icons-material/Extension';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 
-import { Alert, Box, Button, Container, Grid, Link as MuiLink, Skeleton, Stack, Typography, Chip } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Grid,
+  Link as MuiLink,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -55,7 +70,6 @@ function RouteComponent() {
 
   const followMutation = useMutationFollowSet();
   const unfollowMutation = useMutationUnfollowSet();
-  // Disabled while followedLoading to prevent a double-follow race during the initial fetch window
   const followButtonLoading = followMutation.isPending || unfollowMutation.isPending || followedLoading;
 
   const handleFollowToggle = async () => {
@@ -77,7 +91,7 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
-      <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
         {/* Back link */}
         <MuiLink
           component={Link}
@@ -104,19 +118,7 @@ function RouteComponent() {
           </Alert>
         )}
 
-        {isPending && (
-          <>
-            <Skeleton variant="text" width={320} height={48} sx={{ mb: 1 }} />
-            <Skeleton variant="text" width={480} height={24} sx={{ mb: 4 }} />
-            <Grid container spacing={2}>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                  <Skeleton variant="rounded" sx={{ aspectRatio: '1/1', borderRadius: 4 }} />
-                </Grid>
-              ))}
-            </Grid>
-          </>
-        )}
+        {isPending && <SetDetailSkeleton />}
 
         {set && (
           <>
@@ -126,67 +128,110 @@ function RouteComponent() {
               </Alert>
             )}
 
-            {/* Set header */}
-            <Box
-              sx={{
-                mb: 4,
-                pb: 3,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                borderLeft: set.color ? `4px solid ${set.color}` : 'none',
-                pl: set.color ? 2 : 0,
-              }}
-            >
+            {/* ─── Header ─── */}
+            <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 2.5, md: 4 }, mb: 3 }}>
               <Stack
-                direction="row"
-                sx={{ alignItems: 'flex-start', mb: 0.5, flexWrap: 'wrap', gap: 1.5, justifyContent: 'space-between' }}
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={2}
+                sx={{ alignItems: { xs: 'center', md: 'flex-start' } }}
               >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2, mb: 1 }}>
-                    {set.title}
-                  </Typography>
-
-                  <Chip
-                    icon={<StyleRoundedIcon sx={{ fontSize: '13px !important' }} />}
-                    label={`${patterns.length} pattern${patterns.length !== 1 ? 's' : ''}`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.72rem', height: 24 }}
-                  />
+                {/* Icon box — uses the set's accent color when available */}
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2,
+                    backgroundColor: set.color ? alpha(set.color, 0.15) : (t) => alpha(t.palette.primary.main, 0.1),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <StyleRoundedIcon sx={{ color: set.color ?? 'primary.main' }} />
                 </Box>
 
-                {canFollow && (
-                  <Button
-                    size="small"
-                    variant={isFollowing ? 'contained' : 'outlined'}
-                    loading={followButtonLoading}
-                    onClick={handleFollowToggle}
-                    startIcon={
-                      isFollowing ? (
-                        <NotificationsActiveRoundedIcon fontSize="small" />
-                      ) : (
-                        <NotificationsNoneRoundedIcon fontSize="small" />
-                      )
-                    }
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Grid
+                    container
+                    spacing={2}
+                    sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 4, md: 0 } }}
                   >
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </Button>
-                )}
-              </Stack>
+                    <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                      <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}>
+                        {set.title}
+                      </Typography>
 
-              {set.description && (
-                <Box sx={{ maxWidth: 700, mt: 1 }}>
-                  <MarkdownWrapper>{set.description}</MarkdownWrapper>
+                      {set.description && (
+                        <Box sx={{ mb: 1.5 }}>
+                          <MarkdownWrapper>{set.description}</MarkdownWrapper>
+                        </Box>
+                      )}
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'right' } }}>
+                      {canFollow && (
+                        <Button
+                          size="small"
+                          variant={isFollowing ? 'contained' : 'outlined'}
+                          loading={followButtonLoading}
+                          onClick={handleFollowToggle}
+                          startIcon={
+                            isFollowing ? (
+                              <NotificationsActiveRoundedIcon fontSize="small" />
+                            ) : (
+                              <NotificationsNoneRoundedIcon fontSize="small" />
+                            )
+                          }
+                          sx={{ ml: 'auto' }}
+                        >
+                          {isFollowing ? 'Following' : 'Follow'}
+                        </Button>
+                      )}
+                    </Grid>
+                  </Grid>
+
+                  <Stack direction="row" sx={{ flexWrap: 'wrap', width: '100%', gap: 2.5, alignItems: 'center' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem' }}
+                    >
+                      <ExtensionIcon fontSize="inherit" />{' '}
+                      {`${patterns.length} pattern${patterns.length !== 1 ? 's' : ''}`}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem', mr: 'auto' }}
+                    >
+                      <CalendarTodayOutlinedIcon fontSize="inherit" /> {createPrettyDate(set.created)}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem' }}
+                    >
+                      Last Updated: {createPrettyDate(set.updated)}
+                    </Typography>
+                  </Stack>
                 </Box>
-              )}
-            </Box>
+              </Stack>
+            </Paper>
 
-            {/* Pattern grid */}
+            {/* ─── Pattern grid ─── */}
             {patterns.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 10 }}>
-                <StyleRoundedIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
-                  No patterns in this set yet
+              <Box
+                sx={{
+                  py: 8,
+                  textAlign: 'center',
+                  border: '1.5px dashed',
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                }}
+              >
+                <StyleRoundedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                <Typography variant="body1" color="text.disabled">
+                  No patterns in this set yet.
                 </Typography>
               </Box>
             ) : (
@@ -211,3 +256,30 @@ function RouteComponent() {
     </GeneralLayout>
   );
 }
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const SetDetailSkeleton = () => (
+  <>
+    <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 2.5, md: 4 }, mb: 3 }}>
+      <Stack direction="row" spacing={2}>
+        <Skeleton variant="rounded" width={52} height={52} />
+        <Box sx={{ flex: 1 }}>
+          <Skeleton variant="text" width="40%" sx={{ fontSize: '1.5rem', mb: 0.5 }} />
+          <Skeleton variant="text" width="70%" />
+          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+            <Skeleton variant="rounded" width={100} height={24} />
+            <Skeleton variant="rounded" width={80} height={24} />
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+    <Grid container spacing={2}>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <Skeleton variant="rounded" sx={{ aspectRatio: '1/1', borderRadius: 4 }} />
+        </Grid>
+      ))}
+    </Grid>
+  </>
+);
