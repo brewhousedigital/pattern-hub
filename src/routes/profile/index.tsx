@@ -457,15 +457,22 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           }}
         >
           <Tooltip title="Share profile">
-            <IconButton onClick={handleShare} sx={heroBtn}>
-              <ShareRoundedIcon />
-            </IconButton>
+            <Button startIcon={<ShareRoundedIcon />} onClick={handleShare} sx={heroBtn} variant="outlined">
+              Share
+            </Button>
           </Tooltip>
+
           {!isPublicView && (
             <Tooltip title="Edit profile">
-              <IconButton component={Link} to="/profile/edit" sx={heroBtn}>
-                <EditRoundedIcon />
-              </IconButton>
+              <Button
+                startIcon={<EditRoundedIcon />}
+                component={Link}
+                to="/profile/edit"
+                sx={heroBtn}
+                variant="outlined"
+              >
+                Edit
+              </Button>
             </Tooltip>
           )}
         </Box>
@@ -938,7 +945,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   isDark={isDark}
                 />
                 {dataDifficulty && dataDifficulty.totalItems > 0 && (
-                  <PaginationBox data={dataDifficulty} value={difficultyPage} setter={setDifficultyPage} isDark={isDark} />
+                  <PaginationBox
+                    data={dataDifficulty}
+                    value={difficultyPage}
+                    setter={setDifficultyPage}
+                    isDark={isDark}
+                  />
                 )}
               </>
             )}
@@ -1018,7 +1030,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                       ))}
                     </Grid>
                     {dataCols.totalItems > 0 && (
-                      <PaginationBox data={dataCols} value={collectionsPage} setter={setCollectionsPage} isDark={isDark} />
+                      <PaginationBox
+                        data={dataCols}
+                        value={collectionsPage}
+                        setter={setCollectionsPage}
+                        isDark={isDark}
+                      />
                     )}
                   </>
                 )}
@@ -1046,7 +1063,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                         const hasUpdate = new Date(col.updated) > new Date(followRecord.last_checked_updated);
                         return (
                           <Grid key={followRecord.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                            <CollectionCard collection={col} isOwner={false} hasUpdate={hasUpdate} cardBg={cardBg} isDark={isDark} />
+                            <CollectionCard
+                              collection={col}
+                              isOwner={false}
+                              hasUpdate={hasUpdate}
+                              cardBg={cardBg}
+                              isDark={isDark}
+                            />
                           </Grid>
                         );
                       })}
@@ -1134,10 +1157,12 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName, cardBg, 
 
   const cardSx = {
     backgroundColor: cardBg || (isDark ? '#242424' : undefined),
-    ...(isDark ? {
-      borderColor: 'rgba(255,255,255,0.08)',
-      '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
-    } : {}),
+    ...(isDark
+      ? {
+          borderColor: 'rgba(255,255,255,0.08)',
+          '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+        }
+      : {}),
   };
 
   return (
@@ -1204,10 +1229,12 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
 
   const cardSx = {
     backgroundColor: props.cardBg || (props.isDark ? '#242424' : undefined),
-    ...(props.isDark ? {
-      borderColor: 'rgba(255,255,255,0.08)',
-      '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
-    } : {}),
+    ...(props.isDark
+      ? {
+          borderColor: 'rgba(255,255,255,0.08)',
+          '& .MuiTypography-root': { color: 'rgba(255,255,255,0.85) !important' },
+        }
+      : {}),
   };
 
   return (
@@ -1491,7 +1518,11 @@ const GalleryLightbox = ({
             <Typography variant="h6" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
               {photo?.title}
             </Typography>
-            <IconButton onClick={onClose} size="small" sx={{ flexShrink: 0, ...(isDark ? { color: 'rgba(255,255,255,0.6)' } : {}) }}>
+            <IconButton
+              onClick={onClose}
+              size="small"
+              sx={{ flexShrink: 0, ...(isDark ? { color: 'rgba(255,255,255,0.6)' } : {}) }}
+            >
               <CloseRoundedIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -1520,7 +1551,10 @@ const GalleryLightbox = ({
                     borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider',
                     borderRadius: 2,
                     transition: 'border-color 0.15s, background-color 0.15s',
-                    '&:hover': { borderColor: 'primary.main', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'action.hover' },
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'action.hover',
+                    },
                   }}
                 >
                   <Box
