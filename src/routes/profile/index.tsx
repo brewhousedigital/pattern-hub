@@ -232,8 +232,8 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
   // ─── Customization derived values ─────────────────────────────────────────
 
-  const siteColor = thisAuthData?.site_color ?? '#0b6536';
-  const siteColorSecondary = thisAuthData?.site_color_secondary ?? '#cfe1b9';
+  const siteColor = thisAuthData?.site_color || '#0b6536';
+  const siteColorSecondary = thisAuthData?.site_color_secondary || '#cfe1b9';
   const bgType = thisAuthData?.profile_bg_type ?? 'solid';
   const bgColor = thisAuthData?.profile_bg_color ?? '';
   const bgGradEnd = thisAuthData?.profile_bg_gradient_end ?? '#ffffff';
