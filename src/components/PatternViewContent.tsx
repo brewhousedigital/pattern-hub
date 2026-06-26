@@ -371,7 +371,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PanelSectionTitle>Attribution</PanelSectionTitle>
 
           <CompactRow label="Designed by">
-            <Stack direction="row" divider={<>·</>} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+            <Stack direction="column" sx={{ gap: 0.5, justifyContent: 'flex-end' }}>
               {viewData?.expand?.authors?.map((author, index) => {
                 return (
                   <Link key={`designed-by-${index}`} to="/profile" search={{ id: author.id, tab: 0 }}>
