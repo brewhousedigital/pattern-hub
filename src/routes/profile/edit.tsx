@@ -50,6 +50,7 @@ import {
   Container,
   FormControlLabel,
   Grid,
+  IconButton,
   InputAdornment,
   Paper,
   Skeleton,
@@ -58,6 +59,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
@@ -648,6 +650,39 @@ function RouteComponent() {
                       </Alert>
                     )}
 
+                    {/* Hidden file inputs */}
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void handleImageSelect(f, 'avatar');
+                      }}
+                    />
+                    <input
+                      ref={headerInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void handleImageSelect(f, 'header');
+                      }}
+                    />
+                    <input
+                      ref={mobileHeaderInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void handleImageSelect(f, 'mobileheader');
+                      }}
+                    />
+
+                    {/* Live preview of the profile card */}
                     <HeroPreview
                       sx={{
                         backgroundImage: activeHeaderSrc
@@ -704,189 +739,62 @@ function RouteComponent() {
                       </Box>
                     </HeroPreview>
 
-                    <Grid container spacing={6} sx={{ mt: 2 }}>
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <input
-                          ref={avatarInputRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) void handleImageSelect(f, 'avatar');
-                          }}
+                    {/* Uniform photo cards */}
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                      <PhotoRow
+                        title="Profile photo"
+                        description="Square crop · max 5 MB · resized to 400×400"
+                        circular
+                        placeholder={<PersonRoundedIcon sx={{ fontSize: 22, color: 'text.disabled' }} />}
+                        src={activeAvatarSrc}
+                        processing={processingImage === 'avatar'}
+                        removable={!!activeAvatarSrc && !avatarCleared}
+                        onUpload={() => avatarInputRef.current?.click()}
+                        onRemove={() => clearImage('avatar')}
+                      />
+                      <PhotoRow
+                        title="Header image"
+                        description="Wide landscape · max 10 MB · resized to 1920×500"
+                        placeholder={<WallpaperRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />}
+                        src={activeHeaderSrc}
+                        processing={processingImage === 'header'}
+                        removable={!!activeHeaderSrc && !headerCleared}
+                        onUpload={() => headerInputRef.current?.click()}
+                        onRemove={() => clearImage('header')}
+                      />
+                      <PhotoRow
+                        title="Mobile header"
+                        description="Optional · shown on small screens · defaults to your header · 900×500"
+                        placeholder={<WallpaperRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />}
+                        src={activeMobileHeaderSrc}
+                        processing={processingImage === 'mobileheader'}
+                        removable={!!activeMobileHeaderSrc && !mobileHeaderCleared}
+                        onUpload={() => mobileHeaderInputRef.current?.click()}
+                        onRemove={() => clearImage('mobileheader')}
+                      />
+                    </Stack>
+
+                    {/* Gradient overlay toggle */}
+                    <FormControlLabel
+                      sx={{ m: 0, mt: 2, alignItems: 'flex-start', gap: 1 }}
+                      control={
+                        <Switch
+                          checked={customization.header_gradient}
+                          onChange={(e) => setCust('header_gradient', e.target.checked)}
+                          size="small"
                         />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <PersonRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                            Profile Photo
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+                            Show gradient overlay on header image
+                          </Typography>
+                          <Typography variant="caption" color="text.disabled">
+                            Adds a dark fade at the bottom of the header to keep text readable
                           </Typography>
                         </Box>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          onClick={() => avatarInputRef.current?.click()}
-                          disabled={processingImage === 'avatar'}
-                          startIcon={
-                            processingImage === 'avatar' ? (
-                              <CircularProgress size={14} color="inherit" />
-                            ) : (
-                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                            )
-                          }
-                          sx={{ borderStyle: 'dashed' }}
-                        >
-                          {processingImage === 'avatar' ? 'Processing…' : activeAvatarSrc ? 'Replace' : 'Upload'}
-                        </Button>
-                        {activeAvatarSrc && !avatarCleared && (
-                          <Button
-                            fullWidth
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                            onClick={() => clearImage('avatar')}
-                            sx={{ mt: 0.75 }}
-                          >
-                            Remove photo
-                          </Button>
-                        )}
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                          Square crop recommended · max 5 MB · resized to 400×400 px
-                        </Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 6 }}></Grid>
-
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <input
-                          ref={headerInputRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) void handleImageSelect(f, 'header');
-                          }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                            Header Image
-                          </Typography>
-                        </Box>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          onClick={() => headerInputRef.current?.click()}
-                          disabled={processingImage === 'header'}
-                          startIcon={
-                            processingImage === 'header' ? (
-                              <CircularProgress size={14} color="inherit" />
-                            ) : (
-                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                            )
-                          }
-                          sx={{ borderStyle: 'dashed' }}
-                        >
-                          {processingImage === 'header' ? 'Processing…' : activeHeaderSrc ? 'Replace' : 'Upload'}
-                        </Button>
-                        {activeHeaderSrc && !headerCleared && (
-                          <Button
-                            fullWidth
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                            onClick={() => clearImage('header')}
-                            sx={{ mt: 0.75 }}
-                          >
-                            Remove image
-                          </Button>
-                        )}
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                          Wide landscape · max 10 MB · resized to 1920×500 px
-                        </Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <input
-                          ref={mobileHeaderInputRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) void handleImageSelect(f, 'mobileheader');
-                          }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                            Mobile Header Image
-                          </Typography>
-                        </Box>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          onClick={() => mobileHeaderInputRef.current?.click()}
-                          disabled={processingImage === 'mobileheader'}
-                          startIcon={
-                            processingImage === 'mobileheader' ? (
-                              <CircularProgress size={14} color="inherit" />
-                            ) : (
-                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                            )
-                          }
-                          sx={{ borderStyle: 'dashed' }}
-                        >
-                          {processingImage === 'mobileheader'
-                            ? 'Processing…'
-                            : activeMobileHeaderSrc
-                              ? 'Replace'
-                              : 'Upload'}
-                        </Button>
-                        {activeMobileHeaderSrc && !mobileHeaderCleared && (
-                          <Button
-                            fullWidth
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                            onClick={() => clearImage('mobileheader')}
-                            sx={{ mt: 0.75 }}
-                          >
-                            Remove image
-                          </Button>
-                        )}
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                          Shown on small screens · defaults to header image · max 10 MB · resized to 900×500 px
-                        </Typography>
-                      </Grid>
-
-                      <Grid size={{ xs: 12 }}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={customization.header_gradient}
-                              onChange={(e) => setCust('header_gradient', e.target.checked)}
-                              size="small"
-                            />
-                          }
-                          label={
-                            <Box>
-                              <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
-                                Show gradient overlay on header image
-                              </Typography>
-                              <Typography variant="caption" color="text.disabled">
-                                Adds a dark fade at the bottom of the header to keep text readable
-                              </Typography>
-                            </Box>
-                          }
-                          sx={{ m: 0, alignItems: 'flex-start', gap: 1 }}
-                        />
-                      </Grid>
-                    </Grid>
+                      }
+                    />
                   </SectionCard>
                 )}
 
@@ -1031,22 +939,96 @@ const HeroPreview = styled(Box)(({ theme }) => ({
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   border: `1px solid ${theme.palette.divider}`,
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: -30,
-    right: -30,
-    width: 120,
-    height: 120,
-    borderRadius: '50%',
-    background: alpha(theme.palette.primary.main, 0.5),
-    pointerEvents: 'none',
-  },
 }));
 
 const WallpaperPlaceholder = () => (
   <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.25 }}>
     <WallpaperRoundedIcon sx={{ fontSize: 32, color: 'white' }} />
+  </Box>
+);
+
+// ─── Photo card row ─────────────────────────────────────────────────────────--
+
+type PhotoRowProps = {
+  title: string;
+  description: string;
+  src: string | null;
+  processing: boolean;
+  removable: boolean;
+  placeholder: React.ReactNode;
+  onUpload: () => void;
+  onRemove: () => void;
+  circular?: boolean;
+};
+
+const PhotoRow = ({
+  title,
+  description,
+  src,
+  processing,
+  removable,
+  placeholder,
+  onUpload,
+  onRemove,
+  circular = false,
+}: PhotoRowProps) => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      p: 1.5,
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2,
+    }}
+  >
+    <Box
+      sx={{
+        width: circular ? 48 : 72,
+        height: circular ? 48 : 44,
+        flexShrink: 0,
+        borderRadius: circular ? '50%' : 1,
+        overflow: 'hidden',
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'action.hover',
+        backgroundImage: src ? `url(${src})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {!src && placeholder}
+    </Box>
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        {title}
+      </Typography>
+      <Typography variant="caption" color="text.disabled">
+        {description}
+      </Typography>
+    </Box>
+    <Button
+      size="small"
+      variant="outlined"
+      onClick={onUpload}
+      disabled={processing}
+      startIcon={
+        processing ? <CircularProgress size={14} color="inherit" /> : <AddPhotoAlternateOutlinedIcon fontSize="small" />
+      }
+    >
+      {processing ? 'Processing…' : src ? 'Replace' : 'Upload'}
+    </Button>
+    {removable && (
+      <Tooltip title={`Remove ${title.toLowerCase()}`}>
+        <IconButton size="small" color="error" onClick={onRemove}>
+          <DeleteOutlineRoundedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    )}
   </Box>
 );
 
