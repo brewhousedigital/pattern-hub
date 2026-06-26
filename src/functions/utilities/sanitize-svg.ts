@@ -322,6 +322,17 @@ export function analyzeSvgThreats(svgText: string): SvgThreat[] {
   return threats;
 }
 
+// Removes descriptive metadata elements (and all their content) so a re-uploaded
+// export doesn't accumulate stale metadata. DOMPurify's SVG profile keeps
+// <title>/<desc>/<metadata> but strips the RDF children inside <metadata>, leaving
+// flattened text behind. We drop these entirely on upload; the exporter re-adds a
+// fresh <metadata>/<title>/<desc> from the pattern's data on download.
+const stripDescriptiveMetadata = (svg: string): string => {
+  const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  doc.querySelectorAll('metadata, title, desc').forEach((el) => el.remove());
+  return new XMLSerializer().serializeToString(doc);
+};
+
 export const sanitizeSvgFile = async (file: File): Promise<File> => {
   const raw = await file.text();
 
@@ -331,7 +342,9 @@ export const sanitizeSvgFile = async (file: File): Promise<File> => {
     throw new Error('SVG failed sanitization - file may be malformed or malicious');
   }
 
-  const fixed = await normalizeSvgDimensions(clean);
+  const stripped = stripDescriptiveMetadata(clean);
+
+  const fixed = await normalizeSvgDimensions(stripped);
 
   const blob = new Blob([fixed], { type: 'image/svg+xml' });
   return new File([blob], file.name, { type: 'image/svg+xml' });
