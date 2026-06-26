@@ -4,6 +4,7 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
+import { buildPatternXmpMeta, buildXmpPacket, insertSvgMetadata } from '@/functions/utilities/xmp/buildXmp';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -334,7 +335,16 @@ export const ExportPatternForSVG = ({
         `</svg>`,
       ].join('');
 
-      const blob = new Blob([composite], { type: 'image/svg+xml;charset=utf-8' });
+      // Embed pattern/site/author metadata as an XMP packet inside <metadata>.
+      const xmpPacket = buildXmpPacket(
+        buildPatternXmpMeta(viewData, { sizeLabel: `${r2(patternWIn)}×${r2(patternHIn)}in` }),
+      );
+      const compositeWithMeta = insertSvgMetadata(composite, xmpPacket, {
+        title: viewData.name,
+        desc: viewData.description,
+      });
+
+      const blob = new Blob([compositeWithMeta], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

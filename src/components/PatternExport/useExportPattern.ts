@@ -45,6 +45,7 @@ export interface TypeExportPatternContext {
   instructionsMarkdown: string;
   patternKeys: TypePatternKeyReferenceObject[];
   hiddenLayerIds?: string[];
+  xmpPacket?: string; // embedded into the exported file's metadata
 }
 
 export function useExportPattern() {
@@ -118,6 +119,7 @@ export function useExportPattern() {
         format: form.format,
         svgVariant: form.svgVariant,
         jpgBackground: form.jpgBackground,
+        xmpPacket: ctx.xmpPacket,
       });
 
       return blob;

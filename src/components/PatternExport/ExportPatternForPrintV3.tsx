@@ -5,6 +5,11 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
+import {
+  buildPatternXmpMeta,
+  buildPdfDocumentProperties,
+  type PatternXmpMeta,
+} from '@/functions/utilities/xmp/buildXmp';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -226,6 +231,7 @@ interface SinglePdfArgs {
   svgString: string;
   patternName: string;
   sizeLabel: string;
+  xmpMeta: PatternXmpMeta;
   patternWIn: number;
   patternHIn: number;
   lineWidthIn: number;
@@ -244,6 +250,7 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
   const fh = a.orientation === 'landscape' ? Math.min(a.pageWIn, a.pageHIn) : Math.max(a.pageWIn, a.pageHIn);
 
   const pdf = new jsPDF({ orientation: a.orientation, unit: 'in', format: [fw, fh] });
+  pdf.setDocumentProperties(buildPdfDocumentProperties(a.xmpMeta));
 
   const M = PAGE_MARGIN_IN;
   const availW = fw - 2 * M;
@@ -282,6 +289,7 @@ interface TiledPdfArgs {
   svgString: string;
   patternName: string;
   sizeLabel: string;
+  xmpMeta: PatternXmpMeta;
   patternWIn: number;
   patternHIn: number;
   lineWidthIn: number;
@@ -314,6 +322,7 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
     : null;
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: [TILE_SHEET_W, TILE_SHEET_H] });
+  pdf.setDocumentProperties(buildPdfDocumentProperties(a.xmpMeta));
   let first = true;
 
   for (let row = 0; row < rows; row++) {
@@ -578,6 +587,7 @@ export const ExportPatternForPrintV3 = ({
       const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
       const fileSizeLabel = `${r2(fromIn(patternWIn, unit))}x${r2(fromIn(patternHIn, unit))}${unit}`;
       const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+      const xmpMeta = buildPatternXmpMeta(viewData, { sizeLabel: projectSizeLabel });
 
       const legendOutput = includeLegend
         ? await buildLegend({
@@ -601,6 +611,7 @@ export const ExportPatternForPrintV3 = ({
           svgString: filteredSvgString,
           patternName: viewData.name,
           sizeLabel: fileSizeLabel,
+          xmpMeta,
           patternWIn,
           patternHIn,
           lineWidthIn,
@@ -615,6 +626,7 @@ export const ExportPatternForPrintV3 = ({
           svgString: filteredSvgString,
           patternName: viewData.name,
           sizeLabel: fileSizeLabel,
+          xmpMeta,
           patternWIn,
           patternHIn,
           lineWidthIn,

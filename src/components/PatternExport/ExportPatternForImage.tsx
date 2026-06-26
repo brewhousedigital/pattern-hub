@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useExportPattern, downloadBlob } from './useExportPattern';
+import { buildPatternXmpMeta, buildXmpPacket } from '@/functions/utilities/xmp/buildXmp';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -152,6 +153,10 @@ export const ExportPatternForImage = ({
 
     const widthVal = parseFloat(widthInput);
     const heightVal = parseFloat(heightInput);
+    const heightIn = !isNaN(heightVal) && heightVal > 0 ? toIn(heightVal, unit, dpi) : 0;
+    const metaSizeLabel =
+      unit === 'px' ? `${Math.round(widthVal)}×${Math.round(heightVal)}px` : `${r2(widthIn)}×${r2(heightIn)}in`;
+    const xmpPacket = buildXmpPacket(buildPatternXmpMeta(viewData, { sizeLabel: metaSizeLabel }));
 
     try {
       const blob = await runExport(
@@ -170,6 +175,7 @@ export const ExportPatternForImage = ({
           instructionsMarkdown: viewData.instructions ?? '',
           patternKeys: viewData.pattern_key_reference_list ?? [],
           hiddenLayerIds: hiddenLayers.size > 0 ? Array.from(hiddenLayers) : undefined,
+          xmpPacket,
         },
         {
           format,

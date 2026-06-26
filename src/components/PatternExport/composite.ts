@@ -17,6 +17,8 @@
 // only if instructions exceed pattern width, which they won't since cap=700px).
 
 import { scaleSVG } from './scaling-SVG';
+import { insertSvgMetadata } from '@/functions/utilities/xmp/buildXmp';
+import { injectXmpForFormat } from '@/functions/utilities/xmp/injectRasterXmp';
 
 export type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 export type SvgVariant = 'scaled' | 'original';
@@ -41,6 +43,8 @@ export interface TypeCompositeInput {
   format: ExportFormat;
   svgVariant?: SvgVariant; // only meaningful when format === 'svg'
   jpgBackground?: JpgBackground;
+  // Optional XMP packet embedded into the output (SVG <metadata> / raster binary).
+  xmpPacket?: string;
 }
 
 function computeLayout(input: TypeCompositeInput) {
@@ -68,9 +72,12 @@ function computeLayout(input: TypeCompositeInput) {
 }
 
 export async function compositeExport(input: TypeCompositeInput): Promise<Blob> {
-  // SHORT-CIRCUIT: original SVG export - return source bytes untouched.
+  // SHORT-CIRCUIT: original SVG export - return source bytes (with metadata if present).
   if (input.format === 'svg' && input.svgVariant === 'original') {
-    return new Blob([input.originalSvgText], { type: 'image/svg+xml' });
+    const svg = input.xmpPacket
+      ? insertSvgMetadata(input.originalSvgText, input.xmpPacket)
+      : input.originalSvgText;
+    return new Blob([svg], { type: 'image/svg+xml' });
   }
 
   // Build the scaled pattern SVG with stroke preservation.
@@ -129,8 +136,11 @@ async function buildCompositeSvgBlob(scaledPatternSvg: string, input: TypeCompos
   const instructionsHeight = Number(input?.instructions?.height || 0);
   const totalHeight = totalH + legendHeight + LEGEND_MARGIN + instructionsHeight;
 
+  const metadataBlock = input.xmpPacket ? `<metadata>${input.xmpPacket}</metadata>` : '';
+
   const out =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">` +
+    metadataBlock +
     `<g>${patternInner}</g>` +
     legendBlock +
     instructionsBlock +
@@ -187,9 +197,20 @@ async function buildRasterBlob(scaledPatternSvg: string, input: TypeCompositeInp
   const mime = input.format === 'png' ? 'image/png' : input.format === 'jpg' ? 'image/jpeg' : 'image/webp';
   const quality = input.format === 'png' ? undefined : 0.92;
 
-  return new Promise<Blob>((resolve, reject) => {
+  const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))), mime, quality);
   });
+
+  // Embed the XMP packet into the raster binary. WebP needs the encoded pixel
+  // dimensions (the supersampled canvas size) to synthesize a VP8X header.
+  if (input.xmpPacket && input.format !== 'svg') {
+    return injectXmpForFormat(blob, input.format, input.xmpPacket, {
+      width: canvas.width,
+      height: canvas.height,
+    });
+  }
+
+  return blob;
 }
 
 // SVG string → HTMLImageElement (loaded). Uses a blob URL so large SVGs avoid
