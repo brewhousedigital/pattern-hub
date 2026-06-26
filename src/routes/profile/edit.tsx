@@ -28,7 +28,7 @@ import { MoodSection } from '../../components/profile/MoodSection';
 import { VisibilitySection } from '../../components/profile/VisibilitySection';
 import { SocialSection } from '../../components/profile/SocialSection';
 
-import { styled, alpha } from '@mui/material/styles';
+import { styled, alpha, useTheme } from '@mui/material/styles';
 import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import BrushRoundedIcon from '@mui/icons-material/BrushRounded';
@@ -36,6 +36,10 @@ import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternate
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import WallpaperRoundedIcon from '@mui/icons-material/WallpaperRounded';
+import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
+import PaletteRoundedIcon from '@mui/icons-material/PaletteRounded';
+import ShareRoundedIcon from '@mui/icons-material/ShareRounded';
+import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 
 import {
   Box,
@@ -51,8 +55,11 @@ import {
   Skeleton,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 
 export const Route = createFileRoute('/profile/edit')({
@@ -75,12 +82,28 @@ interface ProfileFormErrors {
   username?: string;
 }
 
+// ─── Navigation ─────────────────────────────────────────────────────────────--
+
+// Each tab is a self-contained group of settings. Add a new feature (e.g. the
+// upcoming tag blocklist) by adding a tab here and a matching panel below.
+const TABS = [
+  { key: 'basics', label: 'Profile', icon: <PersonRoundedIcon fontSize="small" /> },
+  { key: 'photos', label: 'Photos', icon: <PhotoLibraryRoundedIcon fontSize="small" /> },
+  { key: 'appearance', label: 'Appearance', icon: <PaletteRoundedIcon fontSize="small" /> },
+  { key: 'social', label: 'Status & Social', icon: <ShareRoundedIcon fontSize="small" /> },
+  { key: 'privacy', label: 'Privacy', icon: <ShieldRoundedIcon fontSize="small" /> },
+] as const;
+
+type TabKey = (typeof TABS)[number]['key'];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function RouteComponent() {
   const { authData } = useGlobalAuthData();
   const navigate = useNavigate();
   const { handleRefresh } = useRefreshAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const verifyUsername = useMutationValidateUsername();
   const updateUser = useMutationUpdateUserWithFiles();
@@ -89,6 +112,8 @@ function RouteComponent() {
   const headerInputRef = useRef<HTMLInputElement>(null);
   const mobileHeaderInputRef = useRef<HTMLInputElement>(null);
   const bgImageInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState<TabKey>('basics');
 
   const [form, setForm] = useState<ProfileFormData>({
     username: '',
@@ -290,6 +315,7 @@ function RouteComponent() {
     const usernameOk = await handleUsernameVerification();
     if (!usernameOk) {
       setSaving(false);
+      setActiveTab('basics');
       return;
     }
 
@@ -382,497 +408,602 @@ function RouteComponent() {
   return (
     <GeneralLayout>
       <PageWrapper>
-        <Container maxWidth="sm">
-          <Box sx={{ mb: 5 }}>
+        <Container maxWidth="md">
+          <Box sx={{ mb: 4 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.3px' }}>
               Edit Profile
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Manage your details, appearance, and privacy. All sections save together with one button.
             </Typography>
           </Box>
 
           {loading ? (
             <EditSkeleton />
           ) : (
-            <Box component="form" onSubmit={handleSubmit}>
-              {/* ─── PHOTOS ─────────────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Profile Photos</SectionTitle>
-
-                {imageError && (
-                  <Alert severity="error" sx={{ mb: 2, py: 0.5 }} onClose={() => setImageError('')}>
-                    {imageError}
-                  </Alert>
-                )}
-
-                <HeroPreview
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: { xs: 2, md: 4 },
+                alignItems: 'flex-start',
+              }}
+            >
+              {/* ─── Section navigation ─────────────────────────────────── */}
+              <Box
+                sx={{
+                  width: { xs: '100%', md: 220 },
+                  flexShrink: 0,
+                  position: { md: 'sticky' },
+                  top: { md: 24 },
+                }}
+              >
+                <Tabs
+                  value={activeTab}
+                  onChange={(_, v: TabKey) => setActiveTab(v)}
+                  orientation={isMobile ? 'horizontal' : 'vertical'}
+                  variant={isMobile ? 'scrollable' : 'standard'}
+                  scrollButtons={isMobile ? 'auto' : false}
+                  allowScrollButtonsMobile
                   sx={{
-                    backgroundImage: activeHeaderSrc
-                      ? `${customization.header_gradient ? 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), ' : ''}url(${activeHeaderSrc})`
-                      : undefined,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 3,
+                    p: 0.5,
+                    minHeight: 0,
+                    '& .MuiTabs-indicator': { display: 'none' },
+                    '& .MuiTab-root': {
+                      minHeight: 44,
+                      borderRadius: 2,
+                      justifyContent: 'flex-start',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      color: 'text.secondary',
+                      minWidth: { xs: 'auto', md: '100%' },
+                      transition: 'background-color 0.15s, color 0.15s',
+                      '&:hover': { backgroundColor: 'action.hover', color: 'text.primary' },
+                    },
+                    '& .MuiTab-root.Mui-selected': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                      color: 'primary.main',
+                    },
                   }}
                 >
-                  {!activeHeaderSrc && <WallpaperPlaceholder />}
-                  <Box
-                    sx={{ position: 'absolute', bottom: 12, left: 16, display: 'flex', alignItems: 'center', gap: 1.5 }}
-                  >
-                    <AvatarPreview hasPhoto={!!activeAvatarSrc}>
-                      {activeAvatarSrc ? (
-                        <Box
-                          component="img"
-                          src={activeAvatarSrc}
-                          alt="Avatar"
-                          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
-                          {initial}
-                        </Typography>
-                      )}
-                    </AvatarPreview>
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          color: activeHeaderSrc ? 'white' : 'text.primary',
-                          lineHeight: 1,
-                          mb: 0.25,
+                  {TABS.map((t) => (
+                    <Tab key={t.key} value={t.key} icon={t.icon} iconPosition="start" label={t.label} />
+                  ))}
+                </Tabs>
+              </Box>
+
+              {/* ─── Active panel ───────────────────────────────────────── */}
+              <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+                {/* ── PROFILE ── */}
+                {activeTab === 'basics' && (
+                  <>
+                    <SectionCard elevation={0}>
+                      <SectionTitle>Username</SectionTitle>
+                      <TextField
+                        fullWidth
+                        required
+                        variant="filled"
+                        label="Username"
+                        value={form.username}
+                        onChange={(e) => {
+                          setUsernameAvailable(undefined);
+                          setForm((p) => ({ ...p, username: e.target.value }));
+                          if (errors.username) setErrors((p) => ({ ...p, username: undefined }));
                         }}
-                      >
-                        {displayName || 'Your Name'}
-                      </Typography>
-                      <Typography
-                        sx={{ fontSize: '0.65rem', color: activeHeaderSrc ? 'rgba(255,255,255,0.6)' : 'text.disabled' }}
-                      >
-                        Preview
-                      </Typography>
-                    </Box>
-                  </Box>
-                </HeroPreview>
+                        error={!!errors.username}
+                        helperText="Letters, numbers, and underscores only. Minimum 4 characters."
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <Typography variant="caption" color="text.disabled">
+                                  {form.username.length}/32
+                                </Typography>
+                              </InputAdornment>
+                            ),
+                          },
+                          htmlInput: { maxLength: 32, minLength: 4, pattern: '^[a-zA-Z0-9_]+$' },
+                        }}
+                      />
+                      <Grid container sx={{ alignItems: 'center', pt: 2 }}>
+                        <Grid size={{ xs: 7 }}>
+                          {usernameAvailable === true && (
+                            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                              <CheckCircleOutlineRoundedIcon color="success" fontSize="small" />
+                              <Typography variant="body2" color="success.main">
+                                Available
+                              </Typography>
+                            </Stack>
+                          )}
+                          {usernameAvailable === false && (
+                            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                              <ReportRoundedIcon color="error" fontSize="small" />
+                              <Typography variant="body2" color="error">
+                                Name taken
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Grid>
+                        <Grid size={{ xs: 5 }} sx={{ textAlign: 'right' }}>
+                          <Button
+                            disabled={form.username.length < 4}
+                            variant="outlined"
+                            size="small"
+                            loading={verifyUsername.isPending}
+                            onClick={handleUsernameVerification}
+                            type="button"
+                          >
+                            Check availability
+                          </Button>
+                        </Grid>
+                      </Grid>
+                    </SectionCard>
 
-                <Grid container spacing={6} sx={{ mt: 2 }}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <input
-                      ref={avatarInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) void handleImageSelect(f, 'avatar');
-                      }}
-                    />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <PersonRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                        Profile Photo
-                      </Typography>
-                    </Box>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      onClick={() => avatarInputRef.current?.click()}
-                      disabled={processingImage === 'avatar'}
-                      startIcon={
-                        processingImage === 'avatar' ? (
-                          <CircularProgress size={14} color="inherit" />
-                        ) : (
-                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                        )
-                      }
-                      sx={{ borderStyle: 'dashed' }}
-                    >
-                      {processingImage === 'avatar' ? 'Processing…' : activeAvatarSrc ? 'Replace' : 'Upload'}
-                    </Button>
-                    {activeAvatarSrc && !avatarCleared && (
-                      <Button
+                    <SectionCard elevation={0}>
+                      <SectionTitle>About</SectionTitle>
+                      <MarkdownEditor
+                        value={form.about}
+                        onChange={(v) => setForm((p) => ({ ...p, about: v }))}
+                        placeholder="Tell the community about yourself and your stained glass journey…"
+                        maxLength={3000}
+                        minRows={8}
+                        helperText={
+                          <>
+                            Supports{' '}
+                            <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
+                              Markdown
+                            </a>
+                            . Switch to Preview to see how it will look.
+                          </>
+                        }
+                      />
+                    </SectionCard>
+
+                    <SectionCard elevation={0}>
+                      <SectionTitle>Interests</SectionTitle>
+                      <TextField
+                        label="Interests"
+                        variant="filled"
                         fullWidth
-                        size="small"
-                        color="error"
-                        startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                        onClick={() => clearImage('avatar')}
-                        sx={{ mt: 0.75 }}
-                      >
-                        Remove photo
-                      </Button>
-                    )}
-                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                      Square crop recommended · max 5 MB · resized to 400×400 px
-                    </Typography>
-                  </Grid>
+                        placeholder="Geometric, Floral, Art Nouveau, Mosaics…"
+                        value={form.interests}
+                        onChange={(e) => setForm((p) => ({ ...p, interests: e.target.value }))}
+                        helperText="Comma-separated. Each entry becomes a chip on your profile."
+                        slotProps={{ htmlInput: { maxLength: 1000 } }}
+                      />
+                      {interestChips.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 2 }}>
+                          {interestChips.map((chip, i) => (
+                            <Chip
+                              key={chip + i}
+                              label={chip}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              sx={{ borderRadius: 2, fontWeight: 500 }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    </SectionCard>
 
-                  <Grid size={{ xs: 12, sm: 6 }}></Grid>
-
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <input
-                      ref={headerInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) void handleImageSelect(f, 'header');
-                      }}
-                    />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                        Header Image
-                      </Typography>
-                    </Box>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      onClick={() => headerInputRef.current?.click()}
-                      disabled={processingImage === 'header'}
-                      startIcon={
-                        processingImage === 'header' ? (
-                          <CircularProgress size={14} color="inherit" />
-                        ) : (
-                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                        )
-                      }
-                      sx={{ borderStyle: 'dashed' }}
-                    >
-                      {processingImage === 'header' ? 'Processing…' : activeHeaderSrc ? 'Replace' : 'Upload'}
-                    </Button>
-                    {activeHeaderSrc && !headerCleared && (
-                      <Button
-                        fullWidth
-                        size="small"
-                        color="error"
-                        startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                        onClick={() => clearImage('header')}
-                        sx={{ mt: 0.75 }}
-                      >
-                        Remove image
-                      </Button>
-                    )}
-                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                      Wide landscape · max 10 MB · resized to 1920×500 px
-                    </Typography>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <input
-                      ref={mobileHeaderInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) void handleImageSelect(f, 'mobileheader');
-                      }}
-                    />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-                        Mobile Header Image
-                      </Typography>
-                    </Box>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      onClick={() => mobileHeaderInputRef.current?.click()}
-                      disabled={processingImage === 'mobileheader'}
-                      startIcon={
-                        processingImage === 'mobileheader' ? (
-                          <CircularProgress size={14} color="inherit" />
-                        ) : (
-                          <AddPhotoAlternateOutlinedIcon fontSize="small" />
-                        )
-                      }
-                      sx={{ borderStyle: 'dashed' }}
-                    >
-                      {processingImage === 'mobileheader'
-                        ? 'Processing…'
-                        : activeMobileHeaderSrc
-                          ? 'Replace'
-                          : 'Upload'}
-                    </Button>
-                    {activeMobileHeaderSrc && !mobileHeaderCleared && (
-                      <Button
-                        fullWidth
-                        size="small"
-                        color="error"
-                        startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
-                        onClick={() => clearImage('mobileheader')}
-                        sx={{ mt: 0.75 }}
-                      >
-                        Remove image
-                      </Button>
-                    )}
-                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-                      Shown on small screens · defaults to header image · max 10 MB · resized to 900×500 px
-                    </Typography>
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={customization.header_gradient}
-                          onChange={(e) => setCust('header_gradient', e.target.checked)}
-                          size="small"
-                        />
-                      }
-                      label={
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
-                            Show gradient overlay on header image
-                          </Typography>
-                          <Typography variant="caption" color="text.disabled">
-                            Adds a dark fade at the bottom of the header to keep text readable
+                    <SectionCard elevation={0}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 2,
+                            flexShrink: 0,
+                            mt: 0.25,
+                            backgroundColor: form.is_artist ? 'secondary.main' : 'action.disabledBackground',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background-color 0.2s ease',
+                          }}
+                        >
+                          <BrushRoundedIcon sx={{ fontSize: 18, color: form.is_artist ? 'white' : 'text.disabled' }} />
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={form.is_artist}
+                                onChange={(e) => setForm((p) => ({ ...p, is_artist: e.target.checked }))}
+                                color="secondary"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                I'm a pattern artist
+                              </Typography>
+                            }
+                            sx={{ m: 0 }}
+                          />
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            Adds an Artist badge to your profile and shows a showcase of patterns you've contributed to
+                            the archive.
                           </Typography>
                         </Box>
-                      }
-                      sx={{ m: 0, alignItems: 'flex-start', gap: 1 }}
-                    />
-                  </Grid>
-                </Grid>
-              </SectionCard>
-
-              {/* ─── USERNAME ────────────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Username</SectionTitle>
-                <TextField
-                  fullWidth
-                  required
-                  variant="filled"
-                  label="Username"
-                  value={form.username}
-                  onChange={(e) => {
-                    setUsernameAvailable(undefined);
-                    setForm((p) => ({ ...p, username: e.target.value }));
-                    if (errors.username) setErrors((p) => ({ ...p, username: undefined }));
-                  }}
-                  error={!!errors.username}
-                  helperText="Letters, numbers, and underscores only. Minimum 4 characters."
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <Typography variant="caption" color="text.disabled">
-                            {form.username.length}/32
-                          </Typography>
-                        </InputAdornment>
-                      ),
-                    },
-                    htmlInput: { maxLength: 32, minLength: 4, pattern: '^[a-zA-Z0-9_]+$' },
-                  }}
-                />
-                <Grid container sx={{ alignItems: 'center', pt: 2 }}>
-                  <Grid size={{ xs: 7 }}>
-                    {usernameAvailable === true && (
-                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <CheckCircleOutlineRoundedIcon color="success" fontSize="small" />
-                        <Typography variant="body2" color="success.main">
-                          Available
-                        </Typography>
-                      </Stack>
-                    )}
-                    {usernameAvailable === false && (
-                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <ReportRoundedIcon color="error" fontSize="small" />
-                        <Typography variant="body2" color="error">
-                          Name taken
-                        </Typography>
-                      </Stack>
-                    )}
-                  </Grid>
-                  <Grid size={{ xs: 5 }} sx={{ textAlign: 'right' }}>
-                    <Button
-                      disabled={form.username.length < 4}
-                      variant="outlined"
-                      size="small"
-                      loading={verifyUsername.isPending}
-                      onClick={handleUsernameVerification}
-                      type="button"
-                    >
-                      Check availability
-                    </Button>
-                  </Grid>
-                </Grid>
-              </SectionCard>
-
-              {/* ─── ABOUT ───────────────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>About</SectionTitle>
-                <MarkdownEditor
-                  value={form.about}
-                  onChange={(v) => setForm((p) => ({ ...p, about: v }))}
-                  placeholder="Tell the community about yourself and your stained glass journey…"
-                  maxLength={3000}
-                  minRows={8}
-                  helperText={
-                    <>
-                      Supports{' '}
-                      <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noreferrer">
-                        Markdown
-                      </a>
-                      . Switch to Preview to see how it will look.
-                    </>
-                  }
-                />
-              </SectionCard>
-
-              {/* ─── INTERESTS ───────────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <SectionTitle>Interests</SectionTitle>
-                <TextField
-                  label="Interests"
-                  variant="filled"
-                  fullWidth
-                  placeholder="Geometric, Floral, Art Nouveau, Mosaics…"
-                  value={form.interests}
-                  onChange={(e) => setForm((p) => ({ ...p, interests: e.target.value }))}
-                  helperText="Comma-separated. Each entry becomes a chip on your profile."
-                  slotProps={{ htmlInput: { maxLength: 1000 } }}
-                />
-                {interestChips.length > 0 && (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 2 }}>
-                    {interestChips.map((chip, i) => (
-                      <Chip
-                        key={chip + i}
-                        label={chip}
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        sx={{ borderRadius: 2, fontWeight: 500 }}
-                      />
-                    ))}
-                  </Box>
+                      </Box>
+                    </SectionCard>
+                  </>
                 )}
-              </SectionCard>
 
-              {/* ─── ARTIST TOGGLE ───────────────────────────────────────── */}
-              <SectionCard elevation={0}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 2,
-                      flexShrink: 0,
-                      mt: 0.25,
-                      backgroundColor: form.is_artist ? 'secondary.main' : 'action.disabledBackground',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'background-color 0.2s ease',
-                    }}
-                  >
-                    <BrushRoundedIcon sx={{ fontSize: 18, color: form.is_artist ? 'white' : 'text.disabled' }} />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={form.is_artist}
-                          onChange={(e) => setForm((p) => ({ ...p, is_artist: e.target.checked }))}
-                          color="secondary"
+                {/* ── PHOTOS ── */}
+                {activeTab === 'photos' && (
+                  <SectionCard elevation={0}>
+                    <SectionTitle>Profile Photos</SectionTitle>
+
+                    {imageError && (
+                      <Alert severity="error" sx={{ mb: 2, py: 0.5 }} onClose={() => setImageError('')}>
+                        {imageError}
+                      </Alert>
+                    )}
+
+                    <HeroPreview
+                      sx={{
+                        backgroundImage: activeHeaderSrc
+                          ? `${customization.header_gradient ? 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%), ' : ''}url(${activeHeaderSrc})`
+                          : undefined,
+                      }}
+                    >
+                      {!activeHeaderSrc && <WallpaperPlaceholder />}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: 12,
+                          left: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                        }}
+                      >
+                        <AvatarPreview hasPhoto={!!activeAvatarSrc}>
+                          {activeAvatarSrc ? (
+                            <Box
+                              component="img"
+                              src={activeAvatarSrc}
+                              alt="Avatar"
+                              sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                              {initial}
+                            </Typography>
+                          )}
+                        </AvatarPreview>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontSize: '0.85rem',
+                              fontWeight: 700,
+                              color: activeHeaderSrc ? 'white' : 'text.primary',
+                              lineHeight: 1,
+                              mb: 0.25,
+                            }}
+                          >
+                            {displayName || 'Your Name'}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: '0.65rem',
+                              color: activeHeaderSrc ? 'rgba(255,255,255,0.6)' : 'text.disabled',
+                            }}
+                          >
+                            Preview
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </HeroPreview>
+
+                    <Grid container spacing={6} sx={{ mt: 2 }}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleImageSelect(f, 'avatar');
+                          }}
                         />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          I'm a pattern artist
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <PersonRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
+                            Profile Photo
+                          </Typography>
+                        </Box>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={processingImage === 'avatar'}
+                          startIcon={
+                            processingImage === 'avatar' ? (
+                              <CircularProgress size={14} color="inherit" />
+                            ) : (
+                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                            )
+                          }
+                          sx={{ borderStyle: 'dashed' }}
+                        >
+                          {processingImage === 'avatar' ? 'Processing…' : activeAvatarSrc ? 'Replace' : 'Upload'}
+                        </Button>
+                        {activeAvatarSrc && !avatarCleared && (
+                          <Button
+                            fullWidth
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
+                            onClick={() => clearImage('avatar')}
+                            sx={{ mt: 0.75 }}
+                          >
+                            Remove photo
+                          </Button>
+                        )}
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+                          Square crop recommended · max 5 MB · resized to 400×400 px
                         </Typography>
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}></Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <input
+                          ref={headerInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleImageSelect(f, 'header');
+                          }}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
+                            Header Image
+                          </Typography>
+                        </Box>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          onClick={() => headerInputRef.current?.click()}
+                          disabled={processingImage === 'header'}
+                          startIcon={
+                            processingImage === 'header' ? (
+                              <CircularProgress size={14} color="inherit" />
+                            ) : (
+                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                            )
+                          }
+                          sx={{ borderStyle: 'dashed' }}
+                        >
+                          {processingImage === 'header' ? 'Processing…' : activeHeaderSrc ? 'Replace' : 'Upload'}
+                        </Button>
+                        {activeHeaderSrc && !headerCleared && (
+                          <Button
+                            fullWidth
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
+                            onClick={() => clearImage('header')}
+                            sx={{ mt: 0.75 }}
+                          >
+                            Remove image
+                          </Button>
+                        )}
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+                          Wide landscape · max 10 MB · resized to 1920×500 px
+                        </Typography>
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <input
+                          ref={mobileHeaderInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleImageSelect(f, 'mobileheader');
+                          }}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <WallpaperRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                          <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
+                            Mobile Header Image
+                          </Typography>
+                        </Box>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          onClick={() => mobileHeaderInputRef.current?.click()}
+                          disabled={processingImage === 'mobileheader'}
+                          startIcon={
+                            processingImage === 'mobileheader' ? (
+                              <CircularProgress size={14} color="inherit" />
+                            ) : (
+                              <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                            )
+                          }
+                          sx={{ borderStyle: 'dashed' }}
+                        >
+                          {processingImage === 'mobileheader'
+                            ? 'Processing…'
+                            : activeMobileHeaderSrc
+                              ? 'Replace'
+                              : 'Upload'}
+                        </Button>
+                        {activeMobileHeaderSrc && !mobileHeaderCleared && (
+                          <Button
+                            fullWidth
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
+                            onClick={() => clearImage('mobileheader')}
+                            sx={{ mt: 0.75 }}
+                          >
+                            Remove image
+                          </Button>
+                        )}
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+                          Shown on small screens · defaults to header image · max 10 MB · resized to 900×500 px
+                        </Typography>
+                      </Grid>
+
+                      <Grid size={{ xs: 12 }}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={customization.header_gradient}
+                              onChange={(e) => setCust('header_gradient', e.target.checked)}
+                              size="small"
+                            />
+                          }
+                          label={
+                            <Box>
+                              <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+                                Show gradient overlay on header image
+                              </Typography>
+                              <Typography variant="caption" color="text.disabled">
+                                Adds a dark fade at the bottom of the header to keep text readable
+                              </Typography>
+                            </Box>
+                          }
+                          sx={{ m: 0, alignItems: 'flex-start', gap: 1 }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </SectionCard>
+                )}
+
+                {/* ── APPEARANCE ── */}
+                {activeTab === 'appearance' && (
+                  <>
+                    <ColorsSection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() =>
+                        resetSection([
+                          'site_color',
+                          'site_color_secondary',
+                          'profile_dark_mode',
+                          'profile_bg_type',
+                          'profile_bg_color',
+                          'profile_bg_gradient_end',
+                          'profile_bg_gradient_angle',
+                          'profile_bg_pattern',
+                          'profile_bg_image_size',
+                          'profile_bg_image_position',
+                          'profile_bg_image_fixed',
+                          'profile_card_bg',
+                        ])
                       }
-                      sx={{ m: 0 }}
+                      bgImageInputRef={bgImageInputRef}
+                      processingImage={processingImage}
+                      activeBgImageSrc={activeBgImageSrc}
+                      bgImageCleared={bgImageCleared}
+                      onImageSelect={(f, type) => void handleImageSelect(f, type)}
+                      onClearImage={clearImage}
                     />
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      Adds an Artist badge to your profile and shows a showcase of patterns you've contributed to the
-                      archive.
-                    </Typography>
-                  </Box>
-                </Box>
-              </SectionCard>
+                    <TypographySection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() =>
+                        resetSection([
+                          'profile_font',
+                          'profile_name_effect',
+                          'profile_avatar_shape',
+                          'profile_cursor',
+                          'profile_sparkles',
+                        ])
+                      }
+                    />
+                  </>
+                )}
 
-              {/* ─── CUSTOMIZATION SECTIONS ──────────────────────────────── */}
-              <ColorsSection
-                customization={customization}
-                setCust={setCust}
-                onReset={() =>
-                  resetSection([
-                    'site_color',
-                    'site_color_secondary',
-                    'profile_dark_mode',
-                    'profile_bg_type',
-                    'profile_bg_color',
-                    'profile_bg_gradient_end',
-                    'profile_bg_gradient_angle',
-                    'profile_bg_pattern',
-                    'profile_bg_image_size',
-                    'profile_bg_image_position',
-                    'profile_bg_image_fixed',
-                    'profile_card_bg',
-                  ])
-                }
-                bgImageInputRef={bgImageInputRef}
-                processingImage={processingImage}
-                activeBgImageSrc={activeBgImageSrc}
-                bgImageCleared={bgImageCleared}
-                onImageSelect={(f, type) => void handleImageSelect(f, type)}
-                onClearImage={clearImage}
-              />
-              <TypographySection
-                customization={customization}
-                setCust={setCust}
-                onReset={() =>
-                  resetSection([
-                    'profile_font',
-                    'profile_name_effect',
-                    'profile_avatar_shape',
-                    'profile_cursor',
-                    'profile_sparkles',
-                  ])
-                }
-              />
-              <MoodSection
-                customization={customization}
-                setCust={setCust}
-                onReset={() => resetSection(['profile_mood_emoji', 'profile_mood_text'])}
-              />
-              <VisibilitySection
-                customization={customization}
-                setCust={setCust}
-                onReset={() =>
-                  resetSection([
-                    'tab_show_favorites',
-                    'tab_show_done',
-                    'tab_show_ratings',
-                    'tab_show_difficulty',
-                    'tab_show_gallery',
-                    'tab_show_collections',
-                  ])
-                }
-              />
-              <SocialSection
-                customization={customization}
-                setCust={setCust}
-                onReset={() => resetSection(['profile_youtube_url', 'social_links'])}
-              />
+                {/* ── STATUS & SOCIAL ── */}
+                {activeTab === 'social' && (
+                  <>
+                    <MoodSection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() => resetSection(['profile_mood_emoji', 'profile_mood_text'])}
+                    />
+                    <SocialSection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() => resetSection(['profile_youtube_url', 'social_links'])}
+                    />
+                  </>
+                )}
 
-              {/* ─── ACTIONS ─────────────────────────────────────────────── */}
-              {saveError && (
-                <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                  {saveError}
-                </Alert>
-              )}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button
-                  component={Link}
-                  variant="outlined"
-                  to="/profile"
-                  sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
+                {/* ── PRIVACY ── */}
+                {activeTab === 'privacy' && (
+                  <VisibilitySection
+                    customization={customization}
+                    setCust={setCust}
+                    onReset={() =>
+                      resetSection([
+                        'tab_show_favorites',
+                        'tab_show_done',
+                        'tab_show_ratings',
+                        'tab_show_difficulty',
+                        'tab_show_gallery',
+                        'tab_show_collections',
+                      ])
+                    }
+                  />
+                )}
+
+                {/* ─── Actions ─────────────────────────────────────────── */}
+                {saveError && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+                    {saveError}
+                  </Alert>
+                )}
+                <Box
+                  sx={{
+                    position: 'sticky',
+                    bottom: 16,
+                    zIndex: 2,
+                    mt: 1,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 2,
+                    p: 1.5,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    backgroundColor: alpha(theme.palette.background.paper, 0.85),
+                    backdropFilter: 'blur(8px)',
+                  }}
                 >
-                  Cancel
-                </Button>
-                <Button disableElevation type="submit" variant="contained" loading={saving}>
-                  {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
-                </Button>
+                  <Button
+                    component={Link}
+                    variant="outlined"
+                    to="/profile"
+                    sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button disableElevation type="submit" variant="contained" loading={saving}>
+                    {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
+                  </Button>
+                </Box>
               </Box>
             </Box>
           )}
@@ -935,12 +1066,15 @@ const AvatarPreview = styled(Box, {
 }));
 
 const EditSkeleton = () => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    {[140, 110, 260, 100, 80].map((h, i) => (
-      <Paper key={i} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 4, boxShadow: 'none' }}>
-        <Skeleton variant="text" width={80} height={14} sx={{ mb: 2 }} />
-        <Skeleton variant="rounded" height={h} sx={{ borderRadius: 1 }} />
-      </Paper>
-    ))}
+  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, alignItems: 'flex-start' }}>
+    <Skeleton variant="rounded" sx={{ width: { xs: '100%', md: 220 }, height: 260, borderRadius: 3, flexShrink: 0 }} />
+    <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {[140, 110, 260].map((h, i) => (
+        <Paper key={i} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 4, boxShadow: 'none' }}>
+          <Skeleton variant="text" width={80} height={14} sx={{ mb: 2 }} />
+          <Skeleton variant="rounded" height={h} sx={{ borderRadius: 1 }} />
+        </Paper>
+      ))}
+    </Box>
   </Box>
 );
