@@ -74,9 +74,7 @@ function computeLayout(input: TypeCompositeInput) {
 export async function compositeExport(input: TypeCompositeInput): Promise<Blob> {
   // SHORT-CIRCUIT: original SVG export - return source bytes (with metadata if present).
   if (input.format === 'svg' && input.svgVariant === 'original') {
-    const svg = input.xmpPacket
-      ? insertSvgMetadata(input.originalSvgText, input.xmpPacket)
-      : input.originalSvgText;
+    const svg = input.xmpPacket ? insertSvgMetadata(input.originalSvgText, input.xmpPacket) : input.originalSvgText;
     return new Blob([svg], { type: 'image/svg+xml' });
   }
 
@@ -164,7 +162,7 @@ async function buildRasterBlob(scaledPatternSvg: string, input: TypeCompositeInp
   // output. At high DPI the output is already large enough that supersampling
   // adds nothing - use 1× and paint 1:1.
   const MAX_DIM = 8192;
-  const SUPERSAMPLE = Math.max(1, Math.min(3, Math.floor(MAX_DIM / Math.max(totalW, totalH))));
+  const SUPERSAMPLE = Math.max(1, Math.min(1, Math.floor(MAX_DIM / Math.max(totalW, totalH))));
 
   const patternW = input.targetWidthPx;
   const patternH = input.targetHeightPx;
