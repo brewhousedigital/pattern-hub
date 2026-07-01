@@ -291,21 +291,6 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   {viewData?.id}
                 </Typography>
               </Tooltip>
-
-              {!onPatternPage && viewData?.id && (
-                <Tooltip title="Open full page" arrow>
-                  <Link to="/pattern/$patternId" params={{ patternId: viewData.id }}>
-                    <LaunchRoundedIcon
-                      sx={{
-                        fontSize: '0.85rem',
-                        color: 'text.disabled',
-                        display: 'block',
-                        '&:hover': { color: 'primary.main' },
-                      }}
-                    />
-                  </Link>
-                </Tooltip>
-              )}
             </Box>
           </Box>
 
