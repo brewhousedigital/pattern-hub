@@ -37,6 +37,7 @@ export interface CustomizationForm {
   tab_show_collections: boolean;
   header_gradient: boolean;
   blocked_tags: string[];
+  preferred_measurement_unit: 'original' | 'in' | 'cm' | 'mm';
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
@@ -70,6 +71,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   tab_show_collections: true,
   header_gradient: true,
   blocked_tags: [],
+  preferred_measurement_unit: 'original',
 };
 
 export type SetCust = <K extends keyof CustomizationForm>(key: K, value: CustomizationForm[K]) => void;

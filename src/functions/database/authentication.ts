@@ -184,6 +184,8 @@ export type TypeAuthData = {
   tab_show_collections?: boolean;
   // Tags to silently exclude from homepage/search results (logged-in users only)
   blocked_tags?: string[];
+  // Preferred unit for displaying pattern sizes; 'original' shows each pattern's authored unit
+  preferred_measurement_unit?: 'original' | 'in' | 'cm' | 'mm';
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;

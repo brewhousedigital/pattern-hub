@@ -11,6 +11,7 @@ const ExportPatternForImage = React.lazy(() =>
 );
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { MeasurementDisplay } from '@/components/MeasurementDisplay';
+import { PatternMeasurement } from '@/components/PatternMeasurement';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -334,11 +335,11 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PanelSectionTitle>Details</PanelSectionTitle>
 
           <CompactRow label="Width">
-            <MeasurementDisplay value={viewData?.design_width} unit={viewData?.design_width_unit} />
+            <PatternMeasurement pattern={viewData} dimension="width" />
           </CompactRow>
 
           <CompactRow label="Height">
-            <MeasurementDisplay value={viewData?.design_height} unit={viewData?.design_height_unit} />
+            <PatternMeasurement pattern={viewData} dimension="height" />
           </CompactRow>
 
           <CompactRow label="Line Width">
@@ -475,9 +476,9 @@ const PatternLegendCard = ({ viewData }: TypeViewData) => {
 
   const sizeLabel = (
     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px' }}>
-      <MeasurementDisplay value={viewData.design_width} unit={viewData.design_width_unit} />
+      <PatternMeasurement pattern={viewData} dimension="width" />
       <Box component="span">×</Box>
-      <MeasurementDisplay value={viewData.design_height} unit={viewData.design_height_unit} />
+      <PatternMeasurement pattern={viewData} dimension="height" />
     </Box>
   );
   const lineWidthLabel = <MeasurementDisplay value={viewData.line_width} unit={viewData.line_width_unit} />;

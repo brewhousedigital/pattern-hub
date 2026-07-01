@@ -28,6 +28,7 @@ import { MoodSection } from '../../components/profile/MoodSection';
 import { VisibilitySection } from '../../components/profile/VisibilitySection';
 import { SocialSection } from '../../components/profile/SocialSection';
 import { BlockedTagsSection } from '../../components/profile/BlockedTagsSection';
+import { PreferredUnitsSection } from '../../components/profile/PreferredUnitsSection';
 
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
@@ -204,6 +205,7 @@ function RouteComponent() {
       tab_show_collections: authData.tab_show_collections !== false,
       header_gradient: authData.header_gradient ?? true,
       blocked_tags: authData.blocked_tags ?? [],
+      preferred_measurement_unit: authData.preferred_measurement_unit ?? 'original',
     });
     setLoading(false);
   }, [authData]);
@@ -382,6 +384,7 @@ function RouteComponent() {
     fd.append('tab_show_collections', String(customization.tab_show_collections));
     fd.append('header_gradient', String(customization.header_gradient));
     fd.append('blocked_tags', JSON.stringify(customization.blocked_tags));
+    fd.append('preferred_measurement_unit', customization.preferred_measurement_unit);
 
     try {
       await updateUser.mutateAsync({ id: authData?.id ?? '', formData: fd });
@@ -888,6 +891,11 @@ function RouteComponent() {
                       customization={customization}
                       setCust={setCust}
                       onReset={() => resetSection(['blocked_tags'])}
+                    />
+                    <PreferredUnitsSection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() => resetSection(['preferred_measurement_unit'])}
                     />
                   </>
                 )}

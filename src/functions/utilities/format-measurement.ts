@@ -87,3 +87,60 @@ export function formatMeasurement(
   const rounded = Number(value.toFixed(3));
   return `${rounded}${unit ?? ''}`;
 }
+
+// ─── Preferred-unit resolution ────────────────────────────────────────────────
+//
+// Patterns store their "native" size as design_width/design_width_unit (the
+// unit whoever uploaded it authored it in), plus six precomputed conversions
+// (size_width_in/cm/mm, size_height_in/cm/mm) generated at upload time -
+// currently only used for admin search filters. A user's preferred-unit
+// profile setting substitutes the matching precomputed field in for display,
+// falling back to the native value/unit when there's no preference or the
+// precomputed field is missing (older patterns saved before it existed).
+
+export type PreferredUnit = 'original' | 'in' | 'cm' | 'mm';
+
+export interface PatternSizeFields {
+  design_width: number;
+  design_width_unit: string;
+  design_height: number;
+  design_height_unit: string;
+  size_width_in?: number;
+  size_width_cm?: number;
+  size_width_mm?: number;
+  size_height_in?: number;
+  size_height_cm?: number;
+  size_height_mm?: number;
+}
+
+export function resolvePatternDimension(
+  pattern: PatternSizeFields,
+  dimension: 'width' | 'height',
+  preferredUnit: PreferredUnit,
+): { value: number; unit: string } {
+  const native =
+    dimension === 'width'
+      ? { value: pattern.design_width, unit: pattern.design_width_unit }
+      : { value: pattern.design_height, unit: pattern.design_height_unit };
+
+  if (preferredUnit === 'original') return native;
+
+  const precomputed =
+    dimension === 'width'
+      ? preferredUnit === 'in'
+        ? pattern.size_width_in
+        : preferredUnit === 'cm'
+          ? pattern.size_width_cm
+          : pattern.size_width_mm
+      : preferredUnit === 'in'
+        ? pattern.size_height_in
+        : preferredUnit === 'cm'
+          ? pattern.size_height_cm
+          : pattern.size_height_mm;
+
+  if (typeof precomputed === 'number' && !isNaN(precomputed)) {
+    return { value: precomputed, unit: preferredUnit };
+  }
+
+  return native;
+}
