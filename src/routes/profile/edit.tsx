@@ -27,6 +27,7 @@ import { TypographySection } from '../../components/profile/TypographySection';
 import { MoodSection } from '../../components/profile/MoodSection';
 import { VisibilitySection } from '../../components/profile/VisibilitySection';
 import { SocialSection } from '../../components/profile/SocialSection';
+import { BlockedTagsSection } from '../../components/profile/BlockedTagsSection';
 
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
@@ -64,8 +65,26 @@ import {
   useMediaQuery,
 } from '@mui/material';
 
+// ─── Navigation ─────────────────────────────────────────────────────────────--
+
+// Each tab is a self-contained group of settings. Add a new feature by adding
+// a tab here and a matching panel below.
+const TABS = [
+  { key: 'basics', label: 'Profile', icon: <PersonRoundedIcon fontSize="small" /> },
+  { key: 'photos', label: 'Photos', icon: <PhotoLibraryRoundedIcon fontSize="small" /> },
+  { key: 'appearance', label: 'Appearance', icon: <PaletteRoundedIcon fontSize="small" /> },
+  { key: 'social', label: 'Status & Social', icon: <ShareRoundedIcon fontSize="small" /> },
+  { key: 'privacy', label: 'Privacy', icon: <ShieldRoundedIcon fontSize="small" /> },
+] as const;
+
+type TabKey = (typeof TABS)[number]['key'];
+
 export const Route = createFileRoute('/profile/edit')({
   component: RouteComponent,
+  // Optional ?tab=privacy deep link (used by the blocked-tags banner on the homepage).
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: TABS.some((t) => t.key === search.tab) ? (search.tab as TabKey) : undefined,
+  }),
   head: ({ match }) => ({
     meta: generateSEO('Edit Profile', '', match.pathname),
   }),
@@ -84,20 +103,6 @@ interface ProfileFormErrors {
   username?: string;
 }
 
-// ─── Navigation ─────────────────────────────────────────────────────────────--
-
-// Each tab is a self-contained group of settings. Add a new feature (e.g. the
-// upcoming tag blocklist) by adding a tab here and a matching panel below.
-const TABS = [
-  { key: 'basics', label: 'Profile', icon: <PersonRoundedIcon fontSize="small" /> },
-  { key: 'photos', label: 'Photos', icon: <PhotoLibraryRoundedIcon fontSize="small" /> },
-  { key: 'appearance', label: 'Appearance', icon: <PaletteRoundedIcon fontSize="small" /> },
-  { key: 'social', label: 'Status & Social', icon: <ShareRoundedIcon fontSize="small" /> },
-  { key: 'privacy', label: 'Privacy', icon: <ShieldRoundedIcon fontSize="small" /> },
-] as const;
-
-type TabKey = (typeof TABS)[number]['key'];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function RouteComponent() {
@@ -115,7 +120,8 @@ function RouteComponent() {
   const mobileHeaderInputRef = useRef<HTMLInputElement>(null);
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('basics');
+  const { tab: initialTab } = Route.useSearch();
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab ?? 'basics');
 
   const [form, setForm] = useState<ProfileFormData>({
     username: '',
@@ -197,6 +203,7 @@ function RouteComponent() {
       tab_show_gallery: authData.tab_show_gallery !== false,
       tab_show_collections: authData.tab_show_collections !== false,
       header_gradient: authData.header_gradient ?? true,
+      blocked_tags: authData.blocked_tags ?? [],
     });
     setLoading(false);
   }, [authData]);
@@ -374,6 +381,7 @@ function RouteComponent() {
     fd.append('tab_show_gallery', String(customization.tab_show_gallery));
     fd.append('tab_show_collections', String(customization.tab_show_collections));
     fd.append('header_gradient', String(customization.header_gradient));
+    fd.append('blocked_tags', JSON.stringify(customization.blocked_tags));
 
     try {
       await updateUser.mutateAsync({ id: authData?.id ?? '', formData: fd });
@@ -861,20 +869,27 @@ function RouteComponent() {
 
                 {/* ── PRIVACY ── */}
                 {activeTab === 'privacy' && (
-                  <VisibilitySection
-                    customization={customization}
-                    setCust={setCust}
-                    onReset={() =>
-                      resetSection([
-                        'tab_show_favorites',
-                        'tab_show_done',
-                        'tab_show_ratings',
-                        'tab_show_difficulty',
-                        'tab_show_gallery',
-                        'tab_show_collections',
-                      ])
-                    }
-                  />
+                  <>
+                    <VisibilitySection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() =>
+                        resetSection([
+                          'tab_show_favorites',
+                          'tab_show_done',
+                          'tab_show_ratings',
+                          'tab_show_difficulty',
+                          'tab_show_gallery',
+                          'tab_show_collections',
+                        ])
+                      }
+                    />
+                    <BlockedTagsSection
+                      customization={customization}
+                      setCust={setCust}
+                      onReset={() => resetSection(['blocked_tags'])}
+                    />
+                  </>
                 )}
 
                 {/* ─── Actions ─────────────────────────────────────────── */}

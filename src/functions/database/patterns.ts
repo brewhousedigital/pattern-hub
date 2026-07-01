@@ -2,7 +2,9 @@ import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
+import { buildBlockedTagsFilter, type TagToken } from '@/functions/utilities/search-v2';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import { useGlobalAuthData } from '@/data/auth-data';
 import dayjs, { Dayjs } from 'dayjs';
 
 export type TypePatternResponse = {
@@ -75,16 +77,34 @@ export type TypePatternKeyTableResponse = {
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
-  const { filter, pageNumber, sort } = usePatternSearch();
+  const { filter, pageNumber, sort, tokens } = usePatternSearch();
+  const { authData } = useGlobalAuthData();
+
+  // Silently exclude the user's blocked tags - unless they've explicitly
+  // searched for that exact tag right now, in which case honor the search
+  // (avoids a confusing "0 results, no explanation" dead end).
+  const activeTagValues = new Set(
+    tokens
+      .filter((t): t is TagToken => t.type === 'tag' && !t.exclude)
+      .map((t) => t.value.toLowerCase()),
+  );
+  const effectiveBlockedTags = (authData?.blocked_tags ?? []).filter(
+    (tag) => !activeTagValues.has(tag.toLowerCase()),
+  );
+  const blockedTagsFilter = buildBlockedTagsFilter(effectiveBlockedTags);
 
   let includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
+
+  if (blockedTagsFilter) {
+    includeIsDeletedFilter = blockedTagsFilter + ' && ' + includeIsDeletedFilter;
+  }
 
   if (filter) {
     includeIsDeletedFilter = filter + ' && ' + includeIsDeletedFilter;
   }
 
   return useQuery({
-    queryKey: ['GetAllPatternsByPagination', filter, pageNumber, sort],
+    queryKey: ['GetAllPatternsByPagination', filter, pageNumber, sort, effectiveBlockedTags.join(',')],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(pageNumber, 20, {
         filter: includeIsDeletedFilter,

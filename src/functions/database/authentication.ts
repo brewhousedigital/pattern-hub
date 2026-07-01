@@ -182,6 +182,8 @@ export type TypeAuthData = {
   tab_show_difficulty?: boolean;
   tab_show_gallery?: boolean;
   tab_show_collections?: boolean;
+  // Tags to silently exclude from homepage/search results (logged-in users only)
+  blocked_tags?: string[];
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;

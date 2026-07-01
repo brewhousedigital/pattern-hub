@@ -3,6 +3,7 @@ import type { TypeTagObject } from '@/functions/types/types';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
 type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number };
 
@@ -95,9 +96,7 @@ export const SidebarList = (props: SidebarListProps) => {
       {isError && <Alert severity="error">Unable to load this category</Alert>}
 
       {!props?.tagList &&
-        mixedItems.map((item) => (
-          <MixedListItem item={item} key={`sidebar-${item.kind}-${item.label}`} />
-        ))}
+        mixedItems.map((item) => <MixedListItem item={item} key={`sidebar-${item.kind}-${item.label}`} />)}
 
       {props?.tagList &&
         passThroughDataTagCounts.map((thisTag) => (
@@ -252,7 +251,12 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
         <Typography
           variant="body2"
           noWrap
-          sx={{ fontSize: '0.8125rem', fontWeight: 500, color: 'text.primary', textTransform: item.kind === 'tag' ? 'capitalize' : 'none' }}
+          sx={{
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            color: 'text.primary',
+            textTransform: item.kind === 'tag' ? 'capitalize' : 'none',
+          }}
         >
           {item.kind === 'author' && (
             <Typography component="span" sx={{ fontSize: 'inherit', color: 'text.disabled', fontWeight: 400 }}>
@@ -361,6 +365,8 @@ const drawerSidebarBlockStyles = {
 export const SidebarBlock = () => {
   return (
     <Box sx={sidebarBlockStyles}>
+      <BlockedTagsBanner />
+
       <SidebarCategoryTitle title="Current Page Tags" />
 
       <SidebarList />

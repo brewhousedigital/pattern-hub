@@ -469,3 +469,17 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
 
   return parts.join(' && ');
 }
+
+// ─── Blocked tags (silent, per-user exclusion) ───────────────────────────────
+//
+// Builds the same "(tags !~ '"value"')" exclusion shape used for excluded tag
+// tokens above, but for a user's stored blocked-tags list. Kept separate from
+// buildPocketBaseFilter because this filter is silent - it must never surface
+// as a visible token/chip in the search bar, only as an invisible AND-ed
+// constraint on the underlying query.
+export function buildBlockedTagsFilter(blockedTags: string[]): string {
+  return blockedTags
+    .filter(Boolean)
+    .map((tag) => `(tags !~ '"${tag.replace(/'/g, "\\'")}"')`)
+    .join(' && ');
+}
