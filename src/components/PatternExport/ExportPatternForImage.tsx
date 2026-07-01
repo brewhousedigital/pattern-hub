@@ -213,7 +213,7 @@ export const ExportPatternForImage = ({
       const sizeLabel =
         unit === 'px'
           ? `${Math.round(widthVal)}x${Math.round(heightVal)}px`
-          : `${r2(widthIn)}x${r2(toIn(heightVal, unit, dpi))}in-${dpi}dpi`;
+          : `${r2(widthVal)}x${r2(heightVal)}${unit}-${dpi}dpi`;
       downloadBlob(blob, `${slugify(viewData.name)}-${sizeLabel}.${format}`);
     } catch {
       // error state managed by useExportPattern
