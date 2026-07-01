@@ -1,7 +1,11 @@
 import React from 'react';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { MeasurementDisplay } from '@/components/MeasurementDisplay';
-import { resolvePatternDimension, type PatternSizeFields } from '@/functions/utilities/format-measurement';
+import {
+  normalizePreferredUnit,
+  resolvePatternDimension,
+  type PatternSizeFields,
+} from '@/functions/utilities/format-measurement';
 
 type PatternMeasurementProps = {
   pattern: PatternSizeFields | undefined;
@@ -16,7 +20,7 @@ type PatternMeasurementProps = {
 // haven't set one) so existing behavior is unchanged by default.
 export const PatternMeasurement = ({ pattern, dimension }: PatternMeasurementProps) => {
   const { authData } = useGlobalAuthData();
-  const preferredUnit = authData?.preferred_measurement_unit ?? 'original';
+  const preferredUnit = normalizePreferredUnit(authData?.preferred_measurement_unit);
 
   if (!pattern) return <>-</>;
 

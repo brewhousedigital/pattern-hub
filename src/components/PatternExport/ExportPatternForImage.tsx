@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useExportPattern, downloadBlob } from './useExportPattern';
 import { buildPatternXmpMeta, buildXmpPacket } from '@/functions/utilities/xmp/buildXmp';
+import { useGlobalAuthData } from '@/data/auth-data';
+import { resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -32,7 +34,9 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ImageFormat = 'png' | 'webp' | 'jpg';
-type ImageUnit = 'in' | 'cm' | 'px';
+type ImageUnit = 'in' | 'cm' | 'mm' | 'px';
+
+const SUPPORTED_IMAGE_UNITS: ImageUnit[] = ['in', 'cm', 'mm', 'px'];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -57,12 +61,14 @@ function dbToIn(value: number, unitStr: string): number {
 
 function toIn(val: number, unit: ImageUnit, dpi: number): number {
   if (unit === 'cm') return val / 2.54;
+  if (unit === 'mm') return val / 25.4;
   if (unit === 'px') return val / dpi;
   return val;
 }
 
 function fromIn(valIn: number, unit: ImageUnit, dpi: number): number {
   if (unit === 'cm') return valIn * 2.54;
+  if (unit === 'mm') return valIn * 25.4;
   if (unit === 'px') return Math.round(valIn * dpi);
   return valIn;
 }
@@ -92,16 +98,24 @@ export const ExportPatternForImage = ({
   viewData,
   hiddenLayers = new Set<string>(),
 }: TypeViewData & { hiddenLayers?: Set<string> }) => {
+  const { authData } = useGlobalAuthData();
+
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
   const baseHIn = viewData ? dbToIn(viewData.design_height, viewData.design_height_unit) : 1;
   const aspectRatio = baseWIn > 0 && baseHIn > 0 ? baseHIn / baseWIn : 1;
 
+  const defaultUnit = resolveDefaultExportUnit(
+    authData?.preferred_measurement_unit,
+    viewData?.design_width_unit,
+    SUPPORTED_IMAGE_UNITS,
+  );
+
   const [format, setFormat] = useState<ImageFormat>('png');
   const [jpgBackground, setJpgBackground] = useState<JpgBackground>('white');
-  const [unit, setUnit] = useState<ImageUnit>('in');
+  const [unit, setUnit] = useState<ImageUnit>(defaultUnit);
   const [dpi, setDpi] = useState(300);
-  const [widthInput, setWidthInput] = useState(() => fmt(baseWIn, 'in'));
-  const [heightInput, setHeightInput] = useState(() => fmt(baseHIn, 'in'));
+  const [widthInput, setWidthInput] = useState(() => fmt(baseWIn, defaultUnit));
+  const [heightInput, setHeightInput] = useState(() => fmt(baseHIn, defaultUnit));
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
   const [includeLegend, setIncludeLegend] = useState(true);
 
@@ -109,8 +123,14 @@ export const ExportPatternForImage = ({
 
   useEffect(() => {
     if (!viewData) return;
-    setWidthInput(fmt(fromIn(baseWIn, unit, dpi), unit));
-    setHeightInput(fmt(fromIn(baseHIn, unit, dpi), unit));
+    const resolvedUnit = resolveDefaultExportUnit(
+      authData?.preferred_measurement_unit,
+      viewData.design_width_unit,
+      SUPPORTED_IMAGE_UNITS,
+    );
+    setUnit(resolvedUnit);
+    setWidthInput(fmt(fromIn(baseWIn, resolvedUnit, dpi), resolvedUnit));
+    setHeightInput(fmt(fromIn(baseHIn, resolvedUnit, dpi), resolvedUnit));
     setIncludeInstructions(!!viewData.instructions);
   }, [viewData?.id]);
 
@@ -290,7 +310,7 @@ export const ExportPatternForImage = ({
             value={unit}
             onChange={(e) => handleUnitChange(e.target.value as ImageUnit)}
           >
-            {(['in', 'cm', 'px'] as ImageUnit[]).map((u) => (
+            {SUPPORTED_IMAGE_UNITS.map((u) => (
               <MenuItem key={u} value={u}>
                 {u}
               </MenuItem>

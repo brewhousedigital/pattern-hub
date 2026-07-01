@@ -10,7 +10,8 @@ import {
   buildPdfDocumentProperties,
   type PatternXmpMeta,
 } from '@/functions/utilities/xmp/buildXmp';
-import { formatMeasurement } from '@/functions/utilities/format-measurement';
+import { formatMeasurement, resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
+import { useGlobalAuthData } from '@/data/auth-data';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -62,6 +63,8 @@ const DPI_TILED = 150;
 type PrintMode = 'single' | 'tiled';
 type Orientation = 'portrait' | 'landscape';
 type PrintUnit = 'in' | 'cm' | 'mm';
+
+const SUPPORTED_UNITS: PrintUnit[] = ['in', 'cm', 'mm'];
 type PaperPreset = 'Letter' | 'Legal' | 'Tabloid' | 'A5' | 'A4' | 'A3' | 'B5' | 'B4' | 'C4';
 
 // ─── Paper presets ────────────────────────────────────────────────────────────
@@ -451,15 +454,22 @@ export const ExportPatternForPrintV3 = ({
   hiddenLayers = new Set<string>(),
 }: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
+  const { authData } = useGlobalAuthData();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
   const baseHIn = viewData ? dbToIn(viewData.design_height, viewData.design_height_unit) : 1;
   const aspectRatio = baseWIn > 0 && baseHIn > 0 ? baseHIn / baseWIn : 1; // H per W
   const lineWidthIn = viewData ? Math.max(dbToIn(viewData.line_width, viewData.line_width_unit), 0.005) : 0.039;
 
+  const defaultUnit = resolveDefaultExportUnit(
+    authData?.preferred_measurement_unit,
+    viewData?.design_width_unit,
+    SUPPORTED_UNITS,
+  );
+
   const [mode, setMode] = useState<PrintMode>('single');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
-  const [unit, setUnit] = useState<PrintUnit>('in');
+  const [unit, setUnit] = useState<PrintUnit>(defaultUnit);
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
   const [patternHeightInput, setPatternHeightInput] = useState(() => String(r3(baseHIn)));
   const [paperPreset, setPaperPreset] = useState<PaperPreset | ''>('');
@@ -475,10 +485,16 @@ export const ExportPatternForPrintV3 = ({
   // Sync both inputs when viewData loads
   useEffect(() => {
     if (viewData) {
+      const resolvedUnit = resolveDefaultExportUnit(
+        authData?.preferred_measurement_unit,
+        viewData.design_width_unit,
+        SUPPORTED_UNITS,
+      );
+      setUnit(resolvedUnit);
       const wIn = dbToIn(viewData.design_width, viewData.design_width_unit);
       const hIn = dbToIn(viewData.design_height, viewData.design_height_unit);
-      setPatternWidthInput(String(r3(fromIn(wIn, unit))));
-      setPatternHeightInput(String(r3(fromIn(hIn, unit))));
+      setPatternWidthInput(String(r3(fromIn(wIn, resolvedUnit))));
+      setPatternHeightInput(String(r3(fromIn(hIn, resolvedUnit))));
     }
   }, [viewData?.id]);
 

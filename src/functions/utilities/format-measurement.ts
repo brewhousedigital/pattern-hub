@@ -100,6 +100,47 @@ export function formatMeasurement(
 
 export type PreferredUnit = 'original' | 'in' | 'cm' | 'mm';
 
+const VALID_PREFERRED_UNITS: readonly PreferredUnit[] = ['original', 'in', 'cm', 'mm'];
+
+/**
+ * Defensively narrows a stored preference to a valid PreferredUnit, falling
+ * back to 'original' for anything blank, null, or otherwise unrecognized
+ * (stale data, a typo, a future value this build doesn't know about, etc.).
+ */
+export function normalizePreferredUnit(value: unknown): PreferredUnit {
+  return typeof value === 'string' && (VALID_PREFERRED_UNITS as readonly string[]).includes(value)
+    ? (value as PreferredUnit)
+    : 'original';
+}
+
+/**
+ * Resolves the unit an export dialog's selector should start on:
+ *  - a concrete preference (in/cm/mm) wins, if this export supports it
+ *  - "original" - or an invalid/missing preference, or one this export
+ *    doesn't support - falls back to the pattern's own native unit, if
+ *    that's supported
+ *  - otherwise falls back to the first supported unit
+ * Never overrides a unit the user has already picked by hand in the dialog -
+ * callers should only use this to seed the initial/default state.
+ */
+export function resolveDefaultExportUnit<U extends string>(
+  preferredUnit: unknown,
+  nativeUnit: string | undefined,
+  supportedUnits: readonly U[],
+): U {
+  const normalizedPreferred = normalizePreferredUnit(preferredUnit);
+  if (normalizedPreferred !== 'original' && (supportedUnits as readonly string[]).includes(normalizedPreferred)) {
+    return normalizedPreferred as U;
+  }
+
+  const normalizedNative = (nativeUnit ?? '').toLowerCase().trim();
+  if ((supportedUnits as readonly string[]).includes(normalizedNative)) {
+    return normalizedNative as U;
+  }
+
+  return supportedUnits[0];
+}
+
 export interface PatternSizeFields {
   design_width: number;
   design_width_unit: string;

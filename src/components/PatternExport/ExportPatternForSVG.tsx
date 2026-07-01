@@ -5,7 +5,12 @@ import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 import { buildPatternXmpMeta, buildXmpPacket, insertSvgMetadata } from '@/functions/utilities/xmp/buildXmp';
-import { formatInchesAsFraction, formatMeasurement } from '@/functions/utilities/format-measurement';
+import {
+  formatInchesAsFraction,
+  formatMeasurement,
+  resolveDefaultExportUnit,
+} from '@/functions/utilities/format-measurement';
+import { useGlobalAuthData } from '@/data/auth-data';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -44,6 +49,8 @@ const LEGEND_GAP_IN = 0.2;
 
 type SvgExportMode = 'original' | 'custom';
 type PrintUnit = 'in' | 'cm' | 'mm';
+
+const SUPPORTED_UNITS: PrintUnit[] = ['in', 'cm', 'mm'];
 
 // ─── Unit helpers ─────────────────────────────────────────────────────────────
 
@@ -138,14 +145,21 @@ export const ExportPatternForSVG = ({
   hiddenLayers = new Set<string>(),
 }: TypeViewData & { hiddenLayers?: Set<string> }) => {
   const queryClient = useQueryClient();
+  const { authData } = useGlobalAuthData();
 
   const baseWIn = viewData ? dbToIn(viewData.design_width, viewData.design_width_unit) : 1;
   const baseHIn = viewData ? dbToIn(viewData.design_height, viewData.design_height_unit) : 1;
   const aspectRatio = baseWIn > 0 && baseHIn > 0 ? baseHIn / baseWIn : 1;
   const lineWidthIn = viewData ? Math.max(dbToIn(viewData.line_width, viewData.line_width_unit), 0.005) : 0.039;
 
+  const defaultUnit = resolveDefaultExportUnit(
+    authData?.preferred_measurement_unit,
+    viewData?.design_width_unit,
+    SUPPORTED_UNITS,
+  );
+
   const [mode, setMode] = useState<SvgExportMode>('original');
-  const [unit, setUnit] = useState<PrintUnit>('in');
+  const [unit, setUnit] = useState<PrintUnit>(defaultUnit);
   const [patternWidthInput, setPatternWidthInput] = useState(() => String(r3(baseWIn)));
   const [patternHeightInput, setPatternHeightInput] = useState(() => String(r3(baseHIn)));
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
@@ -166,8 +180,14 @@ export const ExportPatternForSVG = ({
   // Sync inputs when viewData changes
   useEffect(() => {
     if (viewData) {
-      setPatternWidthInput(String(r3(fromIn(baseWIn, unit))));
-      setPatternHeightInput(String(r3(fromIn(baseHIn, unit))));
+      const resolvedUnit = resolveDefaultExportUnit(
+        authData?.preferred_measurement_unit,
+        viewData.design_width_unit,
+        SUPPORTED_UNITS,
+      );
+      setUnit(resolvedUnit);
+      setPatternWidthInput(String(r3(fromIn(baseWIn, resolvedUnit))));
+      setPatternHeightInput(String(r3(fromIn(baseHIn, resolvedUnit))));
       setIncludeInstructions(!!viewData.instructions);
     }
   }, [viewData?.id]);
