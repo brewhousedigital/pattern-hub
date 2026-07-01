@@ -10,6 +10,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useAdminLogger } from '@/functions/database/admin-logs';
+import { createPrettyDate } from '@/functions/utilities/dates';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -133,7 +134,7 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            Submitted: {props.report ? new Date(props.report.created).toLocaleDateString() : '-'}
+            Submitted: {props.report ? createPrettyDate(props.report.created) : '-'}
           </Typography>
 
           {props.report?.expand?.owner_id?.id && (

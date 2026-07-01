@@ -9,6 +9,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useAdminLogger } from '@/functions/database/admin-logs';
+import { createPrettyDate } from '@/functions/utilities/dates';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -112,7 +113,7 @@ export const AdminContactModal = (props: AdminContactModalProps) => {
           </Typography>
 
           <Typography variant="body2" color="text.disabled">
-            Submitted: {props.submission ? new Date(props.submission.created).toLocaleDateString() : '-'}
+            Submitted: {props.submission ? createPrettyDate(props.submission.created) : '-'}
           </Typography>
         </Box>
 

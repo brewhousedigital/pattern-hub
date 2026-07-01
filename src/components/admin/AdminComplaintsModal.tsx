@@ -10,6 +10,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useAdminLogger } from '@/functions/database/admin-logs';
+import { createPrettyDate } from '@/functions/utilities/dates';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -143,7 +144,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary">
-              Submitted: {props.complaint ? new Date(props.complaint.created).toLocaleDateString() : '-'}
+              Submitted: {props.complaint ? createPrettyDate(props.complaint.created) : '-'}
             </Typography>
 
             {props.complaint?.expand?.owner_id?.id && (
