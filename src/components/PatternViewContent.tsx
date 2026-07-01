@@ -10,6 +10,7 @@ const ExportPatternForImage = React.lazy(() =>
   import('@/components/PatternExport/ExportPatternForImage').then((m) => ({ default: m.ExportPatternForImage })),
 );
 import { createPrettyDate } from '@/functions/utilities/dates';
+import { MeasurementDisplay } from '@/components/MeasurementDisplay';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -333,21 +334,15 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PanelSectionTitle>Details</PanelSectionTitle>
 
           <CompactRow label="Width">
-            {viewData?.design_width != null
-              ? `${Number(viewData.design_width.toFixed(2))}${viewData.design_width_unit ?? ''}`
-              : '-'}
+            <MeasurementDisplay value={viewData?.design_width} unit={viewData?.design_width_unit} />
           </CompactRow>
 
           <CompactRow label="Height">
-            {viewData?.design_height != null
-              ? `${Number(viewData.design_height.toFixed(2))}${viewData.design_height_unit ?? ''}`
-              : '-'}
+            <MeasurementDisplay value={viewData?.design_height} unit={viewData?.design_height_unit} />
           </CompactRow>
 
           <CompactRow label="Line Width">
-            {viewData?.line_width != null
-              ? `${Number(viewData.line_width.toFixed(2))}${viewData.line_width_unit ?? ''}`
-              : '-'}
+            <MeasurementDisplay value={viewData?.line_width} unit={viewData?.line_width_unit} />
           </CompactRow>
 
           <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '-'}</CompactRow>
@@ -478,11 +473,17 @@ const PatternLegendCard = ({ viewData }: TypeViewData) => {
     .filter(Boolean)
     .join(', ');
 
-  const sizeLabel = `${viewData.design_width.toFixed(3)}${viewData.design_width_unit} × ${viewData.design_height.toFixed(3)}${viewData.design_height_unit}`;
-  const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+  const sizeLabel = (
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px' }}>
+      <MeasurementDisplay value={viewData.design_width} unit={viewData.design_width_unit} />
+      <Box component="span">×</Box>
+      <MeasurementDisplay value={viewData.design_height} unit={viewData.design_height_unit} />
+    </Box>
+  );
+  const lineWidthLabel = <MeasurementDisplay value={viewData.line_width} unit={viewData.line_width_unit} />;
   const dateLabel = createPrettyDate(viewData.design_date || '');
 
-  const stats: [string, string][] = [
+  const stats: [string, React.ReactNode][] = [
     ['Project Size', sizeLabel],
     ['Pieces', (viewData.pieces ?? 0).toLocaleString()],
     ['Line Width', lineWidthLabel],

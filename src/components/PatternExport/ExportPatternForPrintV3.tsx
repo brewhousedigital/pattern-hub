@@ -10,6 +10,7 @@ import {
   buildPdfDocumentProperties,
   type PatternXmpMeta,
 } from '@/functions/utilities/xmp/buildXmp';
+import { formatMeasurement } from '@/functions/utilities/format-measurement';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -584,16 +585,19 @@ export const ExportPatternForPrintV3 = ({
       const authorLine =
         viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
 
+      // Plain decimal - kept for the XMP metadata and the filename (never a fraction there).
       const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
       const fileSizeLabel = `${r2(fromIn(patternWIn, unit))}x${r2(fromIn(patternHIn, unit))}${unit}`;
-      const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+      // Crafter-friendly - fraction inches for the printed legend only.
+      const projectSizeDisplayLabel = `${formatMeasurement(fromIn(patternWIn, unit), unit)} × ${formatMeasurement(fromIn(patternHIn, unit), unit)}`;
+      const lineWidthLabel = formatMeasurement(viewData.line_width, viewData.line_width_unit);
       const xmpMeta = buildPatternXmpMeta(viewData, { sizeLabel: projectSizeLabel });
 
       const legendOutput = includeLegend
         ? await buildLegend({
             patternName: viewData.name,
             authorLine,
-            projectSizeLabel,
+            projectSizeLabel: projectSizeDisplayLabel,
             pieces: viewData.pieces,
             lineWidthLabel,
             designDate: viewData.design_date as Date | null,

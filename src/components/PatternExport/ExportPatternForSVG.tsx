@@ -5,6 +5,7 @@ import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
 import { buildPatternXmpMeta, buildXmpPacket, insertSvgMetadata } from '@/functions/utilities/xmp/buildXmp';
+import { formatInchesAsFraction, formatMeasurement } from '@/functions/utilities/format-measurement';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -217,8 +218,8 @@ export const ExportPatternForSVG = ({
     try {
       const authorLine =
         viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
-      const projectSizeLabel = `${r2(patternWIn)}in × ${r2(patternHIn)}in`;
-      const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+      const projectSizeLabel = `${formatInchesAsFraction(patternWIn)} in × ${formatInchesAsFraction(patternHIn)} in`;
+      const lineWidthLabel = formatMeasurement(viewData.line_width, viewData.line_width_unit);
 
       const legendOutput = includeLegend
         ? await buildLegend({

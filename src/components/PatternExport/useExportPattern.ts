@@ -16,6 +16,7 @@ import { renderInstructions } from './render-instructions';
 import { normalizeUnit, toPx, type TypePatternExportUnit } from './units';
 import type { TypePatternKeyReferenceObject } from '@/functions/database/patterns';
 import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
+import { formatMeasurement } from '@/functions/utilities/format-measurement';
 
 export interface TypeExportFormState {
   format: ExportFormat;
@@ -87,8 +88,8 @@ export function useExportPattern() {
       const strokeWidthPx = toPx(ctx.lineWidth, lineUnit, form.dpi);
 
       // ── 4. Build legend + instructions in parallel ─────────────────────────
-      const projectSizeLabel = `${form.width}${form.unit} x ${form.height}${form.unit}`;
-      const lineWidthLabel = `${ctx.lineWidth}${ctx.lineWidthUnit}`;
+      const projectSizeLabel = `${formatMeasurement(form.width, form.unit)} x ${formatMeasurement(form.height, form.unit)}`;
+      const lineWidthLabel = formatMeasurement(ctx.lineWidth, ctx.lineWidthUnit);
 
       const [legend, instructions] = await Promise.all([
         form.includeLegend

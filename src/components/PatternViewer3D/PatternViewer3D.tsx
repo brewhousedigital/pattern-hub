@@ -40,6 +40,7 @@ import { usePatternRasterizer } from './usePatternRasterizer';
 import { ColorControls } from './ColorControls';
 import { STAINED_GLASS_COLORS, ENV_OPTIONS, type EnvPreset } from './ColorPalette';
 import { buildLegend } from '../PatternExport/render-legend';
+import { formatMeasurement } from '@/functions/utilities/format-measurement';
 import type { TypePatternResponse } from '@/functions/database/patterns.ts';
 
 // ─── SVG → HTMLImageElement helper ────────────────────────────────────────────
@@ -107,8 +108,8 @@ const ExportWirer = ({ exportRef, viewData }: ExportWirerProps) => {
           .filter(Boolean)
           .join(', ');
 
-        const projectSizeLabel = `${viewData.design_width}${viewData.design_width_unit} x ${viewData.design_height}${viewData.design_height_unit}`;
-        const lineWidthLabel = `${viewData.line_width}${viewData.line_width_unit}`;
+        const projectSizeLabel = `${formatMeasurement(viewData.design_width, viewData.design_width_unit)} x ${formatMeasurement(viewData.design_height, viewData.design_height_unit)}`;
+        const lineWidthLabel = formatMeasurement(viewData.line_width, viewData.line_width_unit);
         const designDate = viewData.design_date ? new Date(viewData.design_date as unknown as string) : null;
 
         try {
