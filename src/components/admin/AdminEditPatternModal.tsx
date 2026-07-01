@@ -37,6 +37,7 @@ import {
   sanitizeSvgFile,
   extractSvgLayerIds,
   extractSvgDimensions,
+  extractSvgDimensionsFromViewBox,
   analyzeSvgThreats,
   type SvgThreat,
 } from '@/functions/utilities/sanitize-svg';
@@ -309,7 +310,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setPreviewUrl(URL.createObjectURL(f));
     setFile(f);
 
-    const dims = extractSvgDimensions(text);
+    // If width/height aren't set in in/cm/mm, fall back to deriving inches
+    // from the viewBox (assumed to be CSS px at 96 DPI) rather than ignoring it.
+    const dims = extractSvgDimensions(text) ?? extractSvgDimensionsFromViewBox(text);
     if (dims) {
       setDesignWidth(String(dims.width));
       setDesignWidthUnit(dims.widthUnit);

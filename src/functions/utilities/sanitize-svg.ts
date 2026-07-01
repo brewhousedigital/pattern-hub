@@ -30,6 +30,36 @@ export function extractSvgDimensions(svgText: string): SvgDimensions | null {
   return { width: w.value, widthUnit: w.unit, height: h.value, heightUnit: h.unit };
 }
 
+// Fallback for SVGs that have no width/height attributes (or have them in a
+// unit we don't parse, e.g. "px"/unitless). Derives inches directly from the
+// viewBox's width/height (assumed to be in CSS pixels) at a given DPI - the
+// same approach as the reference Python script, just gated behind
+// extractSvgDimensions() returning nothing usable first.
+export function extractSvgDimensionsFromViewBox(svgText: string, dpi = 96): SvgDimensions | null {
+  if (!dpi || dpi <= 0) return null;
+
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  const root = doc.documentElement;
+
+  const vbAttr = root.getAttribute('viewBox');
+  if (!vbAttr) return null;
+
+  const vb = vbAttr.trim().split(/[\s,]+/).map(Number);
+  if (vb.length !== 4 || vb.some((n) => isNaN(n))) return null;
+
+  const [, , vbWidth, vbHeight] = vb;
+  if (vbWidth <= 0 || vbHeight <= 0) return null;
+
+  const round3 = (n: number) => Math.round(n * 1000) / 1000;
+
+  return {
+    width: round3(vbWidth / dpi),
+    widthUnit: 'in',
+    height: round3(vbHeight / dpi),
+    heightUnit: 'in',
+  };
+}
+
 export function extractSvgLayerIds(svgText: string): string[] {
   const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
   return Array.from(doc.querySelectorAll('g[id]'))
