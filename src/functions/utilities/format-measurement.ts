@@ -75,11 +75,14 @@ export function isInchUnit(unit: string): boolean {
 export function formatMeasurement(
   value: number | null | undefined,
   unit: string | null | undefined,
-  opts?: { denominator?: number },
+  opts?: { denominator?: number; forceDecimal?: boolean },
 ): string {
   if (value == null || isNaN(value)) return '-';
 
   if (isInchUnit(unit ?? '')) {
+    if (opts?.forceDecimal) {
+      return `${Number(value.toFixed(3))} in`;
+    }
     return `${formatInchesAsFraction(value, opts?.denominator)} in`;
   }
 
@@ -98,9 +101,12 @@ export function formatMeasurement(
 // falling back to the native value/unit when there's no preference or the
 // precomputed field is missing (older patterns saved before it existed).
 
-export type PreferredUnit = 'original' | 'in' | 'cm' | 'mm';
+// 'in-fraction' is display-only - it resolves to the same size_width_in/
+// size_height_in data as plain 'in', but renders as a stacked fraction
+// (e.g. "8 15/16 in") instead of a decimal (e.g. "8.938 in").
+export type PreferredUnit = 'original' | 'in' | 'in-fraction' | 'cm' | 'mm';
 
-const VALID_PREFERRED_UNITS: readonly PreferredUnit[] = ['original', 'in', 'cm', 'mm'];
+const VALID_PREFERRED_UNITS: readonly PreferredUnit[] = ['original', 'in', 'in-fraction', 'cm', 'mm'];
 
 /**
  * Defensively narrows a stored preference to a valid PreferredUnit, falling
@@ -129,8 +135,12 @@ export function resolveDefaultExportUnit<U extends string>(
   supportedUnits: readonly U[],
 ): U {
   const normalizedPreferred = normalizePreferredUnit(preferredUnit);
-  if (normalizedPreferred !== 'original' && (supportedUnits as readonly string[]).includes(normalizedPreferred)) {
-    return normalizedPreferred as U;
+  // "Inches Fractional" is a display-only variant of inches - export dialogs
+  // only ever pick a concrete physical unit, so treat it the same as plain 'in'.
+  const effectivePreferred = normalizedPreferred === 'in-fraction' ? 'in' : normalizedPreferred;
+
+  if (effectivePreferred !== 'original' && (supportedUnits as readonly string[]).includes(effectivePreferred)) {
+    return effectivePreferred as U;
   }
 
   const normalizedNative = (nativeUnit ?? '').toLowerCase().trim();
@@ -158,30 +168,38 @@ export function resolvePatternDimension(
   pattern: PatternSizeFields,
   dimension: 'width' | 'height',
   preferredUnit: PreferredUnit,
-): { value: number; unit: string } {
+): { value: number; unit: string; forceDecimal: boolean } {
   const native =
     dimension === 'width'
       ? { value: pattern.design_width, unit: pattern.design_width_unit }
       : { value: pattern.design_height, unit: pattern.design_height_unit };
 
-  if (preferredUnit === 'original') return native;
+  // "Original" - no saved preference, or logged out - shows the pattern's
+  // native unit, but defaults inches to plain decimal rather than a fraction
+  // (fractions are opt-in via the "Inches Fractional" preference).
+  if (preferredUnit === 'original') return { ...native, forceDecimal: true };
+
+  // "Inches Fractional" reads from the same size_width_in/size_height_in data
+  // as plain "Inches" - only the display treatment (fraction vs decimal) differs.
+  const effectiveUnit: 'in' | 'cm' | 'mm' = preferredUnit === 'in-fraction' ? 'in' : preferredUnit;
+  const forceDecimal = preferredUnit === 'in';
 
   const precomputed =
     dimension === 'width'
-      ? preferredUnit === 'in'
+      ? effectiveUnit === 'in'
         ? pattern.size_width_in
-        : preferredUnit === 'cm'
+        : effectiveUnit === 'cm'
           ? pattern.size_width_cm
           : pattern.size_width_mm
-      : preferredUnit === 'in'
+      : effectiveUnit === 'in'
         ? pattern.size_height_in
-        : preferredUnit === 'cm'
+        : effectiveUnit === 'cm'
           ? pattern.size_height_cm
           : pattern.size_height_mm;
 
   if (typeof precomputed === 'number' && !isNaN(precomputed)) {
-    return { value: precomputed, unit: preferredUnit };
+    return { value: precomputed, unit: effectiveUnit, forceDecimal };
   }
 
-  return native;
+  return { ...native, forceDecimal };
 }

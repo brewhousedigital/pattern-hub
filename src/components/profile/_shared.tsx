@@ -37,7 +37,7 @@ export interface CustomizationForm {
   tab_show_collections: boolean;
   header_gradient: boolean;
   blocked_tags: string[];
-  preferred_measurement_unit: 'original' | 'in' | 'cm' | 'mm';
+  preferred_measurement_unit: 'original' | 'in' | 'in-fraction' | 'cm' | 'mm';
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationForm = {

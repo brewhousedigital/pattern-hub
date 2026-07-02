@@ -5,6 +5,7 @@ import { SectionCard, SectionHeader, type SectionCustProps } from './_shared';
 const UNIT_OPTIONS = [
   { value: 'original', label: 'Original' },
   { value: 'in', label: 'Inches' },
+  { value: 'in-fraction', label: 'Inches Fractional' },
   { value: 'cm', label: 'Centimeters' },
   { value: 'mm', label: 'Millimeters' },
 ] as const;

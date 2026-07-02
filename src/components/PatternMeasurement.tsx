@@ -24,6 +24,6 @@ export const PatternMeasurement = ({ pattern, dimension }: PatternMeasurementPro
 
   if (!pattern) return <>-</>;
 
-  const { value, unit } = resolvePatternDimension(pattern, dimension, preferredUnit);
-  return <MeasurementDisplay value={value} unit={unit} />;
+  const { value, unit, forceDecimal } = resolvePatternDimension(pattern, dimension, preferredUnit);
+  return <MeasurementDisplay value={value} unit={unit} forceDecimal={forceDecimal} />;
 };

@@ -75,14 +75,14 @@ const TABS = [
   { key: 'photos', label: 'Photos', icon: <PhotoLibraryRoundedIcon fontSize="small" /> },
   { key: 'appearance', label: 'Appearance', icon: <PaletteRoundedIcon fontSize="small" /> },
   { key: 'social', label: 'Status & Social', icon: <ShareRoundedIcon fontSize="small" /> },
-  { key: 'privacy', label: 'Privacy', icon: <ShieldRoundedIcon fontSize="small" /> },
+  { key: 'general', label: 'General', icon: <ShieldRoundedIcon fontSize="small" /> },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
 
 export const Route = createFileRoute('/profile/edit')({
   component: RouteComponent,
-  // Optional ?tab=privacy deep link (used by the blocked-tags banner on the homepage).
+  // Optional ?tab=general deep link (used by the blocked-tags banner on the homepage).
   validateSearch: (search: Record<string, unknown>) => ({
     tab: TABS.some((t) => t.key === search.tab) ? (search.tab as TabKey) : undefined,
   }),
@@ -870,8 +870,8 @@ function RouteComponent() {
                   </>
                 )}
 
-                {/* ── PRIVACY ── */}
-                {activeTab === 'privacy' && (
+                {/* ── GENERAL ── */}
+                {activeTab === 'general' && (
                   <>
                     <VisibilitySection
                       customization={customization}

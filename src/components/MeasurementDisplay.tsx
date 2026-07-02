@@ -6,6 +6,8 @@ type MeasurementDisplayProps = {
   value: number | null | undefined;
   unit: string | null | undefined;
   denominator?: number;
+  /** Renders a plain decimal even for inch units - used for the "Inches" (non-fractional) preference. */
+  forceDecimal?: boolean;
 };
 
 // Renders a stored (value, unit) measurement for on-screen display. Inches
@@ -17,11 +19,11 @@ type MeasurementDisplayProps = {
 // formatInchesAsFraction()/formatMeasurement() from format-measurement.ts -
 // a stacked fraction needs real DOM layout, which SVG <text>/canvas output
 // baked into a download can't reproduce.
-export const MeasurementDisplay = ({ value, unit, denominator }: MeasurementDisplayProps) => {
+export const MeasurementDisplay = ({ value, unit, denominator, forceDecimal }: MeasurementDisplayProps) => {
   if (value == null || isNaN(value)) return <>-</>;
 
-  if (!isInchUnit(unit ?? '')) {
-    return <>{formatMeasurement(value, unit)}</>;
+  if (forceDecimal || !isInchUnit(unit ?? '')) {
+    return <>{formatMeasurement(value, unit, { forceDecimal })}</>;
   }
 
   const { sign, whole, numerator, denominator: denom } = computeInchesFraction(value, denominator);
