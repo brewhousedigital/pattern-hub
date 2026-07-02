@@ -121,7 +121,7 @@ const WIZARD_FLOW_DEFS: { key: WizardFlow; label: string; description: string; i
   {
     key: 'editing',
     label: 'Editing',
-    description: 'An editable file to open in Illustrator, Inkscape, or Affinity Designer.',
+    description: 'An editable file to open in Illustrator, Inkscape, or Affinity.',
     icon: <EditRoundedIcon />,
   },
   {
@@ -255,7 +255,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
 
   // ── Terminal actions ────────────────────────────────────────────────────────
 
-  // Cricut / Craft Cutter / Generic → PNG at 300 DPI via the shared image pipeline.
+  // Cricut / Craft Cutter / Generic → PNG at 72 DPI via the shared image pipeline.
   const handleDownloadPng = useCallback(async () => {
     if (!viewData || !flow) return;
     setError(null);
@@ -291,7 +291,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
           width: patternWIn,
           height: patternHIn,
           unit: 'in',
-          dpi: 300,
+          dpi: 72,
           jpgBackground: 'white',
           includeInstructions: false,
           includeLegend: false,
@@ -307,7 +307,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
         width: patternWIn,
         height: patternHIn,
         size_unit: 'in',
-        dpi: 300,
+        dpi: 72,
         page_size: '',
         pdf_mode: '',
         legend_included: false,
