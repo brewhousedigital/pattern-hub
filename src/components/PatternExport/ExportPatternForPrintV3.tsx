@@ -2,16 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import jsPDF from 'jspdf';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
-import { applyHiddenLayers } from '@/functions/utilities/sanitize-svg';
-import {
-  buildPatternXmpMeta,
-  buildPdfDocumentProperties,
-  type PatternXmpMeta,
-} from '@/functions/utilities/xmp/buildXmp';
-import { formatMeasurement, resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
+import { buildPdfDocumentProperties, type PatternXmpMeta } from '@/functions/utilities/xmp/buildXmp';
+import { resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { preparePdfExportInputs } from './preparePdfExport';
+import { trackExportEvent } from '@/functions/database/export-analytics';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -62,7 +58,7 @@ const DPI_TILED = 150;
 
 type PrintMode = 'single' | 'tiled';
 type Orientation = 'portrait' | 'landscape';
-type PrintUnit = 'in' | 'cm' | 'mm';
+export type PrintUnit = 'in' | 'cm' | 'mm';
 
 const SUPPORTED_UNITS: PrintUnit[] = ['in', 'cm', 'mm'];
 type PaperPreset = 'Letter' | 'Legal' | 'Tabloid' | 'A5' | 'A4' | 'A3' | 'B5' | 'B4' | 'C4';
@@ -231,10 +227,9 @@ function drawCropMarks(pdf: jsPDF, x: number, y: number, w: number, h: number) {
 
 // ─── PDF builder: single page ─────────────────────────────────────────────────
 
-interface SinglePdfArgs {
+export interface SinglePdfArgs {
   svgString: string;
   patternName: string;
-  sizeLabel: string;
   xmpMeta: PatternXmpMeta;
   patternWIn: number;
   patternHIn: number;
@@ -249,7 +244,11 @@ interface SinglePdfArgs {
   instructionsMarkdown: string;
 }
 
-async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
+// Returns the built jsPDF instance instead of saving it directly, so callers
+// (this panel's own "Download PDF" button, and the Quick Export wizard's
+// Printing/Saving-for-later flows) can decide whether to .save() it, extract
+// a Blob for the "Print Now" iframe flow, etc.
+export async function buildSinglePdf(a: SinglePdfArgs): Promise<jsPDF> {
   const fw = a.orientation === 'landscape' ? Math.max(a.pageWIn, a.pageHIn) : Math.min(a.pageWIn, a.pageHIn);
   const fh = a.orientation === 'landscape' ? Math.min(a.pageWIn, a.pageHIn) : Math.max(a.pageWIn, a.pageHIn);
 
@@ -284,15 +283,14 @@ async function buildSinglePdf(a: SinglePdfArgs): Promise<void> {
     await addInstructionPages(pdf, a.instructionsMarkdown, fw, fh, M);
   }
 
-  pdf.save(`${slugify(a.patternName)}-${a.sizeLabel}-print.pdf`);
+  return pdf;
 }
 
 // ─── PDF builder: tiled ───────────────────────────────────────────────────────
 
-interface TiledPdfArgs {
+export interface TiledPdfArgs {
   svgString: string;
   patternName: string;
-  sizeLabel: string;
   xmpMeta: PatternXmpMeta;
   patternWIn: number;
   patternHIn: number;
@@ -304,7 +302,7 @@ interface TiledPdfArgs {
   instructionsMarkdown: string;
 }
 
-async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
+export async function buildTiledPdf(a: TiledPdfArgs): Promise<jsPDF> {
   // Each sheet: top + bottom margin, then pattern tile area, then optional gap + legend
   const tileW = TILE_SHEET_W - 2 * TILE_MARGIN;
   const reservedForLegend = a.includeLegend ? LEGEND_GAP_IN + a.legendHIn : 0;
@@ -407,7 +405,7 @@ async function buildTiledPdf(a: TiledPdfArgs): Promise<void> {
     await addInstructionPages(pdf, a.instructionsMarkdown, TILE_SHEET_W, TILE_SHEET_H, 0.25);
   }
 
-  pdf.save(`${slugify(a.patternName)}-${a.sizeLabel}-tiled.pdf`);
+  return pdf;
 }
 
 // ─── Instructions pages ───────────────────────────────────────────────────────
@@ -598,68 +596,70 @@ export const ExportPatternForPrintV3 = ({
     setLoading(true);
 
     try {
-      const authorLine =
-        viewData.expand?.authors?.map((a) => a.name).join(', ') || viewData.author_manual?.join(', ') || '';
+      const {
+        filteredSvgString,
+        xmpMeta,
+        legendSvg,
+        legendHIn: resolvedLegendHIn,
+        fileSizeLabel,
+      } = await preparePdfExportInputs({
+        viewData,
+        unit,
+        patternWIn,
+        patternHIn,
+        includeLegend,
+        hiddenLayers,
+        svgString,
+        queryClient,
+      });
 
-      // Plain decimal - kept for the XMP metadata and the filename (never a fraction there).
-      const projectSizeLabel = `${r2(fromIn(patternWIn, unit))}${unit} × ${r2(fromIn(patternHIn, unit))}${unit}`;
-      const fileSizeLabel = `${r2(fromIn(patternWIn, unit))}x${r2(fromIn(patternHIn, unit))}${unit}`;
-      // Crafter-friendly - fraction inches for the printed legend only.
-      const projectSizeDisplayLabel = `${formatMeasurement(fromIn(patternWIn, unit), unit)} × ${formatMeasurement(fromIn(patternHIn, unit), unit)}`;
-      const lineWidthLabel = formatMeasurement(viewData.line_width, viewData.line_width_unit);
-      const xmpMeta = buildPatternXmpMeta(viewData, { sizeLabel: projectSizeLabel });
+      const pdf =
+        mode === 'tiled'
+          ? await buildTiledPdf({
+              svgString: filteredSvgString,
+              patternName: viewData.name,
+              xmpMeta,
+              patternWIn,
+              patternHIn,
+              lineWidthIn,
+              includeLegend,
+              legendSvg,
+              legendHIn: resolvedLegendHIn,
+              includeInstructions,
+              instructionsMarkdown: viewData.instructions ?? '',
+            })
+          : await buildSinglePdf({
+              svgString: filteredSvgString,
+              patternName: viewData.name,
+              xmpMeta,
+              patternWIn,
+              patternHIn,
+              lineWidthIn,
+              pageWIn: paperWIn!,
+              pageHIn: paperHIn!,
+              orientation,
+              includeLegend,
+              legendSvg,
+              legendHIn: resolvedLegendHIn,
+              includeInstructions,
+              instructionsMarkdown: viewData.instructions ?? '',
+            });
 
-      const legendOutput = includeLegend
-        ? await buildLegend({
-            patternName: viewData.name,
-            authorLine,
-            projectSizeLabel: projectSizeDisplayLabel,
-            pieces: viewData.pieces,
-            lineWidthLabel,
-            designDate: viewData.design_date as Date | null,
-            keys: viewData.pattern_key_reference_list ?? [],
-            queryClient,
-          })
-        : null;
+      pdf.save(`${slugify(viewData.name)}-${fileSizeLabel}-${mode === 'tiled' ? 'tiled' : 'print'}.pdf`);
 
-      const resolvedLegendHIn = legendOutput ? legendOutput.height * (LEGEND_W_IN / LEGEND_SVG_PX) : 0;
-
-      const filteredSvgString = applyHiddenLayers(svgString, hiddenLayers);
-
-      if (mode === 'tiled') {
-        await buildTiledPdf({
-          svgString: filteredSvgString,
-          patternName: viewData.name,
-          sizeLabel: fileSizeLabel,
-          xmpMeta,
-          patternWIn,
-          patternHIn,
-          lineWidthIn,
-          includeLegend,
-          legendSvg: legendOutput?.svg ?? '',
-          legendHIn: resolvedLegendHIn,
-          includeInstructions,
-          instructionsMarkdown: viewData.instructions ?? '',
-        });
-      } else {
-        await buildSinglePdf({
-          svgString: filteredSvgString,
-          patternName: viewData.name,
-          sizeLabel: fileSizeLabel,
-          xmpMeta,
-          patternWIn,
-          patternHIn,
-          lineWidthIn,
-          pageWIn: paperWIn!,
-          pageHIn: paperHIn!,
-          orientation,
-          includeLegend,
-          legendSvg: legendOutput?.svg ?? '',
-          legendHIn: resolvedLegendHIn,
-          includeInstructions,
-          instructionsMarkdown: viewData.instructions ?? '',
-        });
-      }
+      void trackExportEvent({
+        pattern_id: viewData.id,
+        file_type: 'pdf',
+        flow: '',
+        width: fromIn(patternWIn, unit),
+        height: fromIn(patternHIn, unit),
+        size_unit: unit,
+        dpi: 0,
+        page_size: paperPreset || 'Custom',
+        pdf_mode: mode,
+        legend_included: includeLegend,
+        instructions_included: includeInstructions,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Export failed. Please try again.');
     } finally {

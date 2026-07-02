@@ -4,6 +4,7 @@ import { useExportPattern, downloadBlob } from './useExportPattern';
 import { buildPatternXmpMeta, buildXmpPacket } from '@/functions/utilities/xmp/buildXmp';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
+import { trackExportEvent } from '@/functions/database/export-analytics';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -215,6 +216,20 @@ export const ExportPatternForImage = ({
           ? `${Math.round(widthVal)}x${Math.round(heightVal)}px`
           : `${r2(widthVal)}x${r2(heightVal)}${unit}-${dpi}dpi`;
       downloadBlob(blob, `${slugify(viewData.name)}-${sizeLabel}.${format}`);
+
+      void trackExportEvent({
+        pattern_id: viewData.id,
+        file_type: format,
+        flow: '',
+        width: widthVal,
+        height: heightVal,
+        size_unit: unit,
+        dpi: unit === 'px' ? 0 : dpi,
+        page_size: '',
+        pdf_mode: '',
+        legend_included: includeLegend,
+        instructions_included: includeInstructions,
+      });
     } catch {
       // error state managed by useExportPattern
     }

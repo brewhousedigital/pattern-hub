@@ -1,14 +1,6 @@
 import React, { Suspense } from 'react';
 import { Link, useMatch } from '@tanstack/react-router';
-const ExportPatternForPrintV3 = React.lazy(() =>
-  import('@/components/PatternExport/ExportPatternForPrintV3').then((m) => ({ default: m.ExportPatternForPrintV3 })),
-);
-const ExportPatternForSVG = React.lazy(() =>
-  import('@/components/PatternExport/ExportPatternForSVG').then((m) => ({ default: m.ExportPatternForSVG })),
-);
-const ExportPatternForImage = React.lazy(() =>
-  import('@/components/PatternExport/ExportPatternForImage').then((m) => ({ default: m.ExportPatternForImage })),
-);
+import { ExportSection } from '@/components/PatternExport/ExportSection';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { MeasurementDisplay } from '@/components/MeasurementDisplay';
 import { PatternMeasurement } from '@/components/PatternMeasurement';
@@ -40,8 +32,6 @@ import {
   Grid,
   Skeleton,
   Stack,
-  Tab,
-  Tabs,
 } from '@mui/material';
 
 type PatternViewContentProps = {
@@ -57,8 +47,6 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const onPatternPage = useMatch({ from: '/pattern/$patternId', shouldThrow: false });
 
   const { data: publishedManualAuthors = [] } = useQueryGetPublishedManualAuthors();
-
-  const [exportTab, setExportTab] = React.useState<'print' | 'svg' | 'image'>('svg');
 
   // ── Layer toggles ──────────────────────────────────────────────────────────
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
@@ -226,27 +214,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <PatternInstructions viewData={viewData} key={'instructions' + viewData?.id} />
         )}
 
-        {!viewData?.pattern_file_external && (
-          <BorderedCard>
-            <Tabs
-              value={exportTab}
-              onChange={(_, v) => setExportTab(v)}
-              sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab label="Export SVG" value="svg" />
-              <Tab label="Print Pattern" value="print" />
-              <Tab label="Export Image" value="image" />
-            </Tabs>
-
-            {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && <LayerSelectionHint sx={{ mb: 2 }} />}
-
-            <Suspense fallback={<Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />}>
-              {exportTab === 'svg' && <ExportPatternForSVG viewData={viewData} hiddenLayers={hiddenLayers} />}
-              {exportTab === 'print' && <ExportPatternForPrintV3 viewData={viewData} hiddenLayers={hiddenLayers} />}
-              {exportTab === 'image' && <ExportPatternForImage viewData={viewData} hiddenLayers={hiddenLayers} />}
-            </Suspense>
-          </BorderedCard>
-        )}
+        {!viewData?.pattern_file_external && <ExportSection viewData={viewData} hiddenLayers={hiddenLayers} />}
 
         {!viewData?.pattern_file_external && (
           <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>

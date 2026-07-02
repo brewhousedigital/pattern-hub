@@ -24,7 +24,7 @@ export type ExportPdfMode = 'single' | 'tiled';
  * string so new flows can be added without a schema/type change; this const is
  * the canonical list for the upcoming multistep export flow.
  */
-export const EXPORT_FLOWS = ['cricut', 'craft cutter', 'printing', 'saving for later', 'editing'] as const;
+export const EXPORT_FLOWS = ['cricut', 'craft cutter', 'printing', 'saving for later', 'editing', 'generic'] as const;
 export type ExportFlow = (typeof EXPORT_FLOWS)[number];
 
 export type TypeExportEventCreate = {
