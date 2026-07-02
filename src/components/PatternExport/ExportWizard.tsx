@@ -649,7 +649,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
       <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mb: 0.75 }}>
         Prefer to do it yourself?
       </Typography>
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ flexWrap: 'wrap' }}>
         <Button size="small" onClick={() => onOpenAdvanced('image')} sx={{ textTransform: 'none' }}>
           Make a custom image
         </Button>
