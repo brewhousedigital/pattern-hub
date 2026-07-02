@@ -107,7 +107,9 @@ const authenticatedMenuItems = [
   {
     label: 'Settings',
     icon: <Settings />,
-    onClick: () => {},
+    onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+      navigateTo({ to: '/profile/edit', search: { tab: 'general' } });
+    },
     disabled: true,
   },
   {
