@@ -802,7 +802,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
           </Collapse>
 
           <Stack direction="row" spacing={1.5}>
-            {!printTiled && (
+            {/*{!printTiled && (
               <Button
                 variant="contained"
                 fullWidth
@@ -813,9 +813,9 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
               >
                 Print Now
               </Button>
-            )}
+            )}*/}
             <Button
-              variant={printTiled ? 'contained' : 'outlined'}
+              variant="contained"
               fullWidth
               disabled={!canExport || isBusy}
               startIcon={isBusy ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
