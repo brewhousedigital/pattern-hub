@@ -22,9 +22,7 @@ import {
 
 export const Route = createFileRoute('/space-command/contact/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Contact Submissions - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Contact Submissions - Admin', '', match.pathname),
 });
 
 function RouteComponent() {

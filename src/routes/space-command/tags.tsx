@@ -72,9 +72,7 @@ import { DataGrid, type GridColDef, type GridSortModel } from '@mui/x-data-grid'
 
 export const Route = createFileRoute('/space-command/tags')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Tags - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Tags - Admin', '', match.pathname),
 });
 
 const globalIsFetchingPatterns = atom(false);

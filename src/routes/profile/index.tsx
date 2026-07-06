@@ -7,7 +7,8 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
-import { useQueryGetUserById } from '@/functions/database/users';
+import { useQueryGetUserById, getUserByIdOptions } from '@/functions/database/users';
+import { queryClient } from '@/functions/database/authentication-setup';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import type { TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
@@ -118,9 +119,18 @@ export const Route = createFileRoute('/profile/')({
       tab: Number.isFinite(tab) && tab >= 0 && tab <= 5 ? tab : 0,
     };
   },
-  head: ({ match }) => ({
-    meta: generateSEO('Profile', '', match.pathname),
-  }),
+  loaderDeps: ({ search }) => ({ id: search.id }),
+  loader: ({ deps }) =>
+    deps.id ? queryClient.ensureQueryData(getUserByIdOptions(deps.id)).catch(() => undefined) : undefined,
+  head: ({ loaderData, match }) => {
+    const rawName = loaderData?.name || '';
+    const displayName = rawName.startsWith('NewUser_') ? '' : rawName;
+    return generateSEO(
+      displayName ? `${displayName}'s Profile` : 'Profile',
+      displayName ? `See ${displayName}'s stained glass pattern collection, favorites, and activity on Pattern Archive.` : '',
+      match.pathname,
+    );
+  },
 });
 
 function RouteComponent() {

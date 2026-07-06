@@ -1,5 +1,10 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { useQueryGetAllWikiCategories, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import {
+  getAllWikiCategoriesOptions,
+  useQueryGetAllWikiCategories,
+  useQueryGetAllWikiPages,
+} from '@/functions/database/wiki';
+import { queryClient } from '@/functions/database/authentication-setup';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 
@@ -11,9 +16,17 @@ import { Box, Container, Skeleton, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Wiki', '', match.pathname),
-  }),
+  loader: ({ params }) =>
+    queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
+      (categories) => categories.find((c) => c.slug === params.categorySlug),
+      () => undefined,
+    ),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.name,
+      loaderData?.name ? `Browse ${loaderData.name} articles in the Pattern Archive wiki.` : '',
+      match.pathname,
+    ),
 });
 
 function RouteComponent() {

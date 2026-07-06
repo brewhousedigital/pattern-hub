@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import { queryClient } from '@/functions/database/authentication-setup';
 import { WikiMarkdownWrapper } from '@/components/wiki/WikiMarkdownWrapper';
 import { WikiTableOfContents } from '@/components/wiki/WikiTableOfContents';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
@@ -12,9 +15,14 @@ import { Box, Container, Skeleton, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Wiki', '', match.pathname),
-  }),
+  loader: ({ params }) =>
+    queryClient.ensureQueryData(getWikiPageOptions(params.categorySlug, params.pageSlug)).catch(() => undefined),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.title,
+      loaderData?.content ? truncate(stripMarkdown(loaderData.content), 160) : '',
+      match.pathname,
+    ),
 });
 
 function RouteComponent() {
@@ -71,33 +79,43 @@ function RouteComponent() {
           )}
 
           {!isLoading && page && (
-            <ContentGrid>
-              {/* Main content */}
-              <Box>
-                <Typography
-                  variant="h1"
-                  sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 0.75, color: 'text.primary' }}
-                >
-                  {page.title}
-                </Typography>
+            <>
+              <BreadcrumbJsonLd
+                items={[
+                  { name: 'Home', url: '/' },
+                  { name: 'Wiki', url: '/wiki' },
+                  { name: page.expand?.category?.name ?? categorySlug, url: `/wiki/${categorySlug}` },
+                  { name: page.title, url: `/wiki/${categorySlug}/${pageSlug}` },
+                ]}
+              />
+              <ContentGrid>
+                {/* Main content */}
+                <Box>
+                  <Typography
+                    variant="h1"
+                    sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 0.75, color: 'text.primary' }}
+                  >
+                    {page.title}
+                  </Typography>
 
-                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 4 }}>
-                  Last updated{' '}
-                  {new Date(page.updated).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </Typography>
+                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 4 }}>
+                    Last updated{' '}
+                    {new Date(page.updated).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Typography>
 
-                <WikiMarkdownWrapper wikiPages={allPages}>{page.content}</WikiMarkdownWrapper>
-              </Box>
+                  <WikiMarkdownWrapper wikiPages={allPages}>{page.content}</WikiMarkdownWrapper>
+                </Box>
 
-              {/* Sticky TOC sidebar */}
-              <Box>
-                <WikiTableOfContents markdown={page.content} />
-              </Box>
-            </ContentGrid>
+                {/* Sticky TOC sidebar */}
+                <Box>
+                  <WikiTableOfContents markdown={page.content} />
+                </Box>
+              </ContentGrid>
+            </>
           )}
         </Container>
       </PageWrapper>

@@ -199,7 +199,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
               component="img"
               loading="lazy"
               src={preview}
-              alt="Preview"
+              alt="Gallery photo preview"
               sx={{
                 width: '100%',
                 maxHeight: 260,

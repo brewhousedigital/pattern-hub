@@ -18,7 +18,7 @@ export const BlockedTagsBanner = () => {
       <VisibilityOffRoundedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
 
       <Typography variant="caption" color="text.secondary">
-        <Link to="/profile/edit" search={{ tab: 'privacy' }} style={{ color: 'inherit' }}>
+        <Link to="/profile/edit" search={{ tab: 'general' }} style={{ color: 'inherit' }}>
           Hiding {blockedCount} blocked tag{blockedCount !== 1 ? 's' : ''}
         </Link>
       </Typography>

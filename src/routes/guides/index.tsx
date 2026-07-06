@@ -4,9 +4,7 @@ import { generateSEO } from '@/functions/utilities/seo';
 
 export const Route = createFileRoute('/guides/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Guides', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Guides', 'Tips and how-tos for stained glass pattern making.', match.pathname),
 });
 
 function RouteComponent() {

@@ -64,9 +64,7 @@ import {
 
 export const Route = createFileRoute('/space-command/sets')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Sets - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Sets - Admin', '', match.pathname),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

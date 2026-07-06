@@ -5,13 +5,16 @@ import { BrowseSearchBar, type BrowseSortValue, applyBrowseSort } from '@/compon
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
 import {
+  getCollectionByIdOptions,
   useQueryGetCollectionById,
   useQueryGetUserFollowedCollections,
   useMutationFollowCollection,
   useMutationUnfollowCollection,
 } from '@/functions/database/collections';
+import { queryClient } from '@/functions/database/authentication-setup';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
+import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { generateUserAvatarUrl } from '@/functions/utilities/generate-pb-image';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
@@ -29,9 +32,14 @@ import { Alert, Avatar, Box, Button, Container, Paper, Skeleton, Stack, Typograp
 
 export const Route = createFileRoute('/profile/collections/$collectionId')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Collection', '', match.pathname),
-  }),
+  loader: ({ params }) =>
+    queryClient.ensureQueryData(getCollectionByIdOptions(params.collectionId)).catch(() => undefined),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.name,
+      loaderData?.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
+      match.pathname,
+    ),
 });
 
 function RouteComponent() {
@@ -141,7 +149,11 @@ function RouteComponent() {
                     sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 4, md: 0 } }}
                   >
                     <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-                      <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}>
+                      <Typography
+                        variant="h5"
+                        component="h1"
+                        sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}
+                      >
                         {collection.name}
                       </Typography>
 

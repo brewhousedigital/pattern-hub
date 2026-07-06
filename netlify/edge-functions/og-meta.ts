@@ -140,6 +140,66 @@ async function resolvePageMeta(request: Request, pathname: string): Promise<Reco
     }
   }
 
+  // /authors/:slug
+  const authorMatch = pathname.match(/^\/authors\/([^/]+)$/);
+  if (authorMatch) {
+    try {
+      const slug = authorMatch[1].replace(/"/g, '');
+      const params = new URLSearchParams({ filter: `slug="${slug}"&&is_published=true`, perPage: '1' });
+      const res = await fetch(`${POCKETBASE_URL}/api/collections/manual_authors/records?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        const author = data?.items?.[0];
+        if (author) {
+          const description = author.description
+            ? stripMarkdown(author.description).slice(0, 150)
+            : `Stained glass patterns by ${author.name} on Pattern Archive.`;
+          const imageUrl = author.avatar
+            ? `${POCKETBASE_URL}/api/files/${author.collectionId}/${author.id}/${author.avatar}`
+            : `${SITE_URL}/api/og-image?type=author&title=${encodeURIComponent(author.name)}`;
+          return {
+            ...base,
+            title: `${author.name} - ${SITE_NAME}`,
+            description,
+            'og:title': `${author.name} - ${SITE_NAME}`,
+            'og:description': description,
+            'og:url': `${SITE_URL}${pathname}`,
+            'og:image': imageUrl,
+            'twitter:image': imageUrl,
+          };
+        }
+      }
+    } catch {
+      // fall through
+    }
+  }
+
+  // /profile/collections/:collectionId
+  const collectionMatch = pathname.match(/^\/profile\/collections\/([^/]+)$/);
+  if (collectionMatch) {
+    try {
+      const res = await fetch(
+        `${POCKETBASE_URL}/api/collections/user_collections/records/${collectionMatch[1]}`,
+      );
+      if (res.ok) {
+        const collection = await res.json();
+        const description = collection.description
+          ? stripMarkdown(collection.description).slice(0, 150)
+          : 'A curated collection of stained glass patterns on Pattern Archive.';
+        return {
+          ...base,
+          title: `${collection.name} - ${SITE_NAME}`,
+          description,
+          'og:title': `${collection.name} - ${SITE_NAME}`,
+          'og:description': description,
+          'og:url': `${SITE_URL}${pathname}`,
+        };
+      }
+    } catch {
+      // fall through
+    }
+  }
+
   // /wiki/:categorySlug/:pageSlug
   const wikiPageMatch = pathname.match(/^\/wiki\/([^/]+)\/([^/]+)$/);
   if (wikiPageMatch) {

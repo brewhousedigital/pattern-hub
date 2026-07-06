@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
@@ -56,6 +56,13 @@ export const useQueryGetUserById = (id?: string) => {
     enabled: !!id,
   });
 };
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getUserByIdOptions = (id: string) =>
+  queryOptions({
+    queryKey: ['GetUserById', id],
+    queryFn: (): Promise<TypeAuthData> => pocketbase.collection('users').getOne(id),
+  });
 
 export const useMutationResetUserPassword = () => {
   return useMutation({

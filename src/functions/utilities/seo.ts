@@ -27,14 +27,23 @@ export const seoUrl = (url?: string) => {
   return [{ property: 'og:url', content: `${baseURL}${url}` }];
 };
 
+export const seoCanonical = (url?: string) => {
+  const baseURL = `https://patternarchive.net`;
+
+  return [{ rel: 'canonical', href: `${baseURL}${url ?? ''}` }];
+};
+
 export const generateSEO = (title?: string, description?: string, url?: string) => {
-  return [
-    ...seoTitle(title),
-    ...seoDescription(description),
-    ...seoUrl(url),
-    { property: 'og:image', content: `https://patternarchive.net/poster.png` },
-    { property: 'og:site_name', content: `Pattern Archive` },
-    { name: 'twitter:card', content: `summary_large_image` },
-    { name: 'twitter:image', content: `https://patternarchive.net/poster.png` },
-  ];
+  return {
+    meta: [
+      ...seoTitle(title),
+      ...seoDescription(description),
+      ...seoUrl(url),
+      { property: 'og:image', content: `https://patternarchive.net/poster.png` },
+      { property: 'og:site_name', content: `Pattern Archive` },
+      { name: 'twitter:card', content: `summary_large_image` },
+      { name: 'twitter:image', content: `https://patternarchive.net/poster.png` },
+    ],
+    links: seoCanonical(url),
+  };
 };

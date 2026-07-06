@@ -86,9 +86,7 @@ export const Route = createFileRoute('/profile/edit')({
   validateSearch: (search: Record<string, unknown>) => ({
     tab: TABS.some((t) => t.key === search.tab) ? (search.tab as TabKey) : undefined,
   }),
-  head: ({ match }) => ({
-    meta: generateSEO('Edit Profile', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Edit Profile', '', match.pathname),
 });
 
 // ─── Types ────────────────────────────────────────────────────────────────────

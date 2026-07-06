@@ -26,9 +26,7 @@ import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-dat
 
 export const Route = createFileRoute('/space-command/store-locator')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Store Locator - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Store Locator - Admin', '', match.pathname),
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

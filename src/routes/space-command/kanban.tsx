@@ -83,9 +83,7 @@ import {
 
 export const Route = createFileRoute('/space-command/kanban')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Project Planning - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Project Planning - Admin', '', match.pathname),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

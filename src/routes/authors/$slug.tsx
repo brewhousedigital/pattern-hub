@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
+import { queryClient } from '@/functions/database/authentication-setup';
 import {
+  getManualAuthorBySlugOptions,
   useQueryGetManualAuthorBySlug,
   useQueryGetPatternsByManualAuthorName,
 } from '@/functions/database/manual-authors';
@@ -10,6 +12,7 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
@@ -33,9 +36,13 @@ import {
 
 export const Route = createFileRoute('/authors/$slug')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Artist', '', match.pathname),
-  }),
+  loader: ({ params }) => queryClient.ensureQueryData(getManualAuthorBySlugOptions(params.slug)).catch(() => undefined),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.name,
+      loaderData?.description || (loaderData?.name ? `Stained glass patterns by ${loaderData.name}.` : ''),
+      match.pathname,
+    ),
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -78,6 +85,12 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: '/' },
+          { name: author.name, url: `/authors/${slug}` },
+        ]}
+      />
       <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
         {/* ─── Header card ─── */}
         <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 3, md: 4 }, mb: 4 }}>
@@ -91,7 +104,7 @@ function RouteComponent() {
             </Avatar>
 
             <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.5px', mb: 0.5 }}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700, letterSpacing: '-0.5px', mb: 0.5 }}>
                 {author.name}
               </Typography>
 

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
+import { queryOptions, useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
@@ -72,6 +72,16 @@ export const useQueryGetCollectionById = (collectionId: string) => {
 };
 
 /** Fetch all collections that the logged-in user owns - lightweight, no expand. */
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getCollectionByIdOptions = (collectionId: string) =>
+  queryOptions({
+    queryKey: [...COLLECTIONS_QUERY_KEY, 'byId', collectionId],
+    queryFn: (): Promise<TypeCollectionResponse> =>
+      pocketbase.collection('user_collections').getOne(collectionId, {
+        expand: 'patterns,patterns.authors,owner_id',
+      }),
+  });
+
 export const useQueryGetUserCollectionsAll = (userId: string) => {
   return useQuery({
     queryKey: [...COLLECTIONS_QUERY_KEY, 'all', userId],

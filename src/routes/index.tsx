@@ -1,6 +1,7 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { getHomepageDefaultPatternsOptions, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { queryClient } from '@/functions/database/authentication-setup';
 import { MainPageContent } from '@/components/MainPageContent';
 import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -14,14 +15,14 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
 import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
-import { Box, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
+import { visuallyHidden } from '@mui/utils';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
   validateSearch: patternSearchSchema,
-  head: () => ({
-    meta: generateSEO(),
-  }),
+  loader: () => queryClient.ensureQueryData(getHomepageDefaultPatternsOptions()).catch(() => undefined),
+  head: () => generateSEO(),
 });
 
 function RouteComponent() {
@@ -47,6 +48,10 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
+      <Typography variant="h1" sx={visuallyHidden}>
+        Stained Glass Pattern Archive — Browse and Download Patterns
+      </Typography>
+
       <Box sx={{ px: 2, mb: 2 }}>
         <HomepageSearchV3 />
       </Box>

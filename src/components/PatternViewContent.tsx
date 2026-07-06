@@ -239,6 +239,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="h3"
+              component="h1"
               sx={{
                 wordBreak: 'break-word',
                 fontSize: { xs: '1.5rem', sm: '2.4rem' },

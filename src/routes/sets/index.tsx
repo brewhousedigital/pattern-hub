@@ -27,9 +27,7 @@ import {
 
 export const Route = createFileRoute('/sets/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Sets', 'Browse curated pattern collections', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Sets', 'Browse curated pattern collections', match.pathname),
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -46,7 +44,7 @@ function RouteComponent() {
       <Container maxWidth="lg" sx={{ py: 5 }}>
         {/* Page header */}
         <Box sx={{ mb: 5 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }} gutterBottom>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, lineHeight: 1.2 }} gutterBottom>
             Sets
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560 }}>

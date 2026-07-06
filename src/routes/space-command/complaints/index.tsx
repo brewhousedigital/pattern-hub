@@ -34,9 +34,7 @@ import { generateSEO } from '@/functions/utilities/seo.ts';
 
 export const Route = createFileRoute('/space-command/complaints/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Complaints - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Complaints - Admin', '', match.pathname),
 });
 
 function RouteComponent() {

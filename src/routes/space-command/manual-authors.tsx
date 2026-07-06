@@ -53,9 +53,7 @@ import {
 
 export const Route = createFileRoute('/space-command/manual-authors')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Manual Authors - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Manual Authors - Admin', '', match.pathname),
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

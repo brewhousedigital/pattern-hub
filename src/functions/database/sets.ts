@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useGlobalAuthData } from '@/data/auth-data';
 import type { TypePatternResponse } from '@/functions/database/patterns';
@@ -79,6 +79,17 @@ export const useQueryGetSetById = (id?: string) => {
     enabled: !!id,
   });
 };
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getSetByIdOptions = (id: string) =>
+  queryOptions({
+    queryKey: [...PATTERN_SETS_QUERY_KEY, id],
+    queryFn: (): Promise<TypePatternSet> =>
+      pocketbase.collection('pattern_sets').getOne<TypePatternSet>(id, {
+        expand: 'patterns,patterns.authors',
+        sort: '-created',
+      }),
+  });
 
 /** Pattern search for the admin pattern picker - max 20 results. */
 export const useQuerySearchPatternsForPicker = (search: string) => {

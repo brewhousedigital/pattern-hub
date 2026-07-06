@@ -11,9 +11,7 @@ import { Box, Container, Skeleton, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
 });
 
 function RouteComponent() {

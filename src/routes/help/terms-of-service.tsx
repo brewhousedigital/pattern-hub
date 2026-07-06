@@ -17,9 +17,7 @@ const LAST_UPDATED = 'April 23, 2026';
 
 export const Route = createFileRoute('/help/terms-of-service')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Terms of Service', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Terms of Service', '', match.pathname),
 });
 
 function RouteComponent() {

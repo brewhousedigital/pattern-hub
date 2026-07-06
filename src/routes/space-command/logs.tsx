@@ -30,9 +30,7 @@ import {
 
 export const Route = createFileRoute('/space-command/logs')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Audit Log - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Audit Log - Admin', '', match.pathname),
 });
 
 const ENTITY_TYPES = [

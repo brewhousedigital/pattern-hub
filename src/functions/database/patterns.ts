@@ -117,6 +117,21 @@ export const useQueryGetAllPatternsByPagination = () => {
   });
 };
 
+// Prefetches the anonymous, first-page, default-sort view (queryKey matches what
+// useQueryGetAllPatternsByPagination produces for a logged-out visitor with no
+// search/filter active) so crawlers/first paint see real pattern data instead of
+// an empty grid, without replicating the full search/blocked-tags hook machinery.
+export const getHomepageDefaultPatternsOptions = () =>
+  queryOptions({
+    queryKey: ['GetAllPatternsByPagination', '', 1, '-created', ''],
+    queryFn: (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> =>
+      pocketbase.collection('patterns').getList(1, 20, {
+        filter: 'isDeleted = false && is_draft = false',
+        expand: 'authors',
+        sort: '-created',
+      }),
+  });
+
 export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: number, filterIsDeleted = true) => {
   let includeIsDeletedFilter = `isDeleted = ${String(!filterIsDeleted)}`;
 

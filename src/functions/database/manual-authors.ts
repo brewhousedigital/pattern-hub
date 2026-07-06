@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 
@@ -50,6 +50,17 @@ export const useQueryGetManualAuthorBySlug = (slug: string) =>
         .collection('manual_authors')
         .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`),
     enabled: !!slug,
+    retry: false,
+  });
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getManualAuthorBySlugOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ['ManualAuthorBySlug', slug],
+    queryFn: () =>
+      pocketbase
+        .collection('manual_authors')
+        .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`),
     retry: false,
   });
 

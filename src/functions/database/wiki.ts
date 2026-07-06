@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,6 +42,14 @@ export const useQueryGetAllWikiCategories = () => {
     },
   });
 };
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getAllWikiCategoriesOptions = () =>
+  queryOptions({
+    queryKey: ['GetAllWikiCategories'],
+    queryFn: (): Promise<TypeWikiCategory[]> =>
+      pocketbase.collection('wiki_categories').getFullList({ sort: 'order,name' }),
+  });
 
 export type TypeWikiCategoryPayload = {
   id?: string;
@@ -101,6 +109,16 @@ export const useQueryGetWikiPage = (categorySlug: string, pageSlug: string) => {
     enabled: !!categorySlug && !!pageSlug,
   });
 };
+
+// This is a fancy thing to handle automate queries for data on dynamic pages
+export const getWikiPageOptions = (categorySlug: string, pageSlug: string) =>
+  queryOptions({
+    queryKey: ['GetWikiPage', categorySlug, pageSlug],
+    queryFn: (): Promise<TypeWikiPage> =>
+      pocketbase
+        .collection('wiki_pages')
+        .getFirstListItem(`category.slug="${categorySlug}" && slug="${pageSlug}"`, { expand: 'category' }),
+  });
 
 export type TypeWikiPagePayload = {
   id?: string;

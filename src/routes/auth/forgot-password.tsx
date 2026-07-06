@@ -13,9 +13,7 @@ import { Box, Button, CircularProgress, Container, Link as MuiLink, Paper, TextF
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Forgot Password', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Forgot Password', '', match.pathname),
 });
 
 function RouteComponent() {

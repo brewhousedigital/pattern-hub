@@ -40,9 +40,7 @@ import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/faq')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('FAQ - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('FAQ - Admin', '', match.pathname),
 });
 
 // ─── Sortable card ────────────────────────────────────────────────────────────

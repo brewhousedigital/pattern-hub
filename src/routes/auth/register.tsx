@@ -29,9 +29,7 @@ import {
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Register', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Register', '', match.pathname),
 });
 
 function RouteComponent() {

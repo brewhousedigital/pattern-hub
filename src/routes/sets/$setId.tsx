@@ -4,18 +4,22 @@ import { createFileRoute } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
 import { BrowseSearchBar, type BrowseSortValue, applyBrowseSort } from '@/components/browse/BrowseSearchBar';
 import {
+  getSetByIdOptions,
   useQueryGetSetById,
   useQueryGetUserFollowedSets,
   useMutationFollowSet,
   useMutationUnfollowSet,
 } from '@/functions/database/sets';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { queryClient } from '@/functions/database/authentication-setup';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { enqueueSnackbar } from 'notistack';
 import { alpha } from '@mui/material/styles';
 
@@ -43,9 +47,13 @@ import {
 
 export const Route = createFileRoute('/sets/$setId')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Set', '', match.pathname),
-  }),
+  loader: ({ params }) => queryClient.ensureQueryData(getSetByIdOptions(params.setId)).catch(() => undefined),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.title,
+      loaderData?.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
+      match.pathname,
+    ),
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -148,6 +156,14 @@ function RouteComponent() {
 
         {set && (
           <>
+            <BreadcrumbJsonLd
+              items={[
+                { name: 'Home', url: '/' },
+                { name: 'Sets', url: '/sets' },
+                { name: set.title, url: `/sets/${setId}` },
+              ]}
+            />
+
             {!set.is_published && (
               <Alert severity="warning" sx={{ mb: 3 }}>
                 This set is not published.
@@ -184,7 +200,11 @@ function RouteComponent() {
                     sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 4, md: 0 } }}
                   >
                     <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-                      <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}>
+                      <Typography
+                        variant="h5"
+                        component="h1"
+                        sx={{ fontWeight: 700, letterSpacing: '-0.4px', mb: 0.5 }}
+                      >
                         {set.title}
                       </Typography>
 

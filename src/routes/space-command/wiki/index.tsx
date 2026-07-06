@@ -51,9 +51,7 @@ import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/wiki/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Wiki - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Wiki - Admin', '', match.pathname),
 });
 
 // ─── Sortable category wrapper ────────────────────────────────────────────────

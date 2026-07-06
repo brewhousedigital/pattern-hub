@@ -5,6 +5,7 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useFuzzySearch } from '@/functions/hooks/useFuzzySearch';
 import { generateSEO } from '@/functions/utilities/seo';
+import { stripMarkdown } from '@/functions/utilities/strip-markdown';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -23,9 +24,7 @@ import {
 
 export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('FAQ', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('FAQ', '', match.pathname),
 });
 
 function RouteComponent() {
@@ -41,6 +40,23 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
+      {data && data.length > 0 && (
+        // eslint-disable-next-line react/no-danger
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: data.map((faq) => ({
+                '@type': 'Question',
+                name: faq.title,
+                acceptedAnswer: { '@type': 'Answer', text: stripMarkdown(faq.content) },
+              })),
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
+      )}
       <PageWrapper>
         <Container maxWidth="md">
           {/* Hero */}

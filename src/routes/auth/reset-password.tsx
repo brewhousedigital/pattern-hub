@@ -38,9 +38,7 @@ export const Route = createFileRoute('/auth/reset-password')({
   validateSearch: (search: Record<string, unknown>): ResetPasswordSearch => ({
     token: search.token as string | undefined,
   }),
-  head: ({ match }) => ({
-    meta: generateSEO('Reset Password', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Reset Password', '', match.pathname),
 });
 
 // ─── Password strength helper (mirrors register.tsx) ─────────────────────────

@@ -3,6 +3,8 @@ import { queryClient } from '@/functions/database/authentication-setup';
 import { getPatternByIdOptions, useQueryGetPatternById } from '@/functions/database/patterns';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { PatternViewContent } from '@/components/PatternViewContent';
+import { PatternJsonLd } from '@/components/PatternJsonLd';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { generateSEO } from '@/functions/utilities/seo';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
 
@@ -12,9 +14,7 @@ import { Alert, Box, Container, Link as MuiLink } from '@mui/material';
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
   loader: ({ params }) => queryClient.ensureQueryData(getPatternByIdOptions(params.patternId)),
-  head: ({ loaderData, match }) => ({
-    meta: generateSEO(loaderData?.name, loaderData?.description, match.pathname),
-  }),
+  head: ({ loaderData, match }) => generateSEO(loaderData?.name, loaderData?.description, match.pathname),
 });
 
 function RouteComponent() {
@@ -52,6 +52,18 @@ function RouteComponent() {
             <Alert severity="error" sx={{ mb: 3 }}>
               Pattern not found or failed to load.
             </Alert>
+          )}
+
+          {data && (
+            <>
+              <PatternJsonLd pattern={data} />
+              <BreadcrumbJsonLd
+                items={[
+                  { name: 'Home', url: '/' },
+                  { name: data.name, url: `/pattern/${data.id}` },
+                ]}
+              />
+            </>
           )}
 
           <PatternViewContent viewData={data} showStandaloneTags />

@@ -22,7 +22,7 @@ export const Header = () => {
   // Mobile view
   if (!isMediumSizeAndUp) {
     return (
-      <Box sx={mobileNavbarContainerStyles}>
+      <Box component="header" sx={mobileNavbarContainerStyles}>
         <Box sx={showTagMobileSidebar ? [mobileNavbarStyles, mobileHomepageNavbarStyles] : mobileNavbarStyles}>
           <Logo />
 
@@ -45,19 +45,17 @@ export const Header = () => {
   }
 
   return (
-    <>
-      <Box sx={navbarStyles}>
-        <Logo />
+    <Box component="header" sx={navbarStyles}>
+      <Logo />
 
-        <ExtraLinks />
+      <ExtraLinks />
 
-        <Box sx={{ textAlign: 'right' }}>
-          <NotificationBell />
+      <Box sx={{ textAlign: 'right' }}>
+        <NotificationBell />
 
-          <HeaderProfileMenu />
-        </Box>
+        <HeaderProfileMenu />
       </Box>
-    </>
+    </Box>
   );
 };
 
@@ -70,7 +68,7 @@ export const Logo = () => {
 
   return (
     <Link to="/" style={logoLinkStyles} onClick={handleReturnHome}>
-      <Typography component="h1" sx={logoStyles}>
+      <Typography component="div" sx={logoStyles}>
         Pattern Archive
       </Typography>
     </Link>
@@ -89,7 +87,12 @@ const ExtraLinks = () => {
   };
 
   return (
-    <Stack direction="row" spacing={2.5} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+    <Stack
+      component="nav"
+      direction="row"
+      spacing={2.5}
+      sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}
+    >
       <MuiLink component={Link} to="/" sx={activeLinkStyles('/')}>
         Home
       </MuiLink>

@@ -35,7 +35,7 @@ export function extractSvgDimensions(svgText: string): SvgDimensions | null {
 // viewBox's width/height (assumed to be in CSS pixels) at a given DPI - the
 // same approach as the reference Python script, just gated behind
 // extractSvgDimensions() returning nothing usable first.
-export function extractSvgDimensionsFromViewBox(svgText: string, dpi = 96): SvgDimensions | null {
+export function extractSvgDimensionsFromViewBox(svgText: string, dpi = 300): SvgDimensions | null {
   if (!dpi || dpi <= 0) return null;
 
   const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
@@ -44,7 +44,10 @@ export function extractSvgDimensionsFromViewBox(svgText: string, dpi = 96): SvgD
   const vbAttr = root.getAttribute('viewBox');
   if (!vbAttr) return null;
 
-  const vb = vbAttr.trim().split(/[\s,]+/).map(Number);
+  const vb = vbAttr
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
   if (vb.length !== 4 || vb.some((n) => isNaN(n))) return null;
 
   const [, , vbWidth, vbHeight] = vb;

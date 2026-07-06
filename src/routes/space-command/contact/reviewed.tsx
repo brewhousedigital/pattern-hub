@@ -17,9 +17,7 @@ import { enqueueSnackbar } from 'notistack';
 
 export const Route = createFileRoute('/space-command/contact/reviewed')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Reviewed Submissions - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Reviewed Submissions - Admin', '', match.pathname),
 });
 
 function RouteComponent() {

@@ -26,9 +26,7 @@ import {
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Login', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Login', '', match.pathname),
 });
 
 function RouteComponent() {

@@ -16,9 +16,7 @@ const LAST_UPDATED = 'April 4, 2026';
 
 export const Route = createFileRoute('/help/privacy-policy')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Privacy Policy', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Privacy Policy', '', match.pathname),
 });
 
 function RouteComponent() {

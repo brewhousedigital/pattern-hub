@@ -11,9 +11,7 @@ import { Box, Typography, TextField, Button, Alert, CircularProgress, Container,
 
 export const Route = createFileRoute('/help/contact')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Contact', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Contact', '', match.pathname),
 });
 
 const COOLDOWN_KEY = 'contact_last_submit';

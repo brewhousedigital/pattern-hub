@@ -56,9 +56,7 @@ export const Route = createFileRoute('/space-command/patterns')({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: typeof search.filter === 'string' ? search.filter : undefined,
   }),
-  head: ({ match }) => ({
-    meta: generateSEO('Patterns - Admin', '', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Patterns - Admin', '', match.pathname),
 });
 
 function RouteComponent() {

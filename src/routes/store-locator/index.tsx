@@ -66,9 +66,7 @@ L.Icon.Default.mergeOptions({
 
 export const Route = createFileRoute('/store-locator/')({
   component: RouteComponent,
-  head: ({ match }) => ({
-    meta: generateSEO('Store Locator', 'Find craft supply stores near you', match.pathname),
-  }),
+  head: ({ match }) => generateSEO('Store Locator', 'Find craft supply stores near you', match.pathname),
 });
 
 // ─── Map controller (child component - has access to map context) ────────────
