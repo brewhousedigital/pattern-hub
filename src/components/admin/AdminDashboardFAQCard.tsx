@@ -1,4 +1,4 @@
-import { useQueryGetAllFAQ } from '@/functions/database/faq';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -8,12 +8,9 @@ import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardFAQCard = () => {
-  const { isPending, isError, error, data } = useQueryGetAllFAQ();
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const faq = data?.faq;
   const theme = useTheme();
-
-  const mostRecent = data
-    ?.slice()
-    .sort((a, b) => new Date(String(b.updated)).getTime() - new Date(String(a.updated)).getTime())[0];
 
   return (
     <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
@@ -41,11 +38,11 @@ export const AdminDashboardFAQCard = () => {
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
-            {(data?.length ?? 0).toLocaleString()}
+            {(faq?.totalItems ?? 0).toLocaleString()}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Last updated: {mostRecent?.updated ? createPrettyDate(mostRecent.updated as unknown as string) : '-'}
+            Last updated: {faq?.lastUpdated ? createPrettyDate(faq.lastUpdated) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

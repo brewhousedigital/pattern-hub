@@ -1,4 +1,4 @@
-import { useQueryGetAllPatternsByPaginationAdmin } from '@/functions/database/patterns';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha } from '@mui/material/styles';
@@ -9,8 +9,8 @@ import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardPatternsCard = () => {
-  const { isPending, isError, error, data } = useQueryGetAllPatternsByPaginationAdmin('', 1);
-  const firstItem = data?.items?.[0];
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const patterns = data?.patterns;
   const theme = useTheme();
 
   return (
@@ -39,11 +39,11 @@ export const AdminDashboardPatternsCard = () => {
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
-            {(data?.totalItems ?? 0).toLocaleString()}
+            {(patterns?.totalItems ?? 0).toLocaleString()}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Newest added: {firstItem?.created ? createPrettyDate(firstItem.created) : '-'}
+            Newest added: {patterns?.newestCreated ? createPrettyDate(patterns.newestCreated) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

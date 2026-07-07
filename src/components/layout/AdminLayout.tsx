@@ -3,9 +3,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
 import { EnumLevelsAdmin, type TypeLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
-import { useQueryGetComplaints } from '@/functions/database/complaints';
-import { useQueryGetPendingContactSubmissions } from '@/functions/database/contact';
-import { useQueryGetContentReports } from '@/functions/database/content-reports';
+import { useQueryGetAdminNavBadges } from '@/functions/database/admin-dashboard-data';
 
 import { alpha } from '@mui/material/styles';
 
@@ -66,11 +64,9 @@ type NavGroup = {
 export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
   const { checkAccess } = useCheckAdminAccess();
 
-  const { data: complaintsData } = useQueryGetComplaints();
-  const { data: contentReportsData } = useQueryGetContentReports();
-  const { data: contactData } = useQueryGetPendingContactSubmissions();
+  const { data: badgesData } = useQueryGetAdminNavBadges();
 
-  const reportsTotal = (complaintsData?.length || 0) + (contentReportsData?.length || 0);
+  const reportsTotal = (badgesData?.complaints || 0) + (badgesData?.contentReports || 0);
 
   const navGroups: NavGroup[] = [
     {
@@ -106,7 +102,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/contact',
           icon: <MailRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.CONTACT_AR,
-          badge: contactData?.length,
+          badge: badgesData?.contactSubmissions,
         },
         {
           label: 'FAQ',

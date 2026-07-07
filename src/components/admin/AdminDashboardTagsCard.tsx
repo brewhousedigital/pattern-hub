@@ -1,4 +1,4 @@
-import { useQueryAdminTagStatsPaginated } from '@/functions/database/tags';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
@@ -8,14 +8,9 @@ import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardTagsCard = () => {
-  const { isPending, isError, error, data } = useQueryAdminTagStatsPaginated({
-    page: 0,
-    pageSize: 1,
-    search: '',
-    sortField: 'count',
-    sortDir: 'desc',
-  });
-  const topTag = data?.items?.[0];
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const tags = data?.tags;
+  const topTag = tags?.topTag;
   const theme = useTheme();
 
   return (
@@ -44,7 +39,7 @@ export const AdminDashboardTagsCard = () => {
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
-            {(data?.totalItems ?? 0).toLocaleString()}
+            {(tags?.totalItems ?? 0).toLocaleString()}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">

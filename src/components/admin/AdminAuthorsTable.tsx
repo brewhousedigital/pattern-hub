@@ -1,9 +1,10 @@
 import React from 'react';
-import { useQueryGetAllAuthors } from '@/functions/database/authors';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { AdminDashboardReadOnlyTable } from '@/components/admin/AdminDashboardReadOnlyTable';
 
 export const AdminAuthorsTable = () => {
-  const { isPending, isFetching, isError, data } = useQueryGetAllAuthors();
+  const { isPending, isFetching, isError, data: dashboardData } = useQueryGetSpaceCommandDashboardData();
+  const data = dashboardData?.authors;
 
   return (
     <AdminDashboardReadOnlyTable

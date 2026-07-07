@@ -1,4 +1,4 @@
-import { useQueryGetAllSets } from '@/functions/database/sets';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
@@ -8,8 +8,8 @@ import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardSetsCard = () => {
-  const { isPending, isError, error, data } = useQueryGetAllSets();
-  const published = data?.filter((s) => s.is_published)?.length ?? 0;
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const sets = data?.sets;
   const theme = useTheme();
 
   return (
@@ -38,11 +38,11 @@ export const AdminDashboardSetsCard = () => {
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
-            {(data?.length ?? 0).toLocaleString()}
+            {(sets?.totalItems ?? 0).toLocaleString()}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            {published} published · {(data?.length ?? 0) - published} draft
+            {sets?.published ?? 0} published · {sets?.draft ?? 0} draft
           </Typography>
         </AdminCardWrapper>
       </CardContent>

@@ -1,4 +1,4 @@
-import { useQueryGetComplaints } from '@/functions/database/complaints';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha } from '@mui/material/styles';
@@ -9,9 +9,9 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardComplaintsCard = () => {
-  const { isPending, isError, error, data } = useQueryGetComplaints();
-  const total = data?.length ?? 0;
-  const firstItem = data?.[0];
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const complaints = data?.complaints;
+  const total = complaints?.totalItems ?? 0;
   const theme = useTheme();
 
   return (
@@ -49,7 +49,7 @@ export const AdminDashboardComplaintsCard = () => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Latest report: {firstItem?.created ? createPrettyDate(firstItem.created) : 'None'}
+            Latest report: {complaints?.latestCreated ? createPrettyDate(complaints.latestCreated) : 'None'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

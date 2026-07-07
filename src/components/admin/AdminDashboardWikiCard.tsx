@@ -1,4 +1,4 @@
-import { useQueryGetAllWikiCategories, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -8,25 +8,12 @@ import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 
 export const AdminDashboardWikiCard = () => {
-  const {
-    isPending: catsPending,
-    isError: catsError,
-    error: catsErr,
-    data: categories,
-  } = useQueryGetAllWikiCategories();
-  const { isPending: pagesPending, isError: pagesError, error: pagesErr, data: pages } = useQueryGetAllWikiPages();
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const wiki = data?.wiki;
   const theme = useTheme();
 
-  const isPending = catsPending || pagesPending;
-  const isError = catsError || pagesError;
-  const error = catsErr ?? pagesErr ?? null;
-
-  const mostRecentPage = pages
-    ?.slice()
-    .sort((a, b) => new Date(String(b.updated)).getTime() - new Date(String(a.updated)).getTime())[0];
-
-  const catCount = categories?.length ?? 0;
-  const pageCount = pages?.length ?? 0;
+  const catCount = wiki?.categoryCount ?? 0;
+  const pageCount = wiki?.pageCount ?? 0;
 
   return (
     <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
@@ -55,10 +42,10 @@ export const AdminDashboardWikiCard = () => {
 
           <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} spacing={2}>
             <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.25 }}>
-              {(categories?.length ?? 0).toLocaleString()}
+              {catCount.toLocaleString()}
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.25 }}>
-              {(pages?.length ?? 0).toLocaleString()}
+              {pageCount.toLocaleString()}
             </Typography>
           </Stack>
 
@@ -67,8 +54,7 @@ export const AdminDashboardWikiCard = () => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Last updated:{' '}
-            {mostRecentPage?.updated ? createPrettyDate(mostRecentPage.updated as unknown as string) : '-'}
+            Last updated: {wiki?.lastUpdated ? createPrettyDate(wiki.lastUpdated) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>

@@ -1,4 +1,4 @@
-import { useQueryUsersByPagination } from '@/functions/database/users.ts';
+import { useQueryGetSpaceCommandDashboardData } from '@/functions/database/admin-dashboard-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { AdminCardWrapper } from '@/components/admin/AdminCardWrapper';
 import { alpha } from '@mui/material/styles';
@@ -9,8 +9,8 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export const AdminDashboardUsersCard = () => {
-  const { isPending, isError, error, data } = useQueryUsersByPagination(1);
-  const firstItem = data?.items?.[0];
+  const { isPending, isError, error, data } = useQueryGetSpaceCommandDashboardData();
+  const users = data?.users;
   const theme = useTheme();
 
   return (
@@ -39,11 +39,11 @@ export const AdminDashboardUsersCard = () => {
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, mb: 0.75 }}>
-            {(data?.totalItems ?? 0).toLocaleString()}
+            {(users?.totalItems ?? 0).toLocaleString()}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Newest registration: {firstItem?.created ? createPrettyDate(firstItem.created) : '-'}
+            Newest registration: {users?.newestCreated ? createPrettyDate(users.newestCreated) : '-'}
           </Typography>
         </AdminCardWrapper>
       </CardContent>
