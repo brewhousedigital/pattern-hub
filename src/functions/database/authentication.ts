@@ -187,6 +187,11 @@ export type TypeAuthData = {
   blocked_tags?: string[];
   // Preferred unit for displaying pattern sizes; 'original' shows each pattern's authored unit
   preferred_measurement_unit?: 'original' | 'in' | 'in-fraction' | 'cm' | 'mm';
+  // Featured Pattern (artists only) - a single pattern of their own to spotlight above
+  // "Contributed Patterns", plus their own markdown blurb about it (distinct from the
+  // pattern's admin-controlled description).
+  featured_pattern_id?: string;
+  featured_pattern_note?: string;
 };
 
 type AuthCreationType = Promise<RecordAuthResponse<TypeAuthData>>;

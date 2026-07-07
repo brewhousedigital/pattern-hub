@@ -167,6 +167,23 @@ export const useQueryGetPatternsByAuthor = (userId: string, page: number) => {
   });
 };
 
+// Used by the "Featured Pattern" picker on the profile edit page - every pattern
+// the given user is a (linked) author of, for choosing which one to spotlight.
+export const useQueryGetOwnPatternsForPicker = (userId: string) => {
+  return useQuery({
+    queryKey: ['OwnPatternsForPicker', userId],
+    queryFn: async (): Promise<TypePatternResponse[]> => {
+      const result = await pocketbase.collection('patterns').getFullList<TypePatternResponse>({
+        filter: `authors ~ '${userId}' && isDeleted = false && is_draft = false`,
+        sort: 'name',
+        fields: 'id,collectionId,name,pattern_file,pattern_file_external',
+      });
+      return result;
+    },
+    enabled: !!userId,
+  });
+};
+
 export type TypePatternCreatePayload = {
   id?: string;
   name: string;
@@ -335,7 +352,7 @@ export const useQueryGetPatternById = (patternId: string) => {
 export const getPatternByIdOptions = (patternId: string) =>
   queryOptions({
     queryKey: ['GetPatternById', patternId],
-    queryFn: () => pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
+    queryFn: (): Promise<TypePatternResponse> => pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
   });
 
 // This will query the list of pattern keys

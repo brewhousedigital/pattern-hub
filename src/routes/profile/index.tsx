@@ -19,7 +19,7 @@ import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import {
   generateUserAvatarUrl,
@@ -213,6 +213,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     queries: artistPatternIds.map((id) => ({ ...getPatternByIdOptions(id), enabled: !!id })),
   });
   const fullArtistPatterns = artistPatternIds.map((_, i) => artistPatternQueries[i]?.data) as TypePatternResponse[];
+
+  const featuredPatternId = thisAuthData?.featured_pattern_id ?? '';
+  const { data: featuredPattern } = useQuery({
+    ...getPatternByIdOptions(featuredPatternId),
+    enabled: !!featuredPatternId,
+  });
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<TypeGalleryResponse | null>(null);
@@ -759,6 +765,110 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
         </Container>
       )}
 
+      {/* ─── FEATURED PATTERN ─────────────────────────────────────────────── */}
+      {isArtist && featuredPatternId && featuredPattern && !featuredPattern.is_draft && (
+        <>
+          <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />
+
+          <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
+            <Box sx={{ pt: 5, pb: 5 }}>
+              <OverlineLabel>Featured Pattern</OverlineLabel>
+
+              <Box
+                sx={{
+                  mt: 2,
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '360px 1fr' },
+                  gap: { xs: 3, md: 4 },
+                  p: { xs: 2.5, md: 3.5 },
+                  borderRadius: 4,
+                  border: '1px solid',
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+                  backgroundColor: cardBg || (isDark ? '#242424' : undefined),
+                }}
+              >
+                <Box
+                  component="img"
+                  loading="lazy"
+                  src={generatePbImage(featuredPattern)}
+                  alt={featuredPattern.name}
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    objectFit: 'contain',
+                    borderRadius: 3,
+                    p: 2,
+                    backgroundColor: alpha(siteColorSecondary, 0.12),
+                  }}
+                />
+
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 800, letterSpacing: '-0.4px', mb: 1, wordBreak: 'break-word' }}
+                  >
+                    {featuredPattern.name}
+                  </Typography>
+
+                  {featuredPattern.description && (
+                    <Box sx={{ mb: 2, color: isDark ? 'rgba(255,255,255,0.75)' : 'text.secondary' }}>
+                      <MarkdownWrapper
+                        sx={
+                          isDark
+                            ? {
+                                color: 'rgba(255,255,255,0.75)',
+                                '& h1, & h2, & h3, & h4, & h5, & h6': { color: 'rgba(255,255,255,0.92)' },
+                              }
+                            : undefined
+                        }
+                      >
+                        {featuredPattern.description}
+                      </MarkdownWrapper>
+                    </Box>
+                  )}
+
+                  {featuredPattern.tags && featuredPattern.tags.length > 0 && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2.5 }}>
+                      {featuredPattern.tags.map((tag) => (
+                        <Link key={tag} to="/" search={{ tags: [tag] }}>
+                          <Chip label={tag} size="small" variant="outlined" clickable />
+                        </Link>
+                      ))}
+                    </Box>
+                  )}
+
+                  {thisAuthData?.featured_pattern_note?.trim() && (
+                    <Box
+                      sx={{
+                        pt: 2.5,
+                        borderTop: '1px solid',
+                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+                      }}
+                    >
+                      <OverlineLabel>{displayName}'s notes</OverlineLabel>
+                      <Box sx={{ mt: 1 }}>
+                        <MarkdownWrapper
+                          sx={
+                            isDark
+                              ? {
+                                  color: 'rgba(255,255,255,0.75)',
+                                  '& h1, & h2, & h3, & h4, & h5, & h6': { color: 'rgba(255,255,255,0.92)' },
+                                }
+                              : undefined
+                          }
+                        >
+                          {thisAuthData?.featured_pattern_note}
+                        </MarkdownWrapper>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          </Container>
+        </>
+      )}
+
       {/* ─── ARTIST SHOWCASE ──────────────────────────────────────────────── */}
       {isArtist && (
         <>
@@ -769,7 +879,14 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 4 }}>
                 <Box>
                   <OverlineLabel>Contributed Patterns</OverlineLabel>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, letterSpacing: '-0.3px' }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 800,
+                      mt: 0.5,
+                      letterSpacing: '-0.3px',
+                    }}
+                  >
                     {displayName}'s latest work
                   </Typography>
                 </Box>
@@ -1026,7 +1143,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 ) : isError ? (
                   <Alert severity="error">Unable to load gallery photos.</Alert>
                 ) : galleryItems.length === 0 ? (
-                  <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." />
+                  <EmptyState icon={<PhotoLibraryOutlinedIcon />} message="No gallery photos yet." isDark={isDark} />
                 ) : (
                   <>
                     <GalleryGrid photos={galleryItems} onPhotoClick={setLightboxPhoto} />
@@ -1061,6 +1178,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   <EmptyState
                     icon={<BookmarksOutlinedIcon />}
                     message={isPublicView ? 'No collections yet.' : 'No collections yet. Create one to get started!'}
+                    isDark={isDark}
                   />
                 ) : (
                   <>
@@ -1216,7 +1334,13 @@ const ArtistPatternGrid = ({
     );
 
   if (!patterns?.length) {
-    return <EmptyState icon={<BrushRoundedIcon />} message={`${displayName} hasn't contributed any patterns yet.`} />;
+    return (
+      <EmptyState
+        icon={<BrushRoundedIcon />}
+        message={`${displayName} hasn't contributed any patterns yet.`}
+        isDark={isDark}
+      />
+    );
   }
 
   const cardSx = {
@@ -1285,7 +1409,8 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
       </Centered>
     );
   if (props.isError) return <Alert severity="error">Unable to load your list 😔</Alert>;
-  if (!props.patterns?.length) return <EmptyState icon={props.emptyIcon} message={props.emptyMessage} />;
+  if (!props.patterns?.length)
+    return <EmptyState icon={props.emptyIcon} message={props.emptyMessage} isDark={props.isDark} />;
 
   const cardSx = {
     backgroundColor: props.cardBg || (props.isDark ? '#242424' : undefined),
@@ -1776,12 +1901,12 @@ const Centered = ({ children }: { children: React.ReactNode }) => (
   <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>{children}</Box>
 );
 
-const EmptyState = ({ icon, message }: { icon: React.ReactNode; message: string }) => (
+const EmptyState = ({ icon, message, isDark }: { icon: React.ReactNode; message: string; isDark?: boolean }) => (
   <Box
     sx={{
       textAlign: 'center',
       py: 10,
-      color: 'text.disabled',
+      color: isDark ? 'rgba(255,255,255,0.45)' : 'text.disabled',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

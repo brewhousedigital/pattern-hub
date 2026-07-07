@@ -39,6 +39,8 @@ export interface CustomizationForm {
   header_gradient: boolean;
   blocked_tags: string[];
   preferred_measurement_unit: 'original' | 'in' | 'in-fraction' | 'cm' | 'mm';
+  featured_pattern_id: string;
+  featured_pattern_note: string;
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
@@ -74,6 +76,8 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   header_gradient: true,
   blocked_tags: [],
   preferred_measurement_unit: 'original',
+  featured_pattern_id: '',
+  featured_pattern_note: '',
 };
 
 export type SetCust = <K extends keyof CustomizationForm>(key: K, value: CustomizationForm[K]) => void;

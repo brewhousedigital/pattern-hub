@@ -28,6 +28,7 @@ import { MoodSection } from '../../components/profile/MoodSection';
 import { VisibilitySection } from '../../components/profile/VisibilitySection';
 import { SocialSection } from '../../components/profile/SocialSection';
 import { BlockedTagsSection } from '../../components/profile/BlockedTagsSection';
+import { FeaturedPatternSection } from '../../components/profile/FeaturedPatternSection';
 import { PreferredUnitsSection } from '../../components/profile/PreferredUnitsSection';
 
 import { styled, alpha, useTheme } from '@mui/material/styles';
@@ -205,6 +206,8 @@ function RouteComponent() {
       header_gradient: authData.header_gradient ?? true,
       blocked_tags: authData.blocked_tags ?? [],
       preferred_measurement_unit: authData.preferred_measurement_unit ?? 'original',
+      featured_pattern_id: authData.featured_pattern_id ?? '',
+      featured_pattern_note: authData.featured_pattern_note ?? '',
     });
     setLoading(false);
   }, [authData]);
@@ -388,6 +391,8 @@ function RouteComponent() {
     fd.append('header_gradient', String(customization.header_gradient));
     fd.append('blocked_tags', JSON.stringify(customization.blocked_tags));
     fd.append('preferred_measurement_unit', customization.preferred_measurement_unit);
+    fd.append('featured_pattern_id', form.is_artist ? customization.featured_pattern_id : '');
+    fd.append('featured_pattern_note', customization.featured_pattern_note.trim());
 
     try {
       await updateUser.mutateAsync({ id: authData?.id ?? '', formData: fd });
@@ -650,6 +655,15 @@ function RouteComponent() {
                         </Box>
                       </Box>
                     </SectionCard>
+
+                    {form.is_artist && (
+                      <FeaturedPatternSection
+                        customization={customization}
+                        setCust={setCust}
+                        onReset={() => resetSection(['featured_pattern_id', 'featured_pattern_note'])}
+                        userId={authData?.id ?? ''}
+                      />
+                    )}
                   </>
                 )}
 
