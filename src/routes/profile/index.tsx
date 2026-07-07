@@ -15,9 +15,11 @@ import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
 import { GalleryEditDialog } from '@/components/GalleryEditDialog';
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
+import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
-import type { TypePatternResponse } from '@/functions/database/patterns';
+import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
+import { useQueries } from '@tanstack/react-query';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import {
   generateUserAvatarUrl,
@@ -201,9 +203,21 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const followedCols = profileData?.followedCollections ?? [];
   const artistPatterns = profileData?.artistPatterns ?? undefined;
 
+  // The artist-patterns summary endpoint only returns a lightweight subset (id,
+  // name, thumbnail fields, pieces) for the grid tiles - PatternListDrawer (and
+  // PatternViewContent/ExportWizard inside it) need the full record, so fetch
+  // each one before it can be opened. The grid itself keeps using the lightweight
+  // list below (already sufficient for the tiles, always instantly available).
+  const artistPatternIds = artistPatterns?.items?.map((p) => p.id) ?? [];
+  const artistPatternQueries = useQueries({
+    queries: artistPatternIds.map((id) => ({ ...getPatternByIdOptions(id), enabled: !!id })),
+  });
+  const fullArtistPatterns = artistPatternIds.map((_, i) => artistPatternQueries[i]?.data) as TypePatternResponse[];
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<TypeGalleryResponse | null>(null);
   const [createColOpen, setCreateColOpen] = useState(false);
+  const [selectedArtistPatternIndex, setSelectedArtistPatternIndex] = useState<number | null>(null);
 
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: '/profile/' });
@@ -783,6 +797,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 displayName={displayName}
                 cardBg={cardBg}
                 isDark={isDark}
+                onSelect={setSelectedArtistPatternIndex}
               />
 
               {(artistPatterns?.totalItems ?? 0) > 0 && (
@@ -1149,6 +1164,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           setUploadOpen(false);
         }}
       />
+      <PatternListDrawer
+        patterns={fullArtistPatterns}
+        selectedIndex={selectedArtistPatternIndex}
+        onNavigate={setSelectedArtistPatternIndex}
+        onClose={() => setSelectedArtistPatternIndex(null)}
+      />
     </PageRoot>
   );
 };
@@ -1162,9 +1183,18 @@ type ArtistPatternGridProps = {
   displayName: string;
   cardBg?: string;
   isDark?: boolean;
+  onSelect: (index: number) => void;
 };
 
-const ArtistPatternGrid = ({ patterns, isPending, isError, displayName, cardBg, isDark }: ArtistPatternGridProps) => {
+const ArtistPatternGrid = ({
+  patterns,
+  isPending,
+  isError,
+  displayName,
+  cardBg,
+  isDark,
+  onSelect,
+}: ArtistPatternGridProps) => {
   if (isPending) {
     return (
       <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -1201,13 +1231,9 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName, cardBg, 
 
   return (
     <Grid container spacing={2} sx={{ mb: 3 }}>
-      {patterns.map((pattern) => (
+      {patterns.map((pattern, index) => (
         <Grid size={{ xs: 6, sm: 4, md: 3 }} key={pattern.id}>
-          <Link
-            to="/"
-            search={{ patternId: pattern.id, authors: [displayName] }}
-            style={{ textDecoration: 'none', display: 'block' }}
-          >
+          <Box onClick={() => onSelect(index)} sx={{ cursor: 'pointer', display: 'block' }}>
             <PatternCard sx={cardSx}>
               <Box sx={{ p: 1.5, pb: 0 }}>
                 <Box
@@ -1229,7 +1255,7 @@ const ArtistPatternGrid = ({ patterns, isPending, isError, displayName, cardBg, 
                 )}
               </Box>
             </PatternCard>
-          </Link>
+          </Box>
         </Grid>
       ))}
     </Grid>
