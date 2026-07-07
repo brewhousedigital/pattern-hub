@@ -831,7 +831,16 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2.5 }}>
                       {featuredPattern.tags.map((tag) => (
                         <Link key={tag} to="/" search={{ tags: [tag] }}>
-                          <Chip label={tag} size="small" variant="outlined" clickable />
+                          <Chip
+                            label={tag}
+                            size="small"
+                            variant="outlined"
+                            clickable
+                            sx={{
+                              borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'divider',
+                              color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
+                            }}
+                          />
                         </Link>
                       ))}
                     </Box>
