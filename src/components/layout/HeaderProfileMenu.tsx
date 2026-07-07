@@ -2,14 +2,10 @@ import React from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data.ts';
 import { authSignOut } from '@/functions/database/authentication';
+import { generateUserAvatarUrl } from '@/functions/utilities/generate-pb-image';
 
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
-import PersonIcon from '@mui/icons-material/Person';
 import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
-import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
-import DoneRoundedIcon from '@mui/icons-material/DoneRounded';
-import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
-import StarRateRoundedIcon from '@mui/icons-material/StarRateRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
@@ -44,7 +40,7 @@ export const HeaderProfileMenu = () => {
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
       >
-        <AccountCircleRoundedIcon />
+        <AvatarBlock />
       </IconButton>
 
       <Menu
@@ -77,6 +73,20 @@ export const HeaderProfileMenu = () => {
   );
 };
 
+const AvatarBlock = () => {
+  const { authData } = useGlobalAuthData();
+
+  if (authData?.avatar) {
+    return <Avatar src={generateUserAvatarUrl(authData) || undefined} alt={authData?.name} />;
+  }
+
+  if (authData?.name) {
+    return <Avatar alt={authData?.name} />;
+  }
+
+  return <AccountCircleRoundedIcon />;
+};
+
 const authenticatedMenuItems = [
   {
     label: 'Profile',
@@ -86,24 +96,6 @@ const authenticatedMenuItems = [
     },
     disabled: true,
   },
-  /*{
-    label: 'Favorites',
-    icon: <StarRateRoundedIcon />,
-    onClick: () => {},
-    disabled: true,
-  },*/
-  /*{
-    label: 'Want to Make',
-    icon: <FavoriteRoundedIcon />,
-    onClick: () => {},
-    disabled: true,
-  },*/
-  /*{
-    label: 'Completed',
-    icon: <DoneRoundedIcon />,
-    onClick: () => {},
-    disabled: true,
-  },*/
   {
     label: 'Settings',
     icon: <Settings />,

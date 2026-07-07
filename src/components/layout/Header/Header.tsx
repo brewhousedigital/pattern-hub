@@ -50,11 +50,11 @@ export const Header = () => {
 
       <ExtraLinks />
 
-      <Box sx={{ textAlign: 'right' }}>
+      <Stack direction="row" sx={{ textAlign: 'right', gap: 2, alignItems: 'center' }}>
         <NotificationBell />
 
         <HeaderProfileMenu />
-      </Box>
+      </Stack>
     </Box>
   );
 };
