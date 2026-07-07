@@ -24,10 +24,12 @@ import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import {
   Box,
   Checkbox,
   Chip,
+  Collapse,
   FormControlLabel,
   Typography,
   Button,
@@ -54,6 +56,8 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const { authData } = useGlobalAuthData();
   const { data: drawerData } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
   const patternSets = drawerData?.sets ?? [];
+
+  const [detailsExpanded, setDetailsExpanded] = React.useState(false);
 
   // ── Layer toggles ──────────────────────────────────────────────────────────
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
@@ -323,6 +327,70 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           </CompactRow>
 
           <CompactRow label="Pieces">{viewData?.pieces?.toLocaleString() ?? '-'}</CompactRow>
+
+          <Box
+            onClick={() => setDetailsExpanded((v) => !v)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              px: 1,
+              py: 0.4,
+              mt: 0.25,
+              cursor: 'pointer',
+              userSelect: 'none',
+              borderRadius: 1,
+              '&:hover': { backgroundColor: 'action.hover' },
+            }}
+          >
+            <Typography sx={{ fontSize: '0.75rem', color: 'primary.main', fontWeight: 600 }}>
+              {detailsExpanded ? 'Show less' : 'Show more details'}
+            </Typography>
+            <ExpandMoreRoundedIcon
+              sx={{
+                fontSize: '1.1rem',
+                color: 'primary.main',
+                transition: 'transform 0.2s',
+                transform: detailsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            />
+          </Box>
+
+          <Collapse in={detailsExpanded}>
+            <CompactRow label="Width (in)">
+              <MeasurementDisplay value={viewData?.size_width_in} unit="in" forceDecimal />
+            </CompactRow>
+            <CompactRow label="Width (cm)">
+              <MeasurementDisplay value={viewData?.size_width_cm} unit="cm" />
+            </CompactRow>
+            <CompactRow label="Width (mm)">
+              <MeasurementDisplay value={viewData?.size_width_mm} unit="mm" />
+            </CompactRow>
+
+            <CompactRow label="Height (in)">
+              <MeasurementDisplay value={viewData?.size_height_in} unit="in" forceDecimal />
+            </CompactRow>
+            <CompactRow label="Height (cm)">
+              <MeasurementDisplay value={viewData?.size_height_cm} unit="cm" />
+            </CompactRow>
+            <CompactRow label="Height (mm)">
+              <MeasurementDisplay value={viewData?.size_height_mm} unit="mm" />
+            </CompactRow>
+
+            {viewData?.source_url && (
+              <CompactRow label="Source">
+                <Typography
+                  component="a"
+                  href={viewData.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}
+                >
+                  View Source
+                </Typography>
+              </CompactRow>
+            )}
+          </Collapse>
 
           {/* ── Attribution ───────────────────────────────────── */}
           <PanelSectionTitle>Attribution</PanelSectionTitle>
