@@ -18,6 +18,7 @@ export interface CustomizationForm {
   profile_bg_image_position: string;
   profile_bg_image_fixed: boolean;
   profile_card_bg: string;
+  profile_header_text_color: string;
   profile_font: string;
   profile_font_size: 'small' | 'medium' | 'large';
   profile_name_effect: string;
@@ -52,6 +53,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   profile_bg_image_position: 'center center',
   profile_bg_image_fixed: false,
   profile_card_bg: '',
+  profile_header_text_color: '',
   profile_font: '',
   profile_font_size: 'medium',
   profile_name_effect: 'none',

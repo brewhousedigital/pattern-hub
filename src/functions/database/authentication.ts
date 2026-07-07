@@ -159,6 +159,7 @@ export type TypeAuthData = {
   profile_bg_image_position?: string;
   profile_bg_image_fixed?: boolean;
   profile_card_bg?: string;
+  profile_header_text_color?: string;
   // Typography
   profile_font?: string;
   profile_font_size?: 'small' | 'medium' | 'large';

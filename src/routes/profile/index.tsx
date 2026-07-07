@@ -127,7 +127,9 @@ export const Route = createFileRoute('/profile/')({
     const displayName = rawName.startsWith('NewUser_') ? '' : rawName;
     return generateSEO(
       displayName ? `${displayName}'s Profile` : 'Profile',
-      displayName ? `See ${displayName}'s stained glass pattern collection, favorites, and activity on Pattern Archive.` : '',
+      displayName
+        ? `See ${displayName}'s stained glass pattern collection, favorites, and activity on Pattern Archive.`
+        : '',
       match.pathname,
     );
   },
@@ -257,6 +259,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     ? thisAuthData?.profile_font
     : null;
   const nameEffect = thisAuthData?.profile_name_effect ?? 'none';
+  const headerTextColor = thisAuthData?.profile_header_text_color || '#ffffff';
   const avatarShape = thisAuthData?.profile_avatar_shape ?? 'circle';
   const cursorKey = thisAuthData?.profile_cursor ?? 'default';
   const sparkles = !!thisAuthData?.profile_sparkles;
@@ -445,7 +448,11 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
     ...(isDark
       ? {
           color: 'rgba(255,255,255,0.92)',
-          '& .MuiTypography-root': { color: 'inherit' },
+          // :not() exempts the hero's own headerTextColor/nameEffectSx-driven text
+          // (badge, username, status, member since) - those live on the hero's own
+          // background (image/gradient/site color), independent of the page's
+          // light/dark toggle, and must never be forced to inherit this color.
+          '& .MuiTypography-root:not(.hero-text-color)': { color: 'inherit' },
           '& .MuiChip-label': { color: 'inherit' },
         }
       : {}),
@@ -467,7 +474,12 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
           }}
         >
           <Tooltip title="Share profile">
-            <Button startIcon={<ShareRoundedIcon />} onClick={handleShare} sx={heroBtn} variant="outlined">
+            <Button
+              startIcon={<ShareRoundedIcon />}
+              onClick={handleShare}
+              sx={[heroBtn, { color: headerTextColor }]}
+              variant="outlined"
+            >
               Share
             </Button>
           </Tooltip>
@@ -478,7 +490,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 startIcon={<EditRoundedIcon />}
                 component={Link}
                 to="/profile/edit"
-                sx={heroBtn}
+                sx={[heroBtn, { color: headerTextColor }]}
                 variant="outlined"
               >
                 Edit
@@ -538,18 +550,22 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                     backgroundColor: 'rgba(255,255,255,0.12)',
                   }}
                 >
-                  <BrushRoundedIcon sx={{ fontSize: 13, color: 'white' }} />
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                  <BrushRoundedIcon sx={{ fontSize: 13, color: headerTextColor }} />
+                  <Typography
+                    className="hero-text-color"
+                    sx={{ fontSize: '0.7rem', fontWeight: 700, color: headerTextColor, lineHeight: 1 }}
+                  >
                     Artist
                   </Typography>
                 </Box>
               )}
 
               <Typography
+                className="hero-text-color"
                 sx={{
                   fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.875rem' },
                   fontWeight: 800,
-                  color: 'white',
+                  color: headerTextColor,
                   letterSpacing: '-0.5px',
                   lineHeight: 1.05,
                   mb: 0.75,
@@ -564,7 +580,10 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.75 }}>
                   {moodEmoji && <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{moodEmoji}</Typography>}
                   {moodText && (
-                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
+                    <Typography
+                      className="hero-text-color"
+                      sx={{ fontSize: '0.8rem', color: headerTextColor, fontStyle: 'italic', fontWeight: 600 }}
+                    >
                       {moodText}
                     </Typography>
                   )}
@@ -572,8 +591,13 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
               )}
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <CalendarTodayOutlinedIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }} />
-                <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
+                {/*<CalendarTodayOutlinedIcon sx={{ fontSize: 12, color: headerTextColor }} />*/}
+                <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>🗓️</Typography>
+
+                <Typography
+                  className="hero-text-color"
+                  sx={{ fontSize: '0.8rem', color: headerTextColor, fontWeight: 600 }}
+                >
                   Member since {createPrettyDate(thisAuthData.created ?? '')}
                 </Typography>
               </Box>

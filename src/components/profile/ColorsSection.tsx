@@ -322,6 +322,18 @@ export const ColorsSection = ({
           Applied to pattern cards in the Contributed & Activity sections
         </Typography>
       </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <ColorPicker
+          label="Header Text Color"
+          value={customization.profile_header_text_color}
+          fallback="#ffffff"
+          onChange={(v) => setCust('profile_header_text_color', v)}
+        />
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+          Artist badge, username, status, "member since", and the edit/share buttons. Defaults to white. A Name
+          Effect (below) overrides this for the username.
+        </Typography>
+      </Grid>
     </Grid>
 
     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
