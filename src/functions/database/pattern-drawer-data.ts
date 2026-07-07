@@ -29,6 +29,13 @@ export type TypeDrawerUserRecord = {
   owner_id: string;
 };
 
+export type TypeDrawerSet = {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+};
+
 export type TypePatternDrawerData = {
   communityRating: TypeDrawerCommunityRating | null;
   communityDifficulty: TypeDrawerCommunityRating | null;
@@ -36,6 +43,7 @@ export type TypePatternDrawerData = {
   userDifficulty: TypeDrawerUserDifficulty | null;
   userFavorite: TypeDrawerUserRecord | null;
   userMarkedDone: TypeDrawerUserRecord | null;
+  sets: TypeDrawerSet[];
 };
 
 const drawerDataQueryKey = (patternId: string, userId: string) => ['DrawerData', patternId, userId] as const;

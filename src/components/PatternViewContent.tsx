@@ -13,6 +13,8 @@ import { PatternRatingsContainer } from '@/components/PatternUtilities/PatternRa
 import { LayerSelectionHint } from '@/components/PatternUtilities/LayerSelectionHint';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { useQueryGetPublishedManualAuthors, nameToSlug } from '@/functions/database/manual-authors';
+import { useQueryGetPatternDrawerData } from '@/functions/database/pattern-drawer-data';
+import { useGlobalAuthData } from '@/data/auth-data';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
 import { BorderedCard } from '@/components/cards/BorderedCard';
@@ -21,6 +23,7 @@ import { PatternViewer3DLazy } from '@/components/PatternViewer3D';
 import { formatByteSize } from '@/functions/utilities/math';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
+import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import {
   Box,
   Checkbox,
@@ -47,6 +50,10 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const onPatternPage = useMatch({ from: '/pattern/$patternId', shouldThrow: false });
 
   const { data: publishedManualAuthors = [] } = useQueryGetPublishedManualAuthors();
+
+  const { authData } = useGlobalAuthData();
+  const { data: drawerData } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
+  const patternSets = drawerData?.sets ?? [];
 
   // ── Layer toggles ──────────────────────────────────────────────────────────
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
@@ -362,6 +369,40 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <></>
           )}
 
+          {patternSets.length > 0 && (
+            <Box sx={{ px: 1, pt: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  color: 'text.disabled',
+                  pb: 0.75,
+                }}
+              >
+                In Sets
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {patternSets.map((set) => (
+                  <Tooltip key={set.id} title={set.description || ''} arrow disableHoverListener={!set.description}>
+                    <Link to="/sets/$setId" params={{ setId: set.id }}>
+                      <Chip
+                        icon={<StyleRoundedIcon sx={{ fontSize: '1rem !important' }} />}
+                        label={set.title}
+                        size="small"
+                        variant="outlined"
+                        clickable
+                        sx={set.color ? { borderColor: set.color, color: set.color } : undefined}
+                      />
+                    </Link>
+                  </Tooltip>
+                ))}
+              </Box>
+            </Box>
+          )}
+
           {showStandaloneTags && (viewData?.tags?.length ?? 0) > 0 && (
             <Box sx={{ px: 1, pt: 2 }}>
               <Typography
@@ -387,7 +428,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             </Box>
           )}
 
-          <Box sx={{ px: 1, pt: 2, pb: 1 }}>
+          <Box sx={{ px: 1, pt: 6, pb: 1 }}>
             <PatternReportIssue viewData={viewData} key={viewData?.id} />
           </Box>
         </Box>

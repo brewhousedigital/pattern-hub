@@ -17,6 +17,7 @@ routerAdd('GET', '/api/pattern-drawer-data', (c) => {
     userDifficulty: null,
     userFavorite: null,
     userMarkedDone: null,
+    sets: [],
   };
 
   try {
@@ -45,6 +46,26 @@ routerAdd('GET', '/api/pattern-drawer-data', (c) => {
       average_rating: r.getFloat('average_rating'),
       total_ratings: r.getInt('total_ratings'),
     };
+  } catch (_) {}
+
+  try {
+    const records = $app.findRecordsByFilter(
+      'pattern_sets',
+      'patterns ~ {:pid} && is_published = true',
+      '-created',
+      0,
+      0,
+      { pid: patternId },
+    );
+    for (let i = 0; i < records.length; i++) {
+      const r = records[i];
+      result.sets.push({
+        id: r.id,
+        title: r.getString('title'),
+        description: r.getString('description'),
+        color: r.getString('color'),
+      });
+    }
   } catch (_) {}
 
   if (userId) {
