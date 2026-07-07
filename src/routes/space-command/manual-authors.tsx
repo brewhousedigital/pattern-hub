@@ -10,8 +10,10 @@ import {
   useMutationDeleteManualAuthor,
   type TypeManualAuthor,
 } from '@/functions/database/manual-authors';
+import { useQuerySearchManualAuthors } from '@/functions/database/authors';
 import { generateManualAuthorAvatarUrl } from '@/functions/utilities/generate-pb-image';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
+import { useDebounce } from '@/functions/hooks/useDebounce';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
@@ -32,6 +34,7 @@ import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 
 import {
   Alert,
+  Autocomplete,
   Avatar,
   Box,
   Button,
@@ -91,6 +94,17 @@ function RouteComponent() {
   useEffect(() => {
     if (!slugManuallyEdited) setSlug(nameToSlug(name));
   }, [name, slugManuallyEdited]);
+
+  // ── Name search (author_manual strings already used on patterns) ─────────
+  const debouncedName = useDebounce(name, 600);
+  const { data: nameSearchResults, isFetching: isNameSearchFetching } = useQuerySearchManualAuthors(debouncedName);
+
+  // Exclude strings that already have a page - except the one currently being edited,
+  // so re-confirming the exact existing name from the list still works.
+  const existingAuthorNames = new Set(authors.filter((a) => a.id !== editTarget?.id).map((a) => a.name));
+  const nameOptions = (nameSearchResults ?? [])
+    .filter((item) => !existingAuthorNames.has(item.tag))
+    .map((item) => item.tag);
 
   const openCreate = () => {
     setEditTarget(null);
@@ -331,14 +345,25 @@ function RouteComponent() {
               <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
             </Stack>
 
-            <TextField
-              label="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+            <Autocomplete
+              freeSolo
               fullWidth
               size="small"
-              helperText="Must exactly match the author_manual string on patterns (case-sensitive)"
+              options={nameOptions}
+              filterOptions={(x) => x}
+              loading={isNameSearchFetching}
+              loadingText="Searching…"
+              noOptionsText={debouncedName ? 'No matching patterns found' : 'Type to search patterns'}
+              inputValue={name}
+              onInputChange={(_, newValue) => setName(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Name"
+                  required
+                  helperText="Must exactly match the author_manual string on patterns (case-sensitive). Pick from patterns that already use this name, or type a new one."
+                />
+              )}
             />
 
             <TextField

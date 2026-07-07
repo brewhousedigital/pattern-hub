@@ -39,7 +39,7 @@ export const AdminLoginView = () => {
   };
 
   const bgStyles = {
-    backgroundImage: "url('/space-command-bg.gif')",
+    backgroundImage: "url('/images/space-command-bg.gif')",
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
     minHeight: '100svh',
