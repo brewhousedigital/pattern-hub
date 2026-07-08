@@ -601,3 +601,26 @@ routerAdd(
   },
   $apis.requireAuth('admins'),
 );
+
+// Public, unauthenticated aggregate counts for the /community page's stats strip.
+// Intentionally minimal - just enough for a "join N members, browse M patterns"
+// blurb, nothing sensitive.
+routerAdd('GET', '/api/public-site-stats', (c) => {
+  function countRows(table, whereSQL) {
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+        .all(rows);
+      return parseInt(rows[0]?.count || 0, 10);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  return c.json(200, {
+    patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
+    members: countRows('users', "id != ''"),
+  });
+});

@@ -18,6 +18,7 @@ import { Route as SetsIndexRouteImport } from './routes/sets/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as CommunityIndexRouteImport } from './routes/community/index'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
 import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
@@ -96,6 +97,11 @@ const NewsIndexRoute = NewsIndexRouteImport.update({
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
   id: '/guides/',
   path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityIndexRoute = CommunityIndexRouteImport.update({
+  id: '/community/',
+  path: '/community/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/community/': typeof CommunityIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/community': typeof CommunityIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/news': typeof NewsIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/community/': typeof CommunityIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -444,6 +453,7 @@ export interface FileRouteTypes {
     | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/community/'
     | '/guides/'
     | '/news/'
     | '/profile/'
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/community'
     | '/guides'
     | '/news'
     | '/profile'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/space-command/store-locator'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/community/'
     | '/guides/'
     | '/news/'
     | '/profile/'
@@ -567,6 +579,7 @@ export interface RootRouteChildren {
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
+  CommunityIndexRoute: typeof CommunityIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/guides'
       fullPath: '/guides/'
       preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/': {
+      id: '/community/'
+      path: '/community'
+      fullPath: '/community/'
+      preLoaderRoute: typeof CommunityIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/space-command/users': {
@@ -946,6 +966,7 @@ const rootRouteChildren: RootRouteChildren = {
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
+  CommunityIndexRoute: CommunityIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
