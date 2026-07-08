@@ -9,14 +9,18 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { alpha, styled } from '@mui/material/styles';
 import { Box, Container, Skeleton, Typography } from '@mui/material';
 
+// Has its own dedicated page at /news - excluded here so it isn't listed twice.
+const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
+
 export const Route = createFileRoute('/wiki/')({
   component: RouteComponent,
   head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
 });
 
 function RouteComponent() {
-  const { data: categories = [], isLoading: catsLoading } = useQueryGetAllWikiCategories();
+  const { data: allCategories = [], isLoading: catsLoading } = useQueryGetAllWikiCategories();
   const { data: pages = [], isLoading: pagesLoading } = useQueryGetAllWikiPages();
+  const categories = allCategories.filter((c) => c.slug !== NEWS_CATEGORY_SLUG);
   const isLoading = catsLoading || pagesLoading;
 
   return (

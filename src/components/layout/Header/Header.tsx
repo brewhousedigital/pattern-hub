@@ -97,6 +97,10 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
+      <MuiLink component={Link} to="/news" sx={activeLinkStyles('/news')}>
+        News
+      </MuiLink>
+
       <MuiLink component={Link} to="/help/faq" sx={activeLinkStyles('/help/faq')}>
         FAQ
       </MuiLink>
