@@ -624,3 +624,66 @@ routerAdd('GET', '/api/public-site-stats', (c) => {
     members: countRows('users', "id != ''"),
   });
 });
+
+onRecordAfterCreateSuccess((e) => {
+  // ─── Discord "new pattern" notifications ─────────────────────────────────
+  // Fires the instant a pattern becomes publicly visible - either published
+  // straight away on create, or a draft that gets published later on update.
+  // This is a native PocketBase event hook, not PocketHost's cron-based
+  // webhooks (those only fire on a schedule, not on record events). Set
+  // DISCORD_PATTERN_WEBHOOK_URL in the PocketHost environment variables to
+  // enable. Never throws - a Discord outage or missing webhook must never
+  // block a pattern save.
+  function notifyDiscordNewPattern(record) {
+    try {
+      const webhookUrl = $os.getenv('DISCORD_PATTERN_WEBHOOK_URL');
+      if (!webhookUrl) return;
+
+      const name = record.getString('name') || 'Untitled pattern';
+      const description = record.getString('description') || '';
+      const authorManual = record.get('author_manual');
+      const authorLine =
+        Array.isArray(authorManual) && authorManual.length > 0 ? authorManual.join(', ') : 'the community';
+      const ogImage = record.getString('opengraph_image');
+      const imageUrl = ogImage
+        ? `https://stained-glass.pockethost.io/api/files/${record.collection().id}/${record.id}/${ogImage}`
+        : null;
+      const patternUrl = `https://patternarchive.net/pattern/${record.id}`;
+
+      const embed = {
+        title: name,
+        url: patternUrl,
+        description: description.length > 300 ? description.slice(0, 297) + '...' : description,
+        color: 0xc8a96e,
+        footer: { text: `By ${authorLine}` },
+      };
+      if (imageUrl) embed.image = { url: imageUrl };
+
+      $http.send({
+        method: 'POST',
+        url: webhookUrl,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `🪟 New pattern: **${name}**`,
+          embeds: [embed],
+        }),
+      });
+    } catch (err) {
+      console.log('Discord pattern notify error:', err);
+    }
+  }
+
+  if (!e.record.getBool('isDeleted') && !e.record.getBool('is_draft')) {
+    notifyDiscordNewPattern(e.record);
+  }
+  e.next();
+}, 'patterns');
+
+/*onRecordAfterUpdateSuccess((e) => {
+  const wasDraft = e.record.original().getBool('is_draft');
+  const isNowPublished = !e.record.getBool('isDeleted') && !e.record.getBool('is_draft');
+  if (wasDraft && isNowPublished) {
+    notifyDiscordNewPattern(e.record);
+  }
+  e.next();
+}, 'patterns');*/
