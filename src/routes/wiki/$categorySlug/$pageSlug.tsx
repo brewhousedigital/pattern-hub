@@ -1,8 +1,7 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
 import { queryClient } from '@/functions/database/authentication-setup';
-import { WikiMarkdownWrapper } from '@/components/wiki/WikiMarkdownWrapper';
-import { WikiTableOfContents } from '@/components/wiki/WikiTableOfContents';
+import { WikiPageContent } from '@/components/wiki/WikiPageContent';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -11,7 +10,7 @@ import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { styled } from '@mui/material/styles';
-import { Box, Container, Skeleton, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
   component: RouteComponent,
@@ -64,59 +63,18 @@ function RouteComponent() {
             </Typography>
           </Box>
 
-          {isError && <Typography color="error.main">Page not found.</Typography>}
-
-          {isLoading && (
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 6 }}>
-              <Box>
-                <Skeleton variant="text" width="60%" height={56} sx={{ mb: 2 }} />
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} variant="text" width={`${70 + (i % 3) * 10}%`} height={24} sx={{ mb: 0.5 }} />
-                ))}
-              </Box>
-              <Skeleton variant="rounded" height={200} />
-            </Box>
-          )}
-
           {!isLoading && page && (
-            <>
-              <BreadcrumbJsonLd
-                items={[
-                  { name: 'Home', url: '/' },
-                  { name: 'Wiki', url: '/wiki' },
-                  { name: page.expand?.category?.name ?? categorySlug, url: `/wiki/${categorySlug}` },
-                  { name: page.title, url: `/wiki/${categorySlug}/${pageSlug}` },
-                ]}
-              />
-              <ContentGrid>
-                {/* Main content */}
-                <Box>
-                  <Typography
-                    variant="h1"
-                    sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 0.75, color: 'text.primary' }}
-                  >
-                    {page.title}
-                  </Typography>
-
-                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 4 }}>
-                    Last updated{' '}
-                    {new Date(page.updated).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </Typography>
-
-                  <WikiMarkdownWrapper wikiPages={allPages}>{page.content}</WikiMarkdownWrapper>
-                </Box>
-
-                {/* Sticky TOC sidebar */}
-                <Box>
-                  <WikiTableOfContents markdown={page.content} />
-                </Box>
-              </ContentGrid>
-            </>
+            <BreadcrumbJsonLd
+              items={[
+                { name: 'Home', url: '/' },
+                { name: 'Wiki', url: '/wiki' },
+                { name: page.expand?.category?.name ?? categorySlug, url: `/wiki/${categorySlug}` },
+                { name: page.title, url: `/wiki/${categorySlug}/${pageSlug}` },
+              ]}
+            />
           )}
+
+          <WikiPageContent page={page} isLoading={isLoading} isError={isError} allPages={allPages} />
         </Container>
       </PageWrapper>
     </GeneralLayout>
@@ -126,13 +84,4 @@ function RouteComponent() {
 const PageWrapper = styled(Box)(({ theme }) => ({
   paddingTop: theme.spacing(8),
   paddingBottom: theme.spacing(12),
-}));
-
-const ContentGrid = styled(Box)(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: '1fr',
-  gap: theme.spacing(6),
-  [theme.breakpoints.up('lg')]: {
-    gridTemplateColumns: '1fr 220px',
-  },
 }));

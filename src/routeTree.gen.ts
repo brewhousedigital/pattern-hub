@@ -16,6 +16,7 @@ import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/in
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as SetsIndexRouteImport } from './routes/sets/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
@@ -32,6 +33,7 @@ import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/a
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
+import { Route as NewsPageSlugRouteImport } from './routes/news/$pageSlug'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
 import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
@@ -84,6 +86,11 @@ const SetsIndexRoute = SetsIndexRouteImport.update({
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
@@ -167,6 +174,11 @@ const ProfileEditRoute = ProfileEditRouteImport.update({
 const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
   id: '/pattern/$patternId',
   path: '/pattern/$patternId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsPageSlugRoute = NewsPageSlugRouteImport.update({
+  id: '/news/$pageSlug',
+  path: '/news/$pageSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
@@ -279,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
@@ -295,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides/': typeof GuidesIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/sets/': typeof SetsIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -321,6 +335,7 @@ export interface FileRoutesByTo {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
@@ -337,6 +352,7 @@ export interface FileRoutesByTo {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides': typeof GuidesIndexRoute
+  '/news': typeof NewsIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/sets': typeof SetsIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
@@ -365,6 +381,7 @@ export interface FileRoutesById {
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
+  '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
@@ -381,6 +398,7 @@ export interface FileRoutesById {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/guides/': typeof GuidesIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/sets/': typeof SetsIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -410,6 +428,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/news/$pageSlug'
     | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
@@ -426,6 +445,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/guides/'
+    | '/news/'
     | '/profile/'
     | '/sets/'
     | '/space-command/'
@@ -452,6 +472,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/news/$pageSlug'
     | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
@@ -468,6 +489,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/guides'
+    | '/news'
     | '/profile'
     | '/sets'
     | '/space-command'
@@ -495,6 +517,7 @@ export interface FileRouteTypes {
     | '/help/faq'
     | '/help/privacy-policy'
     | '/help/terms-of-service'
+    | '/news/$pageSlug'
     | '/pattern/$patternId'
     | '/profile/edit'
     | '/sets/$setId'
@@ -511,6 +534,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/guides/'
+    | '/news/'
     | '/profile/'
     | '/sets/'
     | '/space-command/'
@@ -539,10 +563,12 @@ export interface RootRouteChildren {
   HelpFaqRoute: typeof HelpFaqRoute
   HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
+  NewsPageSlugRoute: typeof NewsPageSlugRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
+  NewsIndexRoute: typeof NewsIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   SetsIndexRoute: typeof SetsIndexRoute
   StoreLocatorIndexRoute: typeof StoreLocatorIndexRoute
@@ -601,6 +627,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides/': {
@@ -713,6 +746,13 @@ declare module '@tanstack/react-router' {
       path: '/pattern/$patternId'
       fullPath: '/pattern/$patternId'
       preLoaderRoute: typeof PatternPatternIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/$pageSlug': {
+      id: '/news/$pageSlug'
+      path: '/news/$pageSlug'
+      fullPath: '/news/$pageSlug'
+      preLoaderRoute: typeof NewsPageSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help/terms-of-service': {
@@ -902,10 +942,12 @@ const rootRouteChildren: RootRouteChildren = {
   HelpFaqRoute: HelpFaqRoute,
   HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
+  NewsPageSlugRoute: NewsPageSlugRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   GuidesIndexRoute: GuidesIndexRoute,
+  NewsIndexRoute: NewsIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   SetsIndexRoute: SetsIndexRoute,
   StoreLocatorIndexRoute: StoreLocatorIndexRoute,
