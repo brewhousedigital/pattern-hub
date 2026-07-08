@@ -377,7 +377,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               <MeasurementDisplay value={viewData?.size_height_mm} unit="mm" />
             </CompactRow>
 
-            {viewData?.source_url && (
+            {/*{viewData?.source_url && (
               <CompactRow label="Source">
                 <Typography
                   component="a"
@@ -389,7 +389,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   View Source
                 </Typography>
               </CompactRow>
-            )}
+            )}*/}
           </Collapse>
 
           {/* ── Attribution ───────────────────────────────────── */}

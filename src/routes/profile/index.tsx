@@ -41,6 +41,7 @@ import {
 
 import { styled, alpha, keyframes } from '@mui/material/styles';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -776,6 +777,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
 
               <Box
                 sx={{
+                  position: 'relative',
                   mt: 2,
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: '360px 1fr' },
@@ -787,20 +789,42 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   backgroundColor: cardBg || (isDark ? '#242424' : undefined),
                 }}
               >
-                <Box
-                  component="img"
-                  loading="lazy"
-                  src={generatePbImage(featuredPattern)}
-                  alt={featuredPattern.name}
+                <Button
+                  component={Link as any}
+                  to="/pattern/$patternId"
+                  params={{ patternId: featuredPattern.id }}
+                  variant="outlined"
+                  size="small"
+                  endIcon={<LaunchRoundedIcon fontSize="small" />}
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
-                    objectFit: 'contain',
-                    borderRadius: 3,
-                    p: 2,
-                    backgroundColor: alpha(siteColorSecondary, 0.12),
+                    position: 'absolute',
+                    top: { xs: 12, md: 16 },
+                    right: { xs: 12, md: 16 },
+                    zIndex: 1,
+                    borderColor: isDark ? 'rgba(255,255,255,0.25)' : undefined,
+                    color: isDark ? 'rgba(255,255,255,0.85)' : undefined,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'background.paper',
                   }}
-                />
+                >
+                  View Pattern
+                </Button>
+
+                <Link to="/pattern/$patternId" params={{ patternId: featuredPattern.id }}>
+                  <Box
+                    component="img"
+                    loading="lazy"
+                    src={generatePbImage(featuredPattern)}
+                    alt={featuredPattern.name}
+                    sx={{
+                      width: '100%',
+                      aspectRatio: '1/1',
+                      objectFit: 'contain',
+                      borderRadius: 3,
+                      p: 2,
+                      backgroundColor: alpha(siteColorSecondary, 0.12),
+                    }}
+                  />
+                </Link>
 
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
