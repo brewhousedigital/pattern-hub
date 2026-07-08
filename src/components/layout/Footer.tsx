@@ -80,16 +80,20 @@ export const Footer = () => {
                 About
               </MuiLink>*/}
 
+              <MuiLink component={Link} to="/community" sx={subLinkStyles}>
+                Community
+              </MuiLink>
+
+              <MuiLink component={Link} to="/help/contact" sx={subLinkStyles}>
+                Contact
+              </MuiLink>
+
               <MuiLink component={Link} to="/help/privacy-policy" sx={subLinkStyles}>
                 Privacy Policy
               </MuiLink>
 
               <MuiLink component={Link} to="/help/terms-of-service" sx={subLinkStyles}>
                 Terms of Service
-              </MuiLink>
-
-              <MuiLink component={Link} to="/help/contact" sx={subLinkStyles}>
-                Contact
               </MuiLink>
             </Stack>
           </Grid>
