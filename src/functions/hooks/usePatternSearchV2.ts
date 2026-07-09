@@ -2,7 +2,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
 import {
-  buildPocketBaseFilter,
   type ExportTab,
   parseRawInput,
   type PatternSearch,
@@ -17,7 +16,6 @@ export type UsePatternSearchReturn = {
   // Current state
   tokens: Token[];
   patternId: string | undefined;
-  filter: string;
   pageNumber: number;
   setPageNumber: (pageNumber: number) => void;
   sort: SortValue;
@@ -54,8 +52,6 @@ export function usePatternSearch(): UsePatternSearchReturn {
   const navigate = useNavigate({ from: '/' });
 
   const tokens = useMemo(() => tokensFromSearch(search), [search]);
-
-  const filter = useMemo(() => buildPocketBaseFilter(tokens), [tokens]);
 
   const { patternId, pageNumber, sort, exportTab } = search;
 
@@ -228,7 +224,6 @@ export function usePatternSearch(): UsePatternSearchReturn {
   return {
     tokens,
     patternId,
-    filter,
     pageNumber,
     setPageNumber,
     sort,

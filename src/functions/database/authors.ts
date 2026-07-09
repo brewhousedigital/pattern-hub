@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
 
@@ -53,6 +53,29 @@ export const useQuerySearchLinkedAuthors = (search: string) => {
     },
     staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
+  });
+};
+
+// Resolves author-search names to real user ids via a narrow server-side
+// lookup (see pb_hooks/main.pb.js /api/resolve-author-ids). Needed because
+// filtering patterns by "authors.name" directly would join into the `users`
+// collection, whose List rule is now admin-only - the join silently returns
+// nothing for everyone else. This sidesteps that by filtering the `authors`
+// relation field by id instead, which needs no join.
+export const useQueryResolveAuthorUserIds = (names: string[]) => {
+  const sortedNames = [...new Set(names)].sort();
+
+  return useQuery({
+    queryKey: ['ResolveAuthorUserIds', sortedNames.join(',')],
+    queryFn: async (): Promise<Record<string, string[]>> => {
+      const res = await fetch(
+        `${pocketbaseDomain}/api/resolve-author-ids?names=${encodeURIComponent(sortedNames.join(','))}`,
+      );
+      if (!res.ok) throw new Error('Failed to resolve author ids');
+      return res.json();
+    },
+    enabled: sortedNames.length > 0,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

@@ -382,7 +382,17 @@ export function parseSearch(searchStr: string): Record<string, unknown> {
 
 // Convert tokens into a PocketBase filter string.
 // Use decodeURIComponent("") to read the output to test directly in Pocketbase
-export function buildPocketBaseFilter(tokens: Token[]): string {
+//
+// `authorIdMap` maps an author token's name to the real user ids it resolves
+// to (see useQueryResolveAuthorUserIds). It's required for matching registered
+// authors: filtering via the "authors.name" dot-path would join into the
+// `users` collection, which is subject to that collection's List rule - now
+// admin-only, so the join silently returns nothing for everyone else. Filtering
+// the `authors` relation field directly by id needs no join at all, so it's
+// unaffected. When a name hasn't resolved yet (map omitted, or no match),
+// only the `author_manual` half still matches - real-author results simply
+// join in once resolution completes.
+export function buildPocketBaseFilter(tokens: Token[], authorIdMap?: Record<string, string[]>): string {
   const parts: string[] = [];
   const authorParts: string[] = [];
   const idParts: string[] = [];
@@ -411,10 +421,14 @@ export function buildPocketBaseFilter(tokens: Token[]): string {
     }
 
     if (token.type === 'author') {
+      const resolvedIds = authorIdMap?.[token.value] ?? [];
+      const idClauses = resolvedIds.map((id) => `authors ~ "${id}"`);
+
       if (token.exclude) {
-        authorParts.push(`(authors.name !~ "${token.value}" && author_manual !~ "${token.value}")`);
+        const excludeIdClauses = resolvedIds.map((id) => `authors !~ "${id}"`);
+        authorParts.push(`(author_manual !~ "${token.value}"${excludeIdClauses.map((c) => ` && ${c}`).join('')})`);
       } else {
-        authorParts.push(`(authors.name ?~ "${token.value}" || author_manual ~ "${token.value}")`);
+        authorParts.push(`(author_manual ~ "${token.value}"${idClauses.map((c) => ` || ${c}`).join('')})`);
       }
     }
 

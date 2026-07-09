@@ -687,3 +687,32 @@ onRecordAfterCreateSuccess((e) => {
   }
   e.next();
 }, 'patterns');*/
+
+// Public, narrow name -> user-id lookup for the homepage author search.
+// Filtering patterns by "authors.name" would join into the `users` collection,
+// which is subject to that collection's own List rule - now admin-only, so the
+// join silently returns nothing for everyone else. This runs the lookup
+// server-side via $app, which isn't subject to API-level collection rules
+// (those only gate the public REST API, not internal Go/JSVM db access), then
+// hands back just the matching ids so the frontend can filter the `authors`
+// relation directly (authors ~ "id") with no join at all. Only returns ids for
+// names you already supply - can't be used to enumerate the whole users table.
+routerAdd('GET', '/api/resolve-author-ids', (c) => {
+  const namesParam = c.request.url.query().get('names') || '';
+  const names = namesParam
+    .split(',')
+    .map((n) => n.trim())
+    .filter(Boolean);
+
+  const result = {};
+  for (const name of names) {
+    try {
+      const records = $app.findRecordsByFilter('users', 'name ~ {:name}', '', 50, 0, { name });
+      result[name] = records.map((r) => r.id);
+    } catch (_) {
+      result[name] = [];
+    }
+  }
+
+  return c.json(200, result);
+});

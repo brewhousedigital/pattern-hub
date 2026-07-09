@@ -2,7 +2,8 @@ import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { buildBlockedTagsFilter, type TagToken } from '@/functions/utilities/search-v2';
+import { buildBlockedTagsFilter, buildPocketBaseFilter, type AuthorToken, type TagToken } from '@/functions/utilities/search-v2';
+import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
 import dayjs, { Dayjs } from 'dayjs';
@@ -77,8 +78,16 @@ export type TypePatternKeyTableResponse = {
 };
 
 export const useQueryGetAllPatternsByPagination = () => {
-  const { filter, pageNumber, sort, tokens } = usePatternSearch();
+  const { pageNumber, sort, tokens } = usePatternSearch();
   const { authData } = useGlobalAuthData();
+
+  // Author tokens can't be matched via the "authors.name" relation join
+  // anymore (see useQueryResolveAuthorUserIds) - resolve them to real user
+  // ids up front so buildPocketBaseFilter can filter the `authors` relation
+  // directly instead.
+  const authorNames = tokens.filter((t): t is AuthorToken => t.type === 'author').map((t) => t.value);
+  const { data: authorIdMap } = useQueryResolveAuthorUserIds(authorNames);
+  const filter = buildPocketBaseFilter(tokens, authorIdMap);
 
   // Silently exclude the user's blocked tags - unless they've explicitly
   // searched for that exact tag right now, in which case honor the search
@@ -104,7 +113,14 @@ export const useQueryGetAllPatternsByPagination = () => {
   }
 
   return useQuery({
-    queryKey: ['GetAllPatternsByPagination', filter, pageNumber, sort, effectiveBlockedTags.join(',')],
+    queryKey: [
+      'GetAllPatternsByPagination',
+      filter,
+      pageNumber,
+      sort,
+      effectiveBlockedTags.join(','),
+      JSON.stringify(authorIdMap ?? {}),
+    ],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       return await pocketbase.collection('patterns').getList(pageNumber, 20, {
         filter: includeIsDeletedFilter,
