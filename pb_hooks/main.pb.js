@@ -634,14 +634,35 @@ onRecordAfterCreateSuccess((e) => {
   // DISCORD_PATTERN_WEBHOOK_URL in the PocketHost environment variables to
   // enable. Never throws - a Discord outage or missing webhook must never
   // block a pattern save.
+  // Same logic as src/functions/utilities/strip-markdown.ts (kept as a
+  // separate copy since pb_hooks runs in Goja, not Node/the browser) - avoids
+  // dumping raw "**bold**"/"[link](url)" syntax into the Discord embed.
+  // Uses [\s\S] instead of the "s" (dotAll) regex flag for Goja compatibility.
+  function stripMarkdown(text) {
+    return text
+      .replace(/^#+\s.*$/gm, '')
+      .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+      .replace(/\*([\s\S]+?)\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/\n+/g, ' ')
+      .trim();
+  }
+
   function notifyDiscordNewPattern(record) {
     try {
       const webhookUrl = $os.getenv('DISCORD_PATTERN_WEBHOOK_URL');
       if (!webhookUrl) return;
 
       const name = record.getString('name') || 'Untitled pattern';
-      const description = record.getString('description') || '';
-      const authorManual = record.get('author_manual');
+      const description = stripMarkdown(record.getString('description') || '');
+      // JSON-field values come back from .get() as raw bytes, not a parsed
+      // array/string - .getString() + JSON.parse() is this file's existing
+      // convention for reading them (see the `tags` field above).
+      let authorManual = [];
+      try {
+        authorManual = JSON.parse(record.getString('author_manual') || '[]');
+      } catch (_) {}
       const authorLine =
         Array.isArray(authorManual) && authorManual.length > 0 ? authorManual.join(', ') : 'the community';
       const ogImage = record.getString('opengraph_image');
