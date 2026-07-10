@@ -4,11 +4,11 @@
 # (e.g. the /api/* functions in netlify/functions) are handled by the SSR function.
 
 # Use for maintenance
-#[[redirects]]
-#  from = "/*"
-#  to = "/maintenance.html"
-#  status = 503
-#  force = true
+[[redirects]]
+  from = "/*"
+  to = "/maintenance.html"
+  status = 503
+  force = true
 
 [build]
   publish = "dist/client"
