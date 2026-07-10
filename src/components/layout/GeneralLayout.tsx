@@ -1,15 +1,11 @@
 import React from 'react';
 import type { TypeComponentWithChildrenProps } from '@/functions/types/types';
-import { useRefreshAuth } from '@/data/auth-data';
 import { Header } from '@/components/layout/Header/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Box } from '@mui/material';
 import { AccountVerificationBox } from '@/components/layout/AccountVerificationBox.tsx';
 
 export const GeneralLayout = (props: TypeComponentWithChildrenProps) => {
-  // Check if the user is logged in on load
-  useRefreshAuth();
-
   return (
     <Box sx={{ pb: 4 }}>
       <Header />

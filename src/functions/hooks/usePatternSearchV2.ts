@@ -61,7 +61,7 @@ export function usePatternSearch(): UsePatternSearchReturn {
    */
   function updateSearch(partial: Partial<PatternSearch>) {
     // When the user closes the View Drawer, don't scroll them back to the top
-    const shouldScrollBackUp = !partial.hasOwnProperty('patternId');
+    const shouldScrollBackUp = !Object.hasOwn(partial, 'patternId');
 
     navigate({
       search: (prev) => patternSearchSchema.parse({ ...prev, ...partial }),

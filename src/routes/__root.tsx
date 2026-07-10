@@ -8,8 +8,12 @@ import { SnackbarProvider } from 'notistack';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { RateLimitModal } from '@/components/RateLimitModal';
+import { useBootstrapAuth } from '@/data/auth-data';
 
 const RootLayout = () => {
+  // Refresh the PocketBase session once per visit (client-only effect)
+  useBootstrapAuth();
+
   return (
     <RootDocument>
       <ThemeProvider theme={muiTheme}>

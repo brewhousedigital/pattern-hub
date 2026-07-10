@@ -77,7 +77,7 @@ export const useQuerySearchPatternsByName = (term: string) => {
   return useQuery({
     queryKey: ['SearchPatternsByName', term],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternSearchResult>> => {
-      let includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
+      const includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
 
       return await pocketbase.collection('patterns').getList(1, 8, {
         filter: `name ~ "${term.replace(/"/g, '')}" && ${includeIsDeletedFilter}`,

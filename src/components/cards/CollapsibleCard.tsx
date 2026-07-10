@@ -67,8 +67,10 @@ export const CollapsibleCard = ({ title, defaultOpen = false, children }: Collap
         />
       </Box>
 
-      {/* Content */}
-      <Collapse in={open}>
+      {/* Content - mountOnEnter defers mounting children until first opened,
+          so lazy chunks inside (e.g. the three.js Color Planner) don't download
+          for users who never expand the card */}
+      <Collapse in={open} mountOnEnter>
         <Box
           sx={{
             px: 3,

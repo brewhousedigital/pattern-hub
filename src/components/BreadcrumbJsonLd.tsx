@@ -17,8 +17,5 @@ export const BreadcrumbJsonLd = ({ items }: { items: BreadcrumbItem[] }) => {
   // Escape "<" so a title containing "</script>" can't break out of the tag.
   const json = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
-  return (
-    // eslint-disable-next-line react/no-danger
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
 };

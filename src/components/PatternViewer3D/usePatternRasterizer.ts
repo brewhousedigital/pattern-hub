@@ -175,7 +175,7 @@ export function usePatternRasterizer(
         blobUrl = '';
       }
     };
-  }, [viewData?.id, viewData?.pattern_file, hiddenLayersKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewData?.id, viewData?.pattern_file, hiddenLayersKey]);  
 
   return state;
 }

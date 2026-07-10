@@ -37,11 +37,19 @@ export const useRefreshAuth = () => {
     }
   };
 
+  return { isLoading, handleRefresh };
+};
+
+// Bootstraps the session exactly once at the app root. This used to live in
+// useRefreshAuth's own effect, called from GeneralLayout - which is mounted
+// per-route, so every client-side navigation re-hit PocketBase's authRefresh
+// endpoint. The auth atom is global and survives navigation, so once is enough.
+export const useBootstrapAuth = () => {
+  const { handleRefresh } = useRefreshAuth();
+
   React.useEffect(() => {
     handleRefresh().then();
   }, []);
-
-  return { isLoading, handleRefresh };
 };
 
 export const useRefreshAdminAuth = () => {

@@ -355,21 +355,17 @@ export const useMutationDeletePattern = () => {
   });
 };
 
-export const useQueryGetPatternById = (patternId: string) => {
-  return useQuery({
-    queryKey: ['GetPatternById', patternId],
-    queryFn: async (): Promise<TypePatternResponse> => {
-      return await pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' });
-    },
-  });
-};
-
-// This is a fancy thing to handle automate queries for data on dynamic pages
+// Shared between the /pattern/$patternId route loader and useQueryGetPatternById
+// so the key and fetcher can't drift apart.
 export const getPatternByIdOptions = (patternId: string) =>
   queryOptions({
     queryKey: ['GetPatternById', patternId],
     queryFn: (): Promise<TypePatternResponse> => pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
   });
+
+export const useQueryGetPatternById = (patternId: string) => {
+  return useQuery(getPatternByIdOptions(patternId));
+};
 
 // This will query the list of pattern keys
 export const useQueryGetAllPatternKeys = () => {

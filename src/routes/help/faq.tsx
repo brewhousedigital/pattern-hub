@@ -41,7 +41,6 @@ function RouteComponent() {
   return (
     <GeneralLayout>
       {data && data.length > 0 && (
-        // eslint-disable-next-line react/no-danger
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

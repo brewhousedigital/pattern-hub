@@ -422,7 +422,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
                       >
                         <Box
                           component="img"
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                           
                           src={generatePbImage(p as any)}
                           alt=""
                           aria-hidden="true"
