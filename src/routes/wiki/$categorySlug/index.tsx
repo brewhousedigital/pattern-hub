@@ -4,7 +4,6 @@ import {
   useQueryGetAllWikiCategories,
   useQueryGetAllWikiPages,
 } from '@/functions/database/wiki';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -16,8 +15,8 @@ import { Box, Container, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/')({
   component: RouteComponent,
-  loader: ({ params }) =>
-    queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
       (categories) => categories.find((c) => c.slug === params.categorySlug),
       () => undefined,
     ),

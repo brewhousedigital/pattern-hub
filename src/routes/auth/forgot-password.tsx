@@ -12,6 +12,7 @@ import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlin
 import { Box, Button, CircularProgress, Container, Link as MuiLink, Paper, TextField, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/auth/forgot-password')({
+  ssr: false,
   component: RouteComponent,
   head: ({ match }) => generateSEO('Forgot Password', '', match.pathname),
 });

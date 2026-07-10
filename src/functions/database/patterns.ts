@@ -6,7 +6,7 @@ import { buildBlockedTagsFilter, buildPocketBaseFilter, type AuthorToken, type T
 import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 
 export type TypePatternResponse = {
   collectionId: string;

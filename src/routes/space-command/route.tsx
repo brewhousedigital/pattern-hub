@@ -7,6 +7,8 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 
 export const Route = createFileRoute('/space-command')({
   component: RouteComponent,
+  // Admin panel is auth-gated via localStorage tokens - no value in rendering it on the server
+  ssr: false,
 });
 
 function RouteComponent() {

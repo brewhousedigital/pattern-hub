@@ -11,7 +11,6 @@ import {
   useMutationUnfollowSet,
 } from '@/functions/database/sets';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
@@ -47,7 +46,8 @@ import {
 
 export const Route = createFileRoute('/sets/$setId')({
   component: RouteComponent,
-  loader: ({ params }) => queryClient.ensureQueryData(getSetByIdOptions(params.setId)).catch(() => undefined),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getSetByIdOptions(params.setId)).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { tanstackRouter } from '@tanstack/router-plugin/vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import netlify from '@netlify/vite-plugin-tanstack-start';
 import path from 'path';
 
 // https://vite.dev/config/
@@ -12,30 +13,9 @@ export default defineConfig({
   },
 
   plugins: [
-    // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
-    tanstackRouter({
-      target: 'react',
-      autoCodeSplitting: true,
-    }),
-    // This stopped working with Vite 8
-    /*react({
-      // Add this preset to enable the React Compiler
-      reactCompilerPreset: true,
-    }),*/
+    // TanStack Start must come before the React plugin
+    tanstackStart(),
+    netlify(),
     react(),
   ],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'vendor-react';
-          }
-          if (id.includes('node_modules/@tanstack/react-query') || id.includes('node_modules/@tanstack/react-router')) {
-            return 'vendor-query';
-          }
-        },
-      },
-    },
-  },
 });

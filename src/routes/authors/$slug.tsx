@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
-import { queryClient } from '@/functions/database/authentication-setup';
 import {
   getManualAuthorBySlugOptions,
   useQueryGetManualAuthorBySlug,
@@ -36,7 +35,8 @@ import {
 
 export const Route = createFileRoute('/authors/$slug')({
   component: RouteComponent,
-  loader: ({ params }) => queryClient.ensureQueryData(getManualAuthorBySlugOptions(params.slug)).catch(() => undefined),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getManualAuthorBySlugOptions(params.slug)).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.name,

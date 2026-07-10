@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 
 export const createPrettyDate = (date: string | Date | Dayjs) => {
   if (!date) {

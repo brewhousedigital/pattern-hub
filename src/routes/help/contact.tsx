@@ -19,6 +19,7 @@ const COOLDOWN_MS = 60 * 1000; // 1 minute
 
 function RouteComponent() {
   const [formState, setFormState] = useState<FormState>(() => {
+    if (typeof window === 'undefined') return 'idle'; // SSR - no localStorage
     const last = localStorage.getItem(COOLDOWN_KEY);
     if (last && Date.now() - parseInt(last) < COOLDOWN_MS) return 'cooldown';
     return 'idle';

@@ -8,7 +8,6 @@ import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useQueryGetUserById, getUserByIdOptions } from '@/functions/database/users';
-import { queryClient } from '@/functions/database/authentication-setup';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import type { TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
@@ -115,6 +114,9 @@ type UserSearch = {
 
 export const Route = createFileRoute('/profile/')({
   component: RouteComponent,
+  // Run the loader on the server so shared profile links get real SEO meta,
+  // but render the (heavily localStorage-dependent) component client-side only.
+  ssr: 'data-only',
   validateSearch: (search: Record<string, unknown>): UserSearch => {
     const tab = Number(search.tab);
     return {
@@ -123,8 +125,8 @@ export const Route = createFileRoute('/profile/')({
     };
   },
   loaderDeps: ({ search }) => ({ id: search.id }),
-  loader: ({ deps }) =>
-    deps.id ? queryClient.ensureQueryData(getUserByIdOptions(deps.id)).catch(() => undefined) : undefined,
+  loader: ({ deps, context }) =>
+    deps.id ? context.queryClient.ensureQueryData(getUserByIdOptions(deps.id)).catch(() => undefined) : undefined,
   head: ({ loaderData, match }) => {
     const rawName = loaderData?.name || '';
     const displayName = rawName.startsWith('NewUser_') ? '' : rawName;

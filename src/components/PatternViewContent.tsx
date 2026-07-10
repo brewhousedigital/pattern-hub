@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Link, useMatch } from '@tanstack/react-router';
+import { ClientOnly, Link, useMatch } from '@tanstack/react-router';
 import { ExportSection } from '@/components/PatternExport/ExportSection';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { MeasurementDisplay } from '@/components/MeasurementDisplay';
@@ -230,9 +230,12 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
         {!viewData?.pattern_file_external && (
           <CollapsibleCard title="Color Planner" key={'3d-' + viewData?.id}>
             {viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && <LayerSelectionHint sx={{ mb: 2 }} />}
-            <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
-              <PatternViewer3DLazy viewData={viewData} hiddenLayers={hiddenLayers} />
-            </Suspense>
+            {/* three.js/@react-three cannot execute on the server - keep the whole chunk client-only */}
+            <ClientOnly fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
+              <Suspense fallback={<Skeleton variant="rounded" height={500} sx={{ borderRadius: 2 }} />}>
+                <PatternViewer3DLazy viewData={viewData} hiddenLayers={hiddenLayers} />
+              </Suspense>
+            </ClientOnly>
           </CollapsibleCard>
         )}
       </Grid>

@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { WikiPageContent } from '@/components/wiki/WikiPageContent';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
@@ -14,8 +13,8 @@ import { Box, Container, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
   component: RouteComponent,
-  loader: ({ params }) =>
-    queryClient.ensureQueryData(getWikiPageOptions(params.categorySlug, params.pageSlug)).catch(() => undefined),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getWikiPageOptions(params.categorySlug, params.pageSlug)).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,

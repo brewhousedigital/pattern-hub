@@ -1,7 +1,7 @@
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# TanStack Start SSR - the @netlify/vite-plugin-tanstack-start plugin emits the
+# server function and routing config into dist/ during `vite build`.
+# Requests not matched by a static asset or an explicit function path
+# (e.g. the /api/* functions in netlify/functions) are handled by the SSR function.
 
 # Use for maintenance
 #[[redirects]]
@@ -11,7 +11,7 @@
 #  force = true
 
 [build]
-  publish = "dist"
+  publish = "dist/client"
   command = "npm run build"
 
 [functions]
@@ -19,13 +19,5 @@
   included_files = ["node_modules/sharp/**/*"]
 
 [dev]
-  framework = "vite"
-
-[prerendering]
-  enabled = true
-
-# If maintenance mode is not working, comment out this section
-[[edge_functions]]
-  path = "/*"
-  function = "og-meta"
-
+  command = "npm run dev"
+  port = 3000

@@ -1,7 +1,10 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { getHomepageDefaultPatternsOptions, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { queryClient } from '@/functions/database/authentication-setup';
+import {
+  getHomepageDefaultPatternsOptions,
+  getPatternByIdOptions,
+  useQueryGetAllPatternsByPagination,
+} from '@/functions/database/patterns';
 import { MainPageContent } from '@/components/MainPageContent';
 import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -21,8 +24,24 @@ import { visuallyHidden } from '@mui/utils';
 export const Route = createFileRoute('/')({
   component: RouteComponent,
   validateSearch: patternSearchSchema,
-  loader: () => queryClient.ensureQueryData(getHomepageDefaultPatternsOptions()).catch(() => undefined),
-  head: () => generateSEO(),
+  loaderDeps: ({ search }) => ({ patternId: search.patternId }),
+  // Prefetches the default grid; when a pattern is shared via ?patternId=…
+  // (the view drawer), also loads it so the head() below can emit its meta
+  // tags server-side (this replaced the og-meta edge function).
+  loader: async ({ deps, context }) => {
+    const defaultPatterns = context.queryClient
+      .ensureQueryData(getHomepageDefaultPatternsOptions())
+      .catch(() => undefined);
+    const sharedPattern = deps.patternId
+      ? context.queryClient.ensureQueryData(getPatternByIdOptions(deps.patternId)).catch(() => undefined)
+      : undefined;
+    const [, shared] = await Promise.all([defaultPatterns, sharedPattern]);
+    return shared;
+  },
+  head: ({ loaderData }) =>
+    loaderData
+      ? generateSEO(loaderData.name, loaderData.description, `/pattern/${loaderData.id}`)
+      : generateSEO(),
 });
 
 function RouteComponent() {

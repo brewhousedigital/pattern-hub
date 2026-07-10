@@ -33,6 +33,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
 
   // Check cooldown on mount - memoised so it only reads localStorage once
   const isInCooldown = React.useMemo(() => {
+    if (typeof window === 'undefined') return false; // SSR - no localStorage
     const last = localStorage.getItem(COOLDOWN_KEY);
     return !!(last && Date.now() - parseInt(last) < COOLDOWN_MS);
   }, []);

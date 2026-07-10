@@ -82,6 +82,7 @@ const TABS = [
 type TabKey = (typeof TABS)[number]['key'];
 
 export const Route = createFileRoute('/profile/edit')({
+  ssr: false,
   component: RouteComponent,
   // Optional ?tab=general deep link (used by the blocked-tags banner on the homepage).
   validateSearch: (search: Record<string, unknown>) => ({

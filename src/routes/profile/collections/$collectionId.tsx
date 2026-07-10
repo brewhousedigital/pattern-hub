@@ -11,7 +11,6 @@ import {
   useMutationFollowCollection,
   useMutationUnfollowCollection,
 } from '@/functions/database/collections';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
@@ -32,8 +31,11 @@ import { Alert, Avatar, Box, Button, Container, Paper, Skeleton, Stack, Typograp
 
 export const Route = createFileRoute('/profile/collections/$collectionId')({
   component: RouteComponent,
-  loader: ({ params }) =>
-    queryClient.ensureQueryData(getCollectionByIdOptions(params.collectionId)).catch(() => undefined),
+  // Loader runs on the server so shared collection links get real SEO meta;
+  // the component itself renders client-side only (auth-dependent UI).
+  ssr: 'data-only',
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getCollectionByIdOptions(params.collectionId)).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.name,

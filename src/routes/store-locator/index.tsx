@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useMemo, useCallback, Suspense } from 'react';
+import { createFileRoute, ClientOnly, Link } from '@tanstack/react-router';
+import type { PanTarget } from '@/components/StoreLocatorMap';
 
 import {
   useQueryGetStoresCached,
@@ -53,51 +51,17 @@ import {
   useTheme,
 } from '@mui/material';
 
-// ─── Fix Leaflet default icon paths broken by Vite ───────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
-});
+// Leaflet touches `window` at import time, so the map (and leaflet itself)
+// lives in a lazily-loaded, client-only component.
+const StoreLocatorMapLazy = React.lazy(() => import('@/components/StoreLocatorMap'));
 
 // ─── Route ───────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute('/store-locator/')({
+  ssr: false,
   component: RouteComponent,
   head: ({ match }) => generateSEO('Store Locator', 'Find craft supply stores near you', match.pathname),
 });
-
-// ─── Map controller (child component - has access to map context) ────────────
-
-type PanTarget = { center: [number, number]; zoom: number; storeId: string | null };
-
-function MapController({
-  target,
-  markerRefs,
-}: {
-  target: PanTarget | null;
-  markerRefs: React.RefObject<Map<string, L.Marker>>;
-}) {
-  const map = useMap();
-  useEffect(() => {
-    if (!target) return;
-    map.closePopup();
-    map.setView(target.center, target.zoom, { animate: true });
-    if (!target.storeId) return;
-    const id = setTimeout(() => {
-      markerRefs.current.get(target.storeId!)?.openPopup();
-    }, 300);
-    return () => clearTimeout(id);
-  }, [target]);
-  return null;
-}
-
-// ─── USA geographic center - default map view ─────────────────────────────
-
-const USA_CENTER: [number, number] = [39.5, -98.35];
-const USA_ZOOM = 4;
 
 // ─── Main component ───────────────────────────────────────────────────────
 
@@ -110,7 +74,6 @@ function RouteComponent() {
 
   // ── Map pan target + selected store ─────────────────────────────────────
   const [panTarget, setPanTarget] = useState<PanTarget | null>(null);
-  const markerRefs = React.useRef<Map<string, L.Marker>>(new Map());
 
   // ── Reference point for distance (user location OR geocoded address) ─────
   const [refPoint, setRefPoint] = useState<{ lat: number; lon: number } | null>(null);
@@ -452,70 +415,11 @@ function RouteComponent() {
                 zIndex: 0,
               }}
             >
-              <MapContainer
-                center={USA_CENTER}
-                zoom={USA_ZOOM}
-                style={{ width: '100%', height: '100%' }}
-                scrollWheelZoom
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
-                <MapController target={panTarget} markerRefs={markerRefs} />
-
-                {filteredStores
-                  .filter((s) => s.location?.lat != null && s.location?.lon != null)
-                  .map((store) => (
-                    <Marker
-                      key={store.id}
-                      position={[store.location.lat, store.location.lon]}
-                      ref={(m) => {
-                        if (m) markerRefs.current.set(store.id, m);
-                        else markerRefs.current.delete(store.id);
-                      }}
-                    >
-                      <Popup minWidth={200} maxWidth={280}>
-                        <Box sx={{ py: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                            {store.name}
-                          </Typography>
-                          {store.street_address && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              {store.street_address}
-                            </Typography>
-                          )}
-                          {store.phone && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              {store.phone}
-                            </Typography>
-                          )}
-                          {store.website && (
-                            <Typography
-                              variant="caption"
-                              component="a"
-                              href={store.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{ display: 'block', color: 'primary.main', mt: 0.25 }}
-                            >
-                              Visit website ↗
-                            </Typography>
-                          )}
-                          {distanceLabel(store) && (
-                            <Typography
-                              variant="caption"
-                              sx={{ color: 'success.main', fontWeight: 600, display: 'block', mt: 0.5 }}
-                            >
-                              📍 {distanceLabel(store)}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Popup>
-                    </Marker>
-                  ))}
-              </MapContainer>
+              <ClientOnly fallback={<Box sx={{ width: '100%', height: '100%' }} />}>
+                <Suspense fallback={<Box sx={{ width: '100%', height: '100%' }} />}>
+                  <StoreLocatorMapLazy panTarget={panTarget} stores={filteredStores} distanceLabel={distanceLabel} />
+                </Suspense>
+              </ClientOnly>
             </Box>
 
             {/* ── Store list ── */}

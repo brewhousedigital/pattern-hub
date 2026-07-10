@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getAllWikiCategoriesOptions, useQueryGetAllWikiCategories, useQueryGetAllWikiPages } from '@/functions/database/wiki';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -15,8 +14,8 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/news/')({
   component: RouteComponent,
-  loader: () =>
-    queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
       (categories) => categories.find((c) => c.slug === NEWS_CATEGORY_SLUG),
       () => undefined,
     ),

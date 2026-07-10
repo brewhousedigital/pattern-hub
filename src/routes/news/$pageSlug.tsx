@@ -1,6 +1,5 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
-import { queryClient } from '@/functions/database/authentication-setup';
 import { WikiPageContent } from '@/components/wiki/WikiPageContent';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
@@ -15,8 +14,8 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/news/$pageSlug')({
   component: RouteComponent,
-  loader: ({ params }) =>
-    queryClient.ensureQueryData(getWikiPageOptions(NEWS_CATEGORY_SLUG, params.pageSlug)).catch(() => undefined),
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData(getWikiPageOptions(NEWS_CATEGORY_SLUG, params.pageSlug)).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,

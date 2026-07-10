@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 
 export const Route = createFileRoute('/auth/login')({
+  ssr: false,
   component: RouteComponent,
   head: ({ match }) => generateSEO('Login', '', match.pathname),
 });

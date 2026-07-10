@@ -21,7 +21,7 @@ import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import {
   type TypePatternResponse,
   type TypePatternCreatePayload,
