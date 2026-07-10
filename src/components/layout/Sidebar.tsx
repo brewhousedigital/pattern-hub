@@ -18,8 +18,6 @@ import {
   IconButton,
   Tooltip,
   Alert,
-  useTheme,
-  useMediaQuery,
   Drawer,
 } from '@mui/material';
 
@@ -29,9 +27,6 @@ type SidebarListProps = {
 };
 
 export const SidebarList = (props: SidebarListProps) => {
-  const theme = useTheme();
-  const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
-
   const { isPending, isError, data } = useQueryGetAllPatternsByPagination();
 
   const { isTagActive, tokens } = usePatternSearch();
@@ -86,7 +81,8 @@ export const SidebarList = (props: SidebarListProps) => {
     <Box
       sx={{
         minWidth: 250,
-        maxWidth: isMediumSizeAndUp ? '100%' : 250,
+        // CSS instead of useMediaQuery so SSR renders the correct width
+        maxWidth: { xs: 250, md: '100%' },
         px: 1,
         pb: 2,
       }}

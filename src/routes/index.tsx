@@ -18,7 +18,7 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
 import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
-import { Box, Typography, useTheme, useMediaQuery, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
+import { Box, Typography, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
 import { visuallyHidden } from '@mui/utils';
 
 export const Route = createFileRoute('/')({
@@ -45,9 +45,6 @@ export const Route = createFileRoute('/')({
 });
 
 function RouteComponent() {
-  const theme = useTheme();
-  const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
-
   const { patternId, pageNumber, setPageNumber } = usePatternSearch();
   const { handleOpenView, isViewOpen } = useGlobalIsViewOpen();
 
@@ -85,7 +82,12 @@ function RouteComponent() {
         <MobileSidebarBlock />
 
         <Box sx={ContainerStyles}>
-          {isMediumSizeAndUp && <SidebarBlock />}
+          {/* Hidden via CSS rather than useMediaQuery: the media query is false
+              during SSR/first render, which left the sidebar column empty until
+              hydration. CSS lets the server render the sidebar for desktop. */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <SidebarBlock />
+          </Box>
 
           <Box sx={mainContentStyles}>
             <MainPageContent />

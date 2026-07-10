@@ -125,14 +125,26 @@ export const MainPageContent = () => {
                           variant="outlined"
                           icon={<FavoriteRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                           label={pattern.favorite_count ?? 0}
-                          sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                          sx={{
+                            fontSize: '0.65rem',
+                            height: 18,
+                            color: 'text.disabled',
+                            borderColor: 'divider',
+                            '& .MuiChip-icon': { color: 'text.disabled' },
+                          }}
                         />
                         <Chip
                           size="small"
                           variant="outlined"
                           icon={<StarRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                           label={(pattern.avg_rating ?? 0).toFixed(1)}
-                          sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                          sx={{
+                            fontSize: '0.65rem',
+                            height: 18,
+                            color: 'text.disabled',
+                            borderColor: 'divider',
+                            '& .MuiChip-icon': { color: 'text.disabled' },
+                          }}
                         />
                         {!!pattern.pieces && (
                           <Chip
@@ -140,7 +152,13 @@ export const MainPageContent = () => {
                             variant="outlined"
                             icon={<ExtensionRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                             label={pattern.pieces}
-                            sx={{ fontSize: '0.65rem', height: 18, color: 'text.disabled', borderColor: 'divider', '& .MuiChip-icon': { color: 'text.disabled' } }}
+                            sx={{
+                              fontSize: '0.65rem',
+                              height: 18,
+                              color: 'text.disabled',
+                              borderColor: 'divider',
+                              '& .MuiChip-icon': { color: 'text.disabled' },
+                            }}
                           />
                         )}
                         <Chip
@@ -148,7 +166,11 @@ export const MainPageContent = () => {
                           label={diffChip ? diffChip.label : 'No ratings'}
                           color={diffChip ? diffChip.color : undefined}
                           variant={diffChip ? 'filled' : 'outlined'}
-                          sx={{ fontSize: '0.65rem', height: 18, ...(!diffChip && { color: 'text.disabled', borderColor: 'divider' }) }}
+                          sx={{
+                            fontSize: '0.65rem',
+                            height: 18,
+                            ...(!diffChip && { color: 'text.disabled', borderColor: 'divider' }),
+                          }}
                         />
                       </Box>
                     );
