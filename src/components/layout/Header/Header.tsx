@@ -7,53 +7,39 @@ import { subLinkStyles } from '@/components/layout/Header/sublink-styles';
 import { NotificationBell } from '@/components/layout/Header/NotificationBell';
 
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded';
-import { Box, Stack, Typography, Link as MuiLink, IconButton, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Stack, Typography, Link as MuiLink, IconButton } from '@mui/material';
 
+// One responsive grid instead of a useMediaQuery branch: the media query is
+// false during SSR/first render, which made the header paint in its mobile
+// layout (links below the logo) and pop into the desktop layout after
+// hydration. CSS grid areas let the server render the right layout directly.
 export const Header = () => {
-  const theme = useTheme();
-  const isMediumSizeAndUp = useMediaQuery(theme.breakpoints.up('md'));
-
-  // Only render the tag sidebar on the homepage
+  // Only render the tag sidebar toggle on the homepage
   const { location } = useRouterState();
   const showTagMobileSidebar = location.pathname === '/';
 
   const { handleOpenMobileSidebar } = useGlobalIsSidebarOpen();
 
-  // Mobile view
-  if (!isMediumSizeAndUp) {
-    return (
-      <Box component="header" sx={mobileNavbarContainerStyles}>
-        <Box sx={showTagMobileSidebar ? [mobileNavbarStyles, mobileHomepageNavbarStyles] : mobileNavbarStyles}>
-          <Logo />
-
-          <NotificationBell />
-
-          <HeaderProfileMenu />
-
-          {showTagMobileSidebar && (
-            <IconButton onClick={handleOpenMobileSidebar}>
-              <MenuOpenRoundedIcon />
-            </IconButton>
-          )}
-        </Box>
-
-        <Box sx={{ mb: 2 }}>
-          <ExtraLinks />
-        </Box>
-      </Box>
-    );
-  }
-
   return (
     <Box component="header" sx={navbarStyles}>
-      <Logo />
+      <Box sx={{ gridArea: 'logo', display: 'flex', alignItems: 'center' }}>
+        <Logo />
+      </Box>
 
-      <ExtraLinks />
+      <Box sx={{ gridArea: 'links' }}>
+        <ExtraLinks />
+      </Box>
 
-      <Stack direction="row" sx={{ textAlign: 'right', gap: 2, alignItems: 'center' }}>
+      <Stack direction="row" sx={{ gridArea: 'icons', textAlign: 'right', gap: { xs: 1, md: 2 }, alignItems: 'center' }}>
         <NotificationBell />
 
         <HeaderProfileMenu />
+
+        {showTagMobileSidebar && (
+          <IconButton onClick={handleOpenMobileSidebar} sx={{ display: { xs: 'inline-flex', md: 'none' } }}>
+            <MenuOpenRoundedIcon />
+          </IconButton>
+        )}
       </Stack>
     </Box>
   );
@@ -127,28 +113,20 @@ const ExtraLinks = () => {
 const navbarStyles = {
   backgroundColor: 'rgb(244, 247, 245)',
   display: 'grid',
-  gridTemplateColumns: 'auto 1fr auto',
-  gap: 4,
+  gridTemplateAreas: {
+    xs: '"logo icons" "links links"',
+    md: '"logo links icons"',
+  },
+  gridTemplateColumns: {
+    xs: '1fr auto',
+    md: 'auto 1fr auto',
+  },
   alignItems: 'center',
+  columnGap: { xs: 1, md: 4 },
+  rowGap: { xs: 2, md: 0 },
   paddingX: 2,
-  paddingY: 1,
-};
-
-const mobileNavbarContainerStyles = {
-  backgroundColor: 'rgb(244, 247, 245)',
-  paddingX: 2,
-  pb: 2,
-};
-
-const mobileNavbarStyles = {
-  display: 'flex',
-  gap: 1,
-  alignItems: 'center',
-  mb: 2,
-};
-
-const mobileHomepageNavbarStyles = {
-  gridTemplateColumns: '1fr auto auto',
+  paddingTop: { xs: 0.5, md: 1 },
+  paddingBottom: { xs: 4, md: 1 },
 };
 
 const logoLinkStyles = {
