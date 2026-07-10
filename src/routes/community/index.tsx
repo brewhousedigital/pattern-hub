@@ -48,7 +48,7 @@ function RouteComponent() {
 
           {/* ─── Stats strip ──────────────────────────────────────────────── */}
           <Grid container spacing={2} sx={{ mb: 16 }}>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 4 }}>
               <StatCard>
                 {statsPending ? (
                   <Skeleton variant="text" width="50%" sx={{ mx: 'auto', fontSize: '2.25rem' }} />
@@ -62,7 +62,7 @@ function RouteComponent() {
                 </Typography>
               </StatCard>
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 4 }}>
               <StatCard>
                 {statsPending ? (
                   <Skeleton variant="text" width="50%" sx={{ mx: 'auto', fontSize: '2.25rem' }} />
@@ -73,6 +73,20 @@ function RouteComponent() {
                 )}
                 <Typography variant="caption" color="text.secondary">
                   Members and counting
+                </Typography>
+              </StatCard>
+            </Grid>
+            <Grid size={{ xs: 4 }}>
+              <StatCard>
+                {statsPending ? (
+                  <Skeleton variant="text" width="50%" sx={{ mx: 'auto', fontSize: '2.25rem' }} />
+                ) : (
+                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                    {(stats?.tags ?? 0).toLocaleString()}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  Tags to explore
                 </Typography>
               </StatCard>
             </Grid>

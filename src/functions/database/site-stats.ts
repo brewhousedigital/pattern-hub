@@ -4,6 +4,7 @@ import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 export type TypePublicSiteStats = {
   patterns: number;
   members: number;
+  tags: number;
 };
 
 // Public, unauthenticated aggregate counts (see pb_hooks/main.pb.js
