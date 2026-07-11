@@ -6,6 +6,7 @@ import { buildBlockedTagsFilter, buildPocketBaseFilter, type AuthorToken, type T
 import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import dayjs, { type Dayjs } from 'dayjs';
 
 export type TypePatternResponse = {
@@ -354,6 +355,22 @@ export const useMutationDeletePattern = () => {
     },
   });
 };
+
+// Fetches + sanitizes the raw SVG text for layered patterns (PatternViewContent's
+// layer toggles). Keyed on the file URL, so React Query handles both caching
+// (revisiting a pattern reuses the cached SVG) and races - a slow response for
+// pattern A can never land under pattern B's key during rapid next/prev in the
+// drawer. Client-only in practice: plain useQuery doesn't fetch during SSR.
+export const useQueryPatternLayerSvg = (svgUrl: string | null) =>
+  useQuery({
+    queryKey: ['PatternLayerSvg', svgUrl],
+    queryFn: async (): Promise<string> => {
+      const res = await fetch(svgUrl!);
+      if (!res.ok) throw new Error('Failed to load pattern SVG');
+      return sanitizeSvg(await res.text());
+    },
+    enabled: !!svgUrl,
+  });
 
 // Shared between the /pattern/$patternId route loader and useQueryGetPatternById
 // so the key and fetcher can't drift apart.

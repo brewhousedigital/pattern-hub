@@ -5,13 +5,12 @@ import { createPrettyDate } from '@/functions/utilities/dates';
 import { MeasurementDisplay } from '@/components/MeasurementDisplay';
 import { PatternMeasurement } from '@/components/PatternMeasurement';
 import { generatePbImage, generatePbImageSVG } from '@/functions/utilities/generate-pb-image';
-import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternReportIssue } from '@/components/PatternUtilities/PatternReportIssue';
 import { PatternSaveContainer } from '@/components/PatternUtilities/PatternSaveContainer';
 import { PatternRatingsContainer } from '@/components/PatternUtilities/PatternRatingsContainer';
 import { LayerSelectionHint } from '@/components/PatternUtilities/LayerSelectionHint';
-import { type TypePatternResponse } from '@/functions/database/patterns.ts';
+import { type TypePatternResponse, useQueryPatternLayerSvg } from '@/functions/database/patterns.ts';
 import { useQueryGetPublishedManualAuthors, nameToSlug } from '@/functions/database/manual-authors';
 import { useQueryGetPatternDrawerData } from '@/functions/database/pattern-drawer-data';
 import { useGlobalAuthData } from '@/data/auth-data';
@@ -61,25 +60,24 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
 
   // ── Layer toggles ──────────────────────────────────────────────────────────
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
-  const [layerSvgText, setLayerSvgText] = React.useState<string | null>(null);
 
-  // Derived as a primitive so the effect below re-runs only when the actual
-  // file URL changes, not on every viewData object identity change.
+  // Reset the layer toggles when the viewed pattern changes (state adjustment
+  // during render - the same pattern as useFuzzySearch)
+  const [prevPatternId, setPrevPatternId] = React.useState(viewData?.id);
+  if (viewData?.id !== prevPatternId) {
+    setPrevPatternId(viewData?.id);
+    setHiddenLayers(new Set());
+  }
+
+  // Derived as a primitive so the query below is keyed by the actual file URL
   const layerSvgUrl =
     viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && viewData.pattern_file
       ? generatePbImageSVG(viewData)
       : null;
 
-  React.useEffect(() => {
-    setHiddenLayers(new Set());
-    setLayerSvgText(null);
-    if (layerSvgUrl) {
-      fetch(layerSvgUrl)
-        .then((r) => r.text())
-        .then((text) => setLayerSvgText(sanitizeSvg(text)))
-        .catch(() => {});
-    }
-  }, [layerSvgUrl]);
+  // React Query keys the fetch by URL, so it caches per pattern and a slow
+  // response for the previous pattern can never bleed into the current one
+  const { data: layerSvgText = null } = useQueryPatternLayerSvg(layerSvgUrl);
 
   const displaySvg = React.useMemo(() => {
     if (!layerSvgText) return null;
