@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import {
   getAllWikiCategoriesOptions,
+  getAllWikiPagesOptions,
   useQueryGetAllWikiCategories,
   useQueryGetAllWikiPages,
 } from '@/functions/database/wiki';
@@ -15,9 +16,14 @@ import { Box, Container, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/')({
   component: RouteComponent,
+  // Prefetches pages alongside categories so the article list is in the
+  // server-rendered HTML (the component reads both queries).
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()).then(
-      (categories) => categories.find((c) => c.slug === params.categorySlug),
+    Promise.all([
+      context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()),
+      context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
+    ]).then(
+      ([categories]) => categories.find((c) => c.slug === params.categorySlug),
       () => undefined,
     ),
   head: ({ loaderData, match }) =>

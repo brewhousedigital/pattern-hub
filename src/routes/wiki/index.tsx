@@ -1,5 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQueryGetAllWikiCategories, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import {
+  getAllWikiCategoriesOptions,
+  getAllWikiPagesOptions,
+  useQueryGetAllWikiCategories,
+  useQueryGetAllWikiPages,
+} from '@/functions/database/wiki';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 
@@ -14,6 +19,11 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/wiki/')({
   component: RouteComponent,
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()),
+      context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
+    ]).catch(() => undefined),
   head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
 });
 

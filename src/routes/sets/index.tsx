@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { createFileRoute } from '@tanstack/react-router';
-import { useQueryGetPublishedSets } from '@/functions/database/sets';
+import { getPublishedSetsOptions, useQueryGetPublishedSets } from '@/functions/database/sets';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown } from '@/functions/utilities/markdown';
@@ -27,6 +27,7 @@ import {
 
 export const Route = createFileRoute('/sets/')({
   component: RouteComponent,
+  loader: ({ context }) => context.queryClient.ensureQueryData(getPublishedSetsOptions()).catch(() => undefined),
   head: ({ match }) => generateSEO('Sets', 'Browse curated pattern collections', match.pathname),
 });
 

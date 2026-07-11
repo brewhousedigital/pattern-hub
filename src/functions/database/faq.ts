@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 
 export type TypeFAQItem = {
@@ -12,15 +12,19 @@ export type TypeFAQItem = {
   updated: Date;
 };
 
-export const useQueryGetAllFAQ = () => {
-  return useQuery({
+// Shared between the /help/faq route loader (SSR) and useQueryGetAllFAQ
+// so the key and fetcher can't drift apart.
+export const getAllFAQOptions = () =>
+  queryOptions({
     queryKey: ['GetAllFAQ'],
-    queryFn: async (): Promise<TypeFAQItem[]> => {
-      return await pocketbase.collection('faq').getFullList({
+    queryFn: (): Promise<TypeFAQItem[]> =>
+      pocketbase.collection('faq').getFullList({
         sort: 'order,title',
-      });
-    },
+      }),
   });
+
+export const useQueryGetAllFAQ = () => {
+  return useQuery(getAllFAQOptions());
 };
 
 export type TypeFAQPayload = {

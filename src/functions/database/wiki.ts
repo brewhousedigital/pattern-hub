@@ -84,16 +84,20 @@ export const useMutationDeleteWikiCategory = () => {
 
 // ─── Page queries ─────────────────────────────────────────────────────────────
 
-export const useQueryGetAllWikiPages = () => {
-  return useQuery({
+// Shared between the /wiki route loader (SSR) and useQueryGetAllWikiPages
+// so the key and fetcher can't drift apart.
+export const getAllWikiPagesOptions = () =>
+  queryOptions({
     queryKey: ['GetAllWikiPages'],
-    queryFn: async (): Promise<TypeWikiPage[]> => {
-      return await pocketbase.collection('wiki_pages').getFullList({
+    queryFn: (): Promise<TypeWikiPage[]> =>
+      pocketbase.collection('wiki_pages').getFullList({
         expand: 'category',
         sort: 'category.order,order,title',
-      });
-    },
+      }),
   });
+
+export const useQueryGetAllWikiPages = () => {
+  return useQuery(getAllWikiPagesOptions());
 };
 
 export const useQueryGetWikiPage = (categorySlug: string, pageSlug: string) => {

@@ -51,11 +51,12 @@ export const useQueryGetAllSets = () => {
   });
 };
 
-/** Public - only published sets, sorted by position then title. Expands patterns with minimal fields for thumbnail previews. */
-export const useQueryGetPublishedSets = () => {
-  return useQuery({
+/** Public - only published sets, sorted by position then title. Expands patterns with minimal fields for thumbnail previews.
+ * Shared between the /sets route loader (SSR) and useQueryGetPublishedSets so the key and fetcher can't drift apart. */
+export const getPublishedSetsOptions = () =>
+  queryOptions({
     queryKey: [...PATTERN_SETS_QUERY_KEY, 'published'],
-    queryFn: async (): Promise<TypePatternSet[]> =>
+    queryFn: (): Promise<TypePatternSet[]> =>
       pocketbase.collection('pattern_sets').getFullList<TypePatternSet>({
         filter: 'is_published = true',
         sort: 'position,title',
@@ -65,6 +66,9 @@ export const useQueryGetPublishedSets = () => {
           'expand.patterns.id,expand.patterns.collectionId,expand.patterns.pattern_file,expand.patterns.pattern_file_external,expand.patterns.name',
       }),
   });
+
+export const useQueryGetPublishedSets = () => {
+  return useQuery(getPublishedSetsOptions());
 };
 
 /** Single set with all patterns and their authors expanded. */

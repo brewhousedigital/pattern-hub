@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQueryGetAllFAQ } from '@/functions/database/faq';
+import { getAllFAQOptions, useQueryGetAllFAQ } from '@/functions/database/faq';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useFuzzySearch } from '@/functions/hooks/useFuzzySearch';
@@ -24,6 +24,7 @@ import {
 
 export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
+  loader: ({ context }) => context.queryClient.ensureQueryData(getAllFAQOptions()).catch(() => undefined),
   head: ({ match }) => generateSEO('FAQ', '', match.pathname),
 });
 
