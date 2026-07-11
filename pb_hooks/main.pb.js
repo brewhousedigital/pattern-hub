@@ -835,3 +835,39 @@ routerAdd('GET', '/api/resolve-author-ids', (c) => {
 
   return c.json(200, result);
 });
+
+// ─── Retro visitor counter ────────────────────────────────────────────────────
+// A single integer in the `counters` collection (record key = 'visits') backs
+// the footer's old-school hit counter. No per-visitor data of any kind is
+// stored - the only thing that ever changes is the number. The collection's
+// API rules stay fully locked; these endpoints are the only access path.
+//
+// GET  /api/count-visit → read the current count
+// POST /api/count-visit → increment (atomic SQL update, safe under concurrent
+//                         visitors) and return the new count
+
+routerAdd('GET', '/api/count-visit', (c) => {
+  try {
+    const rows = arrayOf(new DynamicModel({ count: 0 }));
+    $app.db().newQuery("SELECT count FROM counters WHERE key = 'visits' LIMIT 1").all(rows);
+    return c.json(200, { count: parseInt(rows[0]?.count || 0, 10) });
+  } catch (_) {
+    return c.json(200, { count: 0 });
+  }
+});
+
+routerAdd('POST', '/api/count-visit', (c) => {
+  try {
+    $app.db().newQuery("UPDATE counters SET count = count + 1 WHERE key = 'visits'").execute();
+  } catch (_) {
+    // Missing collection/record - fall through and report whatever we can read
+  }
+
+  try {
+    const rows = arrayOf(new DynamicModel({ count: 0 }));
+    $app.db().newQuery("SELECT count FROM counters WHERE key = 'visits' LIMIT 1").all(rows);
+    return c.json(200, { count: parseInt(rows[0]?.count || 0, 10) });
+  } catch (_) {
+    return c.json(200, { count: 0 });
+  }
+});
