@@ -149,7 +149,12 @@ export const getHomepageDefaultPatternsOptions = () =>
       }),
   });
 
-export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: number, filterIsDeleted = true) => {
+export const useQueryGetAllPatternsByPaginationAdmin = (
+  filter: string,
+  page: number,
+  sort = '-created',
+  filterIsDeleted = true,
+) => {
   let includeIsDeletedFilter = `isDeleted = ${String(!filterIsDeleted)}`;
 
   if (filter) {
@@ -157,12 +162,14 @@ export const useQueryGetAllPatternsByPaginationAdmin = (filter: string, page: nu
   }
 
   return useQuery({
-    queryKey: ['GetAllPatternsByPaginationAdmin', filter, page],
+    queryKey: ['GetAllPatternsByPaginationAdmin', filter, page, sort],
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(page, 20, {
+      // perPage must match the DataGrid's pageSize (25) or the grid's page
+      // ranges drift from the server's
+      return await pocketbase.collection('patterns').getList(page, 25, {
         filter: includeIsDeletedFilter,
         expand: 'authors',
-        sort: '-created',
+        sort,
       });
     },
     enabled: !!page,

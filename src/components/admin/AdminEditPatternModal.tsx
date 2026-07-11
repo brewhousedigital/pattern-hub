@@ -7,15 +7,15 @@ import {
   generatePbImageSVG,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  useQueryAdminTagStats,
+  ADMIN_TAG_STATS_QUERY_KEY,
   useQueryAdminTagStatsPaginated,
   useQueryGetTagHierarchy,
   getAncestors,
 } from '@/functions/database/tags';
 import { useQuerySearchLinkedAuthors, useQuerySearchManualAuthors } from '@/functions/database/authors';
 import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
-import { useGlobalAdminFilter, useGlobalAdminPagination } from '@/data/admin-global-state';
 import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
 import { useDebounce } from '@/functions/hooks/useDebounce';
@@ -27,7 +27,6 @@ import {
   type TypePatternCreatePayload,
   type TypePatternKeyReferenceObject,
   type TypePatternLayersMapItem,
-  useQueryGetAllPatternsByPaginationAdmin,
   useMutationEditPattern,
   useMutationSoftDeletePattern,
   useQueryGetAllPatternKeys,
@@ -161,18 +160,20 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     sortDir: 'desc',
   });
 
-  const { refetch: refetchTagManagementStats } = useQueryAdminTagStats();
-
   const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
-
-  const { searchResult } = useGlobalAdminFilter();
-  const { paginationModel } = useGlobalAdminPagination();
 
   const savePattern = useMutationEditPattern();
   const deletePattern = useMutationSoftDeletePattern();
   const { log } = useAdminLogger();
 
-  const { refetch: refetchPatterns } = useQueryGetAllPatternsByPaginationAdmin(searchResult, paginationModel.page);
+  // Invalidate rather than subscribe-for-refetch: this modal is mounted once
+  // per DataGrid row, and subscribing to useQueryAdminTagStats here made every
+  // Patterns page load walk the entire patterns collection (5 requests) just
+  // to keep an unused refetch handle alive. Invalidation only refetches
+  // queries that are actively on screen.
+  const queryClient = useQueryClient();
+  const refetchPatterns = () => queryClient.invalidateQueries({ queryKey: ['GetAllPatternsByPaginationAdmin'] });
+  const refetchTagManagementStats = () => queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
 
   const {
     isPending: isPendingPatternKeys,

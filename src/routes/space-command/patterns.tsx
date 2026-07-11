@@ -42,6 +42,7 @@ import {
   DataGrid,
   type GridColDef,
   type GridRenderCellParams,
+  type GridSortModel,
   Toolbar,
   ToolbarButton,
   ExportCsv,
@@ -75,6 +76,27 @@ type QuickActionId = (typeof QUICK_ACTIONS)[number]['id'];
 
 const isQuickActionId = (value: string): value is QuickActionId => QUICK_ACTIONS.some((a) => a.id === value);
 
+// ─── Server-side sorting ──────────────────────────────────────────────────────
+// Grid column → PocketBase sort field. File-name columns (external, share
+// image) sort as strings, which groups empty vs present - i.e. an
+// exists/doesn't-exist sort.
+const SORTABLE_FIELDS: Record<string, string> = {
+  name: 'name',
+  is_draft: 'is_draft',
+  pattern_file_external: 'pattern_file_external',
+  opengraph_image: 'opengraph_image',
+};
+
+const DEFAULT_SORT = '-created';
+
+function sortModelToPbSort(model: GridSortModel): string {
+  const entry = model[0];
+  const field = entry ? SORTABLE_FIELDS[entry.field] : undefined;
+  if (!entry || !field) return DEFAULT_SORT;
+  // Tiebreak equal values (e.g. all the empty externals) by newest first
+  return `${entry.sort === 'desc' ? '-' : ''}${field},${DEFAULT_SORT}`;
+}
+
 export const Route = createFileRoute('/space-command/patterns')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => ({
@@ -101,9 +123,12 @@ function RouteComponent() {
   const quickClauses = QUICK_ACTIONS.filter((a) => activeQuickIds.includes(a.id)).map((a) => a.filter);
   const combinedFilter = [urlFilter, debouncedSearchTerm, ...quickClauses].filter(Boolean).join(' && ');
 
+  const [sortModel, setSortModel] = React.useState<GridSortModel>([]);
+
   const { isPending, isFetching, data, refetch } = useQueryGetAllPatternsByPaginationAdmin(
     combinedFilter,
     paginationModel.page,
+    sortModelToPbSort(sortModel),
   );
 
   const columns: GridColDef<TypePatternResponse>[] = [
@@ -111,14 +136,14 @@ function RouteComponent() {
     {
       field: 'name',
       headerName: 'Name',
-      sortable: false,
+      sortable: true,
       filterable: false,
       disableColumnMenu: true,
       width: 150,
     },
     {
       field: 'is_draft',
-      sortable: false,
+      sortable: true,
       filterable: false,
       disableColumnMenu: true,
       headerName: 'Draft',
@@ -197,7 +222,7 @@ function RouteComponent() {
     },
     {
       field: 'pattern_file_external',
-      sortable: false,
+      sortable: true,
       filterable: false,
       disableColumnMenu: true,
       headerName: 'External',
@@ -255,7 +280,7 @@ function RouteComponent() {
     },
     {
       field: 'opengraph_image',
-      sortable: false,
+      sortable: true,
       filterable: false,
       disableColumnMenu: true,
       headerName: 'Share Image',
@@ -337,6 +362,12 @@ function RouteComponent() {
             if (urlFilter) {
               navigate({ search: (prev) => ({ ...prev, filter: undefined }), replace: true });
             }
+          }}
+          sortModel={sortModel}
+          onSortModelChange={(newSortModel) => {
+            setSortModel(newSortModel);
+            // Sorted result set is re-ordered server-side - restart at page 1
+            setPaginationModel((prev) => ({ ...prev, page: 1 }));
           }}
           //getRowHeight={() => 'auto'}
           initialState={{
