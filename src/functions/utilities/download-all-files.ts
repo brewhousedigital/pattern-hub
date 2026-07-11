@@ -1,5 +1,10 @@
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+// Default import: file-saver is a CJS/UMD module, and the production SSR
+// bundle keeps node_modules external - Node's ESM loader can't resolve named
+// exports from its UMD wrapper (crashes the Netlify function at cold start).
+import FileSaver from 'file-saver';
+
+const { saveAs } = FileSaver;
 
 export const downloadAllFilesAsZip = async (paths: string[], zipName: string) => {
   const zip = new JSZip();
