@@ -25,6 +25,7 @@ import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 
 import {
   Box,
+  Chip,
   Menu,
   MenuItem,
   InputAdornment,
@@ -51,10 +52,39 @@ import {
   QuickFilterTrigger,
 } from '@mui/x-data-grid';
 
+// ─── Quick actions ────────────────────────────────────────────────────────────
+// Toolbar toggles for common admin QA lookups. Each maps to a PocketBase filter
+// clause, and the active set round-trips through the `quick` URL param
+// (comma-joined) so a filtered view can be bookmarked or shared.
+const QUICK_ACTIONS = [
+  { id: 'no-layers', label: 'No Layers', filter: 'has_layers = false' },
+  { id: 'draft', label: 'Draft', filter: 'is_draft = true' },
+  { id: 'no-tags', label: 'No Tags', filter: 'tag_count = 0' },
+  // No authors of either kind: linked user accounts (relation) or manual names.
+  // NOTE: `:length` only behaves on arrayable fields (relation/select/file) -
+  // on the author_manual JSON field an empty [] still reports length > 0, so
+  // emptiness must be tested by direct equality instead.
+  {
+    id: 'no-authors',
+    label: 'No Authors',
+    filter: "(authors:length = 0 && (author_manual = '[]' || author_manual = null || author_manual = ''))",
+  },
+] as const;
+
+type QuickActionId = (typeof QUICK_ACTIONS)[number]['id'];
+
+const isQuickActionId = (value: string): value is QuickActionId => QUICK_ACTIONS.some((a) => a.id === value);
+
 export const Route = createFileRoute('/space-command/patterns')({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => ({
     filter: typeof search.filter === 'string' ? search.filter : undefined,
+    // Kept as a comma-joined string (not an array) because the app's custom
+    // URL search serializer only round-trips arrays for its own known keys.
+    quick:
+      typeof search.quick === 'string'
+        ? search.quick.split(',').filter(isQuickActionId).join(',') || undefined
+        : undefined,
   }),
   head: ({ match }) => generateSEO('Patterns - Admin', '', match.pathname),
 });
@@ -66,8 +96,10 @@ function RouteComponent() {
   const { setFilterModel, searchResult } = useGlobalAdminFilter();
   const debouncedSearchTerm = useDebounce(searchResult, 600);
 
-  const { filter: urlFilter } = Route.useSearch();
-  const combinedFilter = [urlFilter, debouncedSearchTerm].filter(Boolean).join(' && ');
+  const { filter: urlFilter, quick } = Route.useSearch();
+  const activeQuickIds = quick ? quick.split(',') : [];
+  const quickClauses = QUICK_ACTIONS.filter((a) => activeQuickIds.includes(a.id)).map((a) => a.filter);
+  const combinedFilter = [urlFilter, debouncedSearchTerm, ...quickClauses].filter(Boolean).join(' && ');
 
   const { isPending, isFetching, data, refetch } = useQueryGetAllPatternsByPaginationAdmin(
     combinedFilter,
@@ -328,6 +360,53 @@ function RouteComponent() {
   );
 }
 
+// Quick-action toggle chips. Reads/writes the route's `quick` search param so
+// the active filters live in the URL (shareable, survives reloads).
+function QuickActionChips() {
+  const navigate = useNavigate({ from: '/space-command/patterns' });
+  const { quick } = Route.useSearch();
+  const { setPaginationModel } = useGlobalAdminPagination();
+
+  const active = new Set(quick ? quick.split(',') : []);
+
+  const toggle = (id: QuickActionId) => {
+    const next = new Set(active);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+
+    // The filtered result set may have fewer pages - jump back to the first
+    setPaginationModel((prev) => ({ ...prev, page: 1 }));
+
+    navigate({
+      search: (prev) => ({ ...prev, quick: next.size > 0 ? [...next].join(',') : undefined }),
+      replace: true,
+    });
+  };
+
+  return (
+    <Stack direction="row" sx={{ gap: 0.75, flexWrap: 'wrap', alignItems: 'center' }}>
+      {QUICK_ACTIONS.map((action) => {
+        const isActive = active.has(action.id);
+        return (
+          <Chip
+            key={action.id}
+            label={action.label}
+            size="small"
+            clickable
+            color={isActive ? 'primary' : 'default'}
+            variant={isActive ? 'filled' : 'outlined'}
+            onClick={() => toggle(action.id)}
+            onDelete={isActive ? () => toggle(action.id) : undefined}
+          />
+        );
+      })}
+    </Stack>
+  );
+}
+
 function CustomToolbar() {
   const [exportMenuOpen, setExportMenuOpen] = React.useState(false);
   const exportMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
@@ -335,9 +414,13 @@ function CustomToolbar() {
   return (
     <Toolbar>
       <Stack direction="row" sx={{ width: '100%', alignItems: 'center', gap: 3 }}>
-        <Typography sx={{ fontWeight: 'medium', flex: 1, mx: 0.5, mr: 'auto' }}>
+        <Typography sx={{ fontWeight: 'medium', mx: 0.5 }}>
           List of Patterns
         </Typography>
+
+        <Box sx={{ flex: 1, mr: 'auto' }}>
+          <QuickActionChips />
+        </Box>
 
         <AdminEditPatternModal
           mode="add"

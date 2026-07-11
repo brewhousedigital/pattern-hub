@@ -43,6 +43,7 @@ export function applyBrowseSort(patterns: TypePatternResponse[], sort: BrowseSor
 }
 
 type BrowseSearchBarProps = {
+  title: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -53,6 +54,7 @@ type BrowseSearchBarProps = {
 };
 
 export const BrowseSearchBar = ({
+  title,
   value,
   onChange,
   placeholder = 'Search…',
@@ -130,7 +132,7 @@ export const BrowseSearchBar = ({
 
     {value && (
       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
-        {resultCount} of {totalCount} {resultCount === 1 ? 'result' : 'results'}
+        {resultCount} of {totalCount} {resultCount === 1 ? 'result' : 'results'} in {title}
       </Typography>
     )}
   </Box>

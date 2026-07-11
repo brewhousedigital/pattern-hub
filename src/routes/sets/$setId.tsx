@@ -285,6 +285,7 @@ function RouteComponent() {
             ) : (
               <>
                 <BrowseSearchBar
+                  title={set.title}
                   value={patternSearch}
                   onChange={(v) => {
                     setPatternSearch(v);

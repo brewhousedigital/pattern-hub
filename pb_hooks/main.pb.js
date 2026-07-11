@@ -699,7 +699,7 @@ onRecordAfterCreateSuccess((e) => {
         url: patternUrl,
         description: description.length > 300 ? description.slice(0, 297) + '...' : description,
         color: 0xc8a96e,
-        footer: { text: `By ${authorLine}` },
+        //footer: { text: `By ${authorLine}` },
       };
       if (imageUrl) embed.image = { url: imageUrl };
 
