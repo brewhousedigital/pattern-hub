@@ -96,6 +96,10 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
       setPatternSearch('');
       setPatternDropdownOpen(false);
     }
+    // Intentional reset-on-open: re-seed the form from props.photo only when
+    // the dialog opens. Reacting to photo field changes mid-edit would clobber
+    // the user's in-progress input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.open]);
 
   // Revoke preview object URL when it changes or component unmounts

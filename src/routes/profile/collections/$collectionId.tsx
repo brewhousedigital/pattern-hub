@@ -50,7 +50,9 @@ function RouteComponent() {
 
   const { isPending, isError, data: collection } = useQueryGetCollectionById(collectionId);
 
-  const patterns = collection?.expand?.patterns ?? [];
+  // Memoised so the fallback [] doesn't create a new identity every render
+  // (it feeds the fuse/filteredPatterns memos below)
+  const patterns = useMemo(() => collection?.expand?.patterns ?? [], [collection?.expand?.patterns]);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [patternSearch, setPatternSearch] = useState('');

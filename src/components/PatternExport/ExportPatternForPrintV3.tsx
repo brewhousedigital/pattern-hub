@@ -494,6 +494,10 @@ export const ExportPatternForPrintV3 = ({
       setPatternWidthInput(String(r3(fromIn(wIn, resolvedUnit))));
       setPatternHeightInput(String(r3(fromIn(hIn, resolvedUnit))));
     }
+    // Intentional reset-on-key: re-initialise the form only when the viewed
+    // pattern changes. Reacting to the other values read here (auth's preferred
+    // unit loading in) would clobber the user's in-progress inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewData?.id]);
 
   // Convert both displayed values when unit selector changes
@@ -525,14 +529,17 @@ export const ExportPatternForPrintV3 = ({
     }
   };
 
-  // Fetch SVG source
+  // Fetch SVG source - keyed on the derived URL (a primitive) so the effect
+  // re-runs only when the actual file changes, not on object identity changes
+  const svgUrl = viewData?.pattern_file ? generatePbImage(viewData) : null;
+
   useEffect(() => {
-    if (!viewData?.pattern_file) return;
-    fetch(generatePbImage(viewData))
+    if (!svgUrl) return;
+    fetch(svgUrl)
       .then((r) => r.text())
       .then(setSvgString)
       .catch(console.error);
-  }, [viewData?.id]);
+  }, [svgUrl]);
 
   // Derived pattern dimensions (width drives the ratio-locked height)
   const patternWIn = (() => {
@@ -677,11 +684,11 @@ export const ExportPatternForPrintV3 = ({
     patternWIn,
     patternHIn,
     lineWidthIn,
-    legendHIn,
     includeLegend,
     includeInstructions,
     queryClient,
     unit,
+    paperPreset,
   ]);
 
   return (

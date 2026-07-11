@@ -27,12 +27,15 @@ export const Route = createFileRoute('/help/faq')({
   head: ({ match }) => generateSEO('FAQ', '', match.pathname),
 });
 
+// Module-level so the Fuse index isn't rebuilt every render (see useFuzzySearch)
+const FAQ_SEARCH_KEYS = ['title', 'content'];
+
 function RouteComponent() {
   const [expanded, setExpanded] = useState<number | false>(false);
 
   const { isPending, isError, data } = useQueryGetAllFAQ();
 
-  const { query, search, results } = useFuzzySearch(data, ['title', 'content']);
+  const { query, search, results } = useFuzzySearch(data, FAQ_SEARCH_KEYS);
 
   const handleChange = (index: number) => (_: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? index : false);

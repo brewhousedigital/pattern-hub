@@ -1,6 +1,7 @@
 import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import ErrorPage from '@/components/layout/ErrorPage';
+import NotFoundPage from '@/components/layout/NotFoundPage';
 import { stringifySearch, parseSearch } from '@/functions/utilities/search-v2';
 import { createQueryClient, queryClient as clientQueryClient } from '@/functions/database/authentication-setup';
 
@@ -20,6 +21,7 @@ export function getRouter() {
     stringifySearch,
     parseSearch,
     defaultErrorComponent: ({ error, reset }) => <ErrorPage error={error} onReset={reset} />,
+    defaultNotFoundComponent: () => <NotFoundPage />,
   });
 
   setupRouterSsrQueryIntegration({ router, queryClient });

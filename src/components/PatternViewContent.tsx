@@ -63,16 +63,23 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const [hiddenLayers, setHiddenLayers] = React.useState<Set<string>>(new Set());
   const [layerSvgText, setLayerSvgText] = React.useState<string | null>(null);
 
+  // Derived as a primitive so the effect below re-runs only when the actual
+  // file URL changes, not on every viewData object identity change.
+  const layerSvgUrl =
+    viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && viewData.pattern_file
+      ? generatePbImageSVG(viewData)
+      : null;
+
   React.useEffect(() => {
     setHiddenLayers(new Set());
     setLayerSvgText(null);
-    if (viewData?.has_layers && (viewData.layers_map?.length ?? 0) > 0 && viewData.pattern_file) {
-      fetch(generatePbImageSVG(viewData))
+    if (layerSvgUrl) {
+      fetch(layerSvgUrl)
         .then((r) => r.text())
         .then((text) => setLayerSvgText(sanitizeSvg(text)))
         .catch(() => {});
     }
-  }, [viewData?.id]);
+  }, [layerSvgUrl]);
 
   const displaySvg = React.useMemo(() => {
     if (!layerSvgText) return null;

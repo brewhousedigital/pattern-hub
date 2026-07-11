@@ -26,8 +26,8 @@ const pulse = keyframes`
 
 // Stained-glass SVG panel
 // A hand-composed rose-window–style mosaic. Each <path> is a "glass pane"
-// with its own color and shimmer timing
-const StainedGlassPanel = () => (
+// with its own color and shimmer timing. Exported for reuse by NotFoundPage.
+export const StainedGlassPanel = () => (
   <Box
     component="svg"
     viewBox="0 0 420 420"

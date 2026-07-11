@@ -27,7 +27,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
     } else {
       handleCloseView();
     }
-  }, [patternId]);
+  }, [patternId, handleOpenView, handleCloseView]);
 
   const notFound = !props.isLoading && patternId && !viewData;
 

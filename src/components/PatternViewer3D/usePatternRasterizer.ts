@@ -175,7 +175,11 @@ export function usePatternRasterizer(
         blobUrl = '';
       }
     };
-  }, [viewData?.id, viewData?.pattern_file, hiddenLayersKey]);  
+    // Deliberately keyed on the primitives that change the raster output
+    // (pattern identity/file and the serialised hidden-layer set) rather than
+    // the viewData object, whose identity churns with query refetches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewData?.id, viewData?.pattern_file, hiddenLayersKey]);
 
   return state;
 }

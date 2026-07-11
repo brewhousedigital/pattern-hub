@@ -166,8 +166,10 @@ export const HomepageSearchV3 = ({
     isDropdownOpen && mode === 'author',
   );
 
-  const dropdownItems: TypeReadOnlyDatabaseItem[] =
-    mode === 'suppress' ? [] : mode === 'author' ? authorResults : tagResults;
+  const dropdownItems: TypeReadOnlyDatabaseItem[] = useMemo(
+    () => (mode === 'suppress' ? [] : mode === 'author' ? authorResults : tagResults),
+    [mode, authorResults, tagResults],
+  );
   const isFetchingDropdown = tagsFetching || authorsFetching;
 
   const showDropdown = isDropdownOpen && dropdownItems.length > 0;
@@ -189,11 +191,14 @@ export const HomepageSearchV3 = ({
    * parseRawInput produces the correct token type.
    * Extend this for future prefix modes (e.g. title:) here.
    */
-  function commitDropdownItem(item: TypeReadOnlyDatabaseItem) {
-    const prefix = mode === 'author' ? 'author:' : '';
-    commitInput(`${prefix}${item.tag}`);
-    inputRef.current?.focus();
-  }
+  const commitDropdownItem = useCallback(
+    (item: TypeReadOnlyDatabaseItem) => {
+      const prefix = mode === 'author' ? 'author:' : '';
+      commitInput(`${prefix}${item.tag}`);
+      inputRef.current?.focus();
+    },
+    [mode, commitInput],
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {

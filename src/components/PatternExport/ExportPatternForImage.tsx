@@ -133,6 +133,10 @@ export const ExportPatternForImage = ({
     setWidthInput(fmt(fromIn(baseWIn, resolvedUnit, dpi), resolvedUnit));
     setHeightInput(fmt(fromIn(baseHIn, resolvedUnit, dpi), resolvedUnit));
     setIncludeInstructions(!!viewData.instructions);
+    // Intentional reset-on-key: re-initialise the form only when the viewed
+    // pattern changes. Reacting to the other values read here (dpi, auth's
+    // preferred unit loading in) would clobber the user's in-progress inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewData?.id]);
 
   const handleUnitChange = (newUnit: ImageUnit) => {

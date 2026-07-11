@@ -21,7 +21,9 @@ export const useRefreshAuth = () => {
 
   const { setAuthData } = useGlobalAuthData();
 
-  const handleRefresh = async () => {
+  // Stable identity (jotai setters never change) so callers can safely list
+  // handleRefresh in effect dependency arrays.
+  const handleRefresh = React.useCallback(async () => {
     try {
       await authRefreshSession();
       const userData = pocketbase.authStore.record;
@@ -35,7 +37,7 @@ export const useRefreshAuth = () => {
         setIsLoading(false);
       }, 500);
     }
-  };
+  }, [setAuthData]);
 
   return { isLoading, handleRefresh };
 };
@@ -49,7 +51,7 @@ export const useBootstrapAuth = () => {
 
   React.useEffect(() => {
     handleRefresh().then();
-  }, []);
+  }, [handleRefresh]);
 };
 
 export const useRefreshAdminAuth = () => {

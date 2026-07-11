@@ -46,21 +46,21 @@ export const Route = createFileRoute('/')({
 
 function RouteComponent() {
   const { patternId, pageNumber, setPageNumber } = usePatternSearch();
-  const { handleOpenView, isViewOpen } = useGlobalIsViewOpen();
+  const { handleOpenView } = useGlobalIsViewOpen();
 
   // Get the pattern data
   const { isFetching, isError, data } = useQueryGetAllPatternsByPagination();
 
+  // Open the drawer when a shared/deep link lands with ?patternId= and data is
+  // ready. handleOpenView is idempotent (setting an already-true atom is a
+  // no-op), so no isViewOpen guard is needed - and reading isViewOpen here
+  // would re-open the drawer mid-close (patternId is cleared 300ms after
+  // isViewOpen flips false, see ViewDrawerContainer's handleClose).
   React.useEffect(() => {
-    if (data) {
-      if (patternId) {
-        if (!isViewOpen) {
-          // Open the modal
-          handleOpenView();
-        }
-      }
+    if (data && patternId) {
+      handleOpenView();
     }
-  }, [data]);
+  }, [data, patternId, handleOpenView]);
 
   return (
     <GeneralLayout>

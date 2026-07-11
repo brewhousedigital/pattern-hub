@@ -63,7 +63,9 @@ function RouteComponent() {
   const { data: set, isPending, isError } = useQueryGetSetById(setId);
   const { authData } = useGlobalAuthData();
 
-  const patterns = set?.expand?.patterns ?? [];
+  // Memoised so the fallback [] doesn't create a new identity every render
+  // (it feeds the fuse/filteredPatterns memos below)
+  const patterns = useMemo(() => set?.expand?.patterns ?? [], [set?.expand?.patterns]);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [patternSearch, setPatternSearch] = useState('');

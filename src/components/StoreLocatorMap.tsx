@@ -39,7 +39,7 @@ function MapController({
       markerRefs.current.get(target.storeId!)?.openPopup();
     }, 300);
     return () => clearTimeout(id);
-  }, [target]);
+  }, [target, map, markerRefs]);
   return null;
 }
 

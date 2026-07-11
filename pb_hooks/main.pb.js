@@ -584,15 +584,37 @@ routerAdd(
     } catch (_) {}
 
     try {
+      // The `authors` view derives its columns from JSON expressions, so the
+      // hooks API reads them as raw JSON-encoded text: getString('tag') returns
+      // '"WarlordAxin"' (quotes included), a NULL user_id comes back as the
+      // string 'null', and getInt() on those columns returns 0. The records
+      // REST API deserialises these properly; mirror that here so the client
+      // sees plain values (and manual authors keep an empty user_id).
+      function fromJsonText(s) {
+        if (!s || s === 'null') return '';
+        if (s.length >= 2 && s.charAt(0) === '"' && s.charAt(s.length - 1) === '"') {
+          try {
+            return JSON.parse(s);
+          } catch (_) {
+            return s.slice(1, -1);
+          }
+        }
+        return s;
+      }
+      function jsonInt(s) {
+        const n = parseInt(fromJsonText(s), 10);
+        return isNaN(n) ? 0 : n;
+      }
+
       const records = $app.findRecordsByFilter('authors', "id != ''", '', 0, 0);
       for (let i = 0; i < records.length; i++) {
         const r = records[i];
         result.authors.push({
           id: r.id,
-          tag: r.getString('tag'),
-          count: r.getInt('count'),
-          manual: r.getInt('manual'),
-          user_id: r.getString('user_id'),
+          tag: fromJsonText(r.getString('tag')),
+          count: jsonInt(r.getString('count')),
+          manual: jsonInt(r.getString('manual')),
+          user_id: fromJsonText(r.getString('user_id')),
         });
       }
     } catch (_) {}

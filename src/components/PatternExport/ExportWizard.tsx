@@ -198,16 +198,23 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
     setIncludeLegend(true);
     setPrintTiled(false);
     setError(null);
+    // Intentional reset-on-key: re-initialise the wizard only when the viewed
+    // pattern changes. Reacting to the other values read here (auth's preferred
+    // unit loading in) would clobber the user's in-progress inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewData?.id]);
 
-  // Fetch the source SVG once - needed by the Editing/Saving/Printing flows.
+  // Fetch the source SVG - needed by the Editing/Saving/Printing flows. Keyed
+  // on the derived URL (a primitive) so it re-runs only when the file changes.
+  const svgUrl = viewData?.pattern_file ? generatePbImage(viewData) : null;
+
   useEffect(() => {
-    if (!viewData?.pattern_file) return;
-    fetch(generatePbImage(viewData))
+    if (!svgUrl) return;
+    fetch(svgUrl)
       .then((r) => r.text())
       .then(setSvgString)
       .catch(console.error);
-  }, [viewData?.id]);
+  }, [svgUrl]);
 
   const handleUnitChange = (newUnit: PrintUnit) => {
     const w = parseFloat(widthInput);
