@@ -6,6 +6,7 @@ import { buildBlockedTagsFilter, buildPocketBaseFilter, type AuthorToken, type T
 import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { useSessionUnblockedTags } from '@/data/blocked-tags-session';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
 import dayjs, { type Dayjs } from 'dayjs';
 
@@ -98,8 +99,13 @@ export const useQueryGetAllPatternsByPagination = () => {
       .filter((t): t is TagToken => t.type === 'tag' && !t.exclude)
       .map((t) => t.value.toLowerCase()),
   );
+  // Tags temporarily un-blocked for this session via the BlockedTagsBanner
+  // dropdown also stop filtering (the query key below includes the effective
+  // list, so toggling one refetches automatically).
+  const { unblockedTags } = useSessionUnblockedTags();
+  const sessionUnblocked = new Set(unblockedTags.map((t) => t.toLowerCase()));
   const effectiveBlockedTags = (authData?.blocked_tags ?? []).filter(
-    (tag) => !activeTagValues.has(tag.toLowerCase()),
+    (tag) => !activeTagValues.has(tag.toLowerCase()) && !sessionUnblocked.has(tag.toLowerCase()),
   );
   const blockedTagsFilter = buildBlockedTagsFilter(effectiveBlockedTags);
 
