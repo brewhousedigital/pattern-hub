@@ -27,7 +27,6 @@ const VisitorCounter = () => {
     <Stack
       direction="row"
       sx={{ alignItems: 'center', justifyContent: { xs: 'center', md: 'flex-start' }, gap: 1.25, mt: 4 }}
-      title="Counts anonymous sessions only - no visitor data is stored"
     >
       <Typography
         variant="caption"
