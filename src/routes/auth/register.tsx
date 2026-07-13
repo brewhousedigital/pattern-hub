@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useMutationAuthCreateUser, useMutationAuthSignIn } from '@/functions/database/authentication';
@@ -42,6 +43,9 @@ function RouteComponent() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
   const { setAuthData } = useGlobalAuthData();
 
   const navigate = useNavigate();
@@ -50,7 +54,7 @@ function RouteComponent() {
   const passwordsMatch = confirm.length > 0 && password === confirm;
   const passwordMismatch = confirm.length > 0 && password !== confirm;
 
-  const isValid = email.trim().length > 0 && password.length >= 8 && password === confirm;
+  const isValid = email.trim().length > 0 && password.length >= 8 && password === confirm && !!turnstileToken;
 
   const createUser = useMutationAuthCreateUser();
   const signIn = useMutationAuthSignIn();
@@ -67,6 +71,7 @@ function RouteComponent() {
         email,
         password,
         name: `NewUser_${Date.now()}`,
+        turnstileToken: turnstileToken ?? '',
       });
 
       // Sign in the newly created user so we have a valid token
@@ -82,6 +87,9 @@ function RouteComponent() {
       }).then();
     } catch {
       enqueueSnackbar('Something went wrong registering an account. Try again in a few minutes.');
+      // Turnstile tokens are single-use - request a fresh one so a retry can succeed
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
 
     setIsLoading(false);
@@ -205,7 +213,17 @@ function RouteComponent() {
               />
             </Box>
 
-            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || isLoading} sx={{ mt: 3.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+              />
+            </Box>
+
+            <SubmitButton type="submit" variant="contained" fullWidth disabled={!isValid || isLoading} sx={{ mt: 2 }}>
               {isLoading ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
             </SubmitButton>
 

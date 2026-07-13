@@ -201,6 +201,9 @@ type CreateUserPayload = {
   email: string;
   password: string;
   name: string;
+  /** Cloudflare Turnstile token - verified server-side by the users
+   * onRecordCreateRequest hook (see pb_hooks/main.pb.js). */
+  turnstileToken: string;
 };
 
 export const authSignOut = () => {
@@ -253,12 +256,15 @@ export const useMutationAuthGetAdmin = () => {
 export const useMutationAuthCreateUser = () => {
   return useMutation({
     mutationFn: (payload: CreateUserPayload): AuthCreationType => {
-      return pocketbase.collection('users').create({
-        email: payload.email,
-        name: payload.name,
-        password: payload.password,
-        passwordConfirm: payload.password,
-      });
+      return pocketbase.collection('users').create(
+        {
+          email: payload.email,
+          name: payload.name,
+          password: payload.password,
+          passwordConfirm: payload.password,
+        },
+        { headers: { 'X-Turnstile-Token': payload.turnstileToken } },
+      );
     },
   });
 };

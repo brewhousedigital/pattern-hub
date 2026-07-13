@@ -871,3 +871,50 @@ routerAdd('POST', '/api/count-visit', (c) => {
     return c.json(200, { count: 0 });
   }
 });
+
+// ─── Turnstile-gated user registration ────────────────────────────────────────
+// Blocks bot signups at the API level: creating a `users` record requires a
+// valid Cloudflare Turnstile token in the X-Turnstile-Token header, verified
+// server-side against Cloudflare. A widget alone wouldn't help - bots hit the
+// PocketBase REST API directly, so the collection itself must enforce it.
+//
+// Requires the TURNSTILE_SECRET_KEY env var on the PocketBase host. Until it
+// is set, the hook fails open (registration works, unverified) so deploy
+// order can't brick signups.
+onRecordCreateRequest((e) => {
+  // The PocketBase admin UI / superuser API skips the challenge
+  if (e.hasSuperuserAuth()) {
+    return e.next();
+  }
+
+  const secret = $os.getenv('TURNSTILE_SECRET_KEY');
+  if (!secret) {
+    console.log('TURNSTILE_SECRET_KEY not set - skipping captcha verification for user registration');
+    return e.next();
+  }
+
+  const token = e.request.header.get('X-Turnstile-Token') || '';
+  if (!token) {
+    throw new BadRequestError('Captcha verification required.');
+  }
+
+  let verified = false;
+  try {
+    const res = $http.send({
+      url: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      method: 'POST',
+      body: JSON.stringify({ secret: secret, response: token }),
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10,
+    });
+    verified = !!res.json?.success;
+  } catch (_) {
+    verified = false;
+  }
+
+  if (!verified) {
+    throw new BadRequestError('Captcha verification failed. Please try again.');
+  }
+
+  e.next();
+}, 'users');
