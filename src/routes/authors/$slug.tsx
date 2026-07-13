@@ -42,6 +42,11 @@ export const Route = createFileRoute('/authors/$slug')({
       loaderData?.name,
       loaderData?.description || (loaderData?.name ? `Stained glass patterns by ${loaderData.name}.` : ''),
       match.pathname,
+      // Author avatar if uploaded, otherwise a generated author card
+      (loaderData && generateManualAuthorAvatarUrl(loaderData)) ||
+        (loaderData?.name
+          ? `https://patternarchive.net/api/og-image?type=author&title=${encodeURIComponent(loaderData.name)}`
+          : undefined),
     ),
 });
 

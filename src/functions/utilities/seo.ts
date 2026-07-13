@@ -1,9 +1,10 @@
 export const seoTitle = (title?: string) => {
-  if (!title) {
-    return [{ title: `Pattern Archive` }, { 'og:title': `Pattern Archive` }];
-  }
+  const fullTitle = title ? `${title} - Pattern Archive` : `Pattern Archive`;
 
-  return [{ title: `${title} - Pattern Archive` }, { 'og:title': `${title} - Pattern Archive` }];
+  // NOTE: og meta entries must be { property, content } objects - a plain
+  // { 'og:title': value } renders as the literal attribute <meta og:title="...">,
+  // which social crawlers (Discord etc.) can't read.
+  return [{ title: fullTitle }, { property: 'og:title', content: fullTitle }];
 };
 
 export const seoDescription = (description?: string) => {
@@ -33,16 +34,24 @@ export const seoCanonical = (url?: string) => {
   return [{ rel: 'canonical', href: `${baseURL}${url ?? ''}` }];
 };
 
-export const generateSEO = (title?: string, description?: string, url?: string) => {
+/**
+ * @param image Absolute URL for the og/twitter share image. Falls back to the
+ *              generic site poster. (Per-pattern share images, author avatars,
+ *              and the /api/og-image cards were previously injected by the
+ *              og-meta edge function - with SSR they belong here.)
+ */
+export const generateSEO = (title?: string, description?: string, url?: string, image?: string) => {
+  const imageUrl = image || `https://patternarchive.net/poster.png`;
+
   return {
     meta: [
       ...seoTitle(title),
       ...seoDescription(description),
       ...seoUrl(url),
-      { property: 'og:image', content: `https://patternarchive.net/poster.png` },
+      { property: 'og:image', content: imageUrl },
       { property: 'og:site_name', content: `Pattern Archive` },
       { name: 'twitter:card', content: `summary_large_image` },
-      { name: 'twitter:image', content: `https://patternarchive.net/poster.png` },
+      { name: 'twitter:image', content: imageUrl },
     ],
     links: seoCanonical(url),
   };

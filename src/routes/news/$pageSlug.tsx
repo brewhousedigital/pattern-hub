@@ -21,6 +21,9 @@ export const Route = createFileRoute('/news/$pageSlug')({
       loaderData?.title,
       loaderData?.content ? truncate(stripMarkdown(loaderData.content), 160) : '',
       match.pathname,
+      loaderData?.title
+        ? `https://patternarchive.net/api/og-image?type=wiki&title=${encodeURIComponent(loaderData.title)}&category=News`
+        : undefined,
     ),
 });
 

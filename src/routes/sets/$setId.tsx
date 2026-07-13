@@ -53,6 +53,9 @@ export const Route = createFileRoute('/sets/$setId')({
       loaderData?.title,
       loaderData?.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
       match.pathname,
+      loaderData?.title
+        ? `https://patternarchive.net/api/og-image?type=set&title=${encodeURIComponent(loaderData.title)}`
+        : undefined,
     ),
 });
 

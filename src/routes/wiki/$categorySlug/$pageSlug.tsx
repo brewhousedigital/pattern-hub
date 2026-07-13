@@ -20,6 +20,9 @@ export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
       loaderData?.title,
       loaderData?.content ? truncate(stripMarkdown(loaderData.content), 160) : '',
       match.pathname,
+      loaderData?.title
+        ? `https://patternarchive.net/api/og-image?type=wiki&title=${encodeURIComponent(loaderData.title)}&category=${encodeURIComponent(loaderData.expand?.category?.name ?? '')}`
+        : undefined,
     ),
 });
 

@@ -13,6 +13,8 @@ import { PRIMARY_COLOR } from '@/data/constants';
 import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { generatePbImageOpenGraph } from '@/functions/utilities/generate-pb-image';
+import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { patternSearchSchema } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
@@ -40,7 +42,12 @@ export const Route = createFileRoute('/')({
   },
   head: ({ loaderData }) =>
     loaderData
-      ? generateSEO(loaderData.name, loaderData.description, `/pattern/${loaderData.id}`)
+      ? generateSEO(
+          loaderData.name,
+          loaderData.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
+          `/pattern/${loaderData.id}`,
+          loaderData.opengraph_image ? generatePbImageOpenGraph(loaderData) : undefined,
+        )
       : generateSEO(),
 });
 

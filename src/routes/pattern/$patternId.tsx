@@ -5,6 +5,8 @@ import { PatternViewContent } from '@/components/PatternViewContent';
 import { PatternJsonLd } from '@/components/PatternJsonLd';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { generateSEO } from '@/functions/utilities/seo';
+import { generatePbImageOpenGraph } from '@/functions/utilities/generate-pb-image';
+import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
@@ -13,7 +15,13 @@ import { Alert, Box, Container, Link as MuiLink } from '@mui/material';
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
   loader: ({ params, context }) => context.queryClient.ensureQueryData(getPatternByIdOptions(params.patternId)),
-  head: ({ loaderData, match }) => generateSEO(loaderData?.name, loaderData?.description, match.pathname),
+  head: ({ loaderData, match }) =>
+    generateSEO(
+      loaderData?.name,
+      loaderData?.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
+      match.pathname,
+      loaderData?.opengraph_image ? generatePbImageOpenGraph(loaderData) : undefined,
+    ),
 });
 
 function RouteComponent() {
