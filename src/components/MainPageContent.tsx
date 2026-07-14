@@ -128,8 +128,8 @@ export const MainPageContent = () => {
                           sx={{
                             fontSize: '0.65rem',
                             height: 18,
-                            color: 'text.disabled',
-                            borderColor: 'divider',
+                            color: 'rgba(0, 0, 0, 0.5)',
+                            borderColor: 'rgba(0, 0, 0, 0.3)',
                             '& .MuiChip-icon': { color: 'text.disabled' },
                           }}
                         />
@@ -141,8 +141,8 @@ export const MainPageContent = () => {
                           sx={{
                             fontSize: '0.65rem',
                             height: 18,
-                            color: 'text.disabled',
-                            borderColor: 'divider',
+                            color: 'rgba(0, 0, 0, 0.5)',
+                            borderColor: 'rgba(0, 0, 0, 0.3)',
                             '& .MuiChip-icon': { color: 'text.disabled' },
                           }}
                         />
@@ -155,23 +155,26 @@ export const MainPageContent = () => {
                             sx={{
                               fontSize: '0.65rem',
                               height: 18,
-                              color: 'text.disabled',
-                              borderColor: 'divider',
+                              color: 'rgba(0, 0, 0, 0.5)',
+                              borderColor: 'rgba(0, 0, 0, 0.3)',
                               '& .MuiChip-icon': { color: 'text.disabled' },
                             }}
                           />
                         )}
-                        <Chip
-                          size="small"
-                          label={diffChip ? diffChip.label : 'No ratings'}
-                          color={diffChip ? diffChip.color : undefined}
-                          variant={diffChip ? 'filled' : 'outlined'}
-                          sx={{
-                            fontSize: '0.65rem',
-                            height: 18,
-                            ...(!diffChip && { color: 'text.disabled', borderColor: 'divider' }),
-                          }}
-                        />
+                        {diffChip && (
+                          <Chip
+                            size="small"
+                            label={diffChip ? diffChip.label : null}
+                            color={diffChip ? diffChip.color : undefined}
+                            variant={diffChip ? 'filled' : 'outlined'}
+                            sx={{
+                              fontSize: '0.65rem',
+                              height: 18,
+                              color: diffChip ? diffChip.color : 'rgba(0, 0, 0, 0.5)',
+                              borderColor: diffChip ? diffChip.color : 'rgba(0, 0, 0, 0.3)',
+                            }}
+                          />
+                        )}
                       </Box>
                     );
                   })()}
