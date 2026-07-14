@@ -38,7 +38,7 @@ function RouteComponent() {
         <Container maxWidth="lg" sx={{ py: 3, position: 'relative', zIndex: 1 }}>
           <MuiLink
             component={Link}
-            to="/"
+            to="/pattern"
             sx={{
               display: 'inline-flex',
               alignItems: 'center',

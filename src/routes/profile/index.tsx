@@ -856,7 +856,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
                   {featuredPattern.tags && featuredPattern.tags.length > 0 && (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2.5 }}>
                       {featuredPattern.tags.map((tag) => (
-                        <Link key={tag} to="/" search={{ tags: [tag] }}>
+                        <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
                           <Chip
                             label={tag}
                             size="small"

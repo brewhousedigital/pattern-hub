@@ -60,6 +60,7 @@ function buildSitemapIndex(names: string[], now: string): string {
 
 const STATIC_URLS: SitemapUrl[] = [
   { loc: `${SITE_URL}/`, changefreq: 'daily', priority: '1.0' },
+  { loc: `${SITE_URL}/pattern/`, changefreq: 'daily', priority: '0.9' },
   { loc: `${SITE_URL}/sets/`, changefreq: 'weekly', priority: '0.8' },
   { loc: `${SITE_URL}/wiki/`, changefreq: 'weekly', priority: '0.8' },
   { loc: `${SITE_URL}/guides/`, changefreq: 'weekly', priority: '0.7' },

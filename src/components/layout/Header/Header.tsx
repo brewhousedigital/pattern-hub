@@ -83,6 +83,10 @@ const ExtraLinks = () => {
         Home
       </MuiLink>
 
+      <MuiLink component={Link} to="/pattern" sx={activeLinkStyles('/pattern')}>
+        Patterns
+      </MuiLink>
+
       <MuiLink component={Link} to="/news" sx={activeLinkStyles('/news')}>
         News
       </MuiLink>

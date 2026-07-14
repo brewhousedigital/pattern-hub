@@ -48,8 +48,10 @@ export type UsePatternSearchReturn = {
 };
 
 export function usePatternSearch(): UsePatternSearchReturn {
-  const search = useSearch({ from: '/' }) as PatternSearch;
-  const navigate = useNavigate({ from: '/' });
+  // The pattern browse experience lives at /pattern (the homepage is the
+  // Google-style search landing) - every consumer of this hook renders there.
+  const search = useSearch({ from: '/pattern/' }) as PatternSearch;
+  const navigate = useNavigate({ from: '/pattern/' });
 
   const tokens = useMemo(() => tokensFromSearch(search), [search]);
 

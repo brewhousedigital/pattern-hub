@@ -496,7 +496,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                 {viewData!.tags!.map((tag) => (
-                  <Link key={tag} to="/" search={{ tags: [tag] }}>
+                  <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
                     <Chip label={tag} size="small" variant="outlined" clickable />
                   </Link>
                 ))}

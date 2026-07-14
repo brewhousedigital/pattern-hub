@@ -146,7 +146,10 @@ export const useQueryGetAllPatternsByPagination = () => {
 // an empty grid, without replicating the full search/blocked-tags hook machinery.
 export const getHomepageDefaultPatternsOptions = () =>
   queryOptions({
-    queryKey: ['GetAllPatternsByPagination', '', 1, '-created', ''],
+    // Key must stay in sync with useQueryGetAllPatternsByPagination's key for
+    // the anonymous/default view: filter '', page 1, default sort, no blocked
+    // tags, empty author-id map.
+    queryKey: ['GetAllPatternsByPagination', '', 1, '-created', '', '{}'],
     queryFn: (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> =>
       pocketbase.collection('patterns').getList(1, 20, {
         filter: 'isDeleted = false && is_draft = false',

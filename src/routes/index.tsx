@@ -1,167 +1,174 @@
-import React from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import {
-  getHomepageDefaultPatternsOptions,
-  getPatternByIdOptions,
-  useQueryGetAllPatternsByPagination,
-} from '@/functions/database/patterns';
-import { MainPageContent } from '@/components/MainPageContent';
-import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
-import { useGlobalIsViewOpen } from '@/data/view';
-import { ViewDrawer } from '@/components/ViewDrawer';
-import { PRIMARY_COLOR } from '@/data/constants';
-import { PaginationBox } from '@/components/PaginationBox';
+import React, { useState } from 'react';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
+import { HomepageDoodle } from '@/components/homepage/HomepageDoodle';
+import { useQuerySearchTags } from '@/functions/database/tags';
 import { generateSEO } from '@/functions/utilities/seo';
-import { generatePbImageOpenGraph } from '@/functions/utilities/generate-pb-image';
-import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
-import { patternSearchSchema } from '@/functions/utilities/search-v2';
-import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { usePatternViewData } from '@/functions/hooks/usePatternView';
-import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
 
-import { Box, Typography, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
-import { visuallyHidden } from '@mui/utils';
+import SearchIcon from '@mui/icons-material/Search';
+import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
+import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
+import TipsAndUpdatesRoundedIcon from '@mui/icons-material/TipsAndUpdatesRounded';
+
+import { Box, Chip, InputAdornment, Stack, TextField } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+
+// Search params the browse experience used when it lived at "/". Old shared
+// links (drawer shares, tag links, bookmarks) must keep working, so any of
+// these on the homepage redirects to /pattern with the search intact. Runs
+// during SSR too, so crawlers and link unfurlers follow the redirect and read
+// the pattern meta from /pattern.
+const LEGACY_PATTERN_SEARCH_KEYS = [
+  'patternId',
+  'q',
+  'tags',
+  'authors',
+  'id',
+  'title',
+  'description',
+  'parts',
+  'width',
+  'height',
+  'filesize',
+  'sort',
+  'pageNumber',
+  'exportTab',
+] as const;
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
-  validateSearch: patternSearchSchema,
-  loaderDeps: ({ search }) => ({ patternId: search.patternId }),
-  // Prefetches the default grid; when a pattern is shared via ?patternId=…
-  // (the view drawer), also loads it so the head() below can emit its meta
-  // tags server-side (this replaced the og-meta edge function).
-  loader: async ({ deps, context }) => {
-    const defaultPatterns = context.queryClient
-      .ensureQueryData(getHomepageDefaultPatternsOptions())
-      .catch(() => undefined);
-    const sharedPattern = deps.patternId
-      ? context.queryClient.ensureQueryData(getPatternByIdOptions(deps.patternId)).catch(() => undefined)
-      : undefined;
-    const [, shared] = await Promise.all([defaultPatterns, sharedPattern]);
-    return shared;
+  // Loose passthrough: the homepage has no search params of its own, but
+  // beforeLoad needs to see legacy ones to redirect them.
+  validateSearch: (search: Record<string, unknown>) => search,
+  beforeLoad: ({ search }) => {
+    if (LEGACY_PATTERN_SEARCH_KEYS.some((key) => search[key] !== undefined)) {
+      throw redirect({ to: '/pattern', search: search as never });
+    }
   },
-  head: ({ loaderData }) =>
-    loaderData
-      ? generateSEO(
-          loaderData.name,
-          loaderData.description ? truncate(stripMarkdown(loaderData.description), 160) : '',
-          `/pattern/${loaderData.id}`,
-          loaderData.opengraph_image ? generatePbImageOpenGraph(loaderData) : undefined,
-        )
-      : generateSEO(),
+  head: () => generateSEO(),
 });
 
 function RouteComponent() {
-  const { patternId, pageNumber, setPageNumber } = usePatternSearch();
-  const { handleOpenView } = useGlobalIsViewOpen();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
 
-  // Get the pattern data
-  const { isFetching, isError, data } = useQueryGetAllPatternsByPagination();
+  // Top 100 tags by count - powers the "Random Tag" button. Small, cached.
+  const { data: topTags = [] } = useQuerySearchTags('');
 
-  // Open the drawer when a shared/deep link lands with ?patternId= and data is
-  // ready. handleOpenView is idempotent (setting an already-true atom is a
-  // no-op), so no isViewOpen guard is needed - and reading isViewOpen here
-  // would re-open the drawer mid-close (patternId is cleared 300ms after
-  // isViewOpen flips false, see ViewDrawerContainer's handleClose).
-  React.useEffect(() => {
-    if (data && patternId) {
-      handleOpenView();
+  const goToPatterns = (search: { q?: string; tags?: string[]; sort?: '-favorite_count' }) => {
+    void navigate({ to: '/pattern', search, viewTransition: true });
+  };
+
+  const handleSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    const trimmed = query.trim();
+    goToPatterns(trimmed ? { q: trimmed } : {});
+  };
+
+  const handleRandomTag = () => {
+    if (topTags.length === 0) {
+      goToPatterns({});
+      return;
     }
-  }, [data, patternId, handleOpenView]);
+    const random = topTags[Math.floor(Math.random() * topTags.length)];
+    goToPatterns({ tags: [String(random.tag)] });
+  };
 
   return (
     <GeneralLayout>
-      <Typography variant="h1" sx={visuallyHidden}>
-        Stained Glass Pattern Archive — Browse and Download Patterns
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          // Fill the viewport between header and footer so the hero sits
+          // vertically centered, Google-style
+          minHeight: 'calc(100svh - 320px)',
+          px: 2,
+          py: 8,
+        }}
+      >
+        <HomepageDoodle />
 
-      <Box sx={{ px: 2, mb: 2 }}>
-        <HomepageSearchV3 />
-      </Box>
-
-      <Box sx={{ position: 'relative' }}>
-        <Fade in={isFetching}>
-          <Box sx={{ position: 'absolute', top: -9, left: 0, zIndex: 100, width: '100%' }}>
-            <LinearProgress variant="indeterminate" />
-          </Box>
-        </Fade>
-
-        <MobileSidebarBlock />
-
-        <Box sx={ContainerStyles}>
-          {/* Hidden via CSS rather than useMediaQuery: the media query is false
-              during SSR/first render, which left the sidebar column empty until
-              hydration. CSS lets the server render the sidebar for desktop. */}
-          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-            <SidebarBlock />
-          </Box>
-
-          <Box sx={mainContentStyles}>
-            <MainPageContent />
-
-            <PaginationBox data={data} value={pageNumber} setter={setPageNumber} />
-          </Box>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: '100%',
+            maxWidth: 584,
+            mt: 5,
+            // Shared element with the search bar on /pattern - browsers with the
+            // View Transitions API morph between the two on navigation
+            viewTransitionName: 'pattern-search',
+          }}
+        >
+          <TextField
+            fullWidth
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search patterns by tag, like &quot;cat&quot; or &quot;snowflake&quot;…"
+            autoComplete="off"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  borderRadius: 999,
+                  backgroundColor: '#fff',
+                  px: 2.5,
+                  py: 0.5,
+                  boxShadow: (t) => `0 2px 12px ${alpha(t.palette.common.black, 0.08)}`,
+                  '&:hover, &.Mui-focused': {
+                    boxShadow: (t) => `0 4px 20px ${alpha(t.palette.common.black, 0.14)}`,
+                  },
+                  '& fieldset': { border: 'none' },
+                },
+              },
+            }}
+          />
         </Box>
 
-        <ViewDrawerContainer />
+        <Stack
+          direction="row"
+          sx={{ gap: 1.25, mt: 4, flexWrap: 'wrap', justifyContent: 'center' }}
+        >
+          <Chip
+            icon={<CasinoRoundedIcon sx={{ fontSize: '16px !important' }} />}
+            label="Random Tag"
+            clickable
+            variant="outlined"
+            onClick={handleRandomTag}
+            sx={{ px: 0.5 }}
+          />
+
+          <Chip
+            icon={<WhatshotRoundedIcon sx={{ fontSize: '16px !important' }} />}
+            label="Most Popular"
+            clickable
+            variant="outlined"
+            onClick={() => goToPatterns({ sort: '-favorite_count' })}
+            sx={{ px: 0.5 }}
+          />
+
+          <Link
+            to="/wiki/$categorySlug/$pageSlug"
+            params={{ categorySlug: 'site-functions', pageSlug: 'search' }}
+            style={{ textDecoration: 'none' }}
+          >
+            <Chip
+              icon={<TipsAndUpdatesRoundedIcon sx={{ fontSize: '16px !important' }} />}
+              label="Tips on Searching"
+              clickable
+              variant="outlined"
+              sx={{ px: 0.5 }}
+            />
+          </Link>
+        </Stack>
       </Box>
     </GeneralLayout>
   );
 }
-
-const mainContentStyles = {
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  p: 3,
-  mr: 2,
-  mb: 2,
-  ml: { xs: 2, md: 0 },
-  backgroundColor: PRIMARY_COLOR,
-  borderRadius: 6,
-  minHeight: 'calc(100svh - 104px)',
-};
-
-const ViewDrawerContainer = () => {
-  // Pattern View Drawer
-  const { isViewOpen, handleOpenView, handleCloseView } = useGlobalIsViewOpen();
-
-  const { setPatternId, patternId } = usePatternSearch();
-
-  const { viewData, isPending } = usePatternViewData(patternId);
-
-  const handleClose = () => {
-    handleCloseView();
-
-    setTimeout(() => {
-      setPatternId(undefined);
-    }, 300);
-  };
-
-  return (
-    <SwipeableDrawer
-      transitionDuration={300}
-      anchor="bottom"
-      open={isViewOpen}
-      onClose={handleClose}
-      onOpen={handleOpenView}
-      sx={{
-        '& > .MuiPaper-root': {
-          maxHeight: '95svh',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-        },
-      }}
-    >
-      <ViewDrawer viewData={viewData} handleClose={handleClose} isLoading={isPending} />
-    </SwipeableDrawer>
-  );
-};
-
-const ContainerStyles = {
-  display: 'grid',
-  gridTemplateColumns: { xs: '1fr', md: '300px 1fr' },
-  gap: 0,
-  alignItems: 'start',
-};
