@@ -45,6 +45,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-passw
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AuthConfirmVerificationRouteImport } from './routes/auth/confirm-verification'
 import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
 import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
 import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
@@ -237,6 +238,11 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthConfirmVerificationRoute = AuthConfirmVerificationRouteImport.update({
+  id: '/auth/confirm-verification',
+  path: '/auth/confirm-verification',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WikiCategorySlugIndexRoute = WikiCategorySlugIndexRouteImport.update({
   id: '/wiki/$categorySlug/',
   path: '/wiki/$categorySlug/',
@@ -287,6 +293,7 @@ const ProfileCollectionsCollectionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/space-command'
+    | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/space-command'
+    | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SpaceCommandRouteRoute: typeof SpaceCommandRouteRouteWithChildren
+  AuthConfirmVerificationRoute: typeof AuthConfirmVerificationRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -845,6 +858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/confirm-verification': {
+      id: '/auth/confirm-verification'
+      path: '/auth/confirm-verification'
+      fullPath: '/auth/confirm-verification'
+      preLoaderRoute: typeof AuthConfirmVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wiki/$categorySlug/': {
       id: '/wiki/$categorySlug/'
       path: '/wiki/$categorySlug'
@@ -952,6 +972,7 @@ const SpaceCommandRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SpaceCommandRouteRoute: SpaceCommandRouteRouteWithChildren,
+  AuthConfirmVerificationRoute: AuthConfirmVerificationRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,

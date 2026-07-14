@@ -300,6 +300,17 @@ export const useMutationResendVerificationCode = () => {
   });
 };
 
+// Confirms the email-verification token from the verification email. Public
+// endpoint - this is the same call PocketBase's own hosted confirmation page
+// makes; /auth/confirm-verification hosts the flow on our site instead.
+export const useMutationConfirmVerification = () => {
+  return useMutation({
+    mutationFn: async (token: string) => {
+      return await pocketbase.collection('users').confirmVerification(token);
+    },
+  });
+};
+
 export const useMutationRequestPasswordReset = () => {
   return useMutation({
     mutationFn: async (email: string) => {

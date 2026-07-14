@@ -902,7 +902,10 @@ onRecordCreateRequest((e) => {
     return e.next();
   }
 
-  const token = e.request.header.get('X-Turnstile-Token') || '';
+  // NOTE: record request events don't expose `e.request` in the JSVM (unlike
+  // routerAdd handlers) - headers must come from requestInfo(), which
+  // normalizes names to lowercase_with_underscores.
+  const token = e.requestInfo().headers?.x_turnstile_token || '';
   if (!token) {
     throw new BadRequestError('Captcha verification required.');
   }
