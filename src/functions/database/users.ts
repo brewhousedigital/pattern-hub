@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
+import { useAuthorizationHeaders } from '@/functions/database/useAuthorizationHeaders';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
 
@@ -24,6 +25,7 @@ export type TypeAdminUsersPaginationParams = {
   /** Free-text: matches against name OR email. */
   search: string;
   verifiedFilter: 'all' | 'verified' | 'unverified';
+  bannedFilter: 'all' | 'banned' | 'active';
 };
 
 export const useQueryAdminUsersPaginated = (params: TypeAdminUsersPaginationParams) => {
@@ -37,6 +39,8 @@ export const useQueryAdminUsersPaginated = (params: TypeAdminUsersPaginationPara
       }
       if (params.verifiedFilter === 'verified') filters.push('verified = true');
       else if (params.verifiedFilter === 'unverified') filters.push('verified = false');
+      if (params.bannedFilter === 'banned') filters.push('banned = true');
+      else if (params.bannedFilter === 'active') filters.push('banned != true');
 
       return await pocketbase.collection('users').getList<TypeAuthData>(params.page + 1, params.pageSize, {
         sort: '-created',
@@ -76,6 +80,37 @@ export const useMutationDeleteUser = () => {
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await pocketbase.collection('users').delete(id);
+    },
+  });
+};
+
+// ─── Ban / name-reset admin actions ─────────────────────────────────────────
+// Both go through pb_hooks admin endpoints ($apis.requireAuth('admins')) rather
+// than the records API, so they work regardless of the users collection rules.
+
+export const useMutationSetUserBanned = () => {
+  const authHeaders = useAuthorizationHeaders('POST');
+  return useMutation({
+    mutationFn: async (payload: { userId: string; banned: boolean; reason?: string }): Promise<void> => {
+      const res = await fetch(`${pocketbaseDomain}/api/admin-ban-user`, {
+        ...authHeaders,
+        body: JSON.stringify({ userId: payload.userId, banned: payload.banned, reason: payload.reason ?? '' }),
+      });
+      if (!res.ok) throw new Error('Failed to update ban status');
+    },
+  });
+};
+
+export const useMutationResetUserName = () => {
+  const authHeaders = useAuthorizationHeaders('POST');
+  return useMutation({
+    mutationFn: async (userId: string): Promise<{ name: string }> => {
+      const res = await fetch(`${pocketbaseDomain}/api/admin-reset-user-name`, {
+        ...authHeaders,
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) throw new Error('Failed to reset user name');
+      return res.json();
     },
   });
 };

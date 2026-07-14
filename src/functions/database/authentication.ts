@@ -147,6 +147,8 @@ export type TypeAuthData = {
   verified?: boolean;
   admin?: boolean;
   showAdminBanner?: boolean;
+  banned?: boolean;
+  banned_reason?: string;
   // ─── Profile Customization ────────────────────────────────────────────────
   // Background
   profile_bg_type?: 'solid' | 'gradient' | 'pattern' | 'image';

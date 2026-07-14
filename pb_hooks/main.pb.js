@@ -248,6 +248,15 @@ routerAdd('GET', '/api/profile-data', (c) => {
   const userId = q.get('userId') || '';
   if (!userId) return c.json(400, { error: 'userId is required' });
 
+  // Banned accounts have no public profile - this hides their gallery and all
+  // activity in one place. Unknown ids fall through to the same 404.
+  try {
+    const profileUser = $app.findRecordById('users', userId);
+    if (profileUser.getBool('banned')) return c.json(404, { error: 'not found' });
+  } catch (_) {
+    return c.json(404, { error: 'not found' });
+  }
+
   const PER_PAGE = 10;
   const PER_PAGE_ARTIST = 8;
   const favPage = Math.max(1, parseInt(q.get('favPage') || '1', 10));
@@ -918,3 +927,89 @@ onRecordCreateRequest((e) => {
 
   e.next();
 }, 'users');
+
+// ─── User ban system ──────────────────────────────────────────────────────────
+// Soft ban: `banned` (bool) + `banned_reason` (text) on the users collection.
+// Content stays in the database (reversible, keeps evidence); enforcement
+// happens at the API level below. Admin UI lives at /space-command/users.
+
+// Block banned accounts from authenticating. Fires for password login AND
+// token refresh - the app refreshes auth once per visit, so a banned user's
+// existing session ends the next time they load the site.
+onRecordAuthRequest((e) => {
+  if (e.record?.getBool('banned')) {
+    const reason = e.record.getString('banned_reason');
+    throw new ForbiddenError(
+      reason ? 'This account has been suspended. Reason: ' + reason : 'This account has been suspended.',
+    );
+  }
+  e.next();
+}, 'users');
+
+// Warm-token guard: bans don't expire already-issued JWTs, so until the next
+// auth refresh a banned user still holds a technically-valid token. Reject
+// their content writes directly. (Admin panel auth lives in the separate
+// `admins` collection, so admin requests pass through untouched.)
+onRecordCreateRequest((e) => {
+  if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
+    throw new ForbiddenError('This account has been suspended.');
+  }
+  e.next();
+}, 'gallery', 'user_ratings', 'user_difficulty_ratings', 'user_favorites', 'user_marked_done', 'user_collections');
+
+onRecordUpdateRequest((e) => {
+  if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
+    throw new ForbiddenError('This account has been suspended.');
+  }
+  e.next();
+}, 'gallery', 'user_ratings', 'user_difficulty_ratings', 'user_collections', 'users');
+
+// Admin action: ban or unban a user. Uses $app.save (internal access) so it
+// works regardless of the users collection's API rules.
+routerAdd(
+  'POST',
+  '/api/admin-ban-user',
+  (c) => {
+    const body = c.requestInfo().body || {};
+    const userId = String(body.userId || '');
+    const banned = !!body.banned;
+    const reason = String(body.reason || '');
+
+    if (!userId) return c.json(400, { error: 'userId is required' });
+
+    try {
+      const user = $app.findRecordById('users', userId);
+      user.set('banned', banned);
+      user.set('banned_reason', banned ? reason : '');
+      $app.save(user);
+      return c.json(200, { success: true, banned });
+    } catch (_) {
+      return c.json(400, { error: 'Unable to update user' });
+    }
+  },
+  $apis.requireAuth('admins'),
+);
+
+// Admin action: force-reset an impersonating/inappropriate display name to a
+// neutral placeholder. Deterministic per user so repeat clicks are harmless.
+routerAdd(
+  'POST',
+  '/api/admin-reset-user-name',
+  (c) => {
+    const body = c.requestInfo().body || {};
+    const userId = String(body.userId || '');
+
+    if (!userId) return c.json(400, { error: 'userId is required' });
+
+    try {
+      const user = $app.findRecordById('users', userId);
+      const newName = 'User_' + userId.slice(0, 8);
+      user.set('name', newName);
+      $app.save(user);
+      return c.json(200, { success: true, name: newName });
+    } catch (_) {
+      return c.json(400, { error: 'Unable to update user' });
+    }
+  },
+  $apis.requireAuth('admins'),
+);

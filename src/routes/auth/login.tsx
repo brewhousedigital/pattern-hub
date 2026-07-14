@@ -60,7 +60,15 @@ function RouteComponent() {
       }).then();
     } catch (error: any) {
       console.error('Error loading your user data:', error);
-      enqueueSnackbar('Invalid email or password. Please try again.', { variant: 'error' });
+      // Suspended accounts get a specific message from the server (see the
+      // onRecordAuthRequest ban hook in pb_hooks) - surface it instead of the
+      // generic wrong-credentials text.
+      const serverMessage: string = error?.response?.message || '';
+      if (serverMessage.includes('suspended')) {
+        enqueueSnackbar(serverMessage, { variant: 'error', autoHideDuration: 10000 });
+      } else {
+        enqueueSnackbar('Invalid email or password. Please try again.', { variant: 'error' });
+      }
     }
 
     setLoading(false);

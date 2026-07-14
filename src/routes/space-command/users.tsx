@@ -4,6 +4,8 @@ import {
   useQueryAdminUsersPaginated,
   useMutationResetUserPassword,
   useMutationDeleteUser,
+  useMutationSetUserBanned,
+  useMutationResetUserName,
   type TypeAdminUsersPaginationParams,
 } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
@@ -21,6 +23,9 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import BlockIcon from '@mui/icons-material/Block';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 
 import {
   Alert,
@@ -36,6 +41,7 @@ import {
   Divider,
   IconButton,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -66,11 +72,13 @@ function formatDate(iso?: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type VerifiedFilter = TypeAdminUsersPaginationParams['verifiedFilter'];
+type BannedFilter = TypeAdminUsersPaginationParams['bannedFilter'];
 
 function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
   const canDelete = checkAccess(EnumLevelsAdmin.ADMINS_AU);
   const canReset = checkAccess(EnumLevelsAdmin.USERS_AU);
+  const canModerate = checkAccess(EnumLevelsAdmin.USERS_AU);
 
   // ── Pagination ─────────────────────────────────────────────────────────────
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
@@ -80,11 +88,17 @@ function RouteComponent() {
   const searchTerm = filterModel.quickFilterValues?.join(' ') ?? '';
   const debouncedSearch = useDebounce(searchTerm, 600);
 
-  // ── Verified filter chips ──────────────────────────────────────────────────
+  // ── Verified / banned filter chips ─────────────────────────────────────────
   const [verifiedFilter, setVerifiedFilter] = useState<VerifiedFilter>('all');
+  const [bannedFilter, setBannedFilter] = useState<BannedFilter>('all');
 
   function handleVerifiedFilter(next: VerifiedFilter) {
     setVerifiedFilter(next);
+    setPaginationModel((p) => ({ ...p, page: 0 }));
+  }
+
+  function handleBannedFilter(next: BannedFilter) {
+    setBannedFilter(next);
     setPaginationModel((p) => ({ ...p, page: 0 }));
   }
 
@@ -94,11 +108,14 @@ function RouteComponent() {
     pageSize: paginationModel.pageSize,
     search: debouncedSearch,
     verifiedFilter,
+    bannedFilter,
   });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const resetPassword = useMutationResetUserPassword();
   const deleteUser = useMutationDeleteUser();
+  const setUserBanned = useMutationSetUserBanned();
+  const resetUserName = useMutationResetUserName();
   const { log } = useAdminLogger();
 
   async function handleResetPassword(user: TypeAuthData) {
@@ -116,6 +133,72 @@ function RouteComponent() {
       enqueueSnackbar(`Password reset email sent to ${user.email}.`, { variant: 'success' });
     } catch {
       enqueueSnackbar('Failed to send reset email. Try again.', { variant: 'error' });
+    }
+  }
+
+  // ── Ban dialog ─────────────────────────────────────────────────────────────
+  const [banTarget, setBanTarget] = useState<TypeAuthData | null>(null);
+  const [banReason, setBanReason] = useState('');
+
+  async function confirmBan() {
+    if (!banTarget) return;
+    try {
+      await setUserBanned.mutateAsync({ userId: banTarget.id, banned: true, reason: banReason.trim() });
+      log({
+        action: 'User Banned',
+        entity_type: 'User',
+        entity_id: banTarget.id,
+        entity_name: banTarget.name || banTarget.id,
+        changes: {},
+        metadata: { reason: banReason.trim() },
+      });
+      enqueueSnackbar(`"${banTarget.name || banTarget.id}" has been banned.`, { variant: 'success' });
+      setBanTarget(null);
+      setBanReason('');
+      void refetch();
+    } catch {
+      enqueueSnackbar('Failed to ban user. Try again.', { variant: 'error' });
+    }
+  }
+
+  async function handleUnban(user: TypeAuthData) {
+    try {
+      await setUserBanned.mutateAsync({ userId: user.id, banned: false });
+      log({
+        action: 'User Unbanned',
+        entity_type: 'User',
+        entity_id: user.id,
+        entity_name: user.name || user.id,
+        changes: {},
+        metadata: {},
+      });
+      enqueueSnackbar(`"${user.name || user.id}" has been unbanned.`, { variant: 'success' });
+      void refetch();
+    } catch {
+      enqueueSnackbar('Failed to unban user. Try again.', { variant: 'error' });
+    }
+  }
+
+  // ── Name-reset dialog ──────────────────────────────────────────────────────
+  const [renameTarget, setRenameTarget] = useState<TypeAuthData | null>(null);
+
+  async function confirmNameReset() {
+    if (!renameTarget) return;
+    try {
+      const { name } = await resetUserName.mutateAsync(renameTarget.id);
+      log({
+        action: 'User Name Reset',
+        entity_type: 'User',
+        entity_id: renameTarget.id,
+        entity_name: renameTarget.name || renameTarget.id,
+        changes: { name: { from: renameTarget.name, to: name } },
+        metadata: {},
+      });
+      enqueueSnackbar(`Name reset to "${name}".`, { variant: 'success' });
+      setRenameTarget(null);
+      void refetch();
+    } catch {
+      enqueueSnackbar('Failed to reset name. Try again.', { variant: 'error' });
     }
   }
 
@@ -172,43 +255,45 @@ function RouteComponent() {
       ),
     },
     {
-      field: 'email',
-      headerName: 'Email',
-      flex: 1.5,
-      minWidth: 200,
+      field: 'verified',
+      headerName: 'Status',
+      width: 200,
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Typography sx={{ fontSize: 13 }} color="text.secondary">
-          {params.row.email || '-'}
-        </Typography>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+          {params.row.verified ? (
+            <Chip
+              icon={<VerifiedUserIcon sx={{ fontSize: '13px !important' }} />}
+              label="Verified"
+              size="small"
+              color="success"
+              variant="outlined"
+              sx={{ fontSize: '0.68rem', height: 22 }}
+            />
+          ) : (
+            <Chip
+              label="Unverified"
+              size="small"
+              color="error"
+              variant="outlined"
+              sx={{ fontSize: '0.68rem', height: 22 }}
+            />
+          )}
+
+          {params.row.banned && (
+            <Tooltip title={params.row.banned_reason || 'No reason recorded'}>
+              <Chip
+                icon={<BlockIcon sx={{ fontSize: '13px !important' }} />}
+                label="Banned"
+                size="small"
+                color="error"
+                sx={{ fontSize: '0.68rem', height: 22, fontWeight: 700 }}
+              />
+            </Tooltip>
+          )}
+        </Stack>
       ),
-    },
-    {
-      field: 'verified',
-      headerName: 'Verified',
-      width: 110,
-      sortable: false,
-      disableColumnMenu: true,
-      renderCell: (params: GridRenderCellParams<TypeAuthData>) =>
-        params.row.verified ? (
-          <Chip
-            icon={<VerifiedUserIcon sx={{ fontSize: '13px !important' }} />}
-            label="Verified"
-            size="small"
-            color="success"
-            variant="outlined"
-            sx={{ fontSize: '0.68rem', height: 22 }}
-          />
-        ) : (
-          <Chip
-            label="Unverified"
-            size="small"
-            color="error"
-            variant="outlined"
-            sx={{ fontSize: '0.68rem', height: 22 }}
-          />
-        ),
     },
     {
       field: 'created',
@@ -225,12 +310,12 @@ function RouteComponent() {
     {
       field: 'actions',
       headerName: '',
-      width: 110,
+      width: 160,
       sortable: false,
       disableColumnMenu: true,
       align: 'center',
       renderCell: (params: GridRenderCellParams<TypeAuthData>) => (
-        <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
+        <Stack direction="row" spacing={1} sx={{ justifyContent: 'center' }}>
           <Tooltip title="View profile">
             <IconButton
               size="small"
@@ -242,6 +327,49 @@ function RouteComponent() {
               <OpenInNewIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+
+          <Tooltip title={canModerate ? 'Reset display name' : 'Requires USERS_AU permission'}>
+            <span>
+              <IconButton
+                size="small"
+                disabled={!canModerate || resetUserName.isPending}
+                onClick={() => setRenameTarget(params.row)}
+              >
+                <DriveFileRenameOutlineIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {params.row.banned ? (
+            <Tooltip title={canModerate ? 'Unban user' : 'Requires USERS_AU permission'}>
+              <span>
+                <IconButton
+                  size="small"
+                  color="success"
+                  disabled={!canModerate || setUserBanned.isPending}
+                  onClick={() => handleUnban(params.row)}
+                >
+                  <HowToRegIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          ) : (
+            <Tooltip title={canModerate ? 'Ban user' : 'Requires USERS_AU permission'}>
+              <span>
+                <IconButton
+                  size="small"
+                  color="error"
+                  disabled={!canModerate || setUserBanned.isPending}
+                  onClick={() => {
+                    setBanReason('');
+                    setBanTarget(params.row);
+                  }}
+                >
+                  <BlockIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
 
           {/*<Tooltip title={canReset ? 'Send password reset email' : 'Requires USERS_AU permission'}>
             <span>
@@ -291,8 +419,8 @@ function RouteComponent() {
         </Alert>
       )}
 
-      {/* Verified filter chips */}
-      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+      {/* Verified / banned filter chips */}
+      <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
         {(['all', 'verified', 'unverified'] as VerifiedFilter[]).map((opt) => (
           <Chip
             key={opt}
@@ -301,6 +429,20 @@ function RouteComponent() {
             variant={verifiedFilter === opt ? 'filled' : 'outlined'}
             color={verifiedFilter === opt ? 'primary' : 'default'}
             onClick={() => handleVerifiedFilter(opt)}
+            sx={{ textTransform: 'capitalize' }}
+          />
+        ))}
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+        {(['all', 'active', 'banned'] as BannedFilter[]).map((opt) => (
+          <Chip
+            key={`banned-${opt}`}
+            label={opt === 'all' ? 'All' : opt === 'active' ? 'Active' : '⛔ Banned'}
+            size="small"
+            variant={bannedFilter === opt ? 'filled' : 'outlined'}
+            color={bannedFilter === opt ? (opt === 'banned' ? 'error' : 'primary') : 'default'}
+            onClick={() => handleBannedFilter(opt)}
             sx={{ textTransform: 'capitalize' }}
           />
         ))}
@@ -333,6 +475,91 @@ function RouteComponent() {
           columns: { columnVisibilityModel: { id: false } },
         }}
       />
+
+      {/* Ban dialog */}
+      <Dialog
+        open={!!banTarget}
+        onClose={() => !setUserBanned.isPending && setBanTarget(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Ban User</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ pt: 2.5 }}>
+          <DialogContentText sx={{ mb: 2 }}>
+            Ban <strong>{banTarget?.name || banTarget?.id}</strong>? They will be signed out on their next visit,
+            unable to log in or post content, and their public profile and gallery will be hidden. Their data is
+            kept and this can be undone at any time.
+          </DialogContentText>
+          <TextField
+            label="Reason"
+            value={banReason}
+            onChange={(e) => setBanReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            helperText="Shown to the user if they attempt to log in."
+          />
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button
+            onClick={() => setBanTarget(null)}
+            variant="outlined"
+            disabled={setUserBanned.isPending}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmBan}
+            variant="contained"
+            color="error"
+            loading={setUserBanned.isPending}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Ban User
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Name-reset dialog */}
+      <Dialog
+        open={!!renameTarget}
+        onClose={() => !resetUserName.isPending && setRenameTarget(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Reset Display Name</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ pt: 2.5 }}>
+          <DialogContentText>
+            Reset <strong>{renameTarget?.name || renameTarget?.id}</strong> to a neutral placeholder name
+            (User_{renameTarget?.id.slice(0, 8)})? Use this when a name impersonates an admin or another person. The
+            user can choose a new name from their profile settings afterwards.
+          </DialogContentText>
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button
+            onClick={() => setRenameTarget(null)}
+            variant="outlined"
+            disabled={resetUserName.isPending}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmNameReset}
+            variant="contained"
+            color="warning"
+            loading={resetUserName.isPending}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Reset Name
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="xs" fullWidth>
