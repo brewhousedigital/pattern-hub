@@ -84,12 +84,16 @@ function RouteComponent() {
           justifyContent: 'center',
           // Fill the viewport between header and footer so the hero sits
           // vertically centered, Google-style
-          minHeight: 'calc(100svh - 320px)',
+          minHeight: '80svh',
           px: 2,
           py: 8,
         }}
       >
-        <HomepageDoodle />
+        {/* The hero brand carries `site-logo` here (the header logo is hidden on
+            the homepage), so searching morphs it up into the header's logo slot */}
+        <Box sx={{ viewTransitionName: 'site-logo' }}>
+          <HomepageDoodle />
+        </Box>
 
         <Box
           component="form"
@@ -107,7 +111,7 @@ function RouteComponent() {
             fullWidth
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search patterns by tag, like &quot;cat&quot; or &quot;snowflake&quot;…"
+            placeholder='Search patterns by tag, like "cat" or "snowflake"…'
             autoComplete="off"
             slotProps={{
               input: {
@@ -132,10 +136,7 @@ function RouteComponent() {
           />
         </Box>
 
-        <Stack
-          direction="row"
-          sx={{ gap: 1.25, mt: 4, flexWrap: 'wrap', justifyContent: 'center' }}
-        >
+        <Stack direction="row" sx={{ gap: 1.25, mt: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Chip
             icon={<CasinoRoundedIcon sx={{ fontSize: '16px !important' }} />}
             label="Random Tag"

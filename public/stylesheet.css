@@ -21,3 +21,24 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: #0b6536 #f4f7f5;
 }
+
+/* ─── View transitions (homepage → /pattern) ─────────────────────────────────
+   Shared-element morphs: the hero brand rises into the header logo slot
+   (site-logo), the nav slides from centered to left (site-nav), and the hero
+   search bar becomes the browse search bar (pattern-search). Browsers without
+   the View Transitions API simply navigate without animation. */
+::view-transition-group(site-logo),
+::view-transition-group(site-nav),
+::view-transition-group(pattern-search) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

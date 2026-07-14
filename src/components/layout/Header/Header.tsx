@@ -16,21 +16,39 @@ import { Box, Stack, Typography, Link as MuiLink, IconButton } from '@mui/materi
 export const Header = () => {
   // Only render the tag sidebar toggle on the homepage
   const { location } = useRouterState();
-  const showTagMobileSidebar = location.pathname === '/';
+
+  // The tag sidebar (and its mobile toggle) belongs to the /pattern browse page
+  const showTagMobileSidebar = location.pathname === '/pattern';
+
+  // On the homepage the hero owns the brand: the header logo hides and the
+  // hero wordmark carries the `site-logo` view-transition name instead, so
+  // searching morphs the brand up into this slot. The nav is centered on the
+  // homepage and slides into its usual spot via the `site-nav` name.
+  const isHomepage = location.pathname === '/';
 
   const { handleOpenMobileSidebar } = useGlobalIsSidebarOpen();
 
   return (
     <Box component="header" sx={navbarStyles}>
-      <Box sx={{ gridArea: 'logo', display: 'flex', alignItems: 'center' }}>
-        <Logo />
+      <Box
+        sx={{
+          gridArea: 'logo',
+          display: 'flex',
+          alignItems: 'center',
+          ...(isHomepage ? {} : { viewTransitionName: 'site-logo' }),
+        }}
+      >
+        {!isHomepage && <Logo />}
       </Box>
 
-      <Box sx={{ gridArea: 'links' }}>
-        <ExtraLinks />
+      <Box sx={{ gridArea: 'links', viewTransitionName: 'site-nav' }}>
+        <ExtraLinks centered={isHomepage} />
       </Box>
 
-      <Stack direction="row" sx={{ gridArea: 'icons', textAlign: 'right', gap: { xs: 1, md: 2 }, alignItems: 'center' }}>
+      <Stack
+        direction="row"
+        sx={{ gridArea: 'icons', textAlign: 'right', gap: { xs: 1, md: 2 }, alignItems: 'center' }}
+      >
         <NotificationBell />
 
         <HeaderProfileMenu />
@@ -61,7 +79,7 @@ export const Logo = () => {
   );
 };
 
-const ExtraLinks = () => {
+const ExtraLinks = ({ centered = false }: { centered?: boolean }) => {
   const { location } = useRouterState();
 
   const activeLinkStyles = (path: string) => {
@@ -77,7 +95,7 @@ const ExtraLinks = () => {
       component="nav"
       direction="row"
       spacing={2.5}
-      sx={{ flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}
+      sx={{ flexWrap: 'wrap', justifyContent: centered ? 'center' : { xs: 'center', md: 'flex-start' } }}
     >
       <MuiLink component={Link} to="/" sx={activeLinkStyles('/')}>
         Home
