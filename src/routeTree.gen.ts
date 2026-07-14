@@ -16,6 +16,7 @@ import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/in
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as SetsIndexRouteImport } from './routes/sets/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as PatternIndexRouteImport } from './routes/pattern/index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as CommunityIndexRouteImport } from './routes/community/index'
@@ -88,6 +89,11 @@ const SetsIndexRoute = SetsIndexRouteImport.update({
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternIndexRoute = PatternIndexRouteImport.update({
+  id: '/pattern/',
+  path: '/pattern/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/community/': typeof CommunityIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/news/': typeof NewsIndexRoute
+  '/pattern/': typeof PatternIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/sets/': typeof SetsIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/community': typeof CommunityIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/news': typeof NewsIndexRoute
+  '/pattern': typeof PatternIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/sets': typeof SetsIndexRoute
   '/space-command': typeof SpaceCommandIndexRoute
@@ -417,6 +425,7 @@ export interface FileRoutesById {
   '/community/': typeof CommunityIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/news/': typeof NewsIndexRoute
+  '/pattern/': typeof PatternIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/sets/': typeof SetsIndexRoute
   '/space-command/': typeof SpaceCommandIndexRoute
@@ -466,6 +475,7 @@ export interface FileRouteTypes {
     | '/community/'
     | '/guides/'
     | '/news/'
+    | '/pattern/'
     | '/profile/'
     | '/sets/'
     | '/space-command/'
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/community'
     | '/guides'
     | '/news'
+    | '/pattern'
     | '/profile'
     | '/sets'
     | '/space-command'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/community/'
     | '/guides/'
     | '/news/'
+    | '/pattern/'
     | '/profile/'
     | '/sets/'
     | '/space-command/'
@@ -595,6 +607,7 @@ export interface RootRouteChildren {
   CommunityIndexRoute: typeof CommunityIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
+  PatternIndexRoute: typeof PatternIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   SetsIndexRoute: typeof SetsIndexRoute
   StoreLocatorIndexRoute: typeof StoreLocatorIndexRoute
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pattern/': {
+      id: '/pattern/'
+      path: '/pattern'
+      fullPath: '/pattern/'
+      preLoaderRoute: typeof PatternIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news/': {
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommunityIndexRoute: CommunityIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
+  PatternIndexRoute: PatternIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   SetsIndexRoute: SetsIndexRoute,
   StoreLocatorIndexRoute: StoreLocatorIndexRoute,
