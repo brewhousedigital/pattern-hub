@@ -477,19 +477,14 @@ function RouteComponent() {
       />
 
       {/* Ban dialog */}
-      <Dialog
-        open={!!banTarget}
-        onClose={() => !setUserBanned.isPending && setBanTarget(null)}
-        maxWidth="xs"
-        fullWidth
-      >
+      <Dialog open={!!banTarget} onClose={() => !setUserBanned.isPending && setBanTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Ban User</DialogTitle>
         <Divider />
         <DialogContent sx={{ pt: 2.5 }}>
           <DialogContentText sx={{ mb: 2 }}>
-            Ban <strong>{banTarget?.name || banTarget?.id}</strong>? They will be signed out on their next visit,
-            unable to log in or post content, and their public profile and gallery will be hidden. Their data is
-            kept and this can be undone at any time.
+            Ban <strong>{banTarget?.name || banTarget?.id}</strong>? They will be signed out on their next visit, unable
+            to log in or post content, and their public profile and gallery will be hidden. Their data is kept and this
+            can be undone at any time.
           </DialogContentText>
           <TextField
             label="Reason"
@@ -534,9 +529,8 @@ function RouteComponent() {
         <Divider />
         <DialogContent sx={{ pt: 2.5 }}>
           <DialogContentText>
-            Reset <strong>{renameTarget?.name || renameTarget?.id}</strong> to a neutral placeholder name
-            (User_{renameTarget?.id.slice(0, 8)})? Use this when a name impersonates an admin or another person. The
-            user can choose a new name from their profile settings afterwards.
+            Reset <strong>{renameTarget?.name || renameTarget?.id}</strong> to a placeholder name (User_
+            {renameTarget?.id.slice(0, 8)})? The user can choose a new name from their profile settings afterwards.
           </DialogContentText>
         </DialogContent>
         <Divider />
