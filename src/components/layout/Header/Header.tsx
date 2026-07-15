@@ -41,19 +41,27 @@ export const Header = () => {
           gridArea: 'logo',
           display: 'flex',
           alignItems: 'center',
+          minWidth: 225,
           ...(isHomepage ? {} : { viewTransitionName: 'site-logo' }),
         }}
       >
-        {!isHomepage && <Logo />}
+        {!isHomepage ? <Logo /> : <Box />}
       </Box>
 
-      <Box sx={{ gridArea: 'links', viewTransitionName: 'site-nav' }}>
+      <Box sx={{ gridArea: 'links', viewTransitionName: 'site-nav', maxWidth: 700, mx: isHomepage ? 'auto' : '' }}>
         <ExtraLinks centered={isHomepage} />
       </Box>
 
       <Stack
         direction="row"
-        sx={{ gridArea: 'icons', textAlign: 'right', gap: { xs: 1, md: 2 }, alignItems: 'center' }}
+        sx={{
+          gridArea: 'icons',
+          textAlign: 'right',
+          gap: { xs: 1, md: 2 },
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          minWidth: 225,
+        }}
       >
         <NotificationBell />
 
@@ -155,6 +163,7 @@ const navbarStyles = {
   paddingX: 2,
   paddingTop: { xs: 0.5, md: 1 },
   paddingBottom: { xs: 4, md: 1 },
+  minHeight: 58,
 };
 
 const logoLinkStyles = {
