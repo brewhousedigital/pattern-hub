@@ -308,7 +308,10 @@ export function parseRawInput(raw: string): Token {
     return { type: 'description', value, exclude };
   }
 
-  const numericMatch = stripped.match(/^(width|height|parts|pieces|filesize)([><=])([\d.]+)$/i);
+  // \s* around the operator tolerates stray spaces like "parts> 50" or
+  // "parts > 50" - the outer .trim() above only strips leading/trailing
+  // whitespace, not whitespace inside the expression itself.
+  const numericMatch = stripped.match(/^(width|height|parts|pieces|filesize)\s*([><=])\s*([\d.]+)$/i);
   if (numericMatch) {
     const rawType = numericMatch[1].toLowerCase();
     const type = (rawType === 'pieces' ? 'parts' : rawType) as 'width' | 'height' | 'parts' | 'filesize';
