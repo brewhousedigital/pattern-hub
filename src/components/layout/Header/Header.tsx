@@ -41,7 +41,7 @@ export const Header = () => {
           gridArea: 'logo',
           display: 'flex',
           alignItems: 'center',
-          minWidth: 225,
+          minWidth: { md: 225 },
           ...(isHomepage ? {} : { viewTransitionName: 'site-logo' }),
         }}
       >
@@ -60,7 +60,7 @@ export const Header = () => {
           gap: { xs: 1, md: 2 },
           alignItems: 'center',
           justifyContent: 'flex-end',
-          minWidth: 225,
+          minWidth: { md: 225 },
         }}
       >
         <NotificationBell />
