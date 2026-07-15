@@ -10,16 +10,7 @@ type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number };
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 
-import {
-  Box,
-  Skeleton,
-  Typography,
-  Stack,
-  IconButton,
-  Tooltip,
-  Alert,
-  Drawer,
-} from '@mui/material';
+import { Box, Skeleton, Typography, Stack, IconButton, Tooltip, Alert, Drawer } from '@mui/material';
 
 type SidebarListProps = {
   tagList?: string[];
@@ -58,7 +49,9 @@ export const SidebarList = (props: SidebarListProps) => {
   const mixedItems: SidebarItem[] = !props?.tagList
     ? [
         ...(data?.tagFacets ?? [])
-          .filter((f) => !isTagActive(f.tag))
+          // This will hide the currently searched tag
+          // Enable this if we ever need it in the future
+          //.filter((f) => !isTagActive(f.tag))
           .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count })),
         ...(data?.items ?? [])
           .flatMap((item) => [
@@ -72,7 +65,9 @@ export const SidebarList = (props: SidebarListProps) => {
             else acc.push({ kind: 'author', label: name, count: 1 });
             return acc;
           }, []),
-      ].sort((a, b) => b.count - a.count)
+      ]
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .sort((a, b) => b.count - a.count)
     : [];
 
   return (
@@ -361,7 +356,7 @@ export const SidebarBlock = () => {
     <Box sx={sidebarBlockStyles}>
       <BlockedTagsBanner />
 
-      <SidebarCategoryTitle title="Current Page Tags" />
+      <SidebarCategoryTitle title="Current Tags" />
 
       <SidebarList />
     </Box>
