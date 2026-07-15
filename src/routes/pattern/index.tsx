@@ -77,7 +77,7 @@ function RouteComponent() {
 
       {/* viewTransitionName pairs with the homepage hero search bar - browsers
           with the View Transitions API morph between them on navigation */}
-      <Box sx={{ px: 2, mb: 2, viewTransitionName: 'pattern-search' }}>
+      <Box sx={{ px: 2, mb: 2, viewTransitionName: 'pattern-search', position: 'relative', zIndex: 1300 }}>
         <HomepageSearchV3 />
       </Box>
 
