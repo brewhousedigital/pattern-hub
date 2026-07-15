@@ -56,7 +56,21 @@ function RouteComponent() {
   const { data: topTags = [] } = useQuerySearchTags('');
 
   const goToPatterns = (search: { q?: string; tags?: string[]; sort?: '-favorite_count' }) => {
-    void navigate({ to: '/pattern', search, viewTransition: true });
+    void navigate({
+      to: '/pattern',
+      // Supply the schema defaults explicitly, in schema key order. Navigating
+      // with a partial search makes the router immediately re-navigate to the
+      // canonicalized URL, and that second navigation aborts the in-flight
+      // view transition (InvalidStateError) - silently killing the morph.
+      search: {
+        q: search.q ?? '',
+        tags: search.tags ?? [],
+        sort: search.sort ?? '-created',
+        pageNumber: 1,
+        exportTab: 'print',
+      },
+      viewTransition: true,
+    });
   };
 
   const handleSubmit = (e: React.SubmitEvent) => {

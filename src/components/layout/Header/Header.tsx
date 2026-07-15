@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useMatch, useRouterState } from '@tanstack/react-router';
 import { HeaderProfileMenu } from '@/components/layout/HeaderProfileMenu.tsx';
 import { PRIMARY_COLOR } from '@/data/constants';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
@@ -14,17 +14,23 @@ import { Box, Stack, Typography, Link as MuiLink, IconButton } from '@mui/materi
 // layout (links below the logo) and pop into the desktop layout after
 // hydration. CSS grid areas let the server render the right layout directly.
 export const Header = () => {
-  // Only render the tag sidebar toggle on the homepage
-  const { location } = useRouterState();
-
-  // The tag sidebar (and its mobile toggle) belongs to the /pattern browse page
-  const showTagMobileSidebar = location.pathname === '/pattern';
+  // IMPORTANT: these flags must come from the COMMITTED route matches, not
+  // useRouterState().location - the pending location flips to the destination
+  // the moment navigation starts, BEFORE the view transition snapshots the old
+  // page. Deriving from the pathname made the header logo mount (carrying the
+  // `site-logo` name) while the homepage hero still held the same name -
+  // "Unexpected duplicate view-transition-name" aborts the whole animation.
+  // useMatch reads committed matches, which only swap inside the transition's
+  // DOM-update callback.
 
   // On the homepage the hero owns the brand: the header logo hides and the
   // hero wordmark carries the `site-logo` view-transition name instead, so
   // searching morphs the brand up into this slot. The nav is centered on the
   // homepage and slides into its usual spot via the `site-nav` name.
-  const isHomepage = location.pathname === '/';
+  const isHomepage = !!useMatch({ from: '/', shouldThrow: false });
+
+  // The tag sidebar (and its mobile toggle) belongs to the /pattern browse page
+  const showTagMobileSidebar = !!useMatch({ from: '/pattern/', shouldThrow: false });
 
   const { handleOpenMobileSidebar } = useGlobalIsSidebarOpen();
 
