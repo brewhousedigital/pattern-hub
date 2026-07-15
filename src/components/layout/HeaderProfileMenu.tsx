@@ -39,6 +39,7 @@ export const HeaderProfileMenu = () => {
         aria-controls={open ? 'account-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
+        aria-title="Account Menu"
       >
         <AvatarBlock />
       </IconButton>
