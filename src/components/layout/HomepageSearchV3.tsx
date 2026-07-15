@@ -5,6 +5,7 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQuerySearchTags } from '@/functions/database/tags';
 import { useQuerySearchAuthors } from '@/functions/database/authors';
 import { useDebounce } from '@/functions/hooks/useDebounce';
+import { SearchResultsDropdown } from '@/components/layout/SearchResultsDropdown';
 
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -14,23 +15,7 @@ import SortIcon from '@mui/icons-material/Sort';
 import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 
-import {
-  Box,
-  Chip,
-  InputBase,
-  IconButton,
-  LinearProgress,
-  MenuItem,
-  Paper,
-  Select,
-  Tooltip,
-  List,
-  ListItemButton,
-  ListItemText,
-  //ListItemSecondaryAction,
-  Typography,
-  Divider,
-} from '@mui/material';
+import { Box, Chip, InputBase, IconButton, MenuItem, Paper, Select, Tooltip } from '@mui/material';
 
 type TypeReadOnlyDatabaseItem = {
   id: string;
@@ -401,72 +386,16 @@ export const HomepageSearchV3 = ({
         </Paper>
 
         {showDropdown && (
-          <Paper
-            ref={dropdownRef}
-            elevation={3}
-            sx={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              zIndex: 1300,
-              maxHeight: 500,
-              overflowY: 'auto',
-              borderRadius: '0 0 8px 8px',
-              border: '1px solid',
-              borderColor: 'primary.main',
-              borderTop: 'none',
-            }}
-          >
-            {/* Context label */}
-            <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
-              <Typography variant="caption" color="text.secondary">
-                {mode === 'author' ? 'Authors' : 'Tags'} -{' '}
-                {isFetchingDropdown
-                  ? 'Loading...'
-                  : searchTerm
-                    ? `${dropdownItems.length} result${dropdownItems.length !== 1 ? 's' : ''}`
-                    : 'Newest'}
-              </Typography>
-            </Box>
-
-            {isFetchingDropdown && searchTerm ? <LinearProgress sx={{ height: 2 }} /> : <Divider />}
-
-            <List dense disablePadding>
-              {dropdownItems.map((item, index) => (
-                <ListItemButton
-                  key={item.id}
-                  selected={index === highlightedIndex}
-                  onMouseDown={(e) => {
-                    // Prevent input blur from firing before click
-                    e.preventDefault();
-                    commitDropdownItem(item);
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                      '&:hover': { backgroundColor: 'primary.dark' },
-                    },
-                  }}
-                >
-                  <ListItemText primary={item.tag} slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }} />
-
-                  {/*<ListItemSecondaryAction>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: index === highlightedIndex ? 'primary.contrastText' : 'text.disabled',
-                    }}
-                  >
-                    {item.count.toLocaleString()}
-                  </Typography>
-                </ListItemSecondaryAction>*/}
-                </ListItemButton>
-              ))}
-            </List>
-          </Paper>
+          <SearchResultsDropdown
+            dropdownRef={dropdownRef}
+            label={mode === 'author' ? 'Authors' : 'Tags'}
+            items={dropdownItems}
+            isFetching={isFetchingDropdown}
+            searchTerm={searchTerm}
+            highlightedIndex={highlightedIndex}
+            onItemHover={setHighlightedIndex}
+            onItemSelect={commitDropdownItem}
+          />
         )}
       </Box>
 

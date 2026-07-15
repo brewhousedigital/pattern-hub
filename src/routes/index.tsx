@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { HomepageDoodle } from '@/components/homepage/HomepageDoodle';
+import { HomepageTagSearch } from '@/components/homepage/HomepageTagSearch';
 import { useQuerySearchTags } from '@/functions/database/tags';
 import { generateSEO } from '@/functions/utilities/seo';
 
-import SearchIcon from '@mui/icons-material/Search';
 import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
 import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
 import TipsAndUpdatesRoundedIcon from '@mui/icons-material/TipsAndUpdatesRounded';
 
-import { Box, Chip, InputAdornment, Stack, TextField } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Chip, Stack } from '@mui/material';
 
 // Search params the browse experience used when it lived at "/". Old shared
 // links (drawer shares, tag links, bookmarks) must keep working, so any of
@@ -73,10 +72,18 @@ function RouteComponent() {
     });
   };
 
-  const handleSubmit = (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const submitQuery = () => {
     const trimmed = query.trim();
     goToPatterns(trimmed ? { q: trimmed } : {});
+  };
+
+  const handleSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    submitQuery();
+  };
+
+  const handleSelectTag = (tag: string) => {
+    goToPatterns({ tags: [tag] });
   };
 
   const handleRandomTag = () => {
@@ -119,34 +126,16 @@ function RouteComponent() {
             // Shared element with the search bar on /pattern - browsers with the
             // View Transitions API morph between the two on navigation
             viewTransitionName: 'pattern-search',
+            position: 'relative',
+            zIndex: 1300,
           }}
         >
-          <TextField
-            fullWidth
+          <HomepageTagSearch
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
+            onSubmit={submitQuery}
+            onSelectTag={handleSelectTag}
             placeholder='Search patterns by tag, like "cat" or "snowflake"…'
-            autoComplete="off"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'text.disabled' }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: 999,
-                  backgroundColor: '#fff',
-                  px: 2.5,
-                  py: 0.5,
-                  boxShadow: (t) => `0 2px 12px ${alpha(t.palette.common.black, 0.08)}`,
-                  '&:hover, &.Mui-focused': {
-                    boxShadow: (t) => `0 4px 20px ${alpha(t.palette.common.black, 0.14)}`,
-                  },
-                  '& fieldset': { border: 'none' },
-                },
-              },
-            }}
           />
         </Box>
 
