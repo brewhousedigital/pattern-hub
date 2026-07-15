@@ -3,6 +3,7 @@ import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-ro
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { HomepageDoodle } from '@/components/homepage/HomepageDoodle';
 import { HomepageTagSearch } from '@/components/homepage/HomepageTagSearch';
+import { HomepageBackgroundPattern } from '@/components/homepage/HomepageBackgroundPattern';
 import { useQuerySearchTags } from '@/functions/database/tags';
 import { generateSEO } from '@/functions/utilities/seo';
 
@@ -97,6 +98,8 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
+      <HomepageBackgroundPattern />
+
       <Box
         sx={{
           display: 'flex',

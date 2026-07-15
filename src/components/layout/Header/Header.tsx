@@ -34,8 +34,14 @@ export const Header = () => {
 
   const { handleOpenMobileSidebar } = useGlobalIsSidebarOpen();
 
+  // Profile pages (view/edit/collections) sit directly on the page background,
+  // so the header needs its own backdrop there to stay legible - everywhere
+  // else it stays transparent.
+  const { location } = useRouterState();
+  const isProfilePage = location.pathname.startsWith('/profile');
+
   return (
-    <Box component="header" sx={navbarStyles}>
+    <Box component="header" sx={[navbarStyles, isProfilePage && profileNavbarStyles]}>
       <Box
         sx={{
           gridArea: 'logo',
@@ -147,7 +153,6 @@ const ExtraLinks = ({ centered = false }: { centered?: boolean }) => {
 };
 
 const navbarStyles = {
-  backgroundColor: 'rgb(244, 247, 245)',
   display: 'grid',
   gridTemplateAreas: {
     xs: '"logo icons" "links links"',
@@ -164,6 +169,10 @@ const navbarStyles = {
   paddingTop: { xs: 0.5, md: 1 },
   paddingBottom: { xs: 4, md: 1 },
   minHeight: 58,
+};
+
+const profileNavbarStyles = {
+  backgroundColor: 'rgb(244, 247, 245)',
 };
 
 const logoLinkStyles = {

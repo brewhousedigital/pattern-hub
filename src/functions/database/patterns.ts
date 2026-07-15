@@ -166,6 +166,22 @@ export const getHomepageDefaultPatternsOptions = () =>
     },
   });
 
+// Powers the homepage's decorative faded background image - one random
+// visible pattern, picked server-side via PocketBase's `@random` sort so it's
+// a single cheap getList(1, 1, ...) call rather than fetching a full list.
+export const useQueryGetRandomPattern = () => {
+  return useQuery({
+    queryKey: ['GetRandomPattern'],
+    queryFn: async (): Promise<TypePatternResponse | null> => {
+      const result = await pocketbase.collection('patterns').getList<TypePatternResponse>(1, 1, {
+        filter: 'isDeleted = false && is_draft = false',
+        sort: '@random',
+      });
+      return result.items[0] ?? null;
+    },
+  });
+};
+
 export const useQueryGetAllPatternsByPaginationAdmin = (
   filter: string,
   page: number,
