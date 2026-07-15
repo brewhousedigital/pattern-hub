@@ -127,7 +127,7 @@ function RouteComponent() {
             // View Transitions API morph between the two on navigation
             viewTransitionName: 'pattern-search',
             position: 'relative',
-            zIndex: 1300,
+            zIndex: 903,
           }}
         >
           <HomepageTagSearch

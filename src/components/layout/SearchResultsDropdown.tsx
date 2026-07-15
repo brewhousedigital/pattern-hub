@@ -40,7 +40,7 @@ export const SearchResultsDropdown = ({
         top: '100%',
         left: 0,
         right: 0,
-        zIndex: 1300,
+        zIndex: 903,
         maxHeight: 500,
         overflowY: 'auto',
         borderRadius: '0 0 8px 8px',
@@ -53,11 +53,7 @@ export const SearchResultsDropdown = ({
       <Box sx={{ px: 2, py: 0.75, backgroundColor: 'action.hover' }}>
         <Typography variant="caption" color="text.secondary">
           {label} -{' '}
-          {isFetching
-            ? 'Loading...'
-            : searchTerm
-              ? `${items.length} result${items.length !== 1 ? 's' : ''}`
-              : 'Newest'}
+          {isFetching ? 'Loading...' : searchTerm ? `${items.length} result${items.length !== 1 ? 's' : ''}` : 'Newest'}
         </Typography>
       </Box>
 

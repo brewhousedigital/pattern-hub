@@ -51,17 +51,15 @@ export const SidebarList = (props: SidebarListProps) => {
   const isAuthorActive = (author: string) =>
     tokens.some((t) => t.type === 'author' && t.value === author && !t.exclude);
 
+  // Tag counts come from the server's tagFacets - accurate across the whole
+  // filtered result set, not just this page (see useQueryGetAllPatternsByPagination).
+  // Author counts still come from the current page only; that's a known,
+  // separate gap left out of this pass - see the note on useQueryGetAllPatternsByPagination.
   const mixedItems: SidebarItem[] = !props?.tagList
     ? [
-        ...(data?.items ?? [])
-          .flatMap((item) => item.tags.map((tag) => tag.trim().toLowerCase()))
-          .filter((tag) => !isTagActive(tag))
-          .reduce<SidebarItem[]>((acc, tag) => {
-            const existing = acc.find((x) => x.kind === 'tag' && x.label === tag);
-            if (existing) existing.count++;
-            else acc.push({ kind: 'tag', label: tag, count: 1 });
-            return acc;
-          }, []),
+        ...(data?.tagFacets ?? [])
+          .filter((f) => !isTagActive(f.tag))
+          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count })),
         ...(data?.items ?? [])
           .flatMap((item) => [
             ...(item.expand?.authors?.map((a) => a.name).filter((n): n is string => Boolean(n)) ?? []),

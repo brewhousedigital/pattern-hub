@@ -1,8 +1,8 @@
 import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack/react-query';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { buildBlockedTagsFilter, buildPocketBaseFilter, type AuthorToken, type TagToken } from '@/functions/utilities/search-v2';
+import type { AuthorToken, TagToken, Token } from '@/functions/utilities/search-v2';
 import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
@@ -79,25 +79,45 @@ export type TypePatternKeyTableResponse = {
   isDeleted: boolean;
 };
 
+export type TypePatternSearchResponse = TypePaginationDatabaseResponse<TypePatternResponse> & {
+  // Tag counts across the ENTIRE filtered result set (not just this page) -
+  // computed server-side in pb_hooks/main.pb.js's /api/pattern-search so the
+  // sidebar's "Flower (7)" reflects the full search, not one 20-item page.
+  tagFacets: { tag: string; count: number }[];
+};
+
+function buildPatternSearchParams(
+  tokens: Token[],
+  authorIdMap: Record<string, string[]> | undefined,
+  blockedTags: string[],
+  sort: string,
+  pageNumber: number,
+): URLSearchParams {
+  return new URLSearchParams({
+    tokens: JSON.stringify(tokens),
+    authorIdMap: JSON.stringify(authorIdMap ?? {}),
+    blockedTags: JSON.stringify(blockedTags),
+    sort,
+    pageNumber: String(pageNumber),
+  });
+}
+
 export const useQueryGetAllPatternsByPagination = () => {
   const { pageNumber, sort, tokens } = usePatternSearch();
   const { authData } = useGlobalAuthData();
 
   // Author tokens can't be matched via the "authors.name" relation join
   // anymore (see useQueryResolveAuthorUserIds) - resolve them to real user
-  // ids up front so buildPocketBaseFilter can filter the `authors` relation
-  // directly instead.
+  // ids up front so the server can filter the `authors` relation directly
+  // instead.
   const authorNames = tokens.filter((t): t is AuthorToken => t.type === 'author').map((t) => t.value);
   const { data: authorIdMap } = useQueryResolveAuthorUserIds(authorNames);
-  const filter = buildPocketBaseFilter(tokens, authorIdMap);
 
   // Silently exclude the user's blocked tags - unless they've explicitly
   // searched for that exact tag right now, in which case honor the search
   // (avoids a confusing "0 results, no explanation" dead end).
   const activeTagValues = new Set(
-    tokens
-      .filter((t): t is TagToken => t.type === 'tag' && !t.exclude)
-      .map((t) => t.value.toLowerCase()),
+    tokens.filter((t): t is TagToken => t.type === 'tag' && !t.exclude).map((t) => t.value.toLowerCase()),
   );
   // Tags temporarily un-blocked for this session via the BlockedTagsBanner
   // dropdown also stop filtering (the query key below includes the effective
@@ -107,33 +127,21 @@ export const useQueryGetAllPatternsByPagination = () => {
   const effectiveBlockedTags = (authData?.blocked_tags ?? []).filter(
     (tag) => !activeTagValues.has(tag.toLowerCase()) && !sessionUnblocked.has(tag.toLowerCase()),
   );
-  const blockedTagsFilter = buildBlockedTagsFilter(effectiveBlockedTags);
-
-  let includeIsDeletedFilter = `isDeleted = false && is_draft = false`;
-
-  if (blockedTagsFilter) {
-    includeIsDeletedFilter = blockedTagsFilter + ' && ' + includeIsDeletedFilter;
-  }
-
-  if (filter) {
-    includeIsDeletedFilter = filter + ' && ' + includeIsDeletedFilter;
-  }
 
   return useQuery({
     queryKey: [
       'GetAllPatternsByPagination',
-      filter,
+      JSON.stringify(tokens),
       pageNumber,
       sort,
       effectiveBlockedTags.join(','),
       JSON.stringify(authorIdMap ?? {}),
     ],
-    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
-      return await pocketbase.collection('patterns').getList(pageNumber, 20, {
-        filter: includeIsDeletedFilter,
-        expand: 'authors',
-        sort,
-      });
+    queryFn: async (): Promise<TypePatternSearchResponse> => {
+      const params = buildPatternSearchParams(tokens, authorIdMap, effectiveBlockedTags, sort, pageNumber);
+      const res = await fetch(`${pocketbaseDomain}/api/pattern-search?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to search patterns');
+      return res.json();
     },
     enabled: !!pageNumber,
     placeholderData: keepPreviousData,
@@ -147,15 +155,15 @@ export const useQueryGetAllPatternsByPagination = () => {
 export const getHomepageDefaultPatternsOptions = () =>
   queryOptions({
     // Key must stay in sync with useQueryGetAllPatternsByPagination's key for
-    // the anonymous/default view: filter '', page 1, default sort, no blocked
+    // the anonymous/default view: no tokens, page 1, default sort, no blocked
     // tags, empty author-id map.
-    queryKey: ['GetAllPatternsByPagination', '', 1, '-created', '', '{}'],
-    queryFn: (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> =>
-      pocketbase.collection('patterns').getList(1, 20, {
-        filter: 'isDeleted = false && is_draft = false',
-        expand: 'authors',
-        sort: '-created',
-      }),
+    queryKey: ['GetAllPatternsByPagination', '[]', 1, '-created', '', '{}'],
+    queryFn: async (): Promise<TypePatternSearchResponse> => {
+      const params = buildPatternSearchParams([], {}, [], '-created', 1);
+      const res = await fetch(`${pocketbaseDomain}/api/pattern-search?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to search patterns');
+      return res.json();
+    },
   });
 
 export const useQueryGetAllPatternsByPaginationAdmin = (

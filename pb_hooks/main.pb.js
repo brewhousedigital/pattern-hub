@@ -116,6 +116,220 @@ routerAdd('GET', '/api/pattern-drawer-data', (c) => {
   return c.json(200, result);
 });
 
+routerAdd('GET', '/api/pattern-search', (c) => {
+  // ─── Pattern search (list + accurate tag facet counts) ───────────────────────
+  //
+  // Powers the /pattern browse page. Replaces a client-side
+  // `pocketbase.collection('patterns').getList(...)` call so that the sidebar's
+  // tag counts can reflect the ENTIRE filtered result set instead of just the
+  // current 20-item page (see search-v2.ts's Token type - the twin of the token
+  // walk below).
+  //
+  // One token walk builds two representations at once so they can't drift:
+  //   - a PocketBase filter-DSL string, used for the actual page of rows (via
+  //     findRecordsByFilter - this gets sort/expand for free)
+  //   - a parameterised raw-SQL WHERE fragment, used for the facet GROUP BY,
+  //     since the filter DSL has no aggregate/GROUP BY support
+  //
+  // `tags` is stored as a JSON array column (no join table) - SQLite's
+  // json_each() expands it so COUNT(*) ... GROUP BY counts every matching
+  // pattern in the filtered set, not just one page.
+  function buildPatternFilters(tokens, authorIdMap, blockedTags) {
+    const dslParts = [];
+    const sqlParts = [];
+    const sqlParams = {};
+    let n = 0;
+
+    function bind(value) {
+      const key = 'p' + n++;
+      sqlParams[key] = value;
+      return '{:' + key + '}';
+    }
+
+    function escDq(s) {
+      return String(s).replace(/"/g, '\\"');
+    }
+
+    const authorDslParts = [];
+    const authorSqlParts = [];
+    const idDslParts = [];
+    const idSqlParts = [];
+
+    for (const t of tokens || []) {
+      if (t.type === 'text' || t.type === 'tag') {
+        // Wrap in literal quotes so the match hits a JSON element boundary -
+        // '"cat"' matches ["cat"] but not ["suncatcher"].
+        const b = bind(t.value);
+        if (t.exclude) {
+          dslParts.push(`(tags !~ '"${escDq(t.value)}"')`);
+          sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
+        } else {
+          dslParts.push(`(tags ~ '"${escDq(t.value)}"')`);
+          sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
+        }
+      } else if (t.type === 'author') {
+        const ids = (authorIdMap && authorIdMap[t.value]) || [];
+        const nameBind = bind(t.value);
+        if (t.exclude) {
+          let dsl = `(author_manual !~ "${escDq(t.value)}"`;
+          let sql = `(author_manual NOT LIKE '%' || ${nameBind} || '%'`;
+          for (const id of ids) {
+            const idBind = bind(id);
+            dsl += ` && authors !~ "${escDq(id)}"`;
+            sql += ` AND authors NOT LIKE '%"' || ${idBind} || '"%'`;
+          }
+          authorDslParts.push(dsl + ')');
+          authorSqlParts.push(sql + ')');
+        } else {
+          let dsl = `(author_manual ~ "${escDq(t.value)}"`;
+          let sql = `(author_manual LIKE '%' || ${nameBind} || '%'`;
+          for (const id of ids) {
+            const idBind = bind(id);
+            dsl += ` || authors ~ "${escDq(id)}"`;
+            sql += ` OR authors LIKE '%"' || ${idBind} || '"%'`;
+          }
+          authorDslParts.push(dsl + ')');
+          authorSqlParts.push(sql + ')');
+        }
+      } else if (t.type === 'id') {
+        const b = bind(t.value);
+        if (t.exclude) {
+          idDslParts.push(`(id != "${escDq(t.value)}")`);
+          idSqlParts.push(`(id != ${b})`);
+        } else {
+          idDslParts.push(`(id = "${escDq(t.value)}")`);
+          idSqlParts.push(`(id = ${b})`);
+        }
+      } else if (t.type === 'title') {
+        const b = bind(t.value);
+        if (t.exclude) {
+          dslParts.push(`(name !~ "${escDq(t.value)}")`);
+          sqlParts.push(`name NOT LIKE '%' || ${b} || '%'`);
+        } else {
+          dslParts.push(`(name ~ "${escDq(t.value)}")`);
+          sqlParts.push(`name LIKE '%' || ${b} || '%'`);
+        }
+      } else if (t.type === 'description') {
+        const b = bind(t.value);
+        if (t.exclude) {
+          dslParts.push(`(description !~ "${escDq(t.value)}")`);
+          sqlParts.push(`description NOT LIKE '%' || ${b} || '%'`);
+        } else {
+          dslParts.push(`(description ~ "${escDq(t.value)}")`);
+          sqlParts.push(`description LIKE '%' || ${b} || '%'`);
+        }
+      } else if (t.type === 'parts' || t.type === 'width' || t.type === 'height' || t.type === 'filesize') {
+        const column = {
+          parts: 'pieces',
+          width: 'design_width',
+          height: 'design_height',
+          filesize: 'pattern_file_size',
+        }[t.type];
+        const b = bind(t.value);
+        dslParts.push(`(${column} ${t.operator} ${t.value})`);
+        sqlParts.push(`${column} ${t.operator} ${b}`);
+      }
+    }
+
+    if (authorDslParts.length) dslParts.push(`(${authorDslParts.join(' || ')})`);
+    if (authorSqlParts.length) sqlParts.push(`(${authorSqlParts.join(' OR ')})`);
+    if (idDslParts.length) dslParts.push(`(${idDslParts.join(' || ')})`);
+    if (idSqlParts.length) sqlParts.push(`(${idSqlParts.join(' OR ')})`);
+
+    // Silent, per-user tag exclusion - never surfaces as a visible token/chip,
+    // just an invisible AND-ed constraint (mirrors the old buildBlockedTagsFilter).
+    for (const tag of blockedTags || []) {
+      if (!tag) continue;
+      const b = bind(tag);
+      dslParts.push(`(tags !~ '"${escDq(tag)}"')`);
+      sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
+    }
+
+    return {
+      dslFilter: dslParts.join(' && '),
+      sqlWhere: sqlParts.length ? sqlParts.join(' AND ') : '1=1',
+      sqlParams,
+    };
+  }
+
+  const q = c.request.url.query();
+
+  let tokens = [];
+  let authorIdMap = {};
+  let blockedTags = [];
+  try {
+    tokens = JSON.parse(q.get('tokens') || '[]');
+  } catch (_) {}
+  try {
+    authorIdMap = JSON.parse(q.get('authorIdMap') || '{}');
+  } catch (_) {}
+  try {
+    blockedTags = JSON.parse(q.get('blockedTags') || '[]');
+  } catch (_) {}
+
+  const sort = q.get('sort') || '-created';
+  const page = Math.max(1, parseInt(q.get('pageNumber') || '1', 10));
+  const perPage = 20;
+
+  function countRows(table, whereSQL, params) {
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+        .bind(params)
+        .all(rows);
+      return parseInt(rows[0]?.count || 0, 10);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags);
+  const baseDsl = (dslFilter ? dslFilter + ' && ' : '') + 'isDeleted = false && is_draft = false';
+  const baseSql = sqlWhere + ' AND isDeleted = 0 AND is_draft = 0';
+
+  let items = [];
+  try {
+    const records = $app.findRecordsByFilter('patterns', baseDsl, sort, perPage, (page - 1) * perPage);
+    $app.expandRecords(records, ['authors'], null);
+    items = records;
+  } catch (err) {
+    return c.json(500, { error: 'search failed' });
+  }
+
+  const totalItems = countRows('patterns', baseSql, sqlParams);
+
+  const tagFacets = [];
+  try {
+    const rows = arrayOf(new DynamicModel({ tag: '', count: 0 }));
+    $app
+      .db()
+      .newQuery(
+        'SELECT je.value AS tag, COUNT(*) AS count FROM patterns, json_each(patterns.tags) je WHERE ' +
+          baseSql +
+          ' GROUP BY je.value ORDER BY count DESC',
+      )
+      .bind(sqlParams)
+      .all(rows);
+    for (let i = 0; i < rows.length; i++) {
+      tagFacets.push({ tag: rows[i].tag, count: parseInt(rows[i].count, 10) });
+    }
+  } catch (_) {}
+
+  // `items`/`totalItems` mirror the shape of a PocketBase SDK getList() response.
+  // Records serialise via their own PublicExport (same fields/expand shape the
+  // SDK's REST call already returns) - no manual field mapping needed here.
+  return c.json(200, {
+    page,
+    perPage,
+    totalItems,
+    totalPages: Math.max(1, Math.ceil(totalItems / perPage)),
+    items,
+    tagFacets,
+  });
+});
+
 // An external cron service sends a POST to /api/sync-aggregates with the
 // `X-Sync-Key` header to trigger the aggregate sync.
 
@@ -953,19 +1167,34 @@ onRecordAuthRequest((e) => {
 // auth refresh a banned user still holds a technically-valid token. Reject
 // their content writes directly. (Admin panel auth lives in the separate
 // `admins` collection, so admin requests pass through untouched.)
-onRecordCreateRequest((e) => {
-  if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
-    throw new ForbiddenError('This account has been suspended.');
-  }
-  e.next();
-}, 'gallery', 'user_ratings', 'user_difficulty_ratings', 'user_favorites', 'user_marked_done', 'user_collections');
+onRecordCreateRequest(
+  (e) => {
+    if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
+      throw new ForbiddenError('This account has been suspended.');
+    }
+    e.next();
+  },
+  'gallery',
+  'user_ratings',
+  'user_difficulty_ratings',
+  'user_favorites',
+  'user_marked_done',
+  'user_collections',
+);
 
-onRecordUpdateRequest((e) => {
-  if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
-    throw new ForbiddenError('This account has been suspended.');
-  }
-  e.next();
-}, 'gallery', 'user_ratings', 'user_difficulty_ratings', 'user_collections', 'users');
+onRecordUpdateRequest(
+  (e) => {
+    if (e.auth?.collection()?.name === 'users' && e.auth.getBool('banned')) {
+      throw new ForbiddenError('This account has been suspended.');
+    }
+    e.next();
+  },
+  'gallery',
+  'user_ratings',
+  'user_difficulty_ratings',
+  'user_collections',
+  'users',
+);
 
 // Admin action: ban or unban a user. Uses $app.save (internal access) so it
 // works regardless of the users collection's API rules.
