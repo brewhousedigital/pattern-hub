@@ -174,7 +174,7 @@ export const useQueryGetRandomPattern = () => {
     queryKey: ['GetRandomPattern'],
     queryFn: async (): Promise<TypePatternResponse | null> => {
       const result = await pocketbase.collection('patterns').getList<TypePatternResponse>(1, 1, {
-        filter: 'isDeleted = false && is_draft = false',
+        filter: 'isDeleted = false && is_draft = false && tags !~ "nsfw"',
         sort: '@random',
       });
       return result.items[0] ?? null;
@@ -417,7 +417,8 @@ export const useQueryPatternLayerSvg = (svgUrl: string | null) =>
 export const getPatternByIdOptions = (patternId: string) =>
   queryOptions({
     queryKey: ['GetPatternById', patternId],
-    queryFn: (): Promise<TypePatternResponse> => pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
+    queryFn: (): Promise<TypePatternResponse> =>
+      pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
   });
 
 export const useQueryGetPatternById = (patternId: string) => {
