@@ -407,7 +407,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <Stack direction="column" sx={{ gap: 0.5, justifyContent: 'flex-end' }}>
               {viewData?.expand?.authors?.map((author, index) => {
                 return (
-                  <Link key={`designed-by-${index}`} to="/profile" search={{ id: author.id, tab: 0 }}>
+                  <Link key={`designed-by-${index}`} to="/profile/$userId" params={{ userId: author.id }} search={{ tab: 0 }}>
                     <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
                       {author.name || 'Not Listed'}
                     </Typography>
@@ -437,7 +437,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
           <CompactRow label="Design Date">{createPrettyDate(viewData?.design_date || '') || '-'}</CompactRow>
           <CompactRow label="Uploaded by">{viewData?.uploaded_by || 'Not Listed'}</CompactRow>
           <CompactRow label="Added on">{createPrettyDate(viewData?.created || '') || '-'}</CompactRow>
-          <CompactRow label="Last updated">{createPrettyDate(viewData?.updated || '') || '-'}</CompactRow>
+          <CompactRow label="Last updated">
+            {createPrettyDate(viewData?.last_updated || viewData?.created || '') || '-'}
+          </CompactRow>
 
           {viewData?.pattern_file_size ? (
             <CompactRow label="File size">{formatByteSize(viewData?.pattern_file_size)}</CompactRow>

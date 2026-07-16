@@ -6,14 +6,14 @@ const PER_PAGE = 200;
 
 type PbListResponse<T> = { page: number; totalPages: number; items: T[] };
 
-async function fetchAllPages<T>(collection: string, params: Record<string, string>): Promise<T[]> {
+async function fetchAllPages<T>(path: string, params: Record<string, string>): Promise<T[]> {
   const items: T[] = [];
   let page = 1;
   let totalPages = 1;
 
   while (page <= totalPages) {
     const search = new URLSearchParams({ ...params, page: String(page), perPage: String(PER_PAGE) });
-    const res = await fetch(`${PB_URL}/api/collections/${collection}/records?${search}`);
+    const res = await fetch(`${PB_URL}${path}?${search}`);
     if (!res.ok) break;
 
     const data = (await res.json()) as PbListResponse<T>;
@@ -77,17 +77,31 @@ type WikiCategoryRecord = { id: string; slug: string; updated: string; created: 
 type WikiPageRecord = { slug: string; updated: string; created: string; expand?: { category?: { slug: string } } };
 type SetRecord = { id: string; updated: string; created: string };
 type AuthorRecord = { slug: string; updated: string; created: string };
+type ArtistUserRecord = { id: string; updated: string };
 
 async function buildSitemaps(): Promise<Record<string, string>> {
-  const [patterns, wikiCategories, wikiPages, sets, authors] = await Promise.all([
-    fetchAllPages<PatternRecord>('patterns', {
+  const [patterns, wikiCategories, wikiPages, sets, authors, artistUsers] = await Promise.all([
+    fetchAllPages<PatternRecord>('/api/collections/patterns/records', {
       filter: 'isDeleted=false && is_draft=false',
       fields: 'id,updated,last_updated,created',
     }),
-    fetchAllPages<WikiCategoryRecord>('wiki_categories', { fields: 'id,slug,updated' }),
-    fetchAllPages<WikiPageRecord>('wiki_pages', { expand: 'category', fields: 'slug,updated,expand.category.slug' }),
-    fetchAllPages<SetRecord>('pattern_sets', { filter: 'is_published=true', fields: 'id,updated' }),
-    fetchAllPages<AuthorRecord>('manual_authors', { filter: 'is_published=true', fields: 'slug,updated' }),
+    fetchAllPages<WikiCategoryRecord>('/api/collections/wiki_categories/records', { fields: 'id,slug,updated' }),
+    fetchAllPages<WikiPageRecord>('/api/collections/wiki_pages/records', {
+      expand: 'category',
+      fields: 'slug,updated,expand.category.slug',
+    }),
+    fetchAllPages<SetRecord>('/api/collections/pattern_sets/records', {
+      filter: 'is_published=true',
+      fields: 'id,updated',
+    }),
+    fetchAllPages<AuthorRecord>('/api/collections/manual_authors/records', {
+      filter: 'is_published=true',
+      fields: 'slug,updated',
+    }),
+    // users' own List API rule is admin-only (no bulk enumeration of the whole
+    // table) - this hits the narrow public-artist-ids pb_hooks endpoint instead,
+    // which only ever returns is_artist=true, non-banned ids.
+    fetchAllPages<ArtistUserRecord>('/api/public-artist-ids', {}),
   ]);
 
   const sitemapPatterns = buildUrlset(
@@ -116,9 +130,10 @@ async function buildSitemaps(): Promise<Record<string, string>> {
     sets.map((s) => ({ loc: `${SITE_URL}/sets/${s.id}`, lastmod: s.updated, changefreq: 'monthly' })),
   );
 
-  const sitemapAuthors = buildUrlset(
-    authors.map((a) => ({ loc: `${SITE_URL}/authors/${a.slug}`, lastmod: a.updated, changefreq: 'monthly' })),
-  );
+  const sitemapAuthors = buildUrlset([
+    ...authors.map((a) => ({ loc: `${SITE_URL}/authors/${a.slug}`, lastmod: a.updated, changefreq: 'monthly' })),
+    ...artistUsers.map((u) => ({ loc: `${SITE_URL}/profile/${u.id}`, lastmod: u.updated, changefreq: 'monthly' })),
+  ]);
 
   const sitemapStatic = buildUrlset(STATIC_URLS);
 

@@ -1,0 +1,436 @@
+import React from 'react';
+import { enqueueSnackbar } from 'notistack';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useNavigate } from '@tanstack/react-router';
+import { useGlobalAuthData } from '@/data/auth-data';
+import { pocketbase } from '@/functions/database/authentication-setup';
+import { useDebounce } from '@/functions/hooks/useDebounce';
+import { useQuerySearchManualAuthors } from '@/functions/database/authors';
+import { FancyAutocomplete } from '@/components/FancyAutocomplete';
+import { SvgDropZone } from '@/components/admin/SvgDropZone';
+import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
+import {
+  useQueryGetAllPatternKeys,
+  type TypePatternKeyReferenceObject,
+  type TypePatternLayersMapItem,
+} from '@/functions/database/patterns';
+import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
+import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
+
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Divider,
+  FormControlLabel,
+  Grid,
+  Link as MuiLink,
+  MenuItem,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Link } from '@tanstack/react-router';
+
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+const RATE_LIMIT_MS = 10_000;
+const RATE_LIMIT_STORAGE_KEY = 'pattern_submit_last';
+
+const FormSection = ({ label }: { label: string }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, my: 0.5 }}>
+    <Typography
+      sx={{
+        whiteSpace: 'nowrap',
+        fontSize: '0.67rem',
+        fontWeight: 700,
+        letterSpacing: '0.09em',
+        textTransform: 'uppercase',
+        color: 'text.disabled',
+      }}
+    >
+      {label}
+    </Typography>
+    <Divider sx={{ flex: 1 }} />
+  </Box>
+);
+
+type UploadState = 'idle' | 'loading';
+
+export const UserUploadForm = () => {
+  const { authData } = useGlobalAuthData();
+  const navigate = useNavigate();
+
+  const [file, setFile] = React.useState<File | null>(null);
+  const [fileError, setFileError] = React.useState('');
+  const [svgWarning, setSvgWarning] = React.useState('');
+  const [layerIds, setLayerIds] = React.useState<string[]>([]);
+
+  const [name, setName] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [instructions, setInstructions] = React.useState('');
+  const [pieces, setPieces] = React.useState('1');
+  const [designWidth, setDesignWidth] = React.useState('');
+  const [designHeight, setDesignHeight] = React.useState('');
+  const [lineWidth, setLineWidth] = React.useState('');
+
+  const [isAuthor, setIsAuthor] = React.useState(true);
+  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>([]);
+  const [manualAuthorInput, setManualAuthorInput] = React.useState('');
+  const debouncedManualAuthorSearch = useDebounce(manualAuthorInput, 300);
+  const { data: manualAuthorData, isFetching: manualAuthorFetching } =
+    useQuerySearchManualAuthors(debouncedManualAuthorSearch);
+
+  const [tagValue, setTagValue] = React.useState<string[]>([]);
+  const [tagInput, setTagInput] = React.useState('');
+
+  const { data: patternKeys } = useQueryGetAllPatternKeys();
+  const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>([]);
+  const [customPatternKey, setCustomPatternKey] = React.useState(false);
+
+  const toggleKey = (id: string, name: string, fullPath?: string) => {
+    setSelectedKeys((prev) =>
+      prev.some((k) => k.name === name)
+        ? prev.filter((k) => k.name !== name)
+        : [...prev, { image: id, name, fullPath }],
+    );
+  };
+
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const [honeypot, setHoneypot] = React.useState('');
+  const formOpenTime = React.useRef(Date.now());
+  const [uploadState, setUploadState] = React.useState<UploadState>('idle');
+  const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
+
+  React.useEffect(() => {
+    const tick = () => {
+      const last = Number(localStorage.getItem(RATE_LIMIT_STORAGE_KEY) ?? 0);
+      const remaining = Math.max(0, RATE_LIMIT_MS - (Date.now() - last));
+      setCooldownRemaining(remaining);
+    };
+    tick();
+    const interval = setInterval(tick, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleFileSelect = async (selected: File) => {
+    setFileError('');
+    setSvgWarning('');
+    setLayerIds([]);
+
+    const isSvg = selected.type === 'image/svg+xml' || selected.name.toLowerCase().endsWith('.svg');
+    const isPdf = selected.type === 'application/pdf' || selected.name.toLowerCase().endsWith('.pdf');
+    const isImage = !isSvg && !isPdf && selected.type.startsWith('image/');
+    if (!isSvg && !isPdf && !isImage) {
+      setFileError('Please upload an image file, an SVG, or a single-page PDF.');
+      return;
+    }
+
+    if (selected.size > MAX_FILE_SIZE) {
+      setFileError(
+        'This file is larger than 15 MB. Please compress it first using https://tinypng.com/ and try again.',
+      );
+      return;
+    }
+
+    if (isSvg) {
+      const raw = await selected.text();
+      const threats = analyzeSvgThreats(raw);
+      if (threats.some((t) => t.severity === 'high')) {
+        setFileError(
+          'This SVG looks like it may contain unsafe content and cannot be accepted. Please re-export it from your design tool.',
+        );
+        return;
+      }
+      if (threats.length > 0) {
+        setSvgWarning('This SVG has some unusual content our team will double check during review.');
+      }
+      setLayerIds(extractSvgLayerIds(raw));
+    }
+
+    setFile(selected);
+  };
+
+  const canSubmit =
+    !!file &&
+    !fileError &&
+    !!name.trim() &&
+    !!turnstileToken &&
+    (isAuthor || manualAuthorValue.length > 0) &&
+    cooldownRemaining <= 0 &&
+    uploadState !== 'loading';
+
+  const handleSubmit = async () => {
+    if (honeypot) return;
+    if (!canSubmit || !file) return;
+
+    const authToken = pocketbase.authStore.token;
+    if (!authToken) {
+      enqueueSnackbar('You must be logged in to submit a pattern.', { variant: 'warning' });
+      return;
+    }
+
+    setUploadState('loading');
+
+    const layersMap: TypePatternLayersMapItem[] = layerIds.map((id) => ({
+      layerName: id,
+      mappedName: '',
+      isVisible: true,
+    }));
+
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('name', name.trim());
+    fd.append('description', description.trim());
+    fd.append('instructions', instructions.trim());
+    fd.append('is_author', String(isAuthor));
+    fd.append('author_manual_name', isAuthor ? '' : manualAuthorValue.join(', '));
+    fd.append('pieces', pieces || '1');
+    fd.append('design_width', designWidth || '0');
+    fd.append('design_height', designHeight || '0');
+    fd.append('line_width', lineWidth || '0');
+    fd.append('design_width_unit', 'in');
+    fd.append('design_height_unit', 'in');
+    fd.append('line_width_unit', 'in');
+    fd.append('tags', JSON.stringify(tagValue));
+    fd.append('pattern_key_reference_list', JSON.stringify(selectedKeys));
+    fd.append('custom_pattern_key_requested', String(customPatternKey));
+    fd.append('layers_map', JSON.stringify(layersMap));
+    fd.append('authToken', authToken);
+    fd.append('token', turnstileToken ?? '');
+    fd.append('hp', honeypot);
+    fd.append('ts', String(formOpenTime.current));
+
+    try {
+      const res = await fetch('/api/submit-pattern', { method: 'POST', body: fd });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok) {
+        enqueueSnackbar(data.error ?? 'Submission failed - please try again.', { variant: 'error' });
+        setUploadState('idle');
+        return;
+      }
+
+      localStorage.setItem(RATE_LIMIT_STORAGE_KEY, String(Date.now()));
+      enqueueSnackbar('Thank you! Your pattern has been submitted for review.', { variant: 'success' });
+      navigate({ to: '/' });
+    } catch {
+      enqueueSnackbar('Something went wrong - please try again.', { variant: 'error' });
+      setUploadState('idle');
+    }
+  };
+
+  return (
+    <Stack sx={{ gap: 2.5, maxWidth: 760, mx: 'auto', py: 4, px: 2 }}>
+      <Typography variant="h4" sx={{ fontWeight: 600 }}>
+        Submit a Pattern
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Share your stained glass pattern with the community. Every submission is reviewed by our team before it
+        appears on the site.
+      </Typography>
+
+      <Alert severity="info">
+        Your pattern's unique key names may be adjusted to stay consistent with the rest of the archive.
+      </Alert>
+
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+          Have a large number of patterns?
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          If you're an artist with many patterns to share, submitting them one by one can be slow. Reach out on our{' '}
+          <MuiLink component={Link} to="/help/contact">
+            contact page
+          </MuiLink>{' '}
+          and we can process them together.
+        </Typography>
+      </Paper>
+
+      {/* Honeypot */}
+      <input
+        aria-hidden="true"
+        tabIndex={-1}
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        autoComplete="off"
+        style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+      />
+
+      <FormSection label="Pattern File" />
+      <SvgDropZone
+        accept="image/*,.svg,application/pdf"
+        acceptLabel="Image, SVG, or single-page PDF - max 15 MB"
+        onFile={handleFileSelect}
+        disabled={uploadState === 'loading'}
+      />
+      {file && !fileError && (
+        <Alert severity="success" sx={{ py: 0.5 }}>
+          Selected: {file.name}
+        </Alert>
+      )}
+      {fileError && (
+        <Alert severity="error" sx={{ py: 0.5 }}>
+          {fileError}
+        </Alert>
+      )}
+      {svgWarning && (
+        <Alert severity="warning" sx={{ py: 0.5 }}>
+          {svgWarning}
+        </Alert>
+      )}
+
+      <FormSection label="Pattern Info" />
+      <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
+      <GenericMarkdownEditor content={description} setContent={setDescription} characterLimit={2000} minRows={2} />
+
+      <FormSection label="Measurements" />
+      <Grid container spacing={2}>
+        <Grid size={4}>
+          <TextField
+            label="Pieces"
+            type="number"
+            value={pieces}
+            onChange={(e) => setPieces(e.target.value)}
+            fullWidth
+          />
+        </Grid>
+        <Grid size={4}>
+          <TextField
+            label="Width (in)"
+            type="number"
+            value={designWidth}
+            onChange={(e) => setDesignWidth(e.target.value)}
+            fullWidth
+          />
+        </Grid>
+        <Grid size={4}>
+          <TextField
+            label="Height (in)"
+            type="number"
+            value={designHeight}
+            onChange={(e) => setDesignHeight(e.target.value)}
+            fullWidth
+          />
+        </Grid>
+      </Grid>
+      <TextField
+        label="Line width (in)"
+        type="number"
+        value={lineWidth}
+        onChange={(e) => setLineWidth(e.target.value)}
+        fullWidth
+      />
+
+      <FormSection label="Instructions" />
+      <GenericMarkdownEditor content={instructions} setContent={setInstructions} characterLimit={10000} minRows={2} />
+
+      <FormSection label="Authorship" />
+      <FormControlLabel
+        control={<Checkbox checked={!isAuthor} onChange={(e) => setIsAuthor(!e.target.checked)} />}
+        label="I am not the original author of this pattern"
+      />
+      {!isAuthor && (
+        <FancyAutocomplete
+          label="Original Author"
+          serverSide
+          freeSolo
+          loading={manualAuthorFetching}
+          data={manualAuthorData ?? []}
+          value={manualAuthorValue}
+          onChange={setManualAuthorValue}
+          inputValue={manualAuthorInput}
+          onInputChange={setManualAuthorInput}
+        />
+      )}
+      {isAuthor && (
+        <Typography variant="caption" color="text.secondary">
+          You'll be credited as the author, {authData?.name || 'your account name'}.
+        </Typography>
+      )}
+
+      <FormSection label="Tags" />
+      <FancyAutocomplete
+        label="Tags"
+        freeSolo
+        data={[]}
+        value={tagValue}
+        onChange={setTagValue}
+        inputValue={tagInput}
+        onInputChange={setTagInput}
+      />
+
+      <FormSection label="Pattern Keys" />
+      <Typography variant="body2" color="text.secondary">
+        Select the pattern keys your design uses. Not sure which key is which? Download the reference images below.
+      </Typography>
+      <Grid container spacing={1}>
+        {patternKeys?.map((key) => (
+          <Grid size={4} key={key.id}>
+            <Paper
+              variant="outlined"
+              onClick={() => toggleKey(key.id, key.name)}
+              sx={{
+                p: 1,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                borderColor: selectedKeys.some((k) => k.name === key.name) ? 'primary.main' : undefined,
+                backgroundColor: selectedKeys.some((k) => k.name === key.name) ? 'action.selected' : undefined,
+              }}
+            >
+              <Box
+                component="img"
+                src={generatePbImagePatternKeyRef(key)}
+                alt={key.name}
+                sx={{ width: 32, height: 32, objectFit: 'contain' }}
+              />
+              <Typography variant="body2" sx={{ flex: 1 }}>
+                {key.name}
+              </Typography>
+              <MuiLink
+                href={generatePbImagePatternKeyRef(key)}
+                download
+                onClick={(e) => e.stopPropagation()}
+                variant="caption"
+              >
+                Download
+              </MuiLink>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+      <FormControlLabel
+        control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}
+        label="This pattern uses a custom key not listed above"
+      />
+
+      <Turnstile
+        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+        onSuccess={(token) => setTurnstileToken(token)}
+        onError={() => setTurnstileToken(null)}
+        onExpire={() => setTurnstileToken(null)}
+      />
+
+      {cooldownRemaining > 0 && (
+        <Alert severity="info">
+          Please wait {Math.ceil(cooldownRemaining / 1000)}s before submitting another pattern.
+        </Alert>
+      )}
+
+      <Button
+        variant="contained"
+        size="large"
+        disabled={!canSubmit}
+        onClick={handleSubmit}
+        startIcon={uploadState === 'loading' ? <CircularProgress size={16} color="inherit" /> : null}
+      >
+        {uploadState === 'loading' ? 'Submitting…' : 'Submit Pattern for Review'}
+      </Button>
+    </Stack>
+  );
+};

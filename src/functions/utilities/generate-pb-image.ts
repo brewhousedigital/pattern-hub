@@ -2,6 +2,7 @@ import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypePatternResponse, TypePatternKeyTableResponse } from '@/functions/database/patterns.ts';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import type { TypeManualAuthor } from '@/functions/database/manual-authors';
+import type { TypeUserSubmittedPatternResponse } from '@/functions/database/user-submissions';
 
 // Used whenever the underlying file field (or the pattern/id itself) is missing,
 // instead of building a URL with a literal "undefined" segment in it.
@@ -35,6 +36,14 @@ export const generatePbImageOpenGraph = (pattern?: TypePatternResponse) => {
 export const generatePbImagePatternKeyRef = (keyItem: TypePatternKeyTableResponse) => {
   if (!keyItem.name || !keyItem.id) return PLACEHOLDER_IMAGE;
   return `${pocketbaseDomain}/api/files/pbc_669275364/${keyItem.id}/${keyItem.name}`;
+};
+
+// The admin's re-traced SVG (if present) is the working file for review; it
+// falls back to the artist's original upload otherwise.
+export const generateUserSubmissionFileUrl = (submission?: TypeUserSubmittedPatternResponse) => {
+  const fileName = submission?.admin_reupload_file || submission?.submitted_file;
+  if (!fileName || !submission?.collectionId || !submission?.id) return PLACEHOLDER_IMAGE;
+  return `${pocketbaseDomain}/api/files/${submission.collectionId}/${submission.id}/${fileName}`;
 };
 
 export const generateUserAvatarUrl = (user?: TypeAuthData): string | null => {

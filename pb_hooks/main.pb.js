@@ -1059,6 +1059,30 @@ routerAdd('GET', '/api/resolve-author-ids', (c) => {
   return c.json(200, result);
 });
 
+// Public list of artist profile ids, for sitemap generation. Same rationale as
+// resolve-author-ids above: the `users` List rule is admin-only so bulk
+// enumeration of the whole table stays blocked, but an artist's profile page
+// and pattern list are already fully public - this just indexes pages that
+// are already public, scoped strictly to is_artist=true (never plain users).
+// Raw SQL rather than findRecordsByFilter so every match comes back in one
+// query - no row cap to remember to raise as the artist count grows.
+routerAdd('GET', '/api/public-artist-ids', (c) => {
+  const rows = arrayOf(new DynamicModel({ id: '', updated: '' }));
+  try {
+    $app
+      .db()
+      .newQuery(
+        'SELECT id, updated FROM users WHERE is_artist = 1 AND (banned IS NULL OR banned = 0) ORDER BY updated DESC',
+      )
+      .all(rows);
+  } catch (_) {
+    // fall through with whatever rows were populated (likely none)
+  }
+
+  const items = rows.map((r) => ({ id: r.id, updated: r.updated }));
+  return c.json(200, { page: 1, perPage: items.length, totalItems: items.length, totalPages: 1, items });
+});
+
 // ─── Retro visitor counter ────────────────────────────────────────────────────
 // A single integer in the `counters` collection (record key = 'visits') backs
 // the footer's old-school hit counter. No per-visitor data of any kind is

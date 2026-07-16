@@ -51,21 +51,24 @@ export const useQueryAdminUsersPaginated = (params: TypeAdminUsersPaginationPara
   });
 };
 
-export const useQueryGetUserById = (id?: string) => {
+// `identifier` is a raw PocketBase record id today (see isPocketBaseId). Once
+// custom profile vanity slugs ship, branch here: when isPocketBaseId(identifier)
+// is false, look up by the slug field instead of calling getOne.
+export const useQueryGetUserById = (identifier?: string) => {
   return useQuery({
-    queryKey: ['GetUserById', id],
+    queryKey: ['GetUserById', identifier],
     queryFn: async (): Promise<TypeAuthData> => {
-      return await pocketbase.collection('users').getOne(id || '');
+      return await pocketbase.collection('users').getOne(identifier || '');
     },
-    enabled: !!id,
+    enabled: !!identifier,
   });
 };
 
 // This is a fancy thing to handle automate queries for data on dynamic pages
-export const getUserByIdOptions = (id: string) =>
+export const getUserByIdOptions = (identifier: string) =>
   queryOptions({
-    queryKey: ['GetUserById', id],
-    queryFn: (): Promise<TypeAuthData> => pocketbase.collection('users').getOne(id),
+    queryKey: ['GetUserById', identifier],
+    queryFn: (): Promise<TypeAuthData> => pocketbase.collection('users').getOne(identifier),
   });
 
 export const useMutationResetUserPassword = () => {

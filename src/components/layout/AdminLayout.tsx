@@ -27,6 +27,7 @@ import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import {
@@ -84,6 +85,12 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/pattern-key-mgmt',
           icon: <KeyRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.PATTERN_KEY_MGMT_AR,
+        },
+        {
+          label: 'User Submissions',
+          href: '/space-command/user-submissions',
+          icon: <UploadFileRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.USER_SUBMIT_AR,
         },
       ],
     },

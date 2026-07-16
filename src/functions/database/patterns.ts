@@ -54,6 +54,7 @@ export type TypePatternResponse = {
   done_count?: number;
   created: string;
   updated: string;
+  last_updated: string;
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
   expand?: {
     authors: TypeAuthData[];
@@ -351,6 +352,10 @@ export const useMutationEditPattern = () => {
       formData.append('layers_map', JSON.stringify(payload?.layers_map ?? []));
       formData.append('tag_count', String(payload?.tags?.length ?? 0));
       formData.append('is_draft', String(payload?.is_draft ?? false));
+
+      // Set explicitly here (rather than relying on PocketBase's auto `updated`) so the
+      // hourly data-correction cron job - which also touches these rows - can't affect it.
+      formData.append('last_updated', new Date().toISOString());
 
       if (payload?.id) {
         return await pocketbase.collection('patterns').update(payload?.id, formData);

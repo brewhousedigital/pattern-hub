@@ -37,7 +37,7 @@ export const AdminDashboardReadOnlyTable = (props: AdminDashboardReadOnlyTablePr
         if (props.customProp === 'authors') {
           if (params.row.user_id) {
             return (
-              <a href={`/profile?id=${params.row.user_id}`} target="_blank">
+              <a href={`/profile/${params.row.user_id}`} target="_blank">
                 {params.value}
               </a>
             );

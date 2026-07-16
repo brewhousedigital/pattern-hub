@@ -478,6 +478,7 @@ function CustomToolbar() {
           line_width_unit={''}
           created={''}
           updated={''}
+          last_updated={''}
           pattern_key_reference_list={[]}
           instructions={''}
           design_date={dayjs()}

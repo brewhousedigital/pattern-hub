@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubmitPatternRouteImport } from './routes/submit-pattern'
 import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
@@ -34,6 +35,7 @@ import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
+import { Route as ProfileUserIdRouteImport } from './routes/profile/$userId'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
 import { Route as NewsPageSlugRouteImport } from './routes/news/$pageSlug'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
@@ -49,13 +51,20 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AuthConfirmVerificationRouteImport } from './routes/auth/confirm-verification'
 import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
 import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
+import { Route as SpaceCommandUserSubmissionsIndexRouteImport } from './routes/space-command/user-submissions/index'
 import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
 import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
 import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
+import { Route as SpaceCommandUserSubmissionsIdReviewRouteImport } from './routes/space-command/user-submissions/$id/review'
 
+const SubmitPatternRoute = SubmitPatternRouteImport.update({
+  id: '/submit-pattern',
+  path: '/submit-pattern',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
   id: '/space-command',
   path: '/space-command',
@@ -184,6 +193,11 @@ const ProfileEditRoute = ProfileEditRouteImport.update({
   path: '/profile/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
   id: '/pattern/$patternId',
   path: '/pattern/$patternId',
@@ -259,6 +273,12 @@ const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
   path: '/wiki/',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandUserSubmissionsIndexRoute =
+  SpaceCommandUserSubmissionsIndexRouteImport.update({
+    id: '/user-submissions/',
+    path: '/user-submissions/',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandContactIndexRoute =
   SpaceCommandContactIndexRouteImport.update({
     id: '/contact/',
@@ -295,10 +315,17 @@ const ProfileCollectionsCollectionIdRoute =
     path: '/profile/collections/$collectionId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SpaceCommandUserSubmissionsIdReviewRoute =
+  SpaceCommandUserSubmissionsIdReviewRouteImport.update({
+    id: '/user-submissions/$id/review',
+    path: '/user-submissions/$id/review',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -312,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -341,11 +369,14 @@ export interface FileRoutesByFullPath {
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
+  '/space-command/user-submissions/': typeof SpaceCommandUserSubmissionsIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
+  '/space-command/user-submissions/$id/review': typeof SpaceCommandUserSubmissionsIdReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -359,6 +390,7 @@ export interface FileRoutesByTo {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -388,13 +420,16 @@ export interface FileRoutesByTo {
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact': typeof SpaceCommandContactIndexRoute
+  '/space-command/user-submissions': typeof SpaceCommandUserSubmissionsIndexRoute
   '/space-command/wiki': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug': typeof WikiCategorySlugIndexRoute
+  '/space-command/user-submissions/$id/review': typeof SpaceCommandUserSubmissionsIdReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
+  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -408,6 +443,7 @@ export interface FileRoutesById {
   '/help/terms-of-service': typeof HelpTermsOfServiceRoute
   '/news/$pageSlug': typeof NewsPageSlugRoute
   '/pattern/$patternId': typeof PatternPatternIdRoute
+  '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
@@ -437,14 +473,17 @@ export interface FileRoutesById {
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
+  '/space-command/user-submissions/': typeof SpaceCommandUserSubmissionsIndexRoute
   '/space-command/wiki/': typeof SpaceCommandWikiIndexRoute
   '/wiki/$categorySlug/': typeof WikiCategorySlugIndexRoute
+  '/space-command/user-submissions/$id/review': typeof SpaceCommandUserSubmissionsIdReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/space-command'
+    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -458,6 +497,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/news/$pageSlug'
     | '/pattern/$patternId'
+    | '/profile/$userId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -487,11 +527,14 @@ export interface FileRouteTypes {
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
     | '/space-command/contact/'
+    | '/space-command/user-submissions/'
     | '/space-command/wiki/'
     | '/wiki/$categorySlug/'
+    | '/space-command/user-submissions/$id/review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -505,6 +548,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/news/$pageSlug'
     | '/pattern/$patternId'
+    | '/profile/$userId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -534,12 +578,15 @@ export interface FileRouteTypes {
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints'
     | '/space-command/contact'
+    | '/space-command/user-submissions'
     | '/space-command/wiki'
     | '/wiki/$categorySlug'
+    | '/space-command/user-submissions/$id/review'
   id:
     | '__root__'
     | '/'
     | '/space-command'
+    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -553,6 +600,7 @@ export interface FileRouteTypes {
     | '/help/terms-of-service'
     | '/news/$pageSlug'
     | '/pattern/$patternId'
+    | '/profile/$userId'
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
@@ -582,13 +630,16 @@ export interface FileRouteTypes {
     | '/wiki/$categorySlug/$pageSlug'
     | '/space-command/complaints/'
     | '/space-command/contact/'
+    | '/space-command/user-submissions/'
     | '/space-command/wiki/'
     | '/wiki/$categorySlug/'
+    | '/space-command/user-submissions/$id/review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SpaceCommandRouteRoute: typeof SpaceCommandRouteRouteWithChildren
+  SubmitPatternRoute: typeof SubmitPatternRoute
   AuthConfirmVerificationRoute: typeof AuthConfirmVerificationRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -602,6 +653,7 @@ export interface RootRouteChildren {
   HelpTermsOfServiceRoute: typeof HelpTermsOfServiceRoute
   NewsPageSlugRoute: typeof NewsPageSlugRoute
   PatternPatternIdRoute: typeof PatternPatternIdRoute
+  ProfileUserIdRoute: typeof ProfileUserIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   CommunityIndexRoute: typeof CommunityIndexRoute
@@ -619,6 +671,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/submit-pattern': {
+      id: '/submit-pattern'
+      path: '/submit-pattern'
+      fullPath: '/submit-pattern'
+      preLoaderRoute: typeof SubmitPatternRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/space-command': {
       id: '/space-command'
       path: '/space-command'
@@ -794,6 +853,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/$userId': {
+      id: '/profile/$userId'
+      path: '/profile/$userId'
+      fullPath: '/profile/$userId'
+      preLoaderRoute: typeof ProfileUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pattern/$patternId': {
       id: '/pattern/$patternId'
       path: '/pattern/$patternId'
@@ -899,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandWikiIndexRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/user-submissions/': {
+      id: '/space-command/user-submissions/'
+      path: '/user-submissions'
+      fullPath: '/space-command/user-submissions/'
+      preLoaderRoute: typeof SpaceCommandUserSubmissionsIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/contact/': {
       id: '/space-command/contact/'
       path: '/contact'
@@ -941,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileCollectionsCollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/space-command/user-submissions/$id/review': {
+      id: '/space-command/user-submissions/$id/review'
+      path: '/user-submissions/$id/review'
+      fullPath: '/space-command/user-submissions/$id/review'
+      preLoaderRoute: typeof SpaceCommandUserSubmissionsIdReviewRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
   }
 }
 
@@ -962,7 +1042,9 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandContactReviewedRoute: typeof SpaceCommandContactReviewedRoute
   SpaceCommandComplaintsIndexRoute: typeof SpaceCommandComplaintsIndexRoute
   SpaceCommandContactIndexRoute: typeof SpaceCommandContactIndexRoute
+  SpaceCommandUserSubmissionsIndexRoute: typeof SpaceCommandUserSubmissionsIndexRoute
   SpaceCommandWikiIndexRoute: typeof SpaceCommandWikiIndexRoute
+  SpaceCommandUserSubmissionsIdReviewRoute: typeof SpaceCommandUserSubmissionsIdReviewRoute
 }
 
 const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
@@ -983,7 +1065,10 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandContactReviewedRoute: SpaceCommandContactReviewedRoute,
   SpaceCommandComplaintsIndexRoute: SpaceCommandComplaintsIndexRoute,
   SpaceCommandContactIndexRoute: SpaceCommandContactIndexRoute,
+  SpaceCommandUserSubmissionsIndexRoute: SpaceCommandUserSubmissionsIndexRoute,
   SpaceCommandWikiIndexRoute: SpaceCommandWikiIndexRoute,
+  SpaceCommandUserSubmissionsIdReviewRoute:
+    SpaceCommandUserSubmissionsIdReviewRoute,
 }
 
 const SpaceCommandRouteRouteWithChildren =
@@ -992,6 +1077,7 @@ const SpaceCommandRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SpaceCommandRouteRoute: SpaceCommandRouteRouteWithChildren,
+  SubmitPatternRoute: SubmitPatternRoute,
   AuthConfirmVerificationRoute: AuthConfirmVerificationRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
@@ -1005,6 +1091,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpTermsOfServiceRoute: HelpTermsOfServiceRoute,
   NewsPageSlugRoute: NewsPageSlugRoute,
   PatternPatternIdRoute: PatternPatternIdRoute,
+  ProfileUserIdRoute: ProfileUserIdRoute,
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   CommunityIndexRoute: CommunityIndexRoute,

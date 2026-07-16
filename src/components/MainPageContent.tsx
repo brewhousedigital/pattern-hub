@@ -4,20 +4,13 @@ import type { TypePatternResponse } from '@/functions/database/patterns';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
+import { DifficultyChip } from '@/components/PatternUtilities/DifficultyChip';
 
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
-
-function getDifficultyChip(avgDifficulty: number | undefined) {
-  if (!avgDifficulty) return null;
-  const d = Math.round(avgDifficulty * 2);
-  if (d <= 3) return { label: 'Beginner', color: 'success' as const };
-  if (d <= 6) return { label: 'Intermediate', color: 'warning' as const };
-  return { label: 'Expert', color: 'error' as const };
-}
 import { alpha } from '@mui/material/styles';
 
 export const MainPageContent = () => {
@@ -107,77 +100,59 @@ export const MainPageContent = () => {
                     </Box>
                   )}
 
-                  {(() => {
-                    const diffChip = getDifficultyChip(pattern.avg_difficulty);
-                    return (
-                      <Box
+                  <Box
+                    sx={{
+                      px: 1.5,
+                      pb: 1.5,
+                      display: 'flex',
+                      gap: 0.75,
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      icon={<FavoriteRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                      label={pattern.favorite_count ?? 0}
+                      sx={{
+                        fontSize: '0.65rem',
+                        height: 18,
+                        color: 'rgba(0, 0, 0, 0.5)',
+                        borderColor: 'rgba(0, 0, 0, 0.3)',
+                        '& .MuiChip-icon': { color: 'text.disabled' },
+                      }}
+                    />
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      icon={<StarRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                      label={(pattern.avg_rating ?? 0).toFixed(1)}
+                      sx={{
+                        fontSize: '0.65rem',
+                        height: 18,
+                        color: 'rgba(0, 0, 0, 0.5)',
+                        borderColor: 'rgba(0, 0, 0, 0.3)',
+                        '& .MuiChip-icon': { color: 'text.disabled' },
+                      }}
+                    />
+                    {!!pattern.pieces && (
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        icon={<ExtensionRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
+                        label={pattern.pieces}
                         sx={{
-                          px: 1.5,
-                          pb: 1.5,
-                          display: 'flex',
-                          gap: 0.75,
-                          flexWrap: 'wrap',
-                          justifyContent: 'center',
+                          fontSize: '0.65rem',
+                          height: 18,
+                          color: 'rgba(0, 0, 0, 0.5)',
+                          borderColor: 'rgba(0, 0, 0, 0.3)',
+                          '& .MuiChip-icon': { color: 'text.disabled' },
                         }}
-                      >
-                        <Chip
-                          size="small"
-                          variant="outlined"
-                          icon={<FavoriteRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
-                          label={pattern.favorite_count ?? 0}
-                          sx={{
-                            fontSize: '0.65rem',
-                            height: 18,
-                            color: 'rgba(0, 0, 0, 0.5)',
-                            borderColor: 'rgba(0, 0, 0, 0.3)',
-                            '& .MuiChip-icon': { color: 'text.disabled' },
-                          }}
-                        />
-                        <Chip
-                          size="small"
-                          variant="outlined"
-                          icon={<StarRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
-                          label={(pattern.avg_rating ?? 0).toFixed(1)}
-                          sx={{
-                            fontSize: '0.65rem',
-                            height: 18,
-                            color: 'rgba(0, 0, 0, 0.5)',
-                            borderColor: 'rgba(0, 0, 0, 0.3)',
-                            '& .MuiChip-icon': { color: 'text.disabled' },
-                          }}
-                        />
-                        {!!pattern.pieces && (
-                          <Chip
-                            size="small"
-                            variant="outlined"
-                            icon={<ExtensionRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
-                            label={pattern.pieces}
-                            sx={{
-                              fontSize: '0.65rem',
-                              height: 18,
-                              color: 'rgba(0, 0, 0, 0.5)',
-                              borderColor: 'rgba(0, 0, 0, 0.3)',
-                              '& .MuiChip-icon': { color: 'text.disabled' },
-                            }}
-                          />
-                        )}
-                        {diffChip && (
-                          <Chip
-                            size="small"
-                            label={diffChip ? diffChip.label : null}
-                            color={diffChip ? diffChip.color : undefined}
-                            variant={diffChip ? 'filled' : 'outlined'}
-                            sx={{
-                              fontSize: '0.65rem',
-                              height: 18,
-                              color: diffChip ? diffChip.color : 'rgba(0, 0, 0, 0.5)',
-                              borderColor: diffChip ? diffChip.color : 'rgba(0, 0, 0, 0.3)',
-                            }}
-                          />
-                        )}
-                      </Box>
-                    );
-                  })()}
+                      />
+                    )}
+                    <DifficultyChip value={pattern.avg_difficulty} sx={{ fontSize: '0.65rem', height: 18 }} />
+                  </Box>
                 </Card>
               </MuiLink>
             </Grid>

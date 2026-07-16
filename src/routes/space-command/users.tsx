@@ -320,7 +320,7 @@ function RouteComponent() {
             <IconButton
               size="small"
               component="a"
-              href={`/profile?id=${params.row.id}`}
+              href={`/profile/${params.row.id}`}
               target="_blank"
               rel="noopener noreferrer"
             >

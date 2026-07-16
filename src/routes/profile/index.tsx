@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { createPrettyDate } from '@/functions/utilities/dates';
 import type { TypeFavoriteDoneRatingsResponse } from '@/functions/types/types';
@@ -7,7 +7,6 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
-import { useQueryGetUserById, getUserByIdOptions } from '@/functions/database/users';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import type { TypeGalleryResponse } from '@/functions/database/gallery';
 import { GalleryUploadDialog } from '@/components/GalleryUploadDialog';
@@ -15,6 +14,7 @@ import { GalleryEditDialog } from '@/components/GalleryEditDialog';
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
+import { DifficultyChip } from '@/components/PatternUtilities/DifficultyChip';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
@@ -124,49 +124,38 @@ export const Route = createFileRoute('/profile/')({
       tab: Number.isFinite(tab) && tab >= 0 && tab <= 5 ? tab : 0,
     };
   },
-  loaderDeps: ({ search }) => ({ id: search.id }),
-  loader: ({ deps, context }) =>
-    deps.id ? context.queryClient.ensureQueryData(getUserByIdOptions(deps.id)).catch(() => undefined) : undefined,
-  head: ({ loaderData, match }) => {
-    const rawName = loaderData?.name || '';
-    const displayName = rawName.startsWith('NewUser_') ? '' : rawName;
-    return generateSEO(
-      displayName ? `${displayName}'s Profile` : 'Profile',
-      displayName
-        ? `See ${displayName}'s stained glass pattern collection, favorites, and activity on Pattern Archive.`
-        : '',
-      match.pathname,
-    );
+  beforeLoad: ({ search }) => {
+    // Old shared/bookmarked links used ?id=<userId> to view another user's
+    // profile; that view now lives at /profile/$userId. Runs during SSR too,
+    // so crawlers and link unfurlers follow the redirect.
+    if (search.id) {
+      throw redirect({ to: '/profile/$userId', params: { userId: search.id }, search: { tab: search.tab } });
+    }
   },
+  head: ({ match }) => generateSEO('Profile', '', match.pathname),
 });
 
 function RouteComponent() {
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: '/profile/' });
+  const setTab = (v: number) => void navigate({ search: (p) => ({ ...p, tab: v }), resetScroll: false });
+
   return (
     <GeneralLayout>
-      <PageContent />
+      <ProfileContent tab={tab} setTab={setTab} />
     </GeneralLayout>
   );
 }
 
-const PageContent = () => {
-  const { id } = Route.useSearch();
-  const { authData } = useGlobalAuthData();
-  const { isPending, isError, data, refetch } = useQueryGetUserById(id);
-
-  if (id && id !== authData?.id) {
-    if (isPending) return <ProfileSkeleton />;
-    if (isError) return <ProfileError />;
-    return <ProfileContent userData={data} />;
-  }
-
-  return <ProfileContent />;
-};
-
 // ─── Profile Content ──────────────────────────────────────────────────────────
 
-type ProfileContentProps = { userData?: TypeAuthData };
+type ProfileContentProps = {
+  userData?: TypeAuthData;
+  tab: number;
+  setTab: (tab: number) => void;
+};
 
-const ProfileContent = ({ userData }: ProfileContentProps) => {
+export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) => {
   const { authData } = useGlobalAuthData();
 
   const thisAuthData = userData ?? authData;
@@ -228,9 +217,6 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   const [createColOpen, setCreateColOpen] = useState(false);
   const [selectedArtistPatternIndex, setSelectedArtistPatternIndex] = useState<number | null>(null);
 
-  const { tab } = Route.useSearch();
-  const navigate = useNavigate({ from: '/profile/' });
-  const setTab = (v: number) => void navigate({ search: (p) => ({ ...p, tab: v }), resetScroll: false });
   const tabSectionRef = React.useRef<HTMLDivElement>(null);
 
   const handleStatClick = (tabIndex: number) => {
@@ -239,7 +225,7 @@ const ProfileContent = ({ userData }: ProfileContentProps) => {
   };
 
   async function handleShare() {
-    const url = `https://patternarchive.net/profile?id=${thisAuthData?.id}`;
+    const url = `https://patternarchive.net/profile/${thisAuthData?.id}`;
     if (navigator.maxTouchPoints > 0 && navigator.share) {
       try {
         await navigator.share({ title: `${thisAuthData?.name ?? 'Profile'} on Pattern Archive`, url });
@@ -1486,28 +1472,9 @@ const ActivityPatternGrid = (props: ActivityPatternGridProps) => {
                   </Typography>
                 )}
                 {props.showRating && <Rating value={item.rating} readOnly size="small" />}
-                {props.showDifficulty &&
-                  (() => {
-                    const r = item.rating;
-                    const chip =
-                      r <= 1
-                        ? { label: 'Beginner', color: 'success' as const }
-                        : r <= 2
-                          ? { label: 'Easy', color: 'success' as const }
-                          : r <= 3
-                            ? { label: 'Intermediate', color: 'warning' as const }
-                            : r <= 4
-                              ? { label: 'Hard', color: 'warning' as const }
-                              : { label: 'Expert', color: 'error' as const };
-                    return (
-                      <Chip
-                        size="small"
-                        label={chip.label}
-                        color={chip.color}
-                        sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
-                      />
-                    );
-                  })()}
+                {props.showDifficulty && (
+                  <DifficultyChip value={item.rating} sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }} />
+                )}
               </Box>
             </PatternCard>
           </Link>
@@ -2084,7 +2051,7 @@ const heroBtn = {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const ProfileSkeleton = () => (
+export const ProfileSkeleton = () => (
   <PageRoot>
     <Box
       sx={{
@@ -2162,7 +2129,7 @@ const ProfileSkeleton = () => (
 
 // ─── Error ────────────────────────────────────────────────────────────────────
 
-const ProfileError = () => (
+export const ProfileError = () => (
   <GeneralLayout>
     <PageRoot>
       <Box sx={{ minHeight: 320, backgroundColor: 'primary.dark' }} />

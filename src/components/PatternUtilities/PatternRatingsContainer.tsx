@@ -24,19 +24,7 @@ import { alpha } from '@mui/material/styles';
 import { Box, Button, Typography, Rating, Chip, Stack } from '@mui/material';
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
-
-// ─── Difficulty helpers ────────────────────────────────────────────────────────
-
-const toScale10 = (v: number) => Math.round(v * 2);
-const toRatingVal = (d: number) => d / 2;
-
-type DifficultyInfo = { label: string; color: 'success' | 'warning' | 'error'; hex: string };
-
-function getDifficultyInfo(d: number): DifficultyInfo {
-  if (d <= 3) return { label: 'Beginner', color: 'success', hex: '#4caf50' };
-  if (d <= 6) return { label: 'Intermediate', color: 'warning', hex: '#ff9800' };
-  return { label: 'Expert', color: 'error', hex: '#f44336' };
-}
+import { getDifficultyInfo, toScale10, toRatingValue as toRatingVal } from '@/functions/utilities/difficulty';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

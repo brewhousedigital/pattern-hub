@@ -193,8 +193,9 @@ function RouteComponent() {
                   <Stack direction="row" sx={{ flexWrap: 'wrap', width: '100%', gap: 2.5, alignItems: 'center' }}>
                     {collection.expand?.owner_id && (
                       <Link
-                        to="/profile"
-                        search={{ id: collection.owner_id, tab: 0 }}
+                        to="/profile/$userId"
+                        params={{ userId: collection.owner_id }}
+                        search={{ tab: 0 }}
                         style={{ textDecoration: 'none', display: 'block' }}
                       >
                         <Box

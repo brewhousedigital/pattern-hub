@@ -8,6 +8,7 @@ import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import Settings from '@mui/icons-material/Settings';
+import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import Logout from '@mui/icons-material/Logout';
 
 import { Avatar, IconButton, ListItemIcon, Menu, MenuItem } from '@mui/material';
@@ -55,7 +56,7 @@ export const HeaderProfileMenu = () => {
         sx={{ '& .MuiPaper-root': { borderRadius: 2 }, '& .MuiList-root': { paddingTop: 0, paddingBottom: 0 } }}
       >
         {authData &&
-          authenticatedMenuItems.map((item) => (
+          getAuthenticatedMenuItems(!!authData?.verified).map((item) => (
             <MenuItem key={item.label} onClick={() => item.onClick(navigateTo)} sx={menuItemStyles}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               {item.label}
@@ -88,7 +89,7 @@ const AvatarBlock = () => {
   return <AccountCircleRoundedIcon />;
 };
 
-const authenticatedMenuItems = [
+const getAuthenticatedMenuItems = (verified: boolean) => [
   {
     label: 'Profile',
     icon: <PersonRoundedIcon />,
@@ -105,6 +106,17 @@ const authenticatedMenuItems = [
     },
     disabled: true,
   },
+  ...(verified
+    ? [
+        {
+          label: 'Submit a Pattern',
+          icon: <UploadFileRoundedIcon />,
+          onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+            navigateTo({ to: '/submit-pattern' });
+          },
+        },
+      ]
+    : []),
   {
     label: 'Logout',
     icon: <Logout />,
