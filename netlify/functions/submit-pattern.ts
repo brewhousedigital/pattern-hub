@@ -1,8 +1,33 @@
 // @ts-ignore
 import sharp from 'sharp';
-// @ts-ignore
-import { pdf as loadPdf } from 'pdf-to-img';
 import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sanitize';
+
+// pdf-to-img pulls in pdfjs-dist's legacy Node build, which references a
+// top-level `new DOMMatrix()` at module-eval time (no lazy guard). Node has no
+// DOMMatrix global, so a static top-level import of pdf-to-img throws during
+// this file's own module load - crashing EVERY submission (SVG and image
+// included), not just PDFs. Both the DOMMatrix/Path2D/ImageData polyfill (from
+// `canvas`, pdfjs's own documented Node canvas backend) and the pdf-to-img
+// import itself are deferred into the PDF-only branch below, inside the
+// existing try/catch, so a PDF-specific failure can never take down the rest
+// of the function.
+async function rasterizeFirstPdfPage(buffer: Buffer): Promise<{ pageBuffer: Buffer; pageCount: number }> {
+  const canvasModule = await import('canvas');
+  const g = globalThis as any;
+  if (!g.DOMMatrix) g.DOMMatrix = canvasModule.DOMMatrix;
+  // @ts-ignore
+  if (!g.Path2D) g.Path2D = canvasModule.Path2D;
+  if (!g.ImageData) g.ImageData = canvasModule.ImageData;
+
+  const { pdf: loadPdf } = await import('pdf-to-img');
+  const doc = await loadPdf(buffer, { scale: 3 });
+  try {
+    const pageBuffer = await doc.getPage(1);
+    return { pageBuffer, pageCount: doc.length };
+  } finally {
+    await doc.destroy();
+  }
+}
 
 const PB_URL = 'https://stained-glass.pockethost.io';
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
@@ -72,7 +97,7 @@ export default async (req: Request) => {
   if (!authToken) return jsonError('Not authenticated', 401);
   if (!turnstileToken) return jsonError('Security check missing', 400);
   if (!file) return jsonError('No file provided', 400);
-  if (!isAuthor && !authorManualName) return jsonError('Please provide the original artist\'s name', 400);
+  if (!isAuthor && !authorManualName) return jsonError("Please provide the original artist's name", 400);
 
   // 4. Turnstile verification
   const cfResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -121,10 +146,7 @@ export default async (req: Request) => {
     return jsonError('Only image files, SVG, or single-page PDF are supported', 400);
   }
   if (file.size > MAX_FILE_SIZE) {
-    return jsonError(
-      'File is too large - maximum 15 MB. Try compressing it first at https://tinypng.com/',
-      400,
-    );
+    return jsonError('File is too large - maximum 15 MB. Try compressing it first at https://tinypng.com/', 400);
   }
 
   let uploadBlob: Blob;
@@ -158,16 +180,13 @@ export default async (req: Request) => {
       }
     } else if (isPdf) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const doc = await loadPdf(buffer, { scale: 3 });
-      if (doc.length > 1) {
-        await doc.destroy();
+      const { pageBuffer, pageCount } = await rasterizeFirstPdfPage(buffer);
+      if (pageCount > 1) {
         return jsonError(
           'Multi-page PDFs are not supported. Please submit a single-page PDF, or use the contact page for bulk submissions.',
           400,
         );
       }
-      const pageBuffer = await doc.getPage(1);
-      await doc.destroy();
       const webp = await convertImageToWebp(pageBuffer);
       uploadBlob = new Blob([new Uint8Array(webp)], { type: 'image/webp' });
       uploadFileName = file.name.replace(/\.[^.]+$/, '') + '.webp';
