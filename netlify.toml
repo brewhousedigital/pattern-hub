@@ -15,8 +15,13 @@
   command = "npm run build"
 
 [functions]
-  external_node_modules = ["sharp"]
-  included_files = ["node_modules/sharp/**/*"]
+  # `canvas` ships a native .node binary that esbuild can't bundle into JS -
+  # it (and sharp) must stay external and have their files copied verbatim.
+  # `pdfjs-dist`'s standard_fonts/cmaps are read from disk at runtime
+  # (pdf-to-img resolves paths via require.resolve('pdfjs-dist/package.json')),
+  # so those assets need to ship too, not just get bundled as code.
+  external_node_modules = ["sharp", "canvas"]
+  included_files = ["node_modules/sharp/**/*", "node_modules/canvas/**/*", "node_modules/pdfjs-dist/**/*"]
 
 [dev]
   command = "npm run dev"

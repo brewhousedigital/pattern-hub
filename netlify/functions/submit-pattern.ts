@@ -161,7 +161,7 @@ export default async (req: Request) => {
       // Malicious SVGs are rejected outright at submit time - there's no
       // admin present here to eyeball a warning dialog the way the admin
       // upload flow does, so any detected threat is a hard block.
-      const threats = analyzeSvgThreatsServer(raw);
+      const threats = await analyzeSvgThreatsServer(raw);
       if (threats.some((t) => t.severity === 'high')) {
         return jsonError(
           'This SVG could not be accepted for security reasons. Please re-export it from your design tool and try again.',
@@ -169,7 +169,7 @@ export default async (req: Request) => {
         );
       }
 
-      const clean = sanitizeSvgServer(raw);
+      const clean = await sanitizeSvgServer(raw);
       uploadBlob = new Blob([clean], { type: 'image/svg+xml' });
       uploadFileName = file.name.replace(/\.[^.]+$/, '') + '.svg';
       fileType = 'svg';

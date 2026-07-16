@@ -6,22 +6,29 @@
 // literal re-export - a compromised/absent browser check must never be the only
 // gate before untrusted content reaches storage, so this file is the real
 // enforcement point.
-// @ts-ignore - no bundled types needed, we only use the DOM surface
-import { JSDOM } from 'jsdom';
-// @ts-ignore
-import createDOMPurify from 'dompurify';
+//
+// jsdom (via html-encoding-sniffer) now pulls in an ESM-only dependency deep
+// in its tree. Netlify's function bundler produces a CommonJS bundle, and a
+// static top-level `import` of jsdom compiles to a top-level `require()` that
+// throws ERR_REQUIRE_ESM at module load - crashing every submission, not just
+// SVG ones (this is the same class of bug as the earlier pdf-to-img/DOMMatrix
+// crash). `import()` CAN load ESM from a CJS module at runtime, so jsdom and
+// dompurify are loaded dynamically here instead, deferred until an SVG is
+// actually being processed.
 
 export type SvgThreatSeverity = 'high' | 'medium';
 export type SvgThreat = { id: string; severity: SvgThreatSeverity; title: string; detail: string };
 
 const URL_FUNC_REGEX = /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
 
-function getWindow() {
+async function getWindow() {
+  const { JSDOM } = await import('jsdom');
   return new JSDOM('').window;
 }
 
-export function sanitizeSvgServer(raw: string): string {
-  const window = getWindow();
+export async function sanitizeSvgServer(raw: string): Promise<string> {
+  const window = await getWindow();
+  const { default: createDOMPurify } = await import('dompurify');
   const DOMPurify = createDOMPurify(window as any);
   const clean = DOMPurify.sanitize(raw, {
     USE_PROFILES: { svg: true, svgFilters: true },
@@ -42,8 +49,8 @@ export function sanitizeSvgServer(raw: string): string {
 // that file for the full rationale behind each check. Runs on the RAW
 // (pre-sanitize) text via jsdom's DOMParser, which never executes scripts or
 // fetches resources, so analysis itself is safe.
-export function analyzeSvgThreatsServer(svgText: string): SvgThreat[] {
-  const window = getWindow();
+export async function analyzeSvgThreatsServer(svgText: string): Promise<SvgThreat[]> {
+  const window = await getWindow();
   const threats: SvgThreat[] = [];
   const add = (t: SvgThreat) => {
     if (!threats.some((x) => x.id === t.id)) threats.push(t);
