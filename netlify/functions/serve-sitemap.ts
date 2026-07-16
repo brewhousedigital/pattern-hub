@@ -52,4 +52,16 @@ export default async (req: Request) => {
   }
 };
 
-export const config = { path: SITEMAP_FILES.map((f) => `/${f}`) };
+// Netlify extracts `config.path` via static analysis of this file at build time -
+// it does NOT execute the module, so a computed value (e.g. SITEMAP_FILES.map(...))
+// is silently ignored and no custom route gets registered. Must be a literal array.
+export const config = {
+  path: [
+    '/sitemap.xml',
+    '/sitemap-static.xml',
+    '/sitemap-patterns.xml',
+    '/sitemap-wiki.xml',
+    '/sitemap-sets.xml',
+    '/sitemap-authors.xml',
+  ],
+};
