@@ -72,15 +72,18 @@ const STATIC_URLS: SitemapUrl[] = [
   { loc: `${SITE_URL}/help/terms-of-service`, changefreq: 'yearly', priority: '0.3' },
 ];
 
-type PatternRecord = { id: string; updated: string };
-type WikiCategoryRecord = { id: string; slug: string; updated: string };
-type WikiPageRecord = { slug: string; updated: string; expand?: { category?: { slug: string } } };
-type SetRecord = { id: string; updated: string };
-type AuthorRecord = { slug: string; updated: string };
+type PatternRecord = { id: string; updated: string; last_updated?: string; created: string };
+type WikiCategoryRecord = { id: string; slug: string; updated: string; created: string };
+type WikiPageRecord = { slug: string; updated: string; created: string; expand?: { category?: { slug: string } } };
+type SetRecord = { id: string; updated: string; created: string };
+type AuthorRecord = { slug: string; updated: string; created: string };
 
 async function buildSitemaps(): Promise<Record<string, string>> {
   const [patterns, wikiCategories, wikiPages, sets, authors] = await Promise.all([
-    fetchAllPages<PatternRecord>('patterns', { filter: 'isDeleted=false && is_draft=false', fields: 'id,updated' }),
+    fetchAllPages<PatternRecord>('patterns', {
+      filter: 'isDeleted=false && is_draft=false',
+      fields: 'id,updated,last_updated,created',
+    }),
     fetchAllPages<WikiCategoryRecord>('wiki_categories', { fields: 'id,slug,updated' }),
     fetchAllPages<WikiPageRecord>('wiki_pages', { expand: 'category', fields: 'slug,updated,expand.category.slug' }),
     fetchAllPages<SetRecord>('pattern_sets', { filter: 'is_published=true', fields: 'id,updated' }),
@@ -88,7 +91,11 @@ async function buildSitemaps(): Promise<Record<string, string>> {
   ]);
 
   const sitemapPatterns = buildUrlset(
-    patterns.map((p) => ({ loc: `${SITE_URL}/pattern/${p.id}`, lastmod: p.updated, changefreq: 'monthly' })),
+    patterns.map((p) => ({
+      loc: `${SITE_URL}/pattern/${p.id}`,
+      lastmod: p.last_updated || p.created,
+      changefreq: 'monthly',
+    })),
   );
 
   const wikiCategoryUrls = wikiCategories.map((c) => ({
@@ -137,7 +144,9 @@ export default async () => {
     const store = getStore('sitemaps');
 
     await Promise.all(
-      Object.entries(sitemaps).map(([key, xml]) => store.set(key, xml, { metadata: { contentType: 'application/xml' } })),
+      Object.entries(sitemaps).map(([key, xml]) =>
+        store.set(key, xml, { metadata: { contentType: 'application/xml' } }),
+      ),
     );
 
     return Response.json({ success: true, files: Object.keys(sitemaps) });
