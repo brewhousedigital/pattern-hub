@@ -18,7 +18,7 @@ import { UserSubmissionViewModal } from '@/components/admin/UserSubmissionViewMo
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 
-import { Box, Chip, Stack, Typography, IconButton, Tooltip } from '@mui/material';
+import { Box, Chip, Stack, Typography, IconButton, Tooltip, Link as MuiLink } from '@mui/material';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 
 export const Route = createFileRoute('/space-command/user-submissions/')({
@@ -75,12 +75,21 @@ function RouteComponent() {
       field: 'submitter',
       headerName: 'Submitter',
       width: 160,
-      valueGetter: (_value, row) => row.expand?.submitter?.name ?? row.submitter,
+      renderCell: (params: GridRenderCellParams<TypeUserSubmittedPatternResponse>) => (
+        <MuiLink
+          href={`/profile/${params.row.submitter}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {params.row.expand?.submitter?.name ?? params.row.submitter}
+        </MuiLink>
+      ),
     },
     {
       field: 'file_type',
       headerName: 'File Type',
-      width: 110,
+      width: 200,
       renderCell: (params: GridRenderCellParams<TypeUserSubmittedPatternResponse>) => (
         <Chip
           size="small"
@@ -114,8 +123,10 @@ function RouteComponent() {
       headerName: '',
       width: 100,
       sortable: false,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params: GridRenderCellParams<TypeUserSubmittedPatternResponse>) => (
-        <Stack direction="row" sx={{ gap: 0.5 }}>
+        <Stack direction="row" sx={{ gap: 0.5, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
           {canRead && (
             <Tooltip title="View">
               <IconButton size="small" onClick={() => setViewingSubmission(params.row)}>
