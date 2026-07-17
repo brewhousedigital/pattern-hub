@@ -150,8 +150,6 @@ routerAdd('GET', '/api/pattern-search', (c) => {
       return String(s).replace(/"/g, '\\"');
     }
 
-    const authorDslParts = [];
-    const authorSqlParts = [];
     const idDslParts = [];
     const idSqlParts = [];
 
@@ -168,6 +166,12 @@ routerAdd('GET', '/api/pattern-search', (c) => {
           sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
         }
       } else if (t.type === 'author') {
+        // Each author token is its own AND-ed clause (pushed straight into
+        // dslParts/sqlParts, same as tag/title/etc.) so "author:A author:B"
+        // means patterns crediting BOTH A and B (intersection) - matching how
+        // tag search already works. Within a single token, matching either
+        // the manual-author text OR any of that name's resolved linked-user
+        // ids is still an OR, since one artist may be recorded either way.
         const ids = (authorIdMap && authorIdMap[t.value]) || [];
         const nameBind = bind(t.value);
         if (t.exclude) {
@@ -178,8 +182,8 @@ routerAdd('GET', '/api/pattern-search', (c) => {
             dsl += ` && authors !~ "${escDq(id)}"`;
             sql += ` AND authors NOT LIKE '%"' || ${idBind} || '"%'`;
           }
-          authorDslParts.push(dsl + ')');
-          authorSqlParts.push(sql + ')');
+          dslParts.push(dsl + ')');
+          sqlParts.push(sql + ')');
         } else {
           let dsl = `(author_manual ~ "${escDq(t.value)}"`;
           let sql = `(author_manual LIKE '%' || ${nameBind} || '%'`;
@@ -188,8 +192,8 @@ routerAdd('GET', '/api/pattern-search', (c) => {
             dsl += ` || authors ~ "${escDq(id)}"`;
             sql += ` OR authors LIKE '%"' || ${idBind} || '"%'`;
           }
-          authorDslParts.push(dsl + ')');
-          authorSqlParts.push(sql + ')');
+          dslParts.push(dsl + ')');
+          sqlParts.push(sql + ')');
         }
       } else if (t.type === 'id') {
         const b = bind(t.value);
@@ -238,8 +242,6 @@ routerAdd('GET', '/api/pattern-search', (c) => {
       }
     }
 
-    if (authorDslParts.length) dslParts.push(`(${authorDslParts.join(' || ')})`);
-    if (authorSqlParts.length) sqlParts.push(`(${authorSqlParts.join(' OR ')})`);
     if (idDslParts.length) dslParts.push(`(${idDslParts.join(' || ')})`);
     if (idSqlParts.length) sqlParts.push(`(${idSqlParts.join(' OR ')})`);
 
