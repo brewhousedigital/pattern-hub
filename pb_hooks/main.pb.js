@@ -193,12 +193,19 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         }
       } else if (t.type === 'id') {
         const b = bind(t.value);
+        // The facet query cross-joins json_each(patterns.tags), whose output
+        // table has its OWN column named `id` (json_each's internal node id,
+        // unrelated to the row's primary key). A bare `id` reference here is
+        // ambiguous between `patterns.id` and that json_each column - SQLite
+        // throws a parse error, which the facet query's try/catch swallows,
+        // silently leaving tagFacets (and totalItems, via countRows) empty.
+        // Qualifying with the table name resolves the ambiguity.
         if (t.exclude) {
           idDslParts.push(`(id != "${escDq(t.value)}")`);
-          idSqlParts.push(`(id != ${b})`);
+          idSqlParts.push(`(patterns.id != ${b})`);
         } else {
           idDslParts.push(`(id = "${escDq(t.value)}")`);
-          idSqlParts.push(`(id = ${b})`);
+          idSqlParts.push(`(patterns.id = ${b})`);
         }
       } else if (t.type === 'title') {
         const b = bind(t.value);
