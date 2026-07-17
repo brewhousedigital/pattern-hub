@@ -1,10 +1,6 @@
 import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  getHomepageDefaultPatternsOptions,
-  getPatternByIdOptions,
-  useQueryGetAllPatternsByPagination,
-} from '@/functions/database/patterns';
+import { getPatternByIdOptions, useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { MainPageContent } from '@/components/MainPageContent';
 import { MobileSidebarBlock, SidebarBlock } from '@/components/layout/Sidebar';
 import { useGlobalIsViewOpen } from '@/data/view';
@@ -28,39 +24,33 @@ export const Route = createFileRoute('/pattern/')({
   component: RouteComponent,
   validateSearch: patternSearchSchema,
   loaderDeps: ({ search }) => ({ patternId: search.patternId }),
-  // Prefetches the default grid; when a pattern is shared via ?patternId=…
-  // (the view drawer), also loads it so the head() below can emit its meta
-  // tags server-side (this replaced the og-meta edge function).
+  // The grid itself is intentionally NOT prefetched here - it's fetched
+  // purely client-side by MainPageContent's useQueryGetAllPatternsByPagination
+  // (which already renders a full skeleton grid for its isPending state), so
+  // the server can respond immediately instead of blocking on a PocketBase
+  // round trip for the pattern list on every /pattern request. Only the
+  // shared/deep-link pattern (?patternId=…) is still fetched here, and only
+  // during SSR, so head() below can emit real per-pattern meta tags for
+  // crawlers/link unfurls (this replaced the og-meta edge function).
   loader: async ({ deps, context }) => {
-    const defaultPatterns = context.queryClient
-      .ensureQueryData(getHomepageDefaultPatternsOptions())
-      .catch(() => undefined);
-
-    if (!deps.patternId) {
-      await defaultPatterns;
-      return undefined;
-    }
+    if (!deps.patternId) return undefined;
 
     const sharedPattern = context.queryClient
       .ensureQueryData(getPatternByIdOptions(deps.patternId))
       .catch(() => undefined);
 
-    // SSR (a hard load / shared ?patternId= link) awaits this so head() below
-    // can emit real per-pattern meta tags for crawlers/link unfurls. On the
-    // client, a pattern-card click already has this pattern's data sitting in
-    // the grid list cache (usePatternViewData reads it directly, see
-    // ViewDrawerContainer below) - awaiting a fresh network fetch here would
-    // just stall the drawer's slide-up on every single click for data nothing
-    // actually needs, which is very noticeable on PocketBase cold starts. Let
-    // it warm the query cache in the background instead; the browser tab
-    // title for this client-nav case is kept in sync separately in
-    // ViewDrawerContainer, straight from the grid data.
+    // On the client, a pattern-card click already has this pattern's data
+    // sitting in the grid list cache (usePatternViewData reads it directly,
+    // see ViewDrawerContainer below) - awaiting a fresh network fetch here
+    // would just stall the drawer's slide-up on every single click for data
+    // nothing actually needs, which is very noticeable on PocketBase cold
+    // starts. Let it warm the query cache in the background instead; the
+    // browser tab title for this client-nav case is kept in sync separately
+    // in ViewDrawerContainer, straight from the grid data.
     if (typeof window === 'undefined') {
-      const [, shared] = await Promise.all([defaultPatterns, sharedPattern]);
-      return shared;
+      return await sharedPattern;
     }
 
-    await defaultPatterns;
     return undefined;
   },
   head: ({ loaderData, match }) =>
