@@ -14,6 +14,7 @@ import { PaginationBox } from '@/components/PaginationBox';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { generatePbImageOpenGraph } from '@/functions/utilities/generate-pb-image';
+import { seoTitle } from '@/functions/utilities/seo';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { patternSearchSchema } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
@@ -34,11 +35,33 @@ export const Route = createFileRoute('/pattern/')({
     const defaultPatterns = context.queryClient
       .ensureQueryData(getHomepageDefaultPatternsOptions())
       .catch(() => undefined);
-    const sharedPattern = deps.patternId
-      ? context.queryClient.ensureQueryData(getPatternByIdOptions(deps.patternId)).catch(() => undefined)
-      : undefined;
-    const [, shared] = await Promise.all([defaultPatterns, sharedPattern]);
-    return shared;
+
+    if (!deps.patternId) {
+      await defaultPatterns;
+      return undefined;
+    }
+
+    const sharedPattern = context.queryClient
+      .ensureQueryData(getPatternByIdOptions(deps.patternId))
+      .catch(() => undefined);
+
+    // SSR (a hard load / shared ?patternId= link) awaits this so head() below
+    // can emit real per-pattern meta tags for crawlers/link unfurls. On the
+    // client, a pattern-card click already has this pattern's data sitting in
+    // the grid list cache (usePatternViewData reads it directly, see
+    // ViewDrawerContainer below) - awaiting a fresh network fetch here would
+    // just stall the drawer's slide-up on every single click for data nothing
+    // actually needs, which is very noticeable on PocketBase cold starts. Let
+    // it warm the query cache in the background instead; the browser tab
+    // title for this client-nav case is kept in sync separately in
+    // ViewDrawerContainer, straight from the grid data.
+    if (typeof window === 'undefined') {
+      const [, shared] = await Promise.all([defaultPatterns, sharedPattern]);
+      return shared;
+    }
+
+    await defaultPatterns;
+    return undefined;
   },
   head: ({ loaderData, match }) =>
     loaderData
