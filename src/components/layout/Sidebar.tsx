@@ -25,7 +25,7 @@ export const SidebarList = (props: SidebarListProps) => {
   // ── Pass-through tags (drawer mode) ──────────────────────────────────────
   const passThroughDataTagCounts = (props?.tagList ?? [])
     .map((tag) => tag.trim().toLowerCase())
-    .filter((tag) => !isTagActive(tag))
+    //.filter((tag) => !isTagActive(tag))
     .reduce<TypeTagObject[]>((acc, tag) => {
       const existing = acc.find((item) => item.tag === tag);
       if (existing) {
@@ -101,7 +101,19 @@ type TagListItemProps = {
 };
 
 const TagListItem = (props: TagListItemProps) => {
-  const { addTag, setPatternId } = usePatternSearch();
+  const { addTag, setOnlyTag, setPatternId } = usePatternSearch();
+
+  // Clicking the tag label itself replaces the whole search with just this
+  // tag (product decision) - the separate +/- icon buttons stay
+  // additive/subtractive via handleAddTag/handleRemoveTag below.
+  const handleSetOnlyTag = (tag: string) => {
+    console.log('>>>Setting only tag', tag);
+    setOnlyTag(tag);
+    if (props?.handleClose) {
+      setPatternId(undefined);
+      props?.handleClose();
+    }
+  };
 
   const handleAddTag = (tag: string) => {
     addTag(tag);
@@ -135,7 +147,7 @@ const TagListItem = (props: TagListItemProps) => {
       {/* Tag label */}
       <Box
         component="button"
-        onClick={() => handleAddTag(props.data.tag)}
+        onClick={() => handleSetOnlyTag(props.data.tag)}
         sx={{
           flex: 1,
           minWidth: 0,
@@ -203,10 +215,14 @@ type MixedListItemProps = {
 };
 
 const MixedListItem = ({ item }: MixedListItemProps) => {
-  const { addTag, addAuthor } = usePatternSearch();
+  const { addTag, addAuthor, setOnlyTag, setOnlyAuthor } = usePatternSearch();
 
   const handleInclude = () => (item.kind === 'author' ? addAuthor(item.label) : addTag(item.label));
   const handleExclude = () => (item.kind === 'author' ? addAuthor(item.label, true) : addTag(item.label, true));
+  // Clicking the label replaces the whole search with just this tag/author
+  // (same product decision as TagListItem) - the +/- icon buttons above stay
+  // additive/subtractive via handleInclude/handleExclude.
+  const handleSetOnly = () => (item.kind === 'author' ? setOnlyAuthor(item.label) : setOnlyTag(item.label));
 
   return (
     <Box
@@ -223,7 +239,7 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
     >
       <Box
         component="button"
-        onClick={handleInclude}
+        onClick={handleSetOnly}
         sx={{
           flex: 1,
           minWidth: 0,

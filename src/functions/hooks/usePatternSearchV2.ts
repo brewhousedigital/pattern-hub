@@ -26,7 +26,9 @@ export type UsePatternSearchReturn = {
   // Token mutations
   addRawInput: (raw: string) => void;
   addTag: (tag: string, exclude?: boolean) => void;
+  setOnlyTag: (tag: string) => void;
   addAuthor: (author: string, exclude?: boolean) => void;
+  setOnlyAuthor: (author: string) => void;
   addId: (id: string, exclude?: boolean) => void;
   addTitle: (title: string, exclude?: boolean) => void;
   addDescription: (description: string, exclude?: boolean) => void;
@@ -113,6 +115,15 @@ export function usePatternSearch(): UsePatternSearchReturn {
   }
 
   /**
+   * Replace the entire search with a single tag - used by the sidebar tag
+   * label click (the label swaps the search to just this tag; the separate
+   * +/- icon buttons stay additive/subtractive via addTag).
+   */
+  function setOnlyTag(tag: string) {
+    updateTokens([{ type: 'tag', value: tag, exclude: false }]);
+  }
+
+  /**
    * Add an author token directly.
    * Skips if the author is already present to avoid duplicates.
    */
@@ -120,6 +131,14 @@ export function usePatternSearch(): UsePatternSearchReturn {
     const alreadyExists = tokens.some((t) => t.type === 'author' && t.value === author && t.exclude === exclude);
     if (alreadyExists) return;
     updateTokens([...tokens, { type: 'author', value: author, exclude }]);
+  }
+
+  /**
+   * Replace the entire search with a single author - same idea as
+   * setOnlyTag, used by the sidebar's mixed tag/author label click.
+   */
+  function setOnlyAuthor(author: string) {
+    updateTokens([{ type: 'author', value: author, exclude: false }]);
   }
 
   function addId(id: string, exclude = false) {
@@ -234,7 +253,9 @@ export function usePatternSearch(): UsePatternSearchReturn {
     setExportTab,
     addRawInput,
     addTag,
+    setOnlyTag,
     addAuthor,
+    setOnlyAuthor,
     addId,
     addTitle,
     addDescription,
