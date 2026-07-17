@@ -6,6 +6,7 @@ import { HomepageTagSearch } from '@/components/homepage/HomepageTagSearch';
 import { HomepageBackgroundPattern } from '@/components/homepage/HomepageBackgroundPattern';
 import { useQuerySearchTags } from '@/functions/database/tags';
 import { generateSEO } from '@/functions/utilities/seo';
+import { dynamicCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
 import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
@@ -46,6 +47,7 @@ export const Route = createFileRoute('/')({
     }
   },
   head: () => generateSEO(),
+  headers: dynamicCacheHeaders,
 });
 
 function RouteComponent() {

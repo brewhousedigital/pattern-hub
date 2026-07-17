@@ -8,6 +8,7 @@ import {
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/wiki/$categorySlug/')({
       loaderData?.name ? `Browse ${loaderData.name} articles in the Pattern Archive wiki.` : '',
       match.pathname,
     ),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

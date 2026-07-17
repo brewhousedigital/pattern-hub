@@ -19,6 +19,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 import { enqueueSnackbar } from 'notistack';
 import { alpha } from '@mui/material/styles';
 
@@ -57,6 +58,7 @@ export const Route = createFileRoute('/sets/$setId')({
         ? `https://patternarchive.net/api/og-image?type=set&title=${encodeURIComponent(loaderData.title)}`
         : undefined,
     ),
+  headers: staticCacheHeaders,
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

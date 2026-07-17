@@ -8,6 +8,7 @@ import {
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { styled } from '@mui/material/styles';
 import { Box, Container } from '@mui/material';
@@ -30,6 +31,7 @@ export const Route = createFileRoute('/news/')({
       () => undefined,
     ),
   head: ({ match }) => generateSEO('News', 'Announcements and updates from Pattern Archive.', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

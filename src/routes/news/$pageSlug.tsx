@@ -5,6 +5,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { styled } from '@mui/material/styles';
 import { Box, Container } from '@mui/material';
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/news/$pageSlug')({
         ? `https://patternarchive.net/api/og-image?type=wiki&title=${encodeURIComponent(loaderData.title)}&category=News`
         : undefined,
     ),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

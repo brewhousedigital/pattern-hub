@@ -6,6 +6,7 @@ import { COMMUNITY_BANNERS, type CommunityBanner } from '@/constants/community-b
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import { DOMAIN_URL, DISCORD_SERVER_LINK, REDDIT_LINK } from '@/data/constants';
 import { DiscordIcon } from '@/assets/DiscordIcon';
+import { dynamicCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import RedditIcon from '@mui/icons-material/Reddit';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/community/')({
       'Help Pattern Archive reach more crafters - banners, embed code, and a look back at where it all started.',
       match.pathname,
     ),
+  headers: dynamicCacheHeaders,
 });
 
 function RouteComponent() {

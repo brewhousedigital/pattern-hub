@@ -2,6 +2,7 @@ import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { styled, alpha } from '@mui/material/styles';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
@@ -18,6 +19,7 @@ const LAST_UPDATED = 'April 23, 2026';
 export const Route = createFileRoute('/help/terms-of-service')({
   component: RouteComponent,
   head: ({ match }) => generateSEO('Terms of Service', '', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

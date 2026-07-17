@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 import { DISCORD_SERVER_LINK } from '@/data/constants';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -12,6 +13,7 @@ import { Box, Typography, TextField, Button, Alert, CircularProgress, Container,
 export const Route = createFileRoute('/help/contact')({
   component: RouteComponent,
   head: ({ match }) => generateSEO('Contact', '', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 const COOLDOWN_KEY = 'contact_last_submit';

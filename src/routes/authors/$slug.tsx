@@ -12,6 +12,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { PatternTileCard } from '@/components/cards/PatternTileCard';
 import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
@@ -48,6 +49,7 @@ export const Route = createFileRoute('/authors/$slug')({
           ? `https://patternarchive.net/api/og-image?type=author&title=${encodeURIComponent(loaderData.name)}`
           : undefined),
     ),
+  headers: staticCacheHeaders,
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

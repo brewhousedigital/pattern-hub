@@ -6,6 +6,7 @@ import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { useFuzzySearch } from '@/functions/hooks/useFuzzySearch';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown } from '@/functions/utilities/strip-markdown';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { styled, alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
   loader: ({ context }) => context.queryClient.ensureQueryData(getAllFAQOptions()).catch(() => undefined),
   head: ({ match }) => generateSEO('FAQ', '', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 // Module-level so the Fuse index isn't rebuilt every render (see useFuzzySearch)

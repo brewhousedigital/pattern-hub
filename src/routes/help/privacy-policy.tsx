@@ -2,6 +2,7 @@ import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { styled, alpha } from '@mui/material/styles';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -17,6 +18,7 @@ const LAST_UPDATED = 'April 4, 2026';
 export const Route = createFileRoute('/help/privacy-policy')({
   component: RouteComponent,
   head: ({ match }) => generateSEO('Privacy Policy', '', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

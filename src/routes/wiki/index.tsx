@@ -7,6 +7,7 @@ import {
 } from '@/functions/database/wiki';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import ArticleIcon from '@mui/icons-material/Article';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/wiki/')({
       context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
     ]).catch(() => undefined),
   head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

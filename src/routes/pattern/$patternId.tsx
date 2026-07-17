@@ -8,6 +8,7 @@ import { generateSEO } from '@/functions/utilities/seo';
 import { generatePbImageOpenGraph } from '@/functions/utilities/generate-pb-image';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
 import { FullScreenLoader } from '@/components/layout/FullScreenLoader';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { Alert, Box, Container, Link as MuiLink } from '@mui/material';
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/pattern/$patternId')({
       match.pathname,
       loaderData?.opengraph_image ? generatePbImageOpenGraph(loaderData) : undefined,
     ),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

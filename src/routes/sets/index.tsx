@@ -5,6 +5,7 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown } from '@/functions/utilities/markdown';
 import { PatternAvatarStack } from '@/components/browse/PatternAvatarStack';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 import { alpha } from '@mui/material/styles';
 
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/sets/')({
   component: RouteComponent,
   loader: ({ context }) => context.queryClient.ensureQueryData(getPublishedSetsOptions()).catch(() => undefined),
   head: ({ match }) => generateSEO('Sets', 'Browse curated pattern collections', match.pathname),
+  headers: staticCacheHeaders,
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────

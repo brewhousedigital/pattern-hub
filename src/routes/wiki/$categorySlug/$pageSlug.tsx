@@ -5,6 +5,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { stripMarkdown, truncate } from '@/functions/utilities/strip-markdown';
+import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
         ? `https://patternarchive.net/api/og-image?type=wiki&title=${encodeURIComponent(loaderData.title)}&category=${encodeURIComponent(loaderData.expand?.category?.name ?? '')}`
         : undefined,
     ),
+  headers: staticCacheHeaders,
 });
 
 function RouteComponent() {

@@ -16,6 +16,7 @@ import { patternSearchSchema } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { usePatternViewData } from '@/functions/hooks/usePatternView';
 import { HomepageSearchV3 } from '@/components/layout/HomepageSearchV3.tsx';
+import { dynamicCacheHeaders } from '@/functions/utilities/cache-headers';
 
 import { Box, Typography, Fade, SwipeableDrawer, LinearProgress } from '@mui/material';
 import { visuallyHidden } from '@mui/utils';
@@ -62,6 +63,7 @@ export const Route = createFileRoute('/pattern/')({
           loaderData.opengraph_image ? generatePbImageOpenGraph(loaderData) : undefined,
         )
       : generateSEO('Browse Patterns', 'Browse and search hundreds of free stained glass patterns.', match.pathname),
+  headers: dynamicCacheHeaders,
 });
 
 function RouteComponent() {
