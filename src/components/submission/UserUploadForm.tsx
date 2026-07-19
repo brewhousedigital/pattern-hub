@@ -100,6 +100,8 @@ export const UserUploadForm = () => {
   const debouncedManualAuthorSearch = useDebounce(manualAuthorInput, 300);
   const { data: manualAuthorData, isFetching: manualAuthorFetching } =
     useQuerySearchManualAuthors(debouncedManualAuthorSearch);
+  const [sourceUrl, setSourceUrl] = React.useState('');
+  const [sourceNotes, setSourceNotes] = React.useState('');
 
   const [tagValue, setTagValue] = React.useState<string[]>([]);
   const [tagInput, setTagInput] = React.useState('');
@@ -175,9 +177,13 @@ export const UserUploadForm = () => {
 
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [honeypot, setHoneypot] = React.useState('');
-  const formOpenTime = React.useRef(Date.now());
+  const formOpenTime = React.useRef(0);
   const [uploadState, setUploadState] = React.useState<UploadState>('idle');
   const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
+
+  React.useEffect(() => {
+    formOpenTime.current = Date.now();
+  }, []);
 
   React.useEffect(() => {
     const tick = () => {
@@ -259,6 +265,8 @@ export const UserUploadForm = () => {
     fd.append('instructions', instructions.trim());
     fd.append('is_author', String(isAuthor));
     fd.append('author_manual_name', isAuthor ? '' : manualAuthorValue.join(', '));
+    fd.append('source_url', isAuthor ? '' : sourceUrl.trim());
+    fd.append('source_notes', isAuthor ? '' : sourceNotes.trim());
     fd.append('pieces', pieces || '1');
     fd.append('design_width', designWidth || '0');
     fd.append('design_height', designHeight || '0');
@@ -598,17 +606,34 @@ export const UserUploadForm = () => {
             label="I am not the original author of this pattern"
           />
           {!isAuthor && (
-            <FancyAutocomplete
-              label="Original Author"
-              serverSide
-              freeSolo
-              loading={manualAuthorFetching}
-              data={manualAuthorData ?? []}
-              value={manualAuthorValue}
-              onChange={setManualAuthorValue}
-              inputValue={manualAuthorInput}
-              onInputChange={setManualAuthorInput}
-            />
+            <>
+              <FancyAutocomplete
+                label="Original Author"
+                serverSide
+                freeSolo
+                loading={manualAuthorFetching}
+                data={manualAuthorData ?? []}
+                value={manualAuthorValue}
+                onChange={setManualAuthorValue}
+                inputValue={manualAuthorInput}
+                onInputChange={setManualAuthorInput}
+              />
+              <TextField
+                label="Source URL (optional)"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Where did you find this pattern? (optional)"
+                placeholder="e.g. Scanned from a 1987 pattern book, a magazine clipping, a friend's collection, etc."
+                value={sourceNotes}
+                onChange={(e) => setSourceNotes(e.target.value)}
+                multiline
+                minRows={2}
+                fullWidth
+              />
+            </>
           )}
           {isAuthor && (
             <Typography variant="caption" color="text.secondary">

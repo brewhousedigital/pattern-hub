@@ -14,6 +14,8 @@ export type TypeUserSubmittedPatternResponse = {
   submitter: string;
   is_author: boolean;
   author_manual_name?: string;
+  source_url?: string;
+  source_notes?: string;
   name: string;
   description: string;
   instructions?: string;
@@ -67,9 +69,7 @@ export const useQueryGetUserSubmissionById = (id: string) => {
   return useQuery({
     queryKey: ['GetUserSubmissionById', id],
     queryFn: async (): Promise<TypeUserSubmittedPatternResponse> => {
-      return await pocketbase
-        .collection('user_submitted_patterns')
-        .getOne(id, { expand: 'submitter,reviewing_admin' });
+      return await pocketbase.collection('user_submitted_patterns').getOne(id, { expand: 'submitter,reviewing_admin' });
     },
     enabled: !!id,
   });

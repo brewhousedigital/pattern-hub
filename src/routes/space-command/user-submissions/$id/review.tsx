@@ -16,7 +16,12 @@ import {
   type TypeUserSubmittedPatternResponse,
 } from '@/functions/database/user-submissions';
 import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
-import { sanitizeSvgFile, analyzeSvgThreats, extractSvgLayerIds, type SvgThreat } from '@/functions/utilities/sanitize-svg';
+import {
+  sanitizeSvgFile,
+  analyzeSvgThreats,
+  extractSvgLayerIds,
+  type SvgThreat,
+} from '@/functions/utilities/sanitize-svg';
 import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb-image';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
@@ -50,14 +55,8 @@ export const Route = createFileRoute('/space-command/user-submissions/$id/review
 // The source is untrusted text, never markup - it's HTML-escaped first, then
 // only the escaped, plain-text matches are wrapped in <mark>.
 function highlightSvgSource(raw: string): string {
-  const escaped = raw
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  return escaped.replace(
-    /(&lt;use\b[^&]*?(?:&gt;|(?=&lt;))|xlink:href="[^"]*"|clip-path="[^"]*")/g,
-    '<mark>$1</mark>',
-  );
+  const escaped = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped.replace(/(&lt;use\b[^&]*?(?:&gt;|(?=&lt;))|xlink:href="[^"]*"|clip-path="[^"]*")/g, '<mark>$1</mark>');
 }
 
 function RouteComponent() {
@@ -74,6 +73,7 @@ function RouteComponent() {
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [instructions, setInstructions] = React.useState('');
+  const [sourceUrl, setSourceUrl] = React.useState('');
   const [pieces, setPieces] = React.useState('1');
   const [designWidth, setDesignWidth] = React.useState('0');
   const [designHeight, setDesignHeight] = React.useState('0');
@@ -106,6 +106,7 @@ function RouteComponent() {
     setName(submission.name);
     setDescription(submission.description ?? '');
     setInstructions(submission.instructions ?? '');
+    setSourceUrl(submission.source_url ?? '');
     setPieces(String(submission.pieces ?? 1));
     setDesignWidth(String(submission.design_width ?? 0));
     setDesignHeight(String(submission.design_height ?? 0));
@@ -191,6 +192,7 @@ function RouteComponent() {
         name,
         description,
         instructions,
+        source_url: sourceUrl,
         tags: tagValue,
         authors: authorValue,
         author_manual: manualAuthorValue,
@@ -238,8 +240,8 @@ function RouteComponent() {
       {submission.file_type === 'svg' && !codeApproved && (
         <Stack sx={{ gap: 2 }}>
           <Alert severity="warning" icon={<WarningAmberRoundedIcon />}>
-            SVGs can contain malicious code. Review every highlighted section below - especially <code>&lt;use&gt;</code>,{' '}
-            <code>xlink:href</code>, and <code>clip-path</code> - before approving.
+            SVGs can contain malicious code. Review every highlighted section below - especially{' '}
+            <code>&lt;use&gt;</code>, <code>xlink:href</code>, and <code>clip-path</code> - before approving.
           </Alert>
 
           {svgThreats.length > 0 && (
@@ -328,6 +330,19 @@ function RouteComponent() {
             characterLimit={10000}
             minRows={2}
           />
+
+          {!submission.is_author && (submission.source_url || submission.source_notes) && (
+            <Alert severity="info">
+              <strong>Submitter's provenance notes</strong>
+              {submission.source_notes && (
+                <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
+                  {submission.source_notes}
+                </Typography>
+              )}
+            </Alert>
+          )}
+
+          <TextField label="Source URL" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} fullWidth />
 
           <Stack direction="row" sx={{ gap: 2 }}>
             <TextField label="Pieces" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} />

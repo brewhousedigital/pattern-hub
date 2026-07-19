@@ -1,4 +1,3 @@
-// @ts-ignore
 import sharp from 'sharp';
 import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sanitize';
 
@@ -15,7 +14,7 @@ async function rasterizeFirstPdfPage(buffer: Buffer): Promise<{ pageBuffer: Buff
   const canvasModule = await import('canvas');
   const g = globalThis as any;
   if (!g.DOMMatrix) g.DOMMatrix = canvasModule.DOMMatrix;
-  // @ts-ignore
+  // @ts-expect-error - canvas's type declarations don't expose Path2D even though it exists at runtime
   if (!g.Path2D) g.Path2D = canvasModule.Path2D;
   if (!g.ImageData) g.ImageData = canvasModule.ImageData;
 
@@ -64,6 +63,8 @@ export default async (req: Request) => {
   const instructions = (formData.get('instructions') as string | null)?.trim() ?? '';
   const isAuthor = (formData.get('is_author') as string | null) === 'true';
   const authorManualName = (formData.get('author_manual_name') as string | null)?.trim() ?? '';
+  const sourceUrl = (formData.get('source_url') as string | null)?.trim() ?? '';
+  const sourceNotes = (formData.get('source_notes') as string | null)?.trim() ?? '';
   const pieces = (formData.get('pieces') as string | null)?.trim() || '1';
   const designWidth = (formData.get('design_width') as string | null)?.trim() || '0';
   const designHeight = (formData.get('design_height') as string | null)?.trim() || '0';
@@ -210,6 +211,8 @@ export default async (req: Request) => {
   pbForm.append('submitter', userId);
   pbForm.append('is_author', String(isAuthor));
   pbForm.append('author_manual_name', isAuthor ? '' : authorManualName);
+  pbForm.append('source_url', isAuthor ? '' : sourceUrl);
+  pbForm.append('source_notes', isAuthor ? '' : sourceNotes);
   pbForm.append('name', name);
   pbForm.append('description', description);
   pbForm.append('instructions', instructions);
