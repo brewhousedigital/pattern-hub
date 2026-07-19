@@ -23,6 +23,7 @@ import {
   type SvgThreat,
 } from '@/functions/utilities/sanitize-svg';
 import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb-image';
+import dayjs, { type Dayjs } from 'dayjs';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -44,6 +45,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 export const Route = createFileRoute('/space-command/user-submissions/$id/review')({
   component: RouteComponent,
@@ -74,6 +76,7 @@ function RouteComponent() {
   const [description, setDescription] = React.useState('');
   const [instructions, setInstructions] = React.useState('');
   const [sourceUrl, setSourceUrl] = React.useState('');
+  const [designDate, setDesignDate] = React.useState<Dayjs | null>(null);
   const [pieces, setPieces] = React.useState('1');
   const [designWidth, setDesignWidth] = React.useState('0');
   const [designHeight, setDesignHeight] = React.useState('0');
@@ -107,6 +110,7 @@ function RouteComponent() {
     setDescription(submission.description ?? '');
     setInstructions(submission.instructions ?? '');
     setSourceUrl(submission.source_url ?? '');
+    setDesignDate(submission.design_date ? dayjs(submission.design_date) : null);
     setPieces(String(submission.pieces ?? 1));
     setDesignWidth(String(submission.design_width ?? 0));
     setDesignHeight(String(submission.design_height ?? 0));
@@ -193,6 +197,7 @@ function RouteComponent() {
         description,
         instructions,
         source_url: sourceUrl,
+        design_date: designDate,
         tags: tagValue,
         authors: authorValue,
         author_manual: manualAuthorValue,
@@ -343,6 +348,14 @@ function RouteComponent() {
           )}
 
           <TextField label="Source URL" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} fullWidth />
+
+          <DatePicker
+            label="Design Date"
+            value={designDate}
+            onChange={(newValue) => setDesignDate(newValue)}
+            disableFuture
+            slotProps={{ textField: { fullWidth: true } }}
+          />
 
           <Stack direction="row" sx={{ gap: 2 }}>
             <TextField label="Pieces" type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} />

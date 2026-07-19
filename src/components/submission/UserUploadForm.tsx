@@ -17,6 +17,7 @@ import {
 } from '@/functions/database/patterns';
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
+import dayjs, { type Dayjs } from 'dayjs';
 
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
@@ -40,6 +41,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Link } from '@tanstack/react-router';
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
@@ -86,6 +88,7 @@ export const UserUploadForm = () => {
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [instructions, setInstructions] = React.useState('');
+  const [designDate, setDesignDate] = React.useState<Dayjs | null>(dayjs());
   const [pieces, setPieces] = React.useState('1');
   const [designWidth, setDesignWidth] = React.useState('');
   const [designWidthUnit, setDesignWidthUnit] = React.useState('in');
@@ -274,6 +277,7 @@ export const UserUploadForm = () => {
     fd.append('design_width_unit', designWidthUnit);
     fd.append('design_height_unit', designHeightUnit);
     fd.append('line_width_unit', lineWidthUnit);
+    if (designDate) fd.append('design_date', designDate.startOf('day').toISOString());
     fd.append('tags', JSON.stringify(tagValue));
     fd.append('pattern_key_reference_list', JSON.stringify(selectedKeys));
     fd.append('custom_pattern_key_requested', String(customPatternKey));
@@ -527,6 +531,14 @@ export const UserUploadForm = () => {
           <FormSection label="Pattern Info" />
 
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
+
+          <DatePicker
+            label="Design Date"
+            value={designDate}
+            onChange={(newValue) => setDesignDate(newValue)}
+            disableFuture
+            slotProps={{ textField: { fullWidth: true, helperText: 'When this pattern was designed or dated.' } }}
+          />
 
           <GenericMarkdownEditor
             label="Description of the pattern"
