@@ -15,19 +15,17 @@
   command = "npm run build"
 
 [build.environment]
-  # jsdom -> html-encoding-sniffer -> @exodus/bytes (ESM-only since its very
-  # first release, not a recent break) does a plain synchronous
-  # `require("@exodus/bytes/encoding-lite.js")` inside html-encoding-sniffer's
-  # own unmodified source. Node can only satisfy that without throwing
-  # ERR_REQUIRE_ESM if it supports "require(esm)" - synchronous require() of
-  # an ES module - which only became stable/default-on in Node 22.12+. Without
-  # this, submit-pattern.ts crashes on every SVG upload the moment it touches
-  # jsdom, regardless of dynamic-import tricks on our end (verified locally:
-  # identical code succeeds on Node 24, since the require(esm) support is what
-  # actually matters, not how jsdom itself gets imported). sharp and canvas
-  # are both N-API-based (canvas declares napi_versions: [7]; sharp uses
-  # @emnapi/runtime) - napi is ABI-stable across Node majors, so raising this
-  # shouldn't affect their prebuilt binaries.
+  # This sets the BUILD-time Node version only. It does NOT reliably control
+  # the deployed Functions runtime - Netlify's function execution environment
+  # is controlled by AWS_LAMBDA_JS_RUNTIME, which per Netlify's own docs and
+  # support team can ONLY be set via the Netlify UI/CLI/API, never from
+  # netlify.toml (confirmed by shipping this exact NODE_VERSION setting and
+  # still hitting the ERR_REQUIRE_ESM error below on the actual function
+  # runtime). Kept here anyway for a consistent build environment, but see
+  # USER_SUBMITTED_PATTERNS_SETUP.md for the required dashboard step - set
+  # AWS_LAMBDA_JS_RUNTIME = "nodejs22.x" (or nodejs24.x) under Site settings ->
+  # Environment variables, then redeploy. Without that UI-side variable, this
+  # NODE_VERSION alone does not fix the jsdom/@exodus/bytes crash.
   NODE_VERSION = "22"
 
 [functions]

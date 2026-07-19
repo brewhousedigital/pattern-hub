@@ -46,6 +46,15 @@ async function convertImageToWebp(buffer: Buffer): Promise<Buffer> {
 }
 
 export default async (req: Request) => {
+  // TEMP DIAGNOSTIC: two deploys targeting the Functions Node runtime
+  // (netlify.toml NODE_VERSION, then the AWS_LAMBDA_JS_RUNTIME dashboard env
+  // var) have not changed the jsdom ERR_REQUIRE_ESM error at all - not even
+  // superficially. That's suspicious enough to stop guessing and log the
+  // actual running version instead of assuming the dashboard change took
+  // effect. Remove this once the real Node version is confirmed in the logs.
+  console.log('>>> DIAGNOSTIC process.version:', process.version);
+  console.log('>>> DIAGNOSTIC require_module supported:', (process as any).features?.require_module);
+
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
