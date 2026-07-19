@@ -87,8 +87,11 @@ export const UserUploadForm = () => {
   const [instructions, setInstructions] = React.useState('');
   const [pieces, setPieces] = React.useState('1');
   const [designWidth, setDesignWidth] = React.useState('');
+  const [designWidthUnit, setDesignWidthUnit] = React.useState('in');
   const [designHeight, setDesignHeight] = React.useState('');
+  const [designHeightUnit, setDesignHeightUnit] = React.useState('in');
   const [lineWidth, setLineWidth] = React.useState('');
+  const [lineWidthUnit, setLineWidthUnit] = React.useState('in');
 
   const [isAuthor, setIsAuthor] = React.useState(true);
   const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>([]);
@@ -202,9 +205,9 @@ export const UserUploadForm = () => {
     fd.append('design_width', designWidth || '0');
     fd.append('design_height', designHeight || '0');
     fd.append('line_width', lineWidth || '0');
-    fd.append('design_width_unit', 'in');
-    fd.append('design_height_unit', 'in');
-    fd.append('line_width_unit', 'in');
+    fd.append('design_width_unit', designWidthUnit);
+    fd.append('design_height_unit', designHeightUnit);
+    fd.append('line_width_unit', lineWidthUnit);
     fd.append('tags', JSON.stringify(tagValue));
     fd.append('pattern_key_reference_list', JSON.stringify(selectedKeys));
     fd.append('custom_pattern_key_requested', String(customPatternKey));
@@ -477,42 +480,59 @@ export const UserUploadForm = () => {
 
           <FormSection label="Measurements" />
 
+          <TextField
+            label="Pieces"
+            type="number"
+            value={pieces}
+            onChange={(e) => setPieces(e.target.value)}
+            fullWidth
+          />
+
           <Grid container spacing={2}>
-            <Grid size={4}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="Pieces"
-                type="number"
-                value={pieces}
-                onChange={(e) => setPieces(e.target.value)}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={4}>
-              <TextField
-                label="Width (in)"
+                label="Design Width"
+                variant="filled"
                 type="number"
                 value={designWidth}
                 onChange={(e) => setDesignWidth(e.target.value)}
                 fullWidth
               />
             </Grid>
-            <Grid size={4}>
+            <UnitOfMeasurementSelect label="Design Width Unit" value={designWidthUnit} onChange={setDesignWidthUnit} />
+          </Grid>
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="Height (in)"
+                label="Design Height"
+                variant="filled"
                 type="number"
                 value={designHeight}
                 onChange={(e) => setDesignHeight(e.target.value)}
                 fullWidth
               />
             </Grid>
+            <UnitOfMeasurementSelect
+              label="Design Height Unit"
+              value={designHeightUnit}
+              onChange={setDesignHeightUnit}
+            />
           </Grid>
-          <TextField
-            label="Line width (in)"
-            type="number"
-            value={lineWidth}
-            onChange={(e) => setLineWidth(e.target.value)}
-            fullWidth
-          />
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                label="Line Width"
+                variant="filled"
+                type="number"
+                value={lineWidth}
+                onChange={(e) => setLineWidth(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <UnitOfMeasurementSelect label="Line Width Unit" value={lineWidthUnit} onChange={setLineWidthUnit} />
+          </Grid>
 
           <FormSection label="Authorship" />
           <FormControlLabel
@@ -620,5 +640,36 @@ export const UserUploadForm = () => {
         </Stack>
       </Box>
     </Stack>
+  );
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const unitOfMeasurementOptions = ['in', 'cm', 'mm'];
+
+type UnitOfMeasurementSelectProps = {
+  value: string;
+  onChange: (newValue: string) => void;
+  label: string;
+};
+
+const UnitOfMeasurementSelect = ({ value, onChange, label }: UnitOfMeasurementSelectProps) => {
+  return (
+    <Grid size={{ xs: 12, md: 6 }}>
+      <TextField
+        fullWidth
+        select
+        variant="filled"
+        label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {unitOfMeasurementOptions.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Grid>
   );
 };
