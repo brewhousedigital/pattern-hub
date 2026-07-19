@@ -637,42 +637,56 @@ export const UserUploadForm = () => {
           </Typography>
 
           <Grid container spacing={1}>
-            {patternKeys?.map((key) => (
-              <Grid size={4} key={key.id}>
-                <Paper
-                  variant="outlined"
-                  onClick={() => toggleKey(key.id, key.name)}
-                  sx={{
-                    p: 1,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'column',
-                    gap: 1,
-                    borderColor: selectedKeys.some((k) => k.name === key.name) ? 'primary.main' : undefined,
-                    backgroundColor: selectedKeys.some((k) => k.name === key.name) ? 'action.selected' : undefined,
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={generatePbImagePatternKeyRef(key)}
-                    alt={key.name}
-                    sx={{ width: '100%', height: 32, objectFit: 'contain' }}
-                  />
-                  {/*<Typography variant="body2" sx={{ flex: 1 }}>
+            {patternKeys?.map((key) => {
+              const isSelected = selectedKeys.some((k) => k.name === key.name);
+              return (
+                <Grid size={4} key={key.id}>
+                  <Paper
+                    variant="outlined"
+                    onClick={() => toggleKey(key.id, key.name)}
+                    sx={{
+                      px: 1,
+                      py: 1.5,
+                      position: 'relative',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      borderColor: isSelected ? 'primary.main' : undefined,
+                      backgroundColor: isSelected ? 'action.selected' : undefined,
+                    }}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={() => toggleKey(key.id, key.name)}
+                      onClick={(e) => e.stopPropagation()}
+                      size="small"
+                      sx={{}}
+                    />
+
+                    <Stack sx={{ gap: 1 }}>
+                      <Box
+                        component="img"
+                        src={generatePbImagePatternKeyRef(key)}
+                        alt={key.name}
+                        sx={{ width: '100%', height: 32, objectFit: 'contain' }}
+                      />
+                      {/*<Typography variant="body2" sx={{ flex: 1 }}>
                     {key.name}
                   </Typography>*/}
-                  <MuiLink
-                    href={generatePbImagePatternKeyRef(key)}
-                    download
-                    onClick={(e) => e.stopPropagation()}
-                    variant="caption"
-                  >
-                    Download
-                  </MuiLink>
-                </Paper>
-              </Grid>
-            ))}
+                      <MuiLink
+                        href={generatePbImagePatternKeyRef(key)}
+                        download
+                        onClick={(e) => e.stopPropagation()}
+                        variant="caption"
+                      >
+                        Download
+                      </MuiLink>
+                    </Stack>
+                  </Paper>
+                </Grid>
+              );
+            })}
           </Grid>
           <FormControlLabel
             control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}
