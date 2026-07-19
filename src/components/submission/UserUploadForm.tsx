@@ -6,6 +6,7 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useQuerySearchManualAuthors } from '@/functions/database/authors';
+import { useQuerySearchTags, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
@@ -102,6 +103,63 @@ export const UserUploadForm = () => {
 
   const [tagValue, setTagValue] = React.useState<string[]>([]);
   const [tagInput, setTagInput] = React.useState('');
+  const debouncedTagSearch = useDebounce(tagInput, 400);
+  const { data: tagSearchData, isFetching: tagSearchFetching } = useQuerySearchTags(debouncedTagSearch);
+  const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
+
+  /**
+   * Set of tag names that were auto-added as ancestors of a primary tag.
+   * Used to render inherited chips differently and to clean them up when their
+   * primary tag is removed.
+   */
+  const [inheritedTags, setInheritedTags] = React.useState<Set<string>>(new Set());
+
+  /**
+   * Smart tag change handler.
+   * When a new tag is added, its full ancestor chain is auto-added as inherited tags.
+   * When a primary tag is removed, its orphaned ancestors are cleaned up.
+   */
+  const handleTagChange = React.useCallback(
+    (newValue: string[]) => {
+      const added = newValue.filter((t) => !tagValue.includes(t));
+      const removed = tagValue.filter((t) => !newValue.includes(t));
+
+      let result = [...newValue];
+      const newInherited = new Set(inheritedTags);
+
+      // Auto-add ancestors for any newly added tags
+      for (const tag of added) {
+        newInherited.delete(tag); // Explicitly added → promote to primary
+        for (const ancestor of getAncestors(tag, hierarchyData)) {
+          if (!result.includes(ancestor)) {
+            result.push(ancestor);
+            newInherited.add(ancestor);
+          }
+        }
+      }
+
+      // When a primary tag is removed, clean up orphaned inherited ancestors
+      for (const tag of removed) {
+        if (!newInherited.has(tag)) {
+          // It was primary - check each of its ancestors
+          for (const ancestor of getAncestors(tag, hierarchyData)) {
+            const stillNeeded = result
+              .filter((t) => !newInherited.has(t) && t !== tag)
+              .some((primary) => getAncestors(primary, hierarchyData).includes(ancestor));
+            if (!stillNeeded) {
+              result = result.filter((t) => t !== ancestor);
+              newInherited.delete(ancestor);
+            }
+          }
+        }
+        newInherited.delete(tag);
+      }
+
+      setTagValue(result);
+      setInheritedTags(newInherited);
+    },
+    [tagValue, inheritedTags, hierarchyData],
+  );
 
   const { data: patternKeys } = useQueryGetAllPatternKeys();
   const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>([]);
@@ -562,11 +620,14 @@ export const UserUploadForm = () => {
           <FancyAutocomplete
             label="Tags"
             freeSolo
-            data={[]}
+            serverSide
+            data={tagSearchData ?? []}
             value={tagValue}
-            onChange={setTagValue}
+            onChange={handleTagChange}
             inputValue={tagInput}
             onInputChange={setTagInput}
+            inheritedValues={inheritedTags}
+            loading={tagSearchFetching}
           />
 
           <FormSection label="Pattern Keys" />
