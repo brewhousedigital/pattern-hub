@@ -112,7 +112,7 @@ const getAuthenticatedMenuItems = (verified: boolean) => [
           label: 'Submit a Pattern',
           icon: <UploadFileRoundedIcon />,
           onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
-            navigateTo({ to: '/submit-pattern' });
+            navigateTo({ to: '/profile/submit-pattern' });
           },
         },
       ]

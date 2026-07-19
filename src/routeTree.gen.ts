@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SubmitPatternRouteImport } from './routes/submit-pattern'
 import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
@@ -34,6 +33,7 @@ import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/k
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
+import { Route as ProfileSubmitPatternRouteImport } from './routes/profile/submit-pattern'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as ProfileUserIdRouteImport } from './routes/profile/$userId'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
@@ -60,11 +60,6 @@ import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/spa
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
 import { Route as SpaceCommandUserSubmissionsIdReviewRouteImport } from './routes/space-command/user-submissions/$id/review'
 
-const SubmitPatternRoute = SubmitPatternRouteImport.update({
-  id: '/submit-pattern',
-  path: '/submit-pattern',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
   id: '/space-command',
   path: '/space-command',
@@ -186,6 +181,11 @@ const SpaceCommandAdminsRoute = SpaceCommandAdminsRouteImport.update({
 const SetsSetIdRoute = SetsSetIdRouteImport.update({
   id: '/sets/$setId',
   path: '/sets/$setId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileSubmitPatternRoute = ProfileSubmitPatternRouteImport.update({
+  id: '/profile/submit-pattern',
+  path: '/profile/submit-pattern',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
@@ -325,7 +325,6 @@ const SpaceCommandUserSubmissionsIdReviewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
-  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -341,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -376,7 +376,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -392,6 +391,7 @@ export interface FileRoutesByTo {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -429,7 +429,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/space-command': typeof SpaceCommandRouteRouteWithChildren
-  '/submit-pattern': typeof SubmitPatternRoute
   '/auth/confirm-verification': typeof AuthConfirmVerificationRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -445,6 +444,7 @@ export interface FileRoutesById {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -483,7 +483,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/space-command'
-    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -499,6 +498,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
+    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -534,7 +534,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -550,6 +549,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
+    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -586,7 +586,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/space-command'
-    | '/submit-pattern'
     | '/auth/confirm-verification'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -602,6 +601,7 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
+    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -639,7 +639,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SpaceCommandRouteRoute: typeof SpaceCommandRouteRouteWithChildren
-  SubmitPatternRoute: typeof SubmitPatternRoute
   AuthConfirmVerificationRoute: typeof AuthConfirmVerificationRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -655,6 +654,7 @@ export interface RootRouteChildren {
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileUserIdRoute: typeof ProfileUserIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
+  ProfileSubmitPatternRoute: typeof ProfileSubmitPatternRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   CommunityIndexRoute: typeof CommunityIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
@@ -671,13 +671,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/submit-pattern': {
-      id: '/submit-pattern'
-      path: '/submit-pattern'
-      fullPath: '/submit-pattern'
-      preLoaderRoute: typeof SubmitPatternRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/space-command': {
       id: '/space-command'
       path: '/space-command'
@@ -844,6 +837,13 @@ declare module '@tanstack/react-router' {
       path: '/sets/$setId'
       fullPath: '/sets/$setId'
       preLoaderRoute: typeof SetsSetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/submit-pattern': {
+      id: '/profile/submit-pattern'
+      path: '/profile/submit-pattern'
+      fullPath: '/profile/submit-pattern'
+      preLoaderRoute: typeof ProfileSubmitPatternRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/edit': {
@@ -1077,7 +1077,6 @@ const SpaceCommandRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SpaceCommandRouteRoute: SpaceCommandRouteRouteWithChildren,
-  SubmitPatternRoute: SubmitPatternRoute,
   AuthConfirmVerificationRoute: AuthConfirmVerificationRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
@@ -1093,6 +1092,7 @@ const rootRouteChildren: RootRouteChildren = {
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileUserIdRoute: ProfileUserIdRoute,
   ProfileEditRoute: ProfileEditRoute,
+  ProfileSubmitPatternRoute: ProfileSubmitPatternRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   CommunityIndexRoute: CommunityIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,

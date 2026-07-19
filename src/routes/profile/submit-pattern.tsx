@@ -1,16 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { GeneralLayout } from '@/components/layout/GeneralLayout';
-import { generateSEO } from '@/functions/utilities/seo';
-import { useGlobalAuthData } from '@/data/auth-data';
-import { UserUploadForm } from '@/components/submission/UserUploadForm';
+import { GeneralLayout } from '@/components/layout/GeneralLayout.tsx';
+import { generateSEO } from '@/functions/utilities/seo.ts';
+import { useGlobalAuthData } from '@/data/auth-data.ts';
+import { UserUploadForm } from '@/components/submission/UserUploadForm.tsx';
 
 import { Alert, Box, Button, Container, Link as MuiLink } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/submit-pattern')({
+export const Route = createFileRoute('/profile/submit-pattern')({
   component: RouteComponent,
   ssr: false,
-  head: () => generateSEO('Submit a Pattern', 'Share your stained glass pattern with the community', '/submit-pattern'),
+  head: () =>
+    generateSEO('Submit a Pattern', 'Share your stained glass pattern with the community', '/profile/submit-pattern'),
 });
 
 function RouteComponent() {
@@ -18,7 +19,7 @@ function RouteComponent() {
 
   return (
     <GeneralLayout>
-      <Container maxWidth="md">
+      <Container maxWidth="lg">
         {!authData?.id ? (
           <Box sx={{ py: 6, textAlign: 'center' }}>
             <Alert severity="info" sx={{ display: 'inline-flex', mb: 2 }}>

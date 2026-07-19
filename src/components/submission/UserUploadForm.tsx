@@ -17,6 +17,10 @@ import {
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
+
 import {
   Alert,
   Box,
@@ -26,11 +30,13 @@ import {
   Divider,
   FormControlLabel,
   Grid,
+  IconButton,
   Link as MuiLink,
   MenuItem,
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { Link } from '@tanstack/react-router';
@@ -66,7 +72,15 @@ export const UserUploadForm = () => {
   const [file, setFile] = React.useState<File | null>(null);
   const [fileError, setFileError] = React.useState('');
   const [svgWarning, setSvgWarning] = React.useState('');
-  const [layerIds, setLayerIds] = React.useState<string[]>([]);
+  const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>([]);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [fileKind, setFileKind] = React.useState<'svg' | 'pdf' | 'image' | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -118,7 +132,7 @@ export const UserUploadForm = () => {
   const handleFileSelect = async (selected: File) => {
     setFileError('');
     setSvgWarning('');
-    setLayerIds([]);
+    setLayersMap([]);
 
     const isSvg = selected.type === 'image/svg+xml' || selected.name.toLowerCase().endsWith('.svg');
     const isPdf = selected.type === 'application/pdf' || selected.name.toLowerCase().endsWith('.pdf');
@@ -147,9 +161,12 @@ export const UserUploadForm = () => {
       if (threats.length > 0) {
         setSvgWarning('This SVG has some unusual content our team will double check during review.');
       }
-      setLayerIds(extractSvgLayerIds(raw));
+      setLayersMap(extractSvgLayerIds(raw).map((id) => ({ layerName: id, mappedName: '', isVisible: true })));
     }
 
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(URL.createObjectURL(selected));
+    setFileKind(isSvg ? 'svg' : isPdf ? 'pdf' : 'image');
     setFile(selected);
   };
 
@@ -173,12 +190,6 @@ export const UserUploadForm = () => {
     }
 
     setUploadState('loading');
-
-    const layersMap: TypePatternLayersMapItem[] = layerIds.map((id) => ({
-      layerName: id,
-      mappedName: '',
-      isVisible: true,
-    }));
 
     const fd = new FormData();
     fd.append('file', file, file.name);
@@ -223,13 +234,13 @@ export const UserUploadForm = () => {
   };
 
   return (
-    <Stack sx={{ gap: 2.5, maxWidth: 760, mx: 'auto', py: 4, px: 2 }}>
+    <Stack sx={{ gap: 2.5, maxWidth: 1100, mx: 'auto', py: 4, px: 2 }}>
       <Typography variant="h4" sx={{ fontWeight: 600 }}>
         Submit a Pattern
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Share your stained glass pattern with the community. Every submission is reviewed by our team before it
-        appears on the site.
+        Share your stained glass pattern with the community. Every submission is reviewed by our team before it appears
+        on the site.
       </Typography>
 
       <Alert severity="info">
@@ -260,177 +271,354 @@ export const UserUploadForm = () => {
         style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
       />
 
-      <FormSection label="Pattern File" />
-      <SvgDropZone
-        accept="image/*,.svg,application/pdf"
-        acceptLabel="Image, SVG, or single-page PDF - max 15 MB"
-        onFile={handleFileSelect}
-        disabled={uploadState === 'loading'}
-      />
-      {file && !fileError && (
-        <Alert severity="success" sx={{ py: 0.5 }}>
-          Selected: {file.name}
-        </Alert>
-      )}
-      {fileError && (
-        <Alert severity="error" sx={{ py: 0.5 }}>
-          {fileError}
-        </Alert>
-      )}
-      {svgWarning && (
-        <Alert severity="warning" sx={{ py: 0.5 }}>
-          {svgWarning}
-        </Alert>
-      )}
+      <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
+        {/* ── Sticky left preview ── */}
+        <Box
+          sx={{
+            width: { xs: '100%', md: 340 },
+            flexShrink: 0,
+            position: { xs: 'static', md: 'sticky' },
+            top: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}
+          >
+            Preview
+          </Typography>
 
-      <FormSection label="Pattern Info" />
-      <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
-      <GenericMarkdownEditor content={description} setContent={setDescription} characterLimit={2000} minRows={2} />
-
-      <FormSection label="Measurements" />
-      <Grid container spacing={2}>
-        <Grid size={4}>
-          <TextField
-            label="Pieces"
-            type="number"
-            value={pieces}
-            onChange={(e) => setPieces(e.target.value)}
-            fullWidth
-          />
-        </Grid>
-        <Grid size={4}>
-          <TextField
-            label="Width (in)"
-            type="number"
-            value={designWidth}
-            onChange={(e) => setDesignWidth(e.target.value)}
-            fullWidth
-          />
-        </Grid>
-        <Grid size={4}>
-          <TextField
-            label="Height (in)"
-            type="number"
-            value={designHeight}
-            onChange={(e) => setDesignHeight(e.target.value)}
-            fullWidth
-          />
-        </Grid>
-      </Grid>
-      <TextField
-        label="Line width (in)"
-        type="number"
-        value={lineWidth}
-        onChange={(e) => setLineWidth(e.target.value)}
-        fullWidth
-      />
-
-      <FormSection label="Instructions" />
-      <GenericMarkdownEditor content={instructions} setContent={setInstructions} characterLimit={10000} minRows={2} />
-
-      <FormSection label="Authorship" />
-      <FormControlLabel
-        control={<Checkbox checked={!isAuthor} onChange={(e) => setIsAuthor(!e.target.checked)} />}
-        label="I am not the original author of this pattern"
-      />
-      {!isAuthor && (
-        <FancyAutocomplete
-          label="Original Author"
-          serverSide
-          freeSolo
-          loading={manualAuthorFetching}
-          data={manualAuthorData ?? []}
-          value={manualAuthorValue}
-          onChange={setManualAuthorValue}
-          inputValue={manualAuthorInput}
-          onInputChange={setManualAuthorInput}
-        />
-      )}
-      {isAuthor && (
-        <Typography variant="caption" color="text.secondary">
-          You'll be credited as the author, {authData?.name || 'your account name'}.
-        </Typography>
-      )}
-
-      <FormSection label="Tags" />
-      <FancyAutocomplete
-        label="Tags"
-        freeSolo
-        data={[]}
-        value={tagValue}
-        onChange={setTagValue}
-        inputValue={tagInput}
-        onInputChange={setTagInput}
-      />
-
-      <FormSection label="Pattern Keys" />
-      <Typography variant="body2" color="text.secondary">
-        Select the pattern keys your design uses. Not sure which key is which? Download the reference images below.
-      </Typography>
-      <Grid container spacing={1}>
-        {patternKeys?.map((key) => (
-          <Grid size={4} key={key.id}>
-            <Paper
-              variant="outlined"
-              onClick={() => toggleKey(key.id, key.name)}
-              sx={{
-                p: 1,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                borderColor: selectedKeys.some((k) => k.name === key.name) ? 'primary.main' : undefined,
-                backgroundColor: selectedKeys.some((k) => k.name === key.name) ? 'action.selected' : undefined,
-              }}
-            >
+          {previewUrl ? (
+            fileKind === 'pdf' ? (
+              <Box
+                component="iframe"
+                src={previewUrl}
+                title="PDF preview"
+                sx={{
+                  width: '100%',
+                  aspectRatio: '1/1',
+                  borderRadius: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'grey.50',
+                }}
+              />
+            ) : (
               <Box
                 component="img"
-                src={generatePbImagePatternKeyRef(key)}
-                alt={key.name}
-                sx={{ width: 32, height: 32, objectFit: 'contain' }}
+                src={previewUrl}
+                alt="Pattern preview"
+                sx={{
+                  width: '100%',
+                  aspectRatio: '1/1',
+                  objectFit: 'contain',
+                  borderRadius: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'grey.50',
+                  p: 1,
+                }}
               />
-              <Typography variant="body2" sx={{ flex: 1 }}>
-                {key.name}
+            )
+          ) : (
+            <Box
+              sx={{
+                border: '1px dashed',
+                borderColor: 'divider',
+                borderRadius: 1.5,
+                aspectRatio: '1/1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'grey.50',
+              }}
+            >
+              <Typography variant="body2" color="text.disabled">
+                No file selected yet
               </Typography>
-              <MuiLink
-                href={generatePbImagePatternKeyRef(key)}
-                download
-                onClick={(e) => e.stopPropagation()}
-                variant="caption"
-              >
-                Download
-              </MuiLink>
-            </Paper>
+            </Box>
+          )}
+
+          {file && (
+            <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 600 }}>
+              {file.name}
+            </Typography>
+          )}
+        </Box>
+
+        {/* ── Right: form fields ── */}
+        <Stack sx={{ flex: 1, minWidth: 0, gap: 2.5 }}>
+          <FormSection label="Pattern File" />
+          <SvgDropZone
+            accept="image/*,.svg,application/pdf"
+            acceptLabel="Image, SVG, or single-page PDF - max 15 MB"
+            onFile={handleFileSelect}
+            disabled={uploadState === 'loading'}
+          />
+          {file && !fileError && (
+            <Alert severity="success" sx={{ py: 0.5 }}>
+              Selected: {file.name}
+            </Alert>
+          )}
+          {fileError && (
+            <Alert severity="error" sx={{ py: 0.5 }}>
+              {fileError}
+            </Alert>
+          )}
+          {svgWarning && (
+            <Alert severity="warning" sx={{ py: 0.5 }}>
+              {svgWarning}
+            </Alert>
+          )}
+
+          {fileKind === 'svg' && layersMap.length > 0 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                Layer Map — name each detected layer so reviewers know what it represents
+              </Typography>
+              <Stack spacing={1}>
+                {layersMap.map((item, index) => (
+                  <Grid container spacing={1} key={item.layerName} sx={{ alignItems: 'center' }}>
+                    <Grid size={{ xs: 5 }}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        variant="filled"
+                        label="Layer ID"
+                        value={item.layerName}
+                        slotProps={{ input: { readOnly: true } }}
+                      />
+                    </Grid>
+                    <Grid size="auto">
+                      <Tooltip title="Copy layer ID to display name" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setLayersMap((prev) =>
+                              prev.map((e, i) => (i === index ? { ...e, mappedName: e.layerName } : e)),
+                            )
+                          }
+                        >
+                          <ArrowForwardRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Grid>
+                    <Grid size="grow">
+                      <TextField
+                        size="small"
+                        fullWidth
+                        variant="filled"
+                        label="Display Name"
+                        value={item.mappedName}
+                        onChange={(e) =>
+                          setLayersMap((prev) =>
+                            prev.map((entry, i) => (i === index ? { ...entry, mappedName: e.target.value } : entry)),
+                          )
+                        }
+                      />
+                    </Grid>
+                    <Grid size="auto">
+                      <Tooltip
+                        title={
+                          item.isVisible !== false
+                            ? 'Users can toggle this layer, click to lock'
+                            : 'Required layer - users cannot hide this'
+                        }
+                        arrow
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setLayersMap((prev) =>
+                              prev.map((e, i) =>
+                                i === index ? { ...e, isVisible: e.isVisible === false ? true : false } : e,
+                              ),
+                            )
+                          }
+                          sx={{ color: item.isVisible === false ? 'error.main' : 'text.disabled' }}
+                        >
+                          {item.isVisible === false ? (
+                            <LockRoundedIcon fontSize="small" />
+                          ) : (
+                            <LockOpenRoundedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                    </Grid>
+                  </Grid>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          <FormSection label="Pattern Info" />
+
+          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
+
+          <GenericMarkdownEditor
+            label="Description of the pattern"
+            content={description}
+            setContent={setDescription}
+            characterLimit={2000}
+            minRows={2}
+          />
+
+          <GenericMarkdownEditor
+            label="Instructions for how to build the pattern"
+            content={instructions}
+            setContent={setInstructions}
+            characterLimit={10000}
+            minRows={2}
+          />
+
+          <FormSection label="Measurements" />
+
+          <Grid container spacing={2}>
+            <Grid size={4}>
+              <TextField
+                label="Pieces"
+                type="number"
+                value={pieces}
+                onChange={(e) => setPieces(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={4}>
+              <TextField
+                label="Width (in)"
+                type="number"
+                value={designWidth}
+                onChange={(e) => setDesignWidth(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={4}>
+              <TextField
+                label="Height (in)"
+                type="number"
+                value={designHeight}
+                onChange={(e) => setDesignHeight(e.target.value)}
+                fullWidth
+              />
+            </Grid>
           </Grid>
-        ))}
-      </Grid>
-      <FormControlLabel
-        control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}
-        label="This pattern uses a custom key not listed above"
-      />
+          <TextField
+            label="Line width (in)"
+            type="number"
+            value={lineWidth}
+            onChange={(e) => setLineWidth(e.target.value)}
+            fullWidth
+          />
 
-      <Turnstile
-        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-        onSuccess={(token) => setTurnstileToken(token)}
-        onError={() => setTurnstileToken(null)}
-        onExpire={() => setTurnstileToken(null)}
-      />
+          <FormSection label="Authorship" />
+          <FormControlLabel
+            control={<Checkbox checked={!isAuthor} onChange={(e) => setIsAuthor(!e.target.checked)} />}
+            label="I am not the original author of this pattern"
+          />
+          {!isAuthor && (
+            <FancyAutocomplete
+              label="Original Author"
+              serverSide
+              freeSolo
+              loading={manualAuthorFetching}
+              data={manualAuthorData ?? []}
+              value={manualAuthorValue}
+              onChange={setManualAuthorValue}
+              inputValue={manualAuthorInput}
+              onInputChange={setManualAuthorInput}
+            />
+          )}
+          {isAuthor && (
+            <Typography variant="caption" color="text.secondary">
+              You'll be credited as the author, {authData?.name || 'your account name'}.
+            </Typography>
+          )}
 
-      {cooldownRemaining > 0 && (
-        <Alert severity="info">
-          Please wait {Math.ceil(cooldownRemaining / 1000)}s before submitting another pattern.
-        </Alert>
-      )}
+          <FormSection label="Tags" />
+          <FancyAutocomplete
+            label="Tags"
+            freeSolo
+            data={[]}
+            value={tagValue}
+            onChange={setTagValue}
+            inputValue={tagInput}
+            onInputChange={setTagInput}
+          />
 
-      <Button
-        variant="contained"
-        size="large"
-        disabled={!canSubmit}
-        onClick={handleSubmit}
-        startIcon={uploadState === 'loading' ? <CircularProgress size={16} color="inherit" /> : null}
-      >
-        {uploadState === 'loading' ? 'Submitting…' : 'Submit Pattern for Review'}
-      </Button>
+          <FormSection label="Pattern Keys" />
+          <Typography variant="body2" color="text.secondary">
+            Select the pattern keys your design uses. Not sure which key is which? Download the reference images below.
+          </Typography>
+          <Grid container spacing={1}>
+            {patternKeys?.map((key) => (
+              <Grid size={4} key={key.id}>
+                <Paper
+                  variant="outlined"
+                  onClick={() => toggleKey(key.id, key.name)}
+                  sx={{
+                    p: 1,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    borderColor: selectedKeys.some((k) => k.name === key.name) ? 'primary.main' : undefined,
+                    backgroundColor: selectedKeys.some((k) => k.name === key.name) ? 'action.selected' : undefined,
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={generatePbImagePatternKeyRef(key)}
+                    alt={key.name}
+                    sx={{ width: 32, height: 32, objectFit: 'contain' }}
+                  />
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {key.name}
+                  </Typography>
+                  <MuiLink
+                    href={generatePbImagePatternKeyRef(key)}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                    variant="caption"
+                  >
+                    Download
+                  </MuiLink>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+          <FormControlLabel
+            control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}
+            label="This pattern uses a custom key not listed above"
+          />
+
+          <Turnstile
+            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+            onSuccess={(token) => setTurnstileToken(token)}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+          />
+
+          {cooldownRemaining > 0 && (
+            <Alert severity="info">
+              Please wait {Math.ceil(cooldownRemaining / 1000)}s before submitting another pattern.
+            </Alert>
+          )}
+
+          <Button
+            variant="contained"
+            size="large"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            startIcon={uploadState === 'loading' ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {uploadState === 'loading' ? 'Submitting…' : 'Submit Pattern for Review'}
+          </Button>
+        </Stack>
+      </Box>
     </Stack>
   );
 };
