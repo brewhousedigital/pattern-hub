@@ -14,14 +14,39 @@
   publish = "dist/client"
   command = "npm run build"
 
+[build.environment]
+  # jsdom -> html-encoding-sniffer -> @exodus/bytes (ESM-only since its very
+  # first release, not a recent break) does a plain synchronous
+  # `require("@exodus/bytes/encoding-lite.js")` inside html-encoding-sniffer's
+  # own unmodified source. Node can only satisfy that without throwing
+  # ERR_REQUIRE_ESM if it supports "require(esm)" - synchronous require() of
+  # an ES module - which only became stable/default-on in Node 22.12+. Without
+  # this, submit-pattern.ts crashes on every SVG upload the moment it touches
+  # jsdom, regardless of dynamic-import tricks on our end (verified locally:
+  # identical code succeeds on Node 24, since the require(esm) support is what
+  # actually matters, not how jsdom itself gets imported). sharp and canvas
+  # are both N-API-based (canvas declares napi_versions: [7]; sharp uses
+  # @emnapi/runtime) - napi is ABI-stable across Node majors, so raising this
+  # shouldn't affect their prebuilt binaries.
+  NODE_VERSION = "22"
+
 [functions]
   # `canvas` ships a native .node binary that esbuild can't bundle into JS -
   # it (and sharp) must stay external and have their files copied verbatim.
   # `pdfjs-dist`'s standard_fonts/cmaps are read from disk at runtime
   # (pdf-to-img resolves paths via require.resolve('pdfjs-dist/package.json')),
-  # so those assets need to ship too, not just get bundled as code.
-  external_node_modules = ["sharp", "canvas"]
-  included_files = ["node_modules/sharp/**/*", "node_modules/canvas/**/*", "node_modules/pdfjs-dist/**/*"]
+  # so those assets need to ship too, not just get bundled as code. `jsdom` is
+  # also kept external/its files included so esbuild doesn't touch its
+  # dynamically-imported module graph - real Node module resolution at
+  # runtime, on the Node 22+ set above, is what actually resolves the
+  # ERR_REQUIRE_ESM issue documented above.
+  external_node_modules = ["sharp", "canvas", "jsdom"]
+  included_files = [
+    "node_modules/sharp/**/*",
+    "node_modules/canvas/**/*",
+    "node_modules/pdfjs-dist/**/*",
+    "node_modules/jsdom/**/*",
+  ]
 
 [dev]
   command = "npm run dev"
