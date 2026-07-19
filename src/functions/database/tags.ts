@@ -170,47 +170,29 @@ export interface TypeTagStat {
   count: number;
 }
 
-/**
- * Fetch ALL patterns (only id + tags fields) for building the tag index.
- * Uses pagination to handle large collections.
- */
-async function fetchAllPatternTags(): Promise<TypePatternRecord[]> {
-  const records: TypePatternRecord[] = [];
-  let page = 1;
-  const perPage = 100;
-
-  while (true) {
-    const result = await pocketbase
-      .collection('patterns')
-      .getList<TypePatternRecord>(page, perPage, { fields: 'id,tags' });
-    records.push(...result.items);
-    if (records.length >= result.totalItems) break;
-    page++;
-  }
-
-  return records;
-}
-
 export const ADMIN_TAG_STATS_QUERY_KEY = ['AdminTagStats'] as const;
 
+// Reads the pre-aggregated `tags` view (one row per unique tag + its pattern
+// count) instead of walking every pattern page-by-page and counting in JS -
+// that used to cost 5+ full-collection requests on every load. Same class of
+// bug as the one fixed in AdminEditPatternModal.tsx (see its
+// refetchTagManagementStats comment), just triggered by a direct subscriber
+// (the tags admin page) instead of a per-row modal.
 export const useQueryAdminTagStats = () => {
   return useQuery({
     queryKey: ADMIN_TAG_STATS_QUERY_KEY,
     queryFn: async (): Promise<TypeTagStat[]> => {
-      const records = await fetchAllPatternTags();
-
-      const counts: Record<string, number> = {};
-
-      for (const record of records) {
-        const tags = Array.isArray(record.tags) ? record.tags : [];
-        for (const tag of tags) {
-          if (tag) counts[tag] = (counts[tag] ?? 0) + 1;
-        }
-      }
-
-      return Object.entries(counts)
-        .map(([tag, count]) => ({ tag, count }))
-        .sort((a, b) => b.count - a.count);
+      // requestKey: null disables PocketBase's auto-cancellation for this call.
+      // By default it derives a request key from just the method + collection
+      // path (ignoring filter/sort/page), so this getFullList() would share a
+      // key with useQueryAdminTagStatsPaginated's getList() on the same 'tags'
+      // collection - whichever fires second silently cancels the other when
+      // both mount together on the tags admin page.
+      const items = await pocketbase.collection('tags').getFullList<TypeReadOnlyDatabaseItem>({
+        sort: '-count',
+        requestKey: null,
+      });
+      return items.map((item) => ({ tag: String(item.tag), count: item.count }));
     },
     staleTime: 1000 * 60 * 2,
   });
@@ -238,11 +220,18 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
       const filter = safeSearch ? `tag ~ "${safeSearch}"` : '';
       const sort = `${params.sortDir === 'desc' ? '-' : ''}${params.sortField}`;
 
+      // requestKey: null - see useQueryAdminTagStats above. This hook has
+      // multiple concurrent consumers on the tags admin page alone (the main
+      // grid and SetParentDialog's search both query 'tags' with different
+      // params/react-query keys), so PocketBase's default same-collection
+      // auto-cancellation would otherwise cancel one in favor of the other.
+      // React Query's own per-key caching already keeps their results isolated.
       const result = await pocketbase
         .collection('tags')
         .getList<TypeReadOnlyDatabaseItem>(params.page + 1, params.pageSize, {
           sort,
           ...(filter ? { filter } : {}),
+          requestKey: null,
         });
 
       // All-digit tag values (e.g. "2007") can deserialize as JS numbers, which
