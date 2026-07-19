@@ -3,6 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "overrides": {
+    "html-encoding-sniffer": {
+      "@exodus/bytes": "file:../../vendor/exodus-bytes-shim"
+    }
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "tsc -b && vite build && node scripts/patch-netlify-ssr-excluded-paths.mjs",
