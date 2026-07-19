@@ -631,9 +631,11 @@ export const UserUploadForm = () => {
           />
 
           <FormSection label="Pattern Keys" />
+
           <Typography variant="body2" color="text.secondary">
             Select the pattern keys your design uses. Not sure which key is which? Download the reference images below.
           </Typography>
+
           <Grid container spacing={1}>
             {patternKeys?.map((key) => (
               <Grid size={4} key={key.id}>
@@ -645,6 +647,7 @@ export const UserUploadForm = () => {
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
+                    flexDirection: 'column',
                     gap: 1,
                     borderColor: selectedKeys.some((k) => k.name === key.name) ? 'primary.main' : undefined,
                     backgroundColor: selectedKeys.some((k) => k.name === key.name) ? 'action.selected' : undefined,
@@ -654,11 +657,11 @@ export const UserUploadForm = () => {
                     component="img"
                     src={generatePbImagePatternKeyRef(key)}
                     alt={key.name}
-                    sx={{ width: 32, height: 32, objectFit: 'contain' }}
+                    sx={{ width: '100%', height: 32, objectFit: 'contain' }}
                   />
-                  <Typography variant="body2" sx={{ flex: 1 }}>
+                  {/*<Typography variant="body2" sx={{ flex: 1 }}>
                     {key.name}
-                  </Typography>
+                  </Typography>*/}
                   <MuiLink
                     href={generatePbImagePatternKeyRef(key)}
                     download
