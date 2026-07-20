@@ -5,16 +5,23 @@ import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sa
 // top-level `new DOMMatrix()` at module-eval time (no lazy guard). Node has no
 // DOMMatrix global, so a static top-level import of pdf-to-img throws during
 // this file's own module load - crashing EVERY submission (SVG and image
-// included), not just PDFs. Both the DOMMatrix/Path2D/ImageData polyfill (from
-// `canvas`, pdfjs's own documented Node canvas backend) and the pdf-to-img
-// import itself are deferred into the PDF-only branch below, inside the
-// existing try/catch, so a PDF-specific failure can never take down the rest
-// of the function.
+// included), not just PDFs. Both the DOMMatrix/Path2D/ImageData polyfill and
+// the pdf-to-img import itself are deferred into the PDF-only branch below,
+// inside the existing try/catch, so a PDF-specific failure can never take
+// down the rest of the function.
+//
+// The polyfill source is `@napi-rs/canvas`, NOT the (also-native) `canvas`
+// (node-canvas) package - pdfjs-dist's legacy Node build hardcodes
+// `require("@napi-rs/canvas")` internally (see its NodeCanvasFactory) for the
+// actual canvas object it renders PDF pages into. Polyfilling DOMMatrix from
+// `canvas` instead only masked the DOMMatrix half of the problem (pdfjs skips
+// its own polyfill attempt once `globalThis.DOMMatrix` already exists) while
+// leaving the real page-rendering canvas creation still trying and failing to
+// find `@napi-rs/canvas` - `Cannot find module '@napi-rs/canvas'`.
 async function rasterizeFirstPdfPage(buffer: Buffer): Promise<{ pageBuffer: Buffer; pageCount: number }> {
-  const canvasModule = await import('canvas');
+  const canvasModule = await import('@napi-rs/canvas');
   const g = globalThis as any;
   if (!g.DOMMatrix) g.DOMMatrix = canvasModule.DOMMatrix;
-  // @ts-expect-error - canvas's type declarations don't expose Path2D even though it exists at runtime
   if (!g.Path2D) g.Path2D = canvasModule.Path2D;
   if (!g.ImageData) g.ImageData = canvasModule.ImageData;
 

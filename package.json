@@ -23,6 +23,7 @@
     "@mui/material": "9.2.0",
     "@mui/x-data-grid": "9.9.0",
     "@mui/x-date-pickers": "9.9.0",
+    "@napi-rs/canvas": "^1.0.2",
     "@netlify/blobs": "10.7.9",
     "@react-three/drei": "10.7.7",
     "@react-three/fiber": "9.6.1",
@@ -32,7 +33,6 @@
     "@tanstack/react-start": "1.168.27",
     "@types/file-saver": "2.0.7",
     "@types/node": "25.9.3",
-    "canvas": "3.2.3",
     "dayjs": "1.11.21",
     "dompurify": "3.4.11",
     "driver.js": "1.6.0",
@@ -78,6 +78,7 @@
     "vite": "8.1.4"
   },
   "optionalDependencies": {
-    "@img/sharp-linux-x64": "0.35.1"
+    "@img/sharp-linux-x64": "0.35.1",
+    "@napi-rs/canvas-linux-x64-gnu": "1.0.2"
   }
 }
