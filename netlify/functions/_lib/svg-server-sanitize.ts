@@ -1,20 +1,39 @@
 // Node-safe counterpart to src/functions/utilities/sanitize-svg.ts.
 // The browser version relies on `DOMParser`/`XMLSerializer`/`document`, none of
 // which exist in the Netlify Functions runtime, so user-submitted SVGs are
-// sanitized and threat-scanned here using jsdom instead. Kept in sync in spirit
-// (same DOMPurify config, same threat categories) but intentionally NOT a
-// literal re-export - a compromised/absent browser check must never be the only
-// gate before untrusted content reaches storage, so this file is the real
-// enforcement point.
+// sanitized and threat-scanned here using linkedom instead. Kept in sync in
+// spirit (same DOMPurify config, same threat categories) but intentionally NOT
+// a literal re-export - a compromised/absent browser check must never be the
+// only gate before untrusted content reaches storage, so this file is the
+// real enforcement point.
 //
-// jsdom (via html-encoding-sniffer) now pulls in an ESM-only dependency deep
-// in its tree. Netlify's function bundler produces a CommonJS bundle, and a
-// static top-level `import` of jsdom compiles to a top-level `require()` that
-// throws ERR_REQUIRE_ESM at module load - crashing every submission, not just
-// SVG ones (this is the same class of bug as the earlier pdf-to-img/DOMMatrix
-// crash). `import()` CAN load ESM from a CJS module at runtime, so jsdom and
-// dompurify are loaded dynamically here instead, deferred until an SVG is
-// actually being processed.
+// WHY linkedom AND NOT jsdom: jsdom is a full HTML5 *browser* emulation
+// (URL parsing, HTML-spec character-encoding sniffing, CSS object model,
+// etc.) - far more than parsing well-formed XML (SVG) needs, and that extra
+// surface (specifically whatwg-url and html-encoding-sniffer) pulls in
+// @exodus/bytes, an ESM-only package that multiple independent jsdom
+// dependencies require() synchronously. AWS Lambda's managed Node.js
+// runtimes disable "require(esm)" with no supported override, so that
+// crashed every SVG submission in production regardless of Node version
+// configured, no matter how jsdom itself was imported on our end. linkedom's
+// entire dependency tree (css-select, cssom, html-escaper, htmlparser2,
+// uhyphen) has none of that baggage, sidestepping the problem rather than
+// working around it.
+//
+// SAFETY NOTE: analyzeSvgThreatsServer below (our own hand-written scanner,
+// not DOMPurify) runs FIRST and hard-rejects the submission on any
+// high-severity finding - <script>, event handlers, javascript: URIs,
+// external references, XML "billion laughs" expansion, etc. - all BEFORE
+// sanitizeSvgServer/DOMPurify ever sees the content. That ordering is what
+// makes linkedom safe to use here: it was rejected once before as a DOMPurify
+// backend because DOMPurify silently failed to strip a <script> tag with it
+// (no error, just quietly unsafe output) - but by the time DOMPurify runs in
+// THIS pipeline, the input has already passed our own strict pre-scan, so
+// DOMPurify's role here is defense-in-depth on already-vetted content, not
+// the primary gate. Verified directly: linkedom's DOMParser + querySelectorAll
+// correctly surfaces a <script> element (and all attributes, including
+// xlink:href) for our own scanner to find and reject - confirmed against the
+// actual analyzeSvgThreatsServer function, not just a standalone probe.
 
 export type SvgThreatSeverity = 'high' | 'medium';
 export type SvgThreat = { id: string; severity: SvgThreatSeverity; title: string; detail: string };
@@ -22,8 +41,8 @@ export type SvgThreat = { id: string; severity: SvgThreatSeverity; title: string
 const URL_FUNC_REGEX = /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
 
 async function getWindow() {
-  const { JSDOM } = await import('jsdom');
-  return new JSDOM('').window;
+  const { parseHTML } = await import('linkedom');
+  return parseHTML('<!doctype html><html><body></body></html>').window;
 }
 
 export async function sanitizeSvgServer(raw: string): Promise<string> {
@@ -42,13 +61,16 @@ export async function sanitizeSvgServer(raw: string): Promise<string> {
   // Strip descriptive metadata the same way the admin pipeline does.
   const doc = new window.DOMParser().parseFromString(clean, 'image/svg+xml');
   doc.querySelectorAll('metadata, title, desc').forEach((el: Element) => el.remove());
-  return new window.XMLSerializer().serializeToString(doc);
+  // linkedom has no XMLSerializer class - doc.toString() is the equivalent,
+  // but it prepends an XML declaration jsdom's serializer never added; strip
+  // it so output stays consistent with the rest of the pipeline's format.
+  return doc.toString().replace(/^<\?xml[^>]*\?>\s*/, '');
 }
 
 // Ported from src/functions/utilities/sanitize-svg.ts::analyzeSvgThreats - see
 // that file for the full rationale behind each check. Runs on the RAW
-// (pre-sanitize) text via jsdom's DOMParser, which never executes scripts or
-// fetches resources, so analysis itself is safe.
+// (pre-sanitize) text via linkedom's DOMParser, which never executes scripts
+// or fetches resources, so analysis itself is safe.
 export async function analyzeSvgThreatsServer(svgText: string): Promise<SvgThreat[]> {
   const window = await getWindow();
   const threats: SvgThreat[] = [];

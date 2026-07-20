@@ -3,11 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "overrides": {
-    "html-encoding-sniffer": {
-      "@exodus/bytes": "file:../../vendor/exodus-bytes-shim"
-    }
-  },
   "scripts": {
     "dev": "vite dev",
     "build": "tsc -b && vite build && node scripts/patch-netlify-ssr-excluded-paths.mjs",
@@ -49,6 +44,7 @@
     "jspdf": "4.2.1",
     "jszip": "3.10.1",
     "leaflet": "1.9.4",
+    "linkedom": "^0.18.13",
     "marked": "18.0.6",
     "notistack": "3.0.2",
     "pdf-to-img": "6.2.0",

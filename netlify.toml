@@ -33,17 +33,21 @@
   # it (and sharp) must stay external and have their files copied verbatim.
   # `pdfjs-dist`'s standard_fonts/cmaps are read from disk at runtime
   # (pdf-to-img resolves paths via require.resolve('pdfjs-dist/package.json')),
-  # so those assets need to ship too, not just get bundled as code. `jsdom` is
-  # also kept external/its files included so esbuild doesn't touch its
-  # dynamically-imported module graph - real Node module resolution at
-  # runtime, on the Node 22+ set above, is what actually resolves the
-  # ERR_REQUIRE_ESM issue documented above.
-  external_node_modules = ["sharp", "canvas", "jsdom"]
+  # so those assets need to ship too, not just get bundled as code.
+  #
+  # SVG sanitization uses `linkedom` (not `jsdom`) specifically because
+  # jsdom's HTML-browser-emulation dependencies (whatwg-url,
+  # html-encoding-sniffer) pull in an ESM-only package that AWS Lambda's
+  # managed Node runtimes can't require() synchronously, crashing every SVG
+  # submission - see netlify/functions/_lib/svg-server-sanitize.ts and
+  # USER_SUBMITTED_PATTERNS_SETUP.md for the full history. linkedom is pure
+  # JS with no native bindings and no equivalent dependency landmine, so it
+  # needs no special external/included_files treatment here.
+  external_node_modules = ["sharp", "canvas"]
   included_files = [
     "node_modules/sharp/**/*",
     "node_modules/canvas/**/*",
     "node_modules/pdfjs-dist/**/*",
-    "node_modules/jsdom/**/*",
   ]
 
 [dev]

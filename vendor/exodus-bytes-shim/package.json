@@ -1,7 +1,0 @@
-{
-  "name": "@exodus/bytes",
-  "version": "1.15.1",
-  "description": "Local CJS-only shim for @exodus/bytes/encoding-lite.js - see encoding-lite.js for why this exists.",
-  "main": "encoding-lite.js",
-  "license": "MIT"
-}
