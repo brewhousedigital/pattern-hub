@@ -298,8 +298,7 @@ export const UserUploadForm = () => {
       }
 
       localStorage.setItem(RATE_LIMIT_STORAGE_KEY, String(Date.now()));
-      enqueueSnackbar('Thank you! Your pattern has been submitted for review.', { variant: 'success' });
-      navigate({ to: '/' });
+      navigate({ to: '/profile/submit-pattern/complete' });
     } catch {
       enqueueSnackbar('Something went wrong - please try again.', { variant: 'error' });
       setUploadState('idle');

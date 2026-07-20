@@ -7,7 +7,7 @@ import { UserUploadForm } from '@/components/submission/UserUploadForm.tsx';
 import { Alert, Box, Button, Container, Link as MuiLink } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/profile/submit-pattern')({
+export const Route = createFileRoute('/profile/submit-pattern/')({
   component: RouteComponent,
   ssr: false,
   head: () =>

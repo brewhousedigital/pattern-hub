@@ -33,7 +33,6 @@ import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/k
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
-import { Route as ProfileSubmitPatternRouteImport } from './routes/profile/submit-pattern'
 import { Route as ProfileEditRouteImport } from './routes/profile/edit'
 import { Route as ProfileUserIdRouteImport } from './routes/profile/$userId'
 import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
@@ -54,9 +53,11 @@ import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-comman
 import { Route as SpaceCommandUserSubmissionsIndexRouteImport } from './routes/space-command/user-submissions/index'
 import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
+import { Route as ProfileSubmitPatternIndexRouteImport } from './routes/profile/submit-pattern/index'
 import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
 import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
 import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
+import { Route as ProfileSubmitPatternCompleteRouteImport } from './routes/profile/submit-pattern/complete'
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
 import { Route as SpaceCommandUserSubmissionsIdReviewRouteImport } from './routes/space-command/user-submissions/$id/review'
 
@@ -183,11 +184,6 @@ const SetsSetIdRoute = SetsSetIdRouteImport.update({
   path: '/sets/$setId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileSubmitPatternRoute = ProfileSubmitPatternRouteImport.update({
-  id: '/profile/submit-pattern',
-  path: '/profile/submit-pattern',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
   id: '/profile/edit',
   path: '/profile/edit',
@@ -291,6 +287,12 @@ const SpaceCommandComplaintsIndexRoute =
     path: '/complaints/',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
+const ProfileSubmitPatternIndexRoute =
+  ProfileSubmitPatternIndexRouteImport.update({
+    id: '/profile/submit-pattern/',
+    path: '/profile/submit-pattern/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const WikiCategorySlugPageSlugRoute =
   WikiCategorySlugPageSlugRouteImport.update({
     id: '/wiki/$categorySlug/$pageSlug',
@@ -308,6 +310,12 @@ const SpaceCommandComplaintsReviewedRoute =
     id: '/complaints/reviewed',
     path: '/complaints/reviewed',
     getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const ProfileSubmitPatternCompleteRoute =
+  ProfileSubmitPatternCompleteRouteImport.update({
+    id: '/profile/submit-pattern/complete',
+    path: '/profile/submit-pattern/complete',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ProfileCollectionsCollectionIdRoute =
   ProfileCollectionsCollectionIdRouteImport.update({
@@ -340,7 +348,6 @@ export interface FileRoutesByFullPath {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -364,9 +371,11 @@ export interface FileRoutesByFullPath {
   '/store-locator/': typeof StoreLocatorIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
+  '/profile/submit-pattern/complete': typeof ProfileSubmitPatternCompleteRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submit-pattern/': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
   '/space-command/user-submissions/': typeof SpaceCommandUserSubmissionsIndexRoute
@@ -391,7 +400,6 @@ export interface FileRoutesByTo {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -415,9 +423,11 @@ export interface FileRoutesByTo {
   '/store-locator': typeof StoreLocatorIndexRoute
   '/wiki': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
+  '/profile/submit-pattern/complete': typeof ProfileSubmitPatternCompleteRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submit-pattern': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact': typeof SpaceCommandContactIndexRoute
   '/space-command/user-submissions': typeof SpaceCommandUserSubmissionsIndexRoute
@@ -444,7 +454,6 @@ export interface FileRoutesById {
   '/pattern/$patternId': typeof PatternPatternIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/profile/edit': typeof ProfileEditRoute
-  '/profile/submit-pattern': typeof ProfileSubmitPatternRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
@@ -468,9 +477,11 @@ export interface FileRoutesById {
   '/store-locator/': typeof StoreLocatorIndexRoute
   '/wiki/': typeof WikiIndexRoute
   '/profile/collections/$collectionId': typeof ProfileCollectionsCollectionIdRoute
+  '/profile/submit-pattern/complete': typeof ProfileSubmitPatternCompleteRoute
   '/space-command/complaints/reviewed': typeof SpaceCommandComplaintsReviewedRoute
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submit-pattern/': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
   '/space-command/user-submissions/': typeof SpaceCommandUserSubmissionsIndexRoute
@@ -498,7 +509,6 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
-    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -522,9 +532,11 @@ export interface FileRouteTypes {
     | '/store-locator/'
     | '/wiki/'
     | '/profile/collections/$collectionId'
+    | '/profile/submit-pattern/complete'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submit-pattern/'
     | '/space-command/complaints/'
     | '/space-command/contact/'
     | '/space-command/user-submissions/'
@@ -549,7 +561,6 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
-    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -573,9 +584,11 @@ export interface FileRouteTypes {
     | '/store-locator'
     | '/wiki'
     | '/profile/collections/$collectionId'
+    | '/profile/submit-pattern/complete'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submit-pattern'
     | '/space-command/complaints'
     | '/space-command/contact'
     | '/space-command/user-submissions'
@@ -601,7 +614,6 @@ export interface FileRouteTypes {
     | '/pattern/$patternId'
     | '/profile/$userId'
     | '/profile/edit'
-    | '/profile/submit-pattern'
     | '/sets/$setId'
     | '/space-command/admins'
     | '/space-command/faq'
@@ -625,9 +637,11 @@ export interface FileRouteTypes {
     | '/store-locator/'
     | '/wiki/'
     | '/profile/collections/$collectionId'
+    | '/profile/submit-pattern/complete'
     | '/space-command/complaints/reviewed'
     | '/space-command/contact/reviewed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submit-pattern/'
     | '/space-command/complaints/'
     | '/space-command/contact/'
     | '/space-command/user-submissions/'
@@ -654,7 +668,6 @@ export interface RootRouteChildren {
   PatternPatternIdRoute: typeof PatternPatternIdRoute
   ProfileUserIdRoute: typeof ProfileUserIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
-  ProfileSubmitPatternRoute: typeof ProfileSubmitPatternRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   CommunityIndexRoute: typeof CommunityIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
@@ -665,7 +678,9 @@ export interface RootRouteChildren {
   StoreLocatorIndexRoute: typeof StoreLocatorIndexRoute
   WikiIndexRoute: typeof WikiIndexRoute
   ProfileCollectionsCollectionIdRoute: typeof ProfileCollectionsCollectionIdRoute
+  ProfileSubmitPatternCompleteRoute: typeof ProfileSubmitPatternCompleteRoute
   WikiCategorySlugPageSlugRoute: typeof WikiCategorySlugPageSlugRoute
+  ProfileSubmitPatternIndexRoute: typeof ProfileSubmitPatternIndexRoute
   WikiCategorySlugIndexRoute: typeof WikiCategorySlugIndexRoute
 }
 
@@ -839,13 +854,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetsSetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/submit-pattern': {
-      id: '/profile/submit-pattern'
-      path: '/profile/submit-pattern'
-      fullPath: '/profile/submit-pattern'
-      preLoaderRoute: typeof ProfileSubmitPatternRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile/edit': {
       id: '/profile/edit'
       path: '/profile/edit'
@@ -986,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandComplaintsIndexRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/profile/submit-pattern/': {
+      id: '/profile/submit-pattern/'
+      path: '/profile/submit-pattern'
+      fullPath: '/profile/submit-pattern/'
+      preLoaderRoute: typeof ProfileSubmitPatternIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wiki/$categorySlug/$pageSlug': {
       id: '/wiki/$categorySlug/$pageSlug'
       path: '/wiki/$categorySlug/$pageSlug'
@@ -1006,6 +1021,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/space-command/complaints/reviewed'
       preLoaderRoute: typeof SpaceCommandComplaintsReviewedRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/profile/submit-pattern/complete': {
+      id: '/profile/submit-pattern/complete'
+      path: '/profile/submit-pattern/complete'
+      fullPath: '/profile/submit-pattern/complete'
+      preLoaderRoute: typeof ProfileSubmitPatternCompleteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/profile/collections/$collectionId': {
       id: '/profile/collections/$collectionId'
@@ -1092,7 +1114,6 @@ const rootRouteChildren: RootRouteChildren = {
   PatternPatternIdRoute: PatternPatternIdRoute,
   ProfileUserIdRoute: ProfileUserIdRoute,
   ProfileEditRoute: ProfileEditRoute,
-  ProfileSubmitPatternRoute: ProfileSubmitPatternRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   CommunityIndexRoute: CommunityIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
@@ -1103,7 +1124,9 @@ const rootRouteChildren: RootRouteChildren = {
   StoreLocatorIndexRoute: StoreLocatorIndexRoute,
   WikiIndexRoute: WikiIndexRoute,
   ProfileCollectionsCollectionIdRoute: ProfileCollectionsCollectionIdRoute,
+  ProfileSubmitPatternCompleteRoute: ProfileSubmitPatternCompleteRoute,
   WikiCategorySlugPageSlugRoute: WikiCategorySlugPageSlugRoute,
+  ProfileSubmitPatternIndexRoute: ProfileSubmitPatternIndexRoute,
   WikiCategorySlugIndexRoute: WikiCategorySlugIndexRoute,
 }
 export const routeTree = rootRouteImport
