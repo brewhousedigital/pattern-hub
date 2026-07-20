@@ -9,6 +9,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
+import { normalizeSvgStrokes } from './normalize-svg-strokes';
 import { buildPatternXmpMeta, buildXmpPacket, insertSvgMetadata } from '@/functions/utilities/xmp/buildXmp';
 import { formatInchesAsFraction, formatMeasurement } from '@/functions/utilities/format-measurement';
 import type { TypePatternResponse } from '@/functions/database/patterns';
@@ -40,22 +41,6 @@ function parseSvgViewBox(svgStr: string): SvgViewBox | null {
 // Strips the outer <svg ...> and </svg> wrapper, leaving inner content only.
 function extractSvgInner(svgStr: string): string {
   return svgStr.replace(/<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
-}
-
-// Replaces all stroke-width values (CSS and attribute forms) with the correct
-// user-unit value for the target physical size. Same formula as
-// prepareSvgForPrint in ExportPatternForPrintV3.tsx - works regardless of the
-// SVG's own coordinate system units.
-function normalizeSvgStrokes(svgString: string, patternWIn: number, lineWidthIn: number): string {
-  const m = svgString.match(/viewBox=["']\s*[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+[\d.]+/i);
-  if (!m) return svgString;
-  const viewBoxWidth = parseFloat(m[1]);
-  if (viewBoxWidth <= 0 || patternWIn <= 0) return svgString;
-  const userUnitsPerInch = viewBoxWidth / patternWIn;
-  const strokeUU = (lineWidthIn * userUnitsPerInch).toFixed(5);
-  return svgString
-    .replace(/stroke-width\s*:\s*[\d.]+/g, `stroke-width:${strokeUU}`)
-    .replace(/stroke-width=["'][\d.]+["']/g, `stroke-width="${strokeUU}"`);
 }
 
 export interface BuildSvgExportOptions {

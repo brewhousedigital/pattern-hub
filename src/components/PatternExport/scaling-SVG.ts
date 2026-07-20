@@ -5,11 +5,22 @@
 //
 // HOW STROKE PRESERVATION WORKS
 // -----------------------------
-// SVG strokes scale with the viewBox. If we render the same viewBox at 2x the size,
-// strokes also double. To prevent that, we set vector-effect="non-scaling-stroke"
-// on every stroked element AND set an explicit stroke-width derived from the
-// original line_width converted to output pixels. Result: line thickness in the
-// final raster matches the original line_width regardless of target size.
+// SVG strokes scale with the viewBox. If we render the same viewBox at 2× the size,
+// strokes also double. To keep the final stroke at exactly `strokeWidthPx` output
+// pixels, we express the stroke in the SVG's OWN user-unit space and let it scale
+// with the geometry:
+//
+//   scale             = targetWidthPx / viewBoxWidth   (applied by the viewBox)
+//   strokeUserUnits   = strokeWidthPx / scale = strokeWidthPx × viewBoxWidth / targetWidthPx
+//   rendered stroke   = strokeUserUnits × scale = strokeWidthPx px   ✓
+//
+// This deliberately avoids `vector-effect: non-scaling-stroke`, which is resolved
+// against DEVICE pixels when the SVG is rasterized via <img> → canvas and gets
+// multiplied by window.devicePixelRatio (2×/3× on HiDPI displays). See
+// normalize-svg-strokes.ts for the full rationale. The actual stroke rewriting is
+// shared with the PDF and composite-SVG paths.
+
+import { applyStrokeWidthUserUnits } from './normalize-svg-strokes';
 
 export interface TypeScaleSVGOpts {
   svgText: string;
@@ -35,15 +46,16 @@ export function scaleSVG({ svgText, targetWidthPx, targetHeightPx, strokeWidthPx
   svg.setAttribute('height', String(targetHeightPx));
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  // Walk every element. If it can take a stroke, lock its width.
-  const STROKE_TAGS = new Set(['path', 'line', 'polyline', 'polygon', 'rect', 'circle', 'ellipse']);
-  const all = svg.querySelectorAll('*');
-  all.forEach((el) => {
-    if (STROKE_TAGS.has(el.tagName.toLowerCase())) {
-      el.setAttribute('vector-effect', 'non-scaling-stroke');
-      el.setAttribute('stroke-width', String(strokeWidthPx));
-    }
-  });
+  const serialized = new XMLSerializer().serializeToString(svg);
 
-  return new XMLSerializer().serializeToString(svg);
+  // Convert the requested output-px stroke into the SVG's user-unit space so it
+  // scales with the viewBox to exactly strokeWidthPx in the final raster.
+  const vb = svg.getAttribute('viewBox');
+  const viewBoxWidth = vb ? parseFloat(vb.trim().split(/\s+/)[2]) : NaN;
+  if (viewBoxWidth > 0 && targetWidthPx > 0) {
+    const strokeUserUnits = strokeWidthPx * (viewBoxWidth / targetWidthPx);
+    return applyStrokeWidthUserUnits(serialized, strokeUserUnits);
+  }
+
+  return serialized;
 }

@@ -7,6 +7,7 @@ import { buildPdfDocumentProperties, type PatternXmpMeta } from '@/functions/uti
 import { resolveDefaultExportUnit } from '@/functions/utilities/format-measurement';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { preparePdfExportInputs } from './preparePdfExport';
+import { normalizeSvgStrokes } from './normalize-svg-strokes';
 import { trackExportEvent } from '@/functions/database/export-analytics';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
@@ -154,19 +155,10 @@ async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<strin
 }
 
 // Prepare an SVG string for print rasterization at `targetWPx × targetHPx`.
-//
-// WHY this exists (not scaleSVG):
-//   scaleSVG sets stroke-width via setAttribute(), which is a CSS "presentation
-//   attribute". SVGs exported from Affinity Designer, Inkscape, etc. store
-//   stroke widths inside inline style="" or <style> blocks, which have higher
-//   CSS specificity and silently override the attribute. The result is that the
-//   original thin stroke from the file wins.
-//
-//   Fix: use regex to replace ALL stroke-width occurrences (both CSS and
-//   attribute) with the correct user-unit value derived from the viewBox.
-//   Formula: strokeUserUnits = lineWidthIn × (viewBoxWidth / patternWIn)
-//   This is unit-system-agnostic - works for mm, pt, px, or any other
-//   coordinate space the SVG uses.
+// Locks stroke widths to the target physical size (via the shared
+// normalizeSvgStrokes helper - see normalize-svg-strokes.ts for why we rewrite
+// stroke-width in user-unit space rather than using setAttribute/non-scaling-stroke),
+// then stamps the output pixel dimensions onto the root <svg>.
 function prepareSvgForPrint(
   svgString: string,
   targetWPx: number,
@@ -174,26 +166,8 @@ function prepareSvgForPrint(
   patternWIn: number,
   lineWidthIn: number,
 ): string {
-  let result = svgString;
-
-  // Ensure SVG namespace for canvas rendering
-  if (!result.includes('xmlns=')) {
-    result = result.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-  }
-
-  // Compute stroke width in SVG user units from the viewBox coordinate system
-  const vbMatch = result.match(/viewBox=["']\s*[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+[\d.]+/i);
-  if (vbMatch) {
-    const viewBoxWidth = parseFloat(vbMatch[1]);
-    if (viewBoxWidth > 0 && patternWIn > 0) {
-      const userUnitsPerInch = viewBoxWidth / patternWIn;
-      const strokeUserUnits = (lineWidthIn * userUnitsPerInch).toFixed(5);
-      // Replace inline CSS  (style="...stroke-width:X...")
-      result = result.replace(/stroke-width\s*:\s*[\d.]+/g, `stroke-width:${strokeUserUnits}`);
-      // Replace presentation attribute  (stroke-width="X")
-      result = result.replace(/stroke-width=["'][\d.]+["']/g, `stroke-width="${strokeUserUnits}"`);
-    }
-  }
+  // Lock stroke widths to the target physical size (also guarantees an xmlns).
+  let result = normalizeSvgStrokes(svgString, patternWIn, lineWidthIn);
 
   // Set the output pixel dimensions on the root <svg> element
   result = result.replace(/(<svg\b[^>]*?)\s+width=["'][^"']*["']/i, `$1 width="${targetWPx}"`);

@@ -82,8 +82,9 @@ export function useExportPattern() {
 
       // ── 3. Stroke preservation ─────────────────────────────────────────────
       // Convert the original line width to px in the SAME pixel space as the
-      // target output. Because we use vector-effect: non-scaling-stroke, this
-      // is the exact thickness the rasterized output will have.
+      // target output. scaleSVG re-expresses this in the SVG's user-unit space so
+      // it scales with the viewBox to exactly this thickness in the rasterized
+      // output (see normalize-svg-strokes.ts for why we avoid non-scaling-stroke).
       const lineUnit = normalizeUnit(ctx.lineWidthUnit);
       const strokeWidthPx = toPx(ctx.lineWidth, lineUnit, form.dpi);
 

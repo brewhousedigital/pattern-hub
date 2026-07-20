@@ -3,22 +3,15 @@ import { enqueueSnackbar } from 'notistack';
 import {
   generatePbImage,
   generatePbImageExternalFile,
-  generatePbImagePatternKeyRef,
   generatePbImageSVG,
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  ADMIN_TAG_STATS_QUERY_KEY,
-  useQueryAdminTagStatsPaginated,
-  useQueryGetTagHierarchy,
-  getAncestors,
-} from '@/functions/database/tags';
-import { useQuerySearchLinkedAuthors, useQuerySearchManualAuthors } from '@/functions/database/authors';
+import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
 import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
-import { FancyAutocomplete, FancyAutocompleteAuthors } from '@/components/FancyAutocomplete';
+import { PatternEditFields } from '@/components/admin/PatternEditFields';
+import { FormSection } from '@/components/admin/FormSection';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
-import { useDebounce } from '@/functions/hooks/useDebounce';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -29,8 +22,6 @@ import {
   type TypePatternLayersMapItem,
   useMutationEditPattern,
   useMutationSoftDeletePattern,
-  useQueryGetAllPatternKeys,
-  useQueryGetAllPatternKeyCollections,
 } from '@/functions/database/patterns';
 import {
   sanitizeSvgFile,
@@ -44,33 +35,23 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import LockRoundedIcon from '@mui/icons-material/LockRounded';
-import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import {
   Box,
   Button,
   Checkbox,
   Dialog,
-  Divider,
   FormControlLabel,
-  MenuItem,
   IconButton,
   DialogActions,
   DialogContent,
-  ListItemText,
   DialogTitle,
   TextField,
   Stack,
-  List,
-  ListItem,
   Typography,
   Grid,
   Tab,
@@ -82,7 +63,6 @@ import {
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,26 +72,6 @@ type TypeEditModalProps = TypePatternResponse & {
   mode?: TypeModalMode;
   callback?: () => void;
 };
-
-// ─── Section label helper ─────────────────────────────────────────────────────
-
-const FormSection = ({ label }: { label: string }) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, my: 0.5 }}>
-    <Typography
-      sx={{
-        whiteSpace: 'nowrap',
-        fontSize: '0.67rem',
-        fontWeight: 700,
-        letterSpacing: '0.09em',
-        textTransform: 'uppercase',
-        color: 'text.disabled',
-      }}
-    >
-      {label}
-    </Typography>
-    <Divider sx={{ flex: 1 }} />
-  </Box>
-);
 
 // ─── Layers helpers ───────────────────────────────────────────────────────────
 
@@ -147,21 +107,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const canEdit = checkAccess(EnumLevelsAdmin.PATTERN_AU);
   const canDelete = checkAccess(EnumLevelsAdmin.PATTERN_AD);
 
-  // Tag autocomplete input - declared here so the debounced value can drive the
-  // server-side search query below (hook call order must stay consistent).
-  const [autoCompleteInputValue, setAutoCompleteInputValue] = React.useState('');
-  const debouncedTagSearch = useDebounce(autoCompleteInputValue, 400);
-
-  const { data: tagSearchData, isFetching: tagSearchFetching } = useQueryAdminTagStatsPaginated({
-    page: 0,
-    pageSize: 50,
-    search: debouncedTagSearch,
-    sortField: 'count',
-    sortDir: 'desc',
-  });
-
-  const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
-
   const savePattern = useMutationEditPattern();
   const deletePattern = useMutationSoftDeletePattern();
   const { log } = useAdminLogger();
@@ -174,16 +119,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   const queryClient = useQueryClient();
   const refetchPatterns = () => queryClient.invalidateQueries({ queryKey: ['GetAllPatternsByPaginationAdmin'] });
   const refetchTagManagementStats = () => queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
-
-  const {
-    isPending: isPendingPatternKeys,
-    isError: isErrorPatternKeys,
-    data: patternKeys,
-  } = useQueryGetAllPatternKeys();
-
-  const { data: patternKeyCollections } = useQueryGetAllPatternKeyCollections();
-
-  const [quickAddKeyCollection, setQuickAddKeyCollection] = React.useState('');
 
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -206,93 +141,15 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // Tags
   const [tagValue, setTagValue] = React.useState<string[]>(props?.tags || []);
 
-  /**
-   * Set of tag names that were auto-added as ancestors of a primary tag.
-   * Used to render inherited chips differently and to clean them up when their
-   * primary tag is removed.
-   */
-  const [inheritedTags, setInheritedTags] = React.useState<Set<string>>(new Set());
-
-  // Once the hierarchy loads, mark which existing pattern tags are ancestors of
-  // other tags already in the set so they render as inherited chips.
-  React.useEffect(() => {
-    const current = props?.tags ?? [];
-    if (current.length === 0) return;
-    const inherited = new Set<string>();
-    for (const tag of current) {
-      for (const ancestor of getAncestors(tag, hierarchyData)) {
-        if (current.includes(ancestor)) inherited.add(ancestor);
-      }
-    }
-    setInheritedTags(inherited);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hierarchyData.length]);
-
-  /**
-   * Smart tag change handler.
-   * When a new tag is added, its full ancestor chain is auto-added as inherited tags.
-   * When a primary tag is removed, its orphaned ancestors are cleaned up.
-   */
-  const handleTagChange = React.useCallback(
-    (newValue: string[]) => {
-      const added = newValue.filter((t) => !tagValue.includes(t));
-      const removed = tagValue.filter((t) => !newValue.includes(t));
-
-      let result = [...newValue];
-      const newInherited = new Set(inheritedTags);
-
-      // Auto-add ancestors for any newly added tags
-      for (const tag of added) {
-        newInherited.delete(tag); // Explicitly added → promote to primary
-        for (const ancestor of getAncestors(tag, hierarchyData)) {
-          if (!result.includes(ancestor)) {
-            result.push(ancestor);
-            newInherited.add(ancestor);
-          }
-        }
-      }
-
-      // When a primary tag is removed, clean up orphaned inherited ancestors
-      for (const tag of removed) {
-        if (!newInherited.has(tag)) {
-          // It was primary - check each of its ancestors
-          for (const ancestor of getAncestors(tag, hierarchyData)) {
-            const stillNeeded = result
-              .filter((t) => !newInherited.has(t) && t !== tag)
-              .some((primary) => getAncestors(primary, hierarchyData).includes(ancestor));
-            if (!stillNeeded) {
-              result = result.filter((t) => t !== ancestor);
-              newInherited.delete(ancestor);
-            }
-          }
-        }
-        newInherited.delete(tag);
-      }
-
-      setTagValue(result);
-      setInheritedTags(newInherited);
-    },
-    [tagValue, inheritedTags, hierarchyData],
-  );
-
   // Authors
   const [authorValue, setAuthorValue] = React.useState<string[] | undefined>(props?.authors || []);
-  const [authorAutoCompleteInputValue, setAuthorAutoCompleteInputValue] = React.useState('');
-
-  const debouncedAuthorSearch = useDebounce(authorAutoCompleteInputValue, 600);
 
   // Manual Authors
   const [manualAuthorValue, setManualAuthorValue] = React.useState<string[] | undefined>(props?.author_manual || []);
-  const [manualAuthorAutoCompleteInputValue, setManualAuthorAutoCompleteInputValue] = React.useState('');
-  const debouncedManualAuthorSearch = useDebounce(manualAuthorAutoCompleteInputValue, 600);
 
   // Design Date
   const now = props?.design_date ? dayjs(props?.design_date) : dayjs();
   const [designDate, setDesignDate] = React.useState<Dayjs | null>(now);
-
-  const { data: authorData, isFetching: authorFetching } = useQuerySearchLinkedAuthors(debouncedAuthorSearch);
-  const { data: manualAuthorData, isFetching: manualAuthorFetching } =
-    useQuerySearchManualAuthors(debouncedManualAuthorSearch);
 
   const isLoading = false;
   const isError = false;
@@ -351,44 +208,9 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   };
 
   // Pattern Key manager
-  const [newPatternKey, setNewPatternKey] = React.useState<TypePatternKeyReferenceObject>({
-    image: '',
-    name: '',
-    fullPath: '',
-  });
-
   const [patternKeyObject, setPatternKeyObject] = React.useState<TypePatternKeyReferenceObject[]>(
     props?.pattern_key_reference_list || [],
   );
-
-  const handleNewChangePatternKey = (newData: any) => {
-    setNewPatternKey((prev) => ({ ...prev, ...newData }));
-  };
-
-  const handleResetChangePatternKey = () => {
-    setNewPatternKey({ image: '', name: '', fullPath: '' });
-  };
-
-  const handleAddPatternKey = (newData: TypePatternKeyReferenceObject) => {
-    setPatternKeyObject((prev) => [...prev, { ...newData }]);
-    setTimeout(() => handleResetChangePatternKey(), 100);
-  };
-
-  const [openKeySelectWindow, setOpenKeySelectWindow] = React.useState(false);
-
-  const handleOpenKeySelect = () => {
-    const promises =
-      patternKeys?.map(
-        (item) =>
-          new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = generatePbImagePatternKeyRef(item);
-          }),
-      ) || [];
-    Promise.all(promises).then(() => setOpenKeySelectWindow(true));
-  };
 
   const handleFormReset = () => {
     setName('');
@@ -403,15 +225,11 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setDesignHeightUnit('in');
     setInstructions('');
     setTagValue([]);
-    setAutoCompleteInputValue('');
     setAuthorValue([]);
-    setAuthorAutoCompleteInputValue('');
     setManualAuthorValue([]);
-    setManualAuthorAutoCompleteInputValue('');
     handleFileDelete();
     handleExternalFileDelete();
     setExternalFileLink('');
-    handleResetChangePatternKey();
     setPatternKeyObject([]);
     setDesignDate(dayjs());
     setHasLayers(false);
@@ -600,16 +418,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(false);
   };
 
-  const handleDeletePatternKey = async (fullPath: string) => {
-    setPatternKeyObject((prev) => prev.filter((item) => item.fullPath !== fullPath));
-  };
-
-  const handleClickQuickAddKeyCollection = () => {
-    const quickAdd = JSON.parse(quickAddKeyCollection);
-    setPatternKeyObject(quickAdd);
-    setQuickAddKeyCollection('');
-  };
-
   return (
     <>
       {props.mode === 'edit' ? (
@@ -788,37 +596,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                   <FormControlLabel
                     control={<Checkbox checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} />}
                     label="Draft Mode (hidden from public)"
-                  />
-
-                  {/* ── Info ── */}
-                  <FormSection label="Pattern Info" />
-
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    label="Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    helperText={name?.length > 100 ? `Name is too long: ${name?.length}/100` : `${name?.length}/100`}
-                    error={name?.length > 100}
-                  />
-
-                  <GenericMarkdownEditor
-                    content={description}
-                    setContent={setDescription}
-                    characterLimit={2000}
-                    minRows={2}
-                    label="Description"
-                  />
-
-                  <DatePicker label="Design Date" value={designDate} onChange={(newValue) => setDesignDate(newValue)} />
-
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    label="Source URL"
-                    value={sourceURL}
-                    onChange={(e) => setSourceURL(e.target.value)}
                   />
 
                   {/* ── Pattern File ── */}
@@ -1003,103 +780,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                             />
                           </>
                         )}
-
-                        {/* ── Has Layers ── */}
-                        <FormControlLabel
-                          control={
-                            <Checkbox checked={hasLayers} onChange={(e) => handleHasLayersChange(e.target.checked)} />
-                          }
-                          label="Has Layers"
-                          sx={{ mt: 1 }}
-                        />
-
-                        {hasLayers && layersMap.length > 0 && (
-                          <Box sx={{ mt: 1 }}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ fontWeight: 600, display: 'block', mb: 1 }}
-                            >
-                              Layer Map
-                            </Typography>
-                            <Stack spacing={1}>
-                              {layersMap.map((item, index) => (
-                                <Grid container spacing={1} key={item.layerName} sx={{ alignItems: 'center' }}>
-                                  <Grid size={{ xs: 5 }}>
-                                    <TextField
-                                      size="small"
-                                      fullWidth
-                                      variant="filled"
-                                      label="Layer ID"
-                                      value={item.layerName}
-                                      slotProps={{ input: { readOnly: true } }}
-                                    />
-                                  </Grid>
-                                  <Grid size="auto">
-                                    <Tooltip title="Copy layer ID to display name" arrow>
-                                      <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                          setLayersMap((prev) =>
-                                            prev.map((e, i) => (i === index ? { ...e, mappedName: e.layerName } : e)),
-                                          )
-                                        }
-                                      >
-                                        <ArrowForwardRoundedIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Grid>
-                                  <Grid size="grow">
-                                    <TextField
-                                      size="small"
-                                      fullWidth
-                                      variant="filled"
-                                      label="Display Name"
-                                      value={item.mappedName}
-                                      onChange={(e) =>
-                                        setLayersMap((prev) =>
-                                          prev.map((entry, i) =>
-                                            i === index ? { ...entry, mappedName: e.target.value } : entry,
-                                          ),
-                                        )
-                                      }
-                                    />
-                                  </Grid>
-                                  <Grid size="auto">
-                                    <Tooltip
-                                      title={
-                                        item.isVisible !== false
-                                          ? 'Users can toggle this layer,  click to lock'
-                                          : 'Required layer - users cannot hide this'
-                                      }
-                                      arrow
-                                    >
-                                      <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                          setLayersMap((prev) =>
-                                            prev.map((e, i) =>
-                                              i === index
-                                                ? { ...e, isVisible: e.isVisible === false ? true : false }
-                                                : e,
-                                            ),
-                                          )
-                                        }
-                                        sx={{ color: item.isVisible === false ? 'error.main' : 'text.disabled' }}
-                                      >
-                                        {item.isVisible === false ? (
-                                          <LockRoundedIcon fontSize="small" />
-                                        ) : (
-                                          <LockOpenRoundedIcon fontSize="small" />
-                                        )}
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Grid>
-                                </Grid>
-                              ))}
-                            </Stack>
-                          </Box>
-                        )}
                       </TabPanel>
 
                       {/* External pattern tab */}
@@ -1259,280 +939,47 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
                     </TabContext>
                   </Box>
 
-                  {/* ── Measurements ── */}
-                  <FormSection label="Measurements" />
-
-                  <TextField
-                    fullWidth
+                  <PatternEditFields
                     variant="filled"
-                    label="Pieces"
-                    type="number"
-                    value={pieces}
-                    onChange={(e) => setPieces(e.target.value)}
+                    resetKey={props.id}
+                    name={name}
+                    onNameChange={setName}
+                    description={description}
+                    onDescriptionChange={setDescription}
+                    designDate={designDate}
+                    onDesignDateChange={setDesignDate}
+                    sourceUrl={sourceURL}
+                    onSourceUrlChange={setSourceURL}
+                    pieces={pieces}
+                    onPiecesChange={setPieces}
+                    designWidth={designWidth}
+                    designWidthUnit={designWidthUnit}
+                    onDesignWidthChange={setDesignWidth}
+                    onDesignWidthUnitChange={setDesignWidthUnit}
+                    designHeight={designHeight}
+                    designHeightUnit={designHeightUnit}
+                    onDesignHeightChange={setDesignHeight}
+                    onDesignHeightUnitChange={setDesignHeightUnit}
+                    lineWidth={lineWidth}
+                    lineWidthUnit={lineWidthUnit}
+                    onLineWidthChange={setLineWidth}
+                    onLineWidthUnitChange={setLineWidthUnit}
+                    instructions={instructions}
+                    onInstructionsChange={setInstructions}
+                    tags={tagValue}
+                    onTagsChange={setTagValue}
+                    authors={authorValue}
+                    onAuthorsChange={setAuthorValue}
+                    authorManual={manualAuthorValue}
+                    onAuthorManualChange={setManualAuthorValue}
+                    hasLayers={hasLayers}
+                    onHasLayersChange={handleHasLayersChange}
+                    layersMap={layersMap}
+                    onLayersMapChange={setLayersMap}
+                    patternKeys={patternKeyObject}
+                    onPatternKeysChange={setPatternKeyObject}
+                    showPatternKeyBuilder={!props.pattern_file_external_link}
                   />
-
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        variant="filled"
-                        label="Line Width"
-                        type="number"
-                        value={lineWidth}
-                        onChange={(e) => setLineWidth(e.target.value)}
-                      />
-                    </Grid>
-                    <UnitOfMeasurementSelect
-                      label="Line Width Unit"
-                      value={lineWidthUnit}
-                      onChange={setLineWidthUnit}
-                    />
-                  </Grid>
-
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        variant="filled"
-                        label="Design Width"
-                        type="number"
-                        value={designWidth}
-                        onChange={(e) => setDesignWidth(e.target.value)}
-                      />
-                    </Grid>
-                    <UnitOfMeasurementSelect
-                      label="Design Width Unit"
-                      value={designWidthUnit}
-                      onChange={setDesignWidthUnit}
-                    />
-                  </Grid>
-
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        variant="filled"
-                        label="Design Height"
-                        type="number"
-                        value={designHeight}
-                        onChange={(e) => setDesignHeight(e.target.value)}
-                      />
-                    </Grid>
-                    <UnitOfMeasurementSelect
-                      label="Design Height Unit"
-                      value={designHeightUnit}
-                      onChange={setDesignHeightUnit}
-                    />
-                  </Grid>
-
-                  {/* ── Instructions ── */}
-                  <FormSection label="Instructions" />
-                  <GenericMarkdownEditor
-                    content={instructions}
-                    setContent={setInstructions}
-                    characterLimit={10000}
-                    minRows={2}
-                  />
-
-                  {/* ── Metadata ── */}
-                  <FormSection label="Metadata" />
-
-                  <FancyAutocomplete
-                    label="Tags"
-                    freeSolo
-                    serverSide
-                    data={tagSearchData?.items ?? []}
-                    value={tagValue}
-                    onChange={handleTagChange}
-                    inputValue={autoCompleteInputValue}
-                    onInputChange={setAutoCompleteInputValue}
-                    inheritedValues={inheritedTags}
-                    loading={tagSearchFetching}
-                  />
-
-                  {/*<Typography variant="body2" color="text.secondary">
-                Total Tags Used: {allTagsData?.length}/500
-              </Typography>*/}
-
-                  <FancyAutocompleteAuthors
-                    label="Author"
-                    serverSide
-                    freeSolo
-                    loading={authorFetching}
-                    data={authorData ?? []}
-                    value={authorValue}
-                    onChange={setAuthorValue}
-                    inputValue={authorAutoCompleteInputValue}
-                    onInputChange={setAuthorAutoCompleteInputValue}
-                  />
-
-                  <FancyAutocomplete
-                    label="Manual Author"
-                    serverSide
-                    loading={manualAuthorFetching}
-                    data={manualAuthorData ?? []}
-                    value={manualAuthorValue}
-                    freeSolo
-                    onChange={setManualAuthorValue}
-                    inputValue={manualAuthorAutoCompleteInputValue}
-                    onInputChange={setManualAuthorAutoCompleteInputValue}
-                  />
-
-                  {/* ── Pattern Key Builder ── */}
-                  {!props.pattern_file_external_link && (
-                    <>
-                      <FormSection label="Pattern Key" />
-
-                      <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ mr: 'auto' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            Pattern Key Builder
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Add key images to the legend
-                          </Typography>
-                        </Box>
-
-                        <TextField
-                          select
-                          size="small"
-                          label="Quick-add collection"
-                          sx={{ minWidth: 200 }}
-                          value={quickAddKeyCollection}
-                          onChange={(e) => setQuickAddKeyCollection(e.target.value)}
-                        >
-                          {patternKeyCollections?.map((item, index) => (
-                            <MenuItem key={`key-collection-quick-add-${index}`} value={JSON.stringify(item.collection)}>
-                              {item.name}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={handleClickQuickAddKeyCollection}
-                          disabled={!quickAddKeyCollection}
-                        >
-                          Apply
-                        </Button>
-                      </Stack>
-
-                      {isPendingPatternKeys && <CircularProgress size={20} />}
-
-                      {isErrorPatternKeys && (
-                        <Alert severity="error">
-                          Unable to load the pattern keys… that's probably not good. Try refreshing.
-                        </Alert>
-                      )}
-
-                      {patternKeys && (
-                        <Grid container spacing={2}>
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                              fullWidth
-                              select
-                              variant="filled"
-                              label="Key Image"
-                              value={newPatternKey.fullPath}
-                              slotProps={{
-                                select: {
-                                  open: openKeySelectWindow,
-                                  onOpen: handleOpenKeySelect,
-                                  onClose: () => setOpenKeySelectWindow(false),
-                                },
-                              }}
-                              onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
-                            >
-                              {patternKeys.map((item) => (
-                                <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
-                                  <Box
-                                    component="img"
-                                    loading="lazy"
-                                    src={generatePbImagePatternKeyRef(item)}
-                                    alt={`pattern-key-img-${item.id}`}
-                                    sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
-                                  />
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                          </Grid>
-
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                              fullWidth
-                              variant="filled"
-                              label="Key Name"
-                              value={newPatternKey.name}
-                              onChange={(e) => handleNewChangePatternKey({ name: e.target.value })}
-                              sx={{ mb: 2 }}
-                            />
-                            <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
-                              <Button variant="outlined" color="error" onClick={handleResetChangePatternKey}>
-                                Reset
-                              </Button>
-                              <Button
-                                variant="outlined"
-                                color="success"
-                                disabled={!newPatternKey.fullPath || !newPatternKey.name.trim()}
-                                onClick={() => handleAddPatternKey(newPatternKey)}
-                              >
-                                Add key
-                              </Button>
-                            </Stack>
-                          </Grid>
-                        </Grid>
-                      )}
-
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                          Assigned Keys
-                        </Typography>
-
-                        {!patternKeyObject?.length ? (
-                          <Alert severity="warning" variant="outlined">
-                            No keys have been assigned to this pattern yet.
-                          </Alert>
-                        ) : (
-                          <List disablePadding>
-                            {patternKeyObject.map((item) => (
-                              <ListItem
-                                key={item.fullPath}
-                                disableGutters
-                                divider
-                                secondaryAction={
-                                  <IconButton
-                                    aria-label="remove this pattern key"
-                                    size="small"
-                                    onClick={() => handleDeletePatternKey(item?.fullPath || '')}
-                                  >
-                                    <DeleteRoundedIcon fontSize="small" />
-                                  </IconButton>
-                                }
-                              >
-                                <ListItemText
-                                  primary={
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                      {item.name}
-                                    </Typography>
-                                  }
-                                  secondary={
-                                    <Box
-                                      component="img"
-                                      loading="lazy"
-                                      src={item.fullPath}
-                                      alt={`pattern-key-img-added-${item.name}`}
-                                      sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}
-                                    />
-                                  }
-                                />
-                              </ListItem>
-                            ))}
-                          </List>
-                        )}
-                      </Box>
-                    </>
-                  )}
                 </Stack>
               </Box>
             </Box>
@@ -1615,36 +1062,5 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         </DialogActions>
       </Dialog>
     </>
-  );
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const unitOfMeasurementOptions = ['in', 'cm', 'mm'];
-
-type TypeUnitOfMeasurementSelectProps = {
-  value: string;
-  onChange: (newValue: string) => void;
-  label: string;
-};
-
-const UnitOfMeasurementSelect = (props: TypeUnitOfMeasurementSelectProps) => {
-  return (
-    <Grid size={{ xs: 12, md: 6 }}>
-      <TextField
-        fullWidth
-        select
-        variant="filled"
-        label={props.label}
-        value={props.value && props.value !== 'undefined' ? props.value : 'in'}
-        onChange={(e) => props.onChange(e.target.value)}
-      >
-        {unitOfMeasurementOptions.map((option) => (
-          <MenuItem key={option} value={option}>
-            {option}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Grid>
   );
 };
