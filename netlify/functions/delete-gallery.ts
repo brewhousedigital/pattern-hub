@@ -22,6 +22,10 @@ export default async (req: Request) => {
   if (!recordId || !authToken) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  if (!process.env.FORM_SUBMISSION_PASSWORD) {
+    console.error('FORM_SUBMISSION_PASSWORD is not configured');
+    return Response.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
 
   // 1. Verify PocketBase auth token - get userId
   const pbAuthResp = await fetch(`${PB_URL}/api/collections/users/auth-refresh`, {
@@ -59,11 +63,19 @@ export default async (req: Request) => {
     }
   }
 
-  // 4. Delete from PocketBase
-  const deleteResp = await fetch(`${PB_URL}/api/collections/gallery/records/${recordId}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
+  // 4. Delete from PocketBase. The password travels as a query param (not a
+  // body field) since DELETE requests carry no @request.data for PocketBase's
+  // rule engine to read - only checked by the collection's Delete API rule
+  // (@request.query.password) to block direct deletes that bypass this
+  // function's ownership check, using nothing but a valid user's own auth token.
+  const deleteResp = await fetch(
+    `${PB_URL}/api/collections/gallery/records/${recordId}?` +
+      new URLSearchParams({ password: process.env.FORM_SUBMISSION_PASSWORD as string }),
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${authToken}` },
+    },
+  );
   if (!deleteResp.ok) {
     return Response.json({ error: 'Failed to delete photo' }, { status: 500 });
   }

@@ -72,6 +72,10 @@ export default async (req: Request) => {
   if (!turnstileToken) return jsonError('Security check missing', 400);
   if (!file) return jsonError('No file provided', 400);
   if (!isAuthor && !authorManualName) return jsonError("Please provide the original artist's name", 400);
+  if (!process.env.FORM_SUBMISSION_PASSWORD) {
+    console.error('FORM_SUBMISSION_PASSWORD is not configured');
+    return jsonError('Server misconfiguration', 500);
+  }
 
   // 4. Turnstile verification
   const cfResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -199,6 +203,11 @@ export default async (req: Request) => {
   pbForm.append('status', 'pending');
   pbForm.append('hidden', 'false');
   pbForm.append('submitted_file', uploadBlob, uploadFileName);
+  // Not a real schema field - only checked by the collection's Create API rule
+  // (@request.data.password) to block direct writes that bypass this function
+  // (captcha, rate limit, SVG threat scan) using nothing but a valid user's own
+  // auth token. Same convention as submit-contact.ts/submit-report.ts.
+  pbForm.append('password', process.env.FORM_SUBMISSION_PASSWORD as string);
 
   const pbResp = await fetch(`${PB_URL}/api/collections/user_submitted_patterns/records`, {
     method: 'POST',

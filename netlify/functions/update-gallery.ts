@@ -80,6 +80,10 @@ export default async (req: Request) => {
   if (!recordId) return Response.json({ error: 'Record ID is required' }, { status: 400 });
   if (!file) return Response.json({ error: 'No file provided' }, { status: 400 });
   if (!turnstileToken) return Response.json({ error: 'Security check missing' }, { status: 400 });
+  if (!process.env.FORM_SUBMISSION_PASSWORD) {
+    console.error('FORM_SUBMISSION_PASSWORD is not configured');
+    return Response.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
 
   // 4. Turnstile verification
   const cfResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -201,6 +205,11 @@ export default async (req: Request) => {
       src: url,
       imagekit_file_id: fileId,
       pattern_id: patternId || null,
+      // Not a real schema field - only checked by the collection's Update API
+      // rule (@request.data.password) to block direct writes that bypass this
+      // function (captcha, NSFW moderation, image processing) using nothing
+      // but a valid user's own auth token. Same convention as submit-pattern.ts.
+      password: process.env.FORM_SUBMISSION_PASSWORD,
     }),
   });
   if (!pbResp.ok) {
