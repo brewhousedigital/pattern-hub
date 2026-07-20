@@ -1,7 +1,7 @@
 import React from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  useMutationUpdateGallery,
   useQuerySearchPatternsByName,
   type TypeGalleryResponse,
   type TypePatternSearchResult,
@@ -65,7 +65,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
   const formOpenTime = React.useRef(Date.now());
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const updateGallery = useMutationUpdateGallery();
+  const queryClient = useQueryClient();
 
   // Seed form from photo when dialog opens
   React.useEffect(() => {
@@ -157,56 +157,49 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
     setSaveError('');
 
     try {
-      if (!newFile) {
-        // Metadata-only update — go directly to PocketBase
-        await updateGallery.mutateAsync({
-          id: props.photo.id,
-          title: title.trim(),
-          description: description.trim(),
-          pattern_id: selectedPattern?.id ?? '',
-        });
-      } else {
-        // Image replacement — go through Netlify function
-        const elapsed = Date.now() - formOpenTime.current;
-        if (elapsed < 2000) {
-          setSaveState('error');
-          setSaveError('Please wait a moment before submitting.');
-          return;
-        }
-        if (!turnstileToken) {
-          setSaveState('error');
-          setSaveError('Security check not complete - wait a moment and try again.');
-          return;
-        }
-
-        const authToken = pocketbase.authStore.token;
-        if (!authToken) {
-          setSaveState('error');
-          setSaveError('You must be logged in to update photos.');
-          return;
-        }
-
-        const fd = new FormData();
-        fd.append('file', newFile, newFile.name);
-        fd.append('title', title.trim());
-        fd.append('description', description.trim());
-        fd.append('pattern_id', selectedPattern?.id ?? '');
-        fd.append('recordId', props.photo.id);
-        fd.append('authToken', authToken);
-        fd.append('token', turnstileToken);
-        fd.append('hp', honeypot);
-        fd.append('ts', String(formOpenTime.current));
-
-        const res = await fetch('/api/update-gallery', { method: 'POST', body: fd });
-        const data = (await res.json()) as { success?: boolean; error?: string };
-
-        if (!res.ok) {
-          setSaveState('error');
-          setSaveError(data.error ?? 'Update failed - please try again.');
-          return;
-        }
+      // Every edit (metadata-only or image replacement) goes through the
+      // Netlify function so the gallery collection's Update API rule's
+      // password gate can't be bypassed by writing to PocketBase directly.
+      const elapsed = Date.now() - formOpenTime.current;
+      if (elapsed < 2000) {
+        setSaveState('error');
+        setSaveError('Please wait a moment before submitting.');
+        return;
+      }
+      if (newFile && !turnstileToken) {
+        setSaveState('error');
+        setSaveError('Security check not complete - wait a moment and try again.');
+        return;
       }
 
+      const authToken = pocketbase.authStore.token;
+      if (!authToken) {
+        setSaveState('error');
+        setSaveError('You must be logged in to update photos.');
+        return;
+      }
+
+      const fd = new FormData();
+      if (newFile) fd.append('file', newFile, newFile.name);
+      fd.append('title', title.trim());
+      fd.append('description', description.trim());
+      fd.append('pattern_id', selectedPattern?.id ?? '');
+      fd.append('recordId', props.photo.id);
+      fd.append('authToken', authToken);
+      fd.append('token', turnstileToken ?? '');
+      fd.append('hp', honeypot);
+      fd.append('ts', String(formOpenTime.current));
+
+      const res = await fetch('/api/update-gallery', { method: 'POST', body: fd });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok) {
+        setSaveState('error');
+        setSaveError(data.error ?? 'Update failed - please try again.');
+        return;
+      }
+
+      void queryClient.invalidateQueries({ queryKey: ['GetUserGallery'] });
       enqueueSnackbar('Photo updated successfully!', { variant: 'success' });
       props.onSuccess();
     } catch {
@@ -217,7 +210,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
     }
   }
 
-  const isLoading = saveState === 'loading' || updateGallery.isPending;
+  const isLoading = saveState === 'loading';
   const canSubmit = !!title.trim() && !isLoading && (!newFile || !!turnstileToken);
 
   const currentImageSrc = `${props.photo.src}?tr=w-600,h-400,f-auto,q-80`;

@@ -77,6 +77,8 @@ export default async (req: Request) => {
     },
   );
   if (!deleteResp.ok) {
+    const errText = await deleteResp.text();
+    console.error('Failed to delete gallery record:', deleteResp.status, errText);
     return Response.json({ error: 'Failed to delete photo' }, { status: 500 });
   }
 

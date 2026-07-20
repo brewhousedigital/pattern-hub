@@ -74,25 +74,29 @@ export default async (req: Request) => {
     return Response.json({ error: 'Invalid submission timing' }, { status: 400 });
   }
 
-  // 3. Required fields
+  // 3. Required fields. `file` is optional - metadata-only edits (title/
+  // description/pattern) go through this same function so the Update API
+  // rule's password gate can't be bypassed, but they skip image processing
+  // entirely and don't need a captcha check.
   if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
   if (!authToken) return Response.json({ error: 'Not authenticated' }, { status: 401 });
   if (!recordId) return Response.json({ error: 'Record ID is required' }, { status: 400 });
-  if (!file) return Response.json({ error: 'No file provided' }, { status: 400 });
-  if (!turnstileToken) return Response.json({ error: 'Security check missing' }, { status: 400 });
+  if (file && !turnstileToken) return Response.json({ error: 'Security check missing' }, { status: 400 });
   if (!process.env.FORM_SUBMISSION_PASSWORD) {
     console.error('FORM_SUBMISSION_PASSWORD is not configured');
     return Response.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
-  // 4. Turnstile verification
-  const cfResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: process.env.TURNSTILE_SECRET_KEY, response: turnstileToken }),
-  });
-  const cfData = (await cfResp.json()) as { success: boolean };
-  if (!cfData.success) return Response.json({ error: 'Security check failed' }, { status: 400 });
+  // 4. Turnstile verification - only needed when replacing the image
+  if (file) {
+    const cfResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: process.env.TURNSTILE_SECRET_KEY, response: turnstileToken }),
+    });
+    const cfData = (await cfResp.json()) as { success: boolean };
+    if (!cfData.success) return Response.json({ error: 'Security check failed' }, { status: 400 });
+  }
 
   // 5. Verify PocketBase auth + get userId
   const pbAuthResp = await fetch(`${PB_URL}/api/collections/users/auth-refresh`, {
@@ -108,91 +112,97 @@ export default async (req: Request) => {
     headers: { Authorization: `Bearer ${authToken}` },
   });
   if (!recordResp.ok) return Response.json({ error: 'Photo not found' }, { status: 404 });
-  const record = (await recordResp.json()) as { owner_id: string; imagekit_file_id: string };
+  const record = (await recordResp.json()) as { owner_id: string; imagekit_file_id: string; src: string };
   if (record.owner_id !== userId) return Response.json({ error: 'Not authorised' }, { status: 403 });
 
-  // 7. Validate file
-  if (!file.type.startsWith('image/')) {
-    return Response.json({ error: 'Only image files are allowed' }, { status: 400 });
-  }
-  if (file.size > MAX_FILE_SIZE) {
-    return Response.json({ error: 'File too large - maximum 10 MB' }, { status: 400 });
-  }
+  let fileId = record.imagekit_file_id;
+  let url = record.src;
 
-  // 8. Process image with sharp
-  let uploadBlob: Blob;
-  let sanitizedName: string;
-  try {
-    const originalBuffer = Buffer.from(await file.arrayBuffer());
-    const processedBuffer = await sharp(originalBuffer)
-      .rotate()
-      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 85 })
-      .toBuffer();
-    uploadBlob = new Blob([new Uint8Array(processedBuffer)], { type: 'image/webp' });
-    const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
-    sanitizedName = `${baseName}.webp`;
-  } catch (error: any) {
-    return Response.json(
-      { error: 'Failed to process image - please try a different file.', message: error?.message ?? '' },
-      { status: 400 },
-    );
-  }
+  if (file) {
+    // 7. Validate file
+    if (!file.type.startsWith('image/')) {
+      return Response.json({ error: 'Only image files are allowed' }, { status: 400 });
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return Response.json({ error: 'File too large - maximum 10 MB' }, { status: 400 });
+    }
 
-  // 9. Upload new image to ImageKit
-  const ikForm = new FormData();
-  ikForm.append('file', uploadBlob, sanitizedName);
-  ikForm.append('fileName', `${userId}_${sanitizedName}`);
-  ikForm.append('folder', `/pattern-archive/user-gallery/`);
-  ikForm.append('useUniqueFileName', 'true');
-  ikForm.append('tags', 'user-gallery');
-  ikForm.append('extensions', AI_TASK_EXTENSIONS);
+    // 8. Process image with sharp
+    let uploadBlob: Blob;
+    let sanitizedName: string;
+    try {
+      const originalBuffer = Buffer.from(await file.arrayBuffer());
+      const processedBuffer = await sharp(originalBuffer)
+        .rotate()
+        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+      uploadBlob = new Blob([new Uint8Array(processedBuffer)], { type: 'image/webp' });
+      const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
+      sanitizedName = `${baseName}.webp`;
+    } catch (error: any) {
+      return Response.json(
+        { error: 'Failed to process image - please try a different file.', message: error?.message ?? '' },
+        { status: 400 },
+      );
+    }
 
-  const ikUploadResp = await fetch(IK_UPLOAD_URL, {
-    method: 'POST',
-    headers: { Authorization: ikAuthHeader() },
-    body: ikForm,
-  });
-  if (!ikUploadResp.ok) {
-    return Response.json({ error: 'Image upload failed - please try again' }, { status: 500 });
-  }
+    // 9. Upload new image to ImageKit
+    const ikForm = new FormData();
+    ikForm.append('file', uploadBlob, sanitizedName);
+    ikForm.append('fileName', `${userId}_${sanitizedName}`);
+    ikForm.append('folder', `/pattern-archive/user-gallery/`);
+    ikForm.append('useUniqueFileName', 'true');
+    ikForm.append('tags', 'user-gallery');
+    ikForm.append('extensions', AI_TASK_EXTENSIONS);
 
-  const ikData = (await ikUploadResp.json()) as {
-    fileId: string;
-    url: string;
-    tags?: string[];
-    extensionStatus?: Record<string, string>;
-  };
-  const { fileId, url } = ikData;
+    const ikUploadResp = await fetch(IK_UPLOAD_URL, {
+      method: 'POST',
+      headers: { Authorization: ikAuthHeader() },
+      body: ikForm,
+    });
+    if (!ikUploadResp.ok) {
+      return Response.json({ error: 'Image upload failed - please try again' }, { status: 500 });
+    }
 
-  // 10. Resolve AI content moderation
-  let tags: string[] = ikData.tags ?? [];
-  const uploadAiStatus = ikData.extensionStatus?.['ai-tasks'];
+    const ikData = (await ikUploadResp.json()) as {
+      fileId: string;
+      url: string;
+      tags?: string[];
+      extensionStatus?: Record<string, string>;
+    };
+    fileId = ikData.fileId;
+    url = ikData.url;
 
-  if (uploadAiStatus === 'failed') {
-    tags = ['nsfw-flagged'];
-  } else if (uploadAiStatus !== 'success') {
-    for (let i = 0; i < POLL_ATTEMPTS; i++) {
-      await delay(POLL_DELAY_MS);
-      const fileResp = await fetch(`${IK_API_URL}/${fileId}/details`, {
-        headers: { Authorization: ikAuthHeader() },
-      });
-      if (fileResp.ok) {
-        const fileData = (await fileResp.json()) as {
-          tags?: string[];
-          extensionStatus?: Record<string, string>;
-        };
-        const aiStatus = fileData.extensionStatus?.['ai-tasks'];
-        if (aiStatus === 'success') { tags = fileData.tags ?? []; break; }
-        if (aiStatus === 'failed') { tags = ['nsfw-flagged']; break; }
+    // 10. Resolve AI content moderation
+    let tags: string[] = ikData.tags ?? [];
+    const uploadAiStatus = ikData.extensionStatus?.['ai-tasks'];
+
+    if (uploadAiStatus === 'failed') {
+      tags = ['nsfw-flagged'];
+    } else if (uploadAiStatus !== 'success') {
+      for (let i = 0; i < POLL_ATTEMPTS; i++) {
+        await delay(POLL_DELAY_MS);
+        const fileResp = await fetch(`${IK_API_URL}/${fileId}/details`, {
+          headers: { Authorization: ikAuthHeader() },
+        });
+        if (fileResp.ok) {
+          const fileData = (await fileResp.json()) as {
+            tags?: string[];
+            extensionStatus?: Record<string, string>;
+          };
+          const aiStatus = fileData.extensionStatus?.['ai-tasks'];
+          if (aiStatus === 'success') { tags = fileData.tags ?? []; break; }
+          if (aiStatus === 'failed') { tags = ['nsfw-flagged']; break; }
+        }
       }
     }
-  }
 
-  // 11. Block NSFW
-  if (tags.includes('nsfw-flagged')) {
-    await deleteIkFile(fileId);
-    return Response.json({ error: 'Content not permitted in this community' }, { status: 400 });
+    // 11. Block NSFW
+    if (tags.includes('nsfw-flagged')) {
+      await deleteIkFile(fileId);
+      return Response.json({ error: 'Content not permitted in this community' }, { status: 400 });
+    }
   }
 
   // 12. Update PocketBase record
@@ -213,12 +223,12 @@ export default async (req: Request) => {
     }),
   });
   if (!pbResp.ok) {
-    await deleteIkFile(fileId);
+    if (file) await deleteIkFile(fileId);
     return Response.json({ error: 'Failed to save changes - please try again' }, { status: 500 });
   }
 
-  // 13. Delete old ImageKit file (best-effort)
-  if (record.imagekit_file_id) {
+  // 13. Delete old ImageKit file (best-effort) - only when it was just replaced
+  if (file && record.imagekit_file_id) {
     await deleteIkFile(record.imagekit_file_id);
   }
 
