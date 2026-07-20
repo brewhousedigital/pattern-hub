@@ -23,7 +23,6 @@
     "@mui/material": "9.2.0",
     "@mui/x-data-grid": "9.9.0",
     "@mui/x-date-pickers": "9.9.0",
-    "@napi-rs/canvas": "^1.0.2",
     "@netlify/blobs": "10.7.9",
     "@react-three/drei": "10.7.7",
     "@react-three/fiber": "9.6.1",
@@ -47,7 +46,7 @@
     "linkedom": "^0.18.13",
     "marked": "18.0.6",
     "notistack": "3.0.2",
-    "pdf-to-img": "6.2.0",
+    "pdfjs-dist": "5.6.205",
     "pocketbase": "0.27.0",
     "prettier": "3.9.5",
     "react": "19.2.7",
@@ -78,7 +77,6 @@
     "vite": "8.1.4"
   },
   "optionalDependencies": {
-    "@img/sharp-linux-x64": "0.35.1",
-    "@napi-rs/canvas-linux-x64-gnu": "1.0.2"
+    "@img/sharp-linux-x64": "0.35.1"
   }
 }

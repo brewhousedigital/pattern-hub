@@ -29,15 +29,14 @@
   NODE_VERSION = "22"
 
 [functions]
-  # `@napi-rs/canvas` (pdfjs-dist's hardcoded Node canvas backend - NOT the
-  # separate `canvas`/node-canvas package, see submit-pattern.ts's
-  # rasterizeFirstPdfPage comment for why that distinction matters) ships
-  # native platform binaries via optionalDependencies that esbuild can't
-  # bundle into JS - it (and sharp) must stay external and have their files
-  # copied verbatim. `pdfjs-dist`'s standard_fonts/cmaps are read from disk at
-  # runtime (pdf-to-img resolves paths via
-  # require.resolve('pdfjs-dist/package.json')), so those assets need to ship
-  # too, not just get bundled as code.
+  # `sharp` ships native platform binaries via optionalDependencies that
+  # esbuild can't bundle into JS - it must stay external and have its files
+  # copied verbatim.
+  #
+  # PDF rasterization now happens entirely in the browser (see
+  # src/functions/utilities/pdf-to-image.ts) - the server only ever receives
+  # images and SVGs, so `@napi-rs/canvas`/`pdfjs-dist` are no longer needed
+  # here.
   #
   # SVG sanitization uses `linkedom` (not `jsdom`) specifically because
   # jsdom's HTML-browser-emulation dependencies (whatwg-url,
@@ -47,12 +46,9 @@
   # USER_SUBMITTED_PATTERNS_SETUP.md for the full history. linkedom is pure
   # JS with no native bindings and no equivalent dependency landmine, so it
   # needs no special external/included_files treatment here.
-  external_node_modules = ["sharp", "@napi-rs/canvas"]
+  external_node_modules = ["sharp"]
   included_files = [
     "node_modules/sharp/**/*",
-    "node_modules/@napi-rs/canvas/**/*",
-    "node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
-    "node_modules/pdfjs-dist/**/*",
   ]
 
 [dev]

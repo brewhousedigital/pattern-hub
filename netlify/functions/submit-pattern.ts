@@ -1,40 +1,6 @@
 import sharp from 'sharp';
 import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sanitize';
 
-// pdf-to-img pulls in pdfjs-dist's legacy Node build, which references a
-// top-level `new DOMMatrix()` at module-eval time (no lazy guard). Node has no
-// DOMMatrix global, so a static top-level import of pdf-to-img throws during
-// this file's own module load - crashing EVERY submission (SVG and image
-// included), not just PDFs. Both the DOMMatrix/Path2D/ImageData polyfill and
-// the pdf-to-img import itself are deferred into the PDF-only branch below,
-// inside the existing try/catch, so a PDF-specific failure can never take
-// down the rest of the function.
-//
-// The polyfill source is `@napi-rs/canvas`, NOT the (also-native) `canvas`
-// (node-canvas) package - pdfjs-dist's legacy Node build hardcodes
-// `require("@napi-rs/canvas")` internally (see its NodeCanvasFactory) for the
-// actual canvas object it renders PDF pages into. Polyfilling DOMMatrix from
-// `canvas` instead only masked the DOMMatrix half of the problem (pdfjs skips
-// its own polyfill attempt once `globalThis.DOMMatrix` already exists) while
-// leaving the real page-rendering canvas creation still trying and failing to
-// find `@napi-rs/canvas` - `Cannot find module '@napi-rs/canvas'`.
-async function rasterizeFirstPdfPage(buffer: Buffer): Promise<{ pageBuffer: Buffer; pageCount: number }> {
-  const canvasModule = await import('@napi-rs/canvas');
-  const g = globalThis as any;
-  if (!g.DOMMatrix) g.DOMMatrix = canvasModule.DOMMatrix;
-  if (!g.Path2D) g.Path2D = canvasModule.Path2D;
-  if (!g.ImageData) g.ImageData = canvasModule.ImageData;
-
-  const { pdf: loadPdf } = await import('pdf-to-img');
-  const doc = await loadPdf(buffer, { scale: 3 });
-  try {
-    const pageBuffer = await doc.getPage(1);
-    return { pageBuffer, pageCount: doc.length };
-  } finally {
-    await doc.destroy();
-  }
-}
-
 const PB_URL = 'https://stained-glass.pockethost.io';
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const RATE_LIMIT_MS = 10_000; // one submission per 10 seconds per user
@@ -146,12 +112,18 @@ export default async (req: Request) => {
     }
   }
 
-  // 7. File validation
+  // 7. File validation - PDFs are converted to an image client-side before
+  // upload, so the server only ever needs to handle images and SVGs. A raw
+  // PDF arriving here means the client was bypassed - reject it rather than
+  // carrying PDF-rasterization dependencies just for that edge case.
   const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   const isImage = !isSvg && !isPdf && file.type.startsWith('image/');
-  if (!isSvg && !isPdf && !isImage) {
-    return jsonError('Only image files, SVG, or single-page PDF are supported', 400);
+  if (isPdf) {
+    return jsonError('PDF uploads must be converted to an image in the browser before submitting', 400);
+  }
+  if (!isSvg && !isImage) {
+    return jsonError('Only image files or SVG are supported', 400);
   }
   if (file.size > MAX_FILE_SIZE) {
     return jsonError('File is too large - maximum 15 MB. Try compressing it first at https://tinypng.com/', 400);
@@ -186,19 +158,6 @@ export default async (req: Request) => {
       } catch {
         layersMap = [];
       }
-    } else if (isPdf) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const { pageBuffer, pageCount } = await rasterizeFirstPdfPage(buffer);
-      if (pageCount > 1) {
-        return jsonError(
-          'Multi-page PDFs are not supported. Please submit a single-page PDF, or use the contact page for bulk submissions.',
-          400,
-        );
-      }
-      const webp = await convertImageToWebp(pageBuffer);
-      uploadBlob = new Blob([new Uint8Array(webp)], { type: 'image/webp' });
-      uploadFileName = file.name.replace(/\.[^.]+$/, '') + '.webp';
-      fileType = 'webp';
     } else {
       const buffer = Buffer.from(await file.arrayBuffer());
       const webp = await convertImageToWebp(buffer);

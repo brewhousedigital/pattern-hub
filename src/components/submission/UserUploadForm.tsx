@@ -16,6 +16,7 @@ import {
   type TypePatternLayersMapItem,
 } from '@/functions/database/patterns';
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
+import { convertPdfFirstPageToImageFile, MultiPagePdfError } from '@/functions/utilities/pdf-to-image';
 import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import dayjs, { type Dayjs } from 'dayjs';
 
@@ -77,7 +78,8 @@ export const UserUploadForm = () => {
   const [svgWarning, setSvgWarning] = React.useState('');
   const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>([]);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [fileKind, setFileKind] = React.useState<'svg' | 'pdf' | 'image' | null>(null);
+  const [fileKind, setFileKind] = React.useState<'svg' | 'image' | null>(null);
+  const [pdfConverting, setPdfConverting] = React.useState(false);
 
   React.useEffect(() => {
     return () => {
@@ -234,10 +236,29 @@ export const UserUploadForm = () => {
       setLayersMap(extractSvgLayerIds(raw).map((id) => ({ layerName: id, mappedName: '', isVisible: true })));
     }
 
+    let fileToUse = selected;
+    if (isPdf) {
+      setPdfConverting(true);
+      try {
+        fileToUse = await convertPdfFirstPageToImageFile(selected);
+      } catch (err) {
+        if (err instanceof MultiPagePdfError) {
+          setFileError(
+            'Multi-page PDFs are not supported. Please submit a single-page PDF, or use the contact page for bulk submissions.',
+          );
+        } else {
+          setFileError('This PDF could not be processed. Please try re-exporting it or upload an image instead.');
+        }
+        return;
+      } finally {
+        setPdfConverting(false);
+      }
+    }
+
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(selected));
-    setFileKind(isSvg ? 'svg' : isPdf ? 'pdf' : 'image');
-    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(fileToUse));
+    setFileKind(isSvg ? 'svg' : 'image');
+    setFile(fileToUse);
   };
 
   const canSubmit =
@@ -247,7 +268,8 @@ export const UserUploadForm = () => {
     !!turnstileToken &&
     (isAuthor || manualAuthorValue.length > 0) &&
     cooldownRemaining <= 0 &&
-    uploadState !== 'loading';
+    uploadState !== 'loading' &&
+    !pdfConverting;
 
   const handleSubmit = async () => {
     if (honeypot) return;
@@ -365,37 +387,21 @@ export const UserUploadForm = () => {
           </Typography>
 
           {previewUrl ? (
-            fileKind === 'pdf' ? (
-              <Box
-                component="iframe"
-                src={previewUrl}
-                title="PDF preview"
-                sx={{
-                  width: '100%',
-                  aspectRatio: '1/1',
-                  borderRadius: 1.5,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  backgroundColor: 'grey.50',
-                }}
-              />
-            ) : (
-              <Box
-                component="img"
-                src={previewUrl}
-                alt="Pattern preview"
-                sx={{
-                  width: '100%',
-                  aspectRatio: '1/1',
-                  objectFit: 'contain',
-                  borderRadius: 1.5,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  backgroundColor: 'grey.50',
-                  p: 1,
-                }}
-              />
-            )
+            <Box
+              component="img"
+              src={previewUrl}
+              alt="Pattern preview"
+              sx={{
+                width: '100%',
+                aspectRatio: '1/1',
+                objectFit: 'contain',
+                borderRadius: 1.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                backgroundColor: 'grey.50',
+                p: 1,
+              }}
+            />
           ) : (
             <Box
               sx={{
@@ -429,8 +435,13 @@ export const UserUploadForm = () => {
             accept="image/*,.svg,application/pdf"
             acceptLabel="Image, SVG, or single-page PDF - max 15 MB"
             onFile={handleFileSelect}
-            disabled={uploadState === 'loading'}
+            disabled={uploadState === 'loading' || pdfConverting}
           />
+          {pdfConverting && (
+            <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ py: 0.5 }}>
+              Converting PDF to an image…
+            </Alert>
+          )}
           {file && !fileError && (
             <Alert severity="success" sx={{ py: 0.5 }}>
               Selected: {file.name}
