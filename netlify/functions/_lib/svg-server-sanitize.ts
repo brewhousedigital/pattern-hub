@@ -61,10 +61,14 @@ export async function sanitizeSvgServer(raw: string): Promise<string> {
   // Strip descriptive metadata the same way the admin pipeline does.
   const doc = new window.DOMParser().parseFromString(clean, 'image/svg+xml');
   doc.querySelectorAll('metadata, title, desc').forEach((el: Element) => el.remove());
-  // linkedom has no XMLSerializer class - doc.toString() is the equivalent,
-  // but it prepends an XML declaration jsdom's serializer never added; strip
-  // it so output stays consistent with the rest of the pipeline's format.
-  return doc.toString().replace(/^<\?xml[^>]*\?>\s*/, '');
+  // linkedom has no XMLSerializer class - doc.toString() is the equivalent.
+  // Unlike jsdom's serializer, it prepends a standard XML declaration
+  // (`<?xml version="1.0" encoding="utf-8"?>`) - this used to get stripped
+  // here to match jsdom's old output, but real SVG files normally carry this
+  // declaration (every design-tool export does), and PocketBase's
+  // server-side MIME sniffing on the `submitted_file` field rejected a
+  // declaration-less upload as not being image/svg+xml. Keep it.
+  return doc.toString();
 }
 
 // Ported from src/functions/utilities/sanitize-svg.ts::analyzeSvgThreats - see
