@@ -17,6 +17,5 @@ export const useQueryGetPublicSiteStats = () => {
       if (!res.ok) throw new Error('Failed to load site stats');
       return res.json();
     },
-    staleTime: 1000 * 60 * 10,
   });
 };

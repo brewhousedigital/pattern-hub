@@ -75,7 +75,6 @@ export const useQueryGetKanbanColumns = () => {
         sort: 'position',
       });
     },
-    refetchOnMount: 'always',
   });
 };
 
@@ -87,7 +86,6 @@ export const useQueryGetAllKanbanItems = () => {
         sort: 'position',
       });
     },
-    refetchOnMount: 'always',
   });
 };
 

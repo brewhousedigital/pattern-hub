@@ -15,7 +15,6 @@ export const useQueryGetUserMarkedDoneByPagination = (userId: string, pageNumber
       });
     },
     enabled: !!pageNumber && !!userId,
-    refetchOnMount: 'always',
   });
 };
 

@@ -88,7 +88,6 @@ export const useQueryGetReviewedContentReportsByPagination = (
       });
     },
     enabled: !!pageNumber,
-    refetchOnMount: 'always',
   });
 };
 

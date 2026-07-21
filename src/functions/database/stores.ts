@@ -42,7 +42,6 @@ export const useQueryGetAllStores = () => {
         sort: '-created',
       });
     },
-    refetchOnMount: 'always',
   });
 };
 
@@ -132,7 +131,6 @@ export const useQueryGetStoresCached = () => {
       const data = await res.json();
       return data.items ?? [];
     },
-    staleTime: 60 * 60 * 1000, // 1 hour - matches CDN cache
   });
 };
 

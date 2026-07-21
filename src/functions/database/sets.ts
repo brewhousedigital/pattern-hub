@@ -156,7 +156,6 @@ export const useQueryGetUserFollowedSets = (userId: string) => {
         sort: '-created',
       }),
     enabled: !!userId,
-    refetchOnMount: 'always',
   });
 };
 

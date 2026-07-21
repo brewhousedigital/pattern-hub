@@ -34,7 +34,6 @@ export const useQuerySearchTags = (searchTerm: string, enabled = true) => {
       return result.items.map((item) => ({ ...item, tag: String(item.tag) }));
     },
     enabled,
-    staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
   });
 };
@@ -65,7 +64,6 @@ export const useQueryGetTagHierarchy = () => {
     queryFn: async (): Promise<TypeTagHierarchyRecord[]> => {
       return await pocketbase.collection('tag_hierarchy').getFullList({ sort: 'tag' });
     },
-    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -194,7 +192,6 @@ export const useQueryAdminTagStats = () => {
       });
       return items.map((item) => ({ tag: String(item.tag), count: item.count }));
     },
-    staleTime: 1000 * 60 * 2,
   });
 };
 
@@ -241,7 +238,6 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
 
       return { items, totalItems: result.totalItems };
     },
-    staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
   });
 };

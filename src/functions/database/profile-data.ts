@@ -54,6 +54,5 @@ export const useQueryGetProfileData = (params: ProfileDataParams) => {
       return res.json() as Promise<TypeProfileDataResponse>;
     },
     enabled: !!params.userId,
-    refetchOnMount: 'always',
   });
 };

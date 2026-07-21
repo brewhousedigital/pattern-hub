@@ -15,7 +15,6 @@ export const useQueryGetUserFavoritesByPagination = (userId: string, pageNumber:
       });
     },
     enabled: !!pageNumber && !!userId,
-    refetchOnMount: 'always',
   });
 };
 

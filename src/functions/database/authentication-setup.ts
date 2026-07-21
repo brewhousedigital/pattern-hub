@@ -9,7 +9,7 @@ export const createQueryClient = () =>
     defaultOptions: {
       queries: {
         retry: 0,
-        staleTime: 1000 * 60 * 60, // 1 hour
+        staleTime: Infinity, // never treat cached data as stale - only explicit invalidation or a full page reload requeries
         gcTime: 1000 * 60 * 60 * 24, // 24 hours
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,

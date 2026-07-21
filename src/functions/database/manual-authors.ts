@@ -39,7 +39,6 @@ export const useQueryGetPublishedManualAuthors = () =>
         filter: 'is_published = true',
         fields: 'id,name,slug,collectionId,avatar',
       }),
-    staleTime: 5 * 60 * 1000,
   });
 
 export const useQueryGetManualAuthorBySlug = (slug: string) =>

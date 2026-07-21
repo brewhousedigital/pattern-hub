@@ -40,7 +40,6 @@ export const useQueryGetUserDifficultyRatingsByPagination = (userId: string, pag
       });
     },
     enabled: !!pageNumber && !!userId,
-    refetchOnMount: 'always',
   });
 };
 
@@ -65,7 +64,6 @@ export const useQueryGetCommunityDifficultyRatingByPatternId = (patternId: strin
         .getFirstListItem<TypeCommunityDifficultyRatingItem>(`pattern_id="${patternId}"`);
     },
     enabled: !!patternId,
-    refetchOnMount: 'always',
   });
 };
 

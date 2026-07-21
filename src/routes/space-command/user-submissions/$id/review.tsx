@@ -17,6 +17,7 @@ import {
   type TypeUserSubmittedPatternResponse,
 } from '@/functions/database/user-submissions';
 import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
+import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
 import {
   sanitizeSvgFile,
   analyzeSvgThreats,
@@ -209,6 +210,12 @@ function RouteComponent() {
       });
 
       await publishSubmission.mutateAsync({ id: submission.id, resultingPatternId: newPattern.id });
+
+      // So the Space Command Patterns table (and its tag stats) reflect the
+      // newly-published pattern immediately instead of showing stale cached data.
+      await queryClient.invalidateQueries({ queryKey: ['GetAllPatternsByPaginationAdmin'] });
+      await queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+
       enqueueSnackbar('Pattern published!', { variant: 'success' });
       navigate({ to: '/space-command/user-submissions' });
     } catch (err: any) {

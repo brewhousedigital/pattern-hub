@@ -15,7 +15,6 @@ export const useQueryGetUserRatingsByPagination = (userId: string, pageNumber: n
       });
     },
     enabled: !!pageNumber && !!userId,
-    refetchOnMount: 'always',
   });
 };
 
@@ -87,6 +86,5 @@ export const useQueryGetCommunityRatingByPatternId = (patternId: string) => {
       return await pocketbase.collection('community_ratings').getFirstListItem(`pattern_id="${patternId}"`);
     },
     enabled: !!patternId,
-    refetchOnMount: 'always',
   });
 };

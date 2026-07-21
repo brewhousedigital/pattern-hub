@@ -55,7 +55,6 @@ export const useQueryGetUserCollections = (userId: string, pageNumber: number) =
     },
     enabled: !!userId && !!pageNumber,
     placeholderData: keepPreviousData,
-    refetchOnMount: 'always',
   });
 };
 
@@ -92,7 +91,6 @@ export const useQueryGetUserCollectionsAll = (userId: string) => {
       });
     },
     enabled: !!userId,
-    refetchOnMount: 'always',
   });
 };
 
@@ -108,7 +106,6 @@ export const useQueryGetUserFollowedCollections = (userId: string) => {
       });
     },
     enabled: !!userId,
-    refetchOnMount: 'always',
   });
 };
 

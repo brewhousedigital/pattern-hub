@@ -15,7 +15,6 @@ export const useQuerySearchAuthors = (searchTerm: string, enabled = true) => {
       return result.items;
     },
     enabled,
-    staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
   });
 };
@@ -51,7 +50,6 @@ export const useQuerySearchLinkedAuthors = (search: string) => {
       });
       return result.items;
     },
-    staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
   });
 };
@@ -75,7 +73,6 @@ export const useQueryResolveAuthorUserIds = (names: string[]) => {
       return res.json();
     },
     enabled: sortedNames.length > 0,
-    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -92,7 +89,6 @@ export const useQuerySearchManualAuthors = (search: string) => {
       });
       return result.items;
     },
-    staleTime: 1000 * 60 * 2,
     placeholderData: (prev) => prev,
   });
 };

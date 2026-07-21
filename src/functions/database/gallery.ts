@@ -35,7 +35,6 @@ export const useQueryGetUserGallery = (userId: string, pageNumber: number) => {
       });
     },
     enabled: !!pageNumber && !!userId,
-    refetchOnMount: 'always',
   });
 };
 
@@ -62,6 +61,5 @@ export const useQuerySearchPatternsByName = (term: string) => {
       });
     },
     enabled: term.length >= 2,
-    staleTime: 30_000,
   });
 };

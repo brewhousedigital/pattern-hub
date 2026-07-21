@@ -75,7 +75,6 @@ export const useQueryGetReviewedComplaintsByPagination = (searchTerm: string, pa
       });
     },
     enabled: !!pageNumber,
-    refetchOnMount: 'always',
   });
 };
 

@@ -86,6 +86,5 @@ export const useQueryGetReviewedContactSubmissionsByPagination = (searchTerm: st
       });
     },
     enabled: !!pageNumber,
-    refetchOnMount: 'always',
   });
 };
