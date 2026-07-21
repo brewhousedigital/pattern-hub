@@ -42,7 +42,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Link } from '@tanstack/react-router';
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
-const RATE_LIMIT_MS = 10_000;
+const RATE_LIMIT_MS = 5_000;
 const RATE_LIMIT_STORAGE_KEY = 'pattern_submit_last';
 
 const FormSection = ({ label }: { label: string }) => (
@@ -667,8 +667,8 @@ export const UserUploadForm = () => {
           <FormSection label="Pattern Keys" />
 
           <Typography variant="body2" color="text.secondary">
-            Add each pattern key your design uses: pick its reference image, give it a name, then click "Add key".
-            Not sure which key is which? Download any reference image before deciding.
+            Add each pattern key your design uses: pick its reference image, give it a name, then click "Add key". Not
+            sure which key is which? Download any reference image before deciding.
           </Typography>
 
           <PatternKeyBuilder value={selectedKeys} onChange={setSelectedKeys} variant="filled" />

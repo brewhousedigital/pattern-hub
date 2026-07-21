@@ -280,6 +280,21 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   const page = Math.max(1, parseInt(q.get('pageNumber') || '1', 10));
   const perPage = 20;
 
+  // These sort options rank "least"/"lowest"/"easiest" first (ascending) -
+  // a 0 in that column means the pattern has no real data for it (never
+  // rated, no difficulty votes, never favorited/completed), so it would
+  // otherwise flood the front of the list ahead of patterns with actual
+  // low-but-real values. Filter those out whenever sorting by one of these.
+  const ZERO_FILTERED_SORTS = {
+    avg_rating: 'avg_rating',
+    total_ratings: 'total_ratings',
+    avg_difficulty: 'avg_difficulty',
+    total_difficulty_ratings: 'total_difficulty_ratings',
+    favorite_count: 'favorite_count',
+    done_count: 'done_count',
+  };
+  const zeroFilterColumn = ZERO_FILTERED_SORTS[sort];
+
   function countRows(table, whereSQL, params) {
     try {
       const rows = arrayOf(new DynamicModel({ count: 0 }));
@@ -295,8 +310,12 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   }
 
   const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags);
-  const baseDsl = (dslFilter ? dslFilter + ' && ' : '') + 'isDeleted = false && is_draft = false';
-  const baseSql = sqlWhere + ' AND isDeleted = 0 AND is_draft = 0';
+  const baseDsl =
+    (dslFilter ? dslFilter + ' && ' : '') +
+    'isDeleted = false && is_draft = false' +
+    (zeroFilterColumn ? ` && ${zeroFilterColumn} > 0` : '');
+  const baseSql =
+    sqlWhere + ' AND isDeleted = 0 AND is_draft = 0' + (zeroFilterColumn ? ` AND ${zeroFilterColumn} > 0` : '');
 
   let items = [];
   try {
