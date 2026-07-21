@@ -6,6 +6,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useQueryGetAllUserSubmissionsByPagination,
@@ -32,6 +33,7 @@ function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
   const { authData } = useGlobalAuthData();
   const queryClient = useQueryClient();
+  const { log } = useAdminLogger();
 
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
   const [viewingSubmission, setViewingSubmission] = React.useState<TypeUserSubmittedPatternResponse | null>(null);
@@ -50,6 +52,14 @@ function RouteComponent() {
     try {
       await beginReview.mutateAsync({ id: row.id, adminId: authData?.id ?? '' });
       queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
+      log({
+        action: 'Submission Review Started',
+        entity_type: 'User Submission',
+        entity_id: row.id,
+        entity_name: row.name,
+        changes: { status: { from: row.status, to: 'in_review' } },
+        metadata: {},
+      });
       navigate({ to: '/space-command/user-submissions/$id/review', params: { id: row.id } });
     } catch {
       enqueueSnackbar('Failed to begin review - please try again.', { variant: 'error' });

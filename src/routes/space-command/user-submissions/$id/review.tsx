@@ -18,6 +18,7 @@ import {
 } from '@/functions/database/user-submissions';
 import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
 import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import {
   sanitizeSvgFile,
   analyzeSvgThreats,
@@ -62,6 +63,7 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { log } = useAdminLogger();
 
   const { data: submission, isLoading } = useQueryGetUserSubmissionById(id);
 
@@ -167,6 +169,14 @@ function RouteComponent() {
     await rejectSubmission.mutateAsync(submission.id);
     queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
     queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
+    log({
+      action: 'Submission Rejected',
+      entity_type: 'User Submission',
+      entity_id: submission.id,
+      entity_name: submission.name,
+      changes: { status: { from: submission.status, to: 'rejected' } },
+      metadata: {},
+    });
     enqueueSnackbar('Submission rejected.', { variant: 'info' });
     navigate({ to: '/space-command/user-submissions' });
   };
@@ -219,6 +229,15 @@ function RouteComponent() {
       await queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
       await queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
+
+      log({
+        action: 'Submission Accepted',
+        entity_type: 'User Submission',
+        entity_id: submission.id,
+        entity_name: values.name || submission.name,
+        changes: { status: { from: submission.status, to: 'published' } },
+        metadata: { resulting_pattern_id: newPattern.id },
+      });
 
       enqueueSnackbar('Pattern published!', { variant: 'success' });
       navigate({ to: '/space-command/user-submissions' });

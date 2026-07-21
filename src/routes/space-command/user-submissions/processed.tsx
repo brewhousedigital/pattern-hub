@@ -6,6 +6,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
+import { useAdminLogger } from '@/functions/database/admin-logs';
 import {
   useQueryGetProcessedUserSubmissionsByPagination,
   useMutationUndoUserSubmission,
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/space-command/user-submissions/processed'
 function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
   const queryClient = useQueryClient();
+  const { log } = useAdminLogger();
 
   const [statusFilter, setStatusFilter] = React.useState<TypeProcessedSubmissionFilter>('all');
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
@@ -51,6 +53,14 @@ function RouteComponent() {
       await undoSubmission.mutateAsync(row.id);
       queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
       queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
+      log({
+        action: 'Submission Reverted',
+        entity_type: 'User Submission',
+        entity_id: row.id,
+        entity_name: row.name,
+        changes: { status: { from: row.status, to: 'pending' } },
+        metadata: {},
+      });
       enqueueSnackbar('Submission sent back to the queue.', { variant: 'info' });
     } catch {
       enqueueSnackbar('Failed to undo - please try again.', { variant: 'error' });
