@@ -165,6 +165,8 @@ function RouteComponent() {
 
   const handleReject = async () => {
     await rejectSubmission.mutateAsync(submission.id);
+    queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
+    queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
     enqueueSnackbar('Submission rejected.', { variant: 'info' });
     navigate({ to: '/space-command/user-submissions' });
   };
@@ -215,6 +217,8 @@ function RouteComponent() {
       // newly-published pattern immediately instead of showing stale cached data.
       await queryClient.invalidateQueries({ queryKey: ['GetAllPatternsByPaginationAdmin'] });
       await queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
+      await queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
 
       enqueueSnackbar('Pattern published!', { variant: 'success' });
       navigate({ to: '/space-command/user-submissions' });
