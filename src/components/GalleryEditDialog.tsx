@@ -7,7 +7,7 @@ import {
   type TypePatternSearchResult,
 } from '@/functions/database/gallery';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { enqueueSnackbar } from 'notistack';
 
@@ -61,6 +61,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
 
   // Bot prevention (needed only for image replacement path)
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = React.useState('');
   const formOpenTime = React.useRef(Date.now());
 
@@ -166,9 +167,13 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
         setSaveError('Please wait a moment before submitting.');
         return;
       }
-      if (newFile && !turnstileToken) {
+      // Read the widget directly rather than trusting the token captured in
+      // state minutes ago - Turnstile tokens expire after ~5 minutes.
+      const currentToken = newFile ? turnstileRef.current?.getResponse() || turnstileToken : null;
+      if (newFile && !currentToken) {
         setSaveState('error');
-        setSaveError('Security check not complete - wait a moment and try again.');
+        setSaveError('Security check expired - please re-verify below and try again.');
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -186,7 +191,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
       fd.append('pattern_id', selectedPattern?.id ?? '');
       fd.append('recordId', props.photo.id);
       fd.append('authToken', authToken);
-      fd.append('token', turnstileToken ?? '');
+      fd.append('token', currentToken ?? '');
       fd.append('hp', honeypot);
       fd.append('ts', String(formOpenTime.current));
 
@@ -447,10 +452,16 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
         {/* Turnstile — only shown when replacing the photo */}
         {newFile && (
           <Turnstile
+            ref={turnstileRef}
             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
             onSuccess={(token) => setTurnstileToken(token)}
             onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
+            onExpire={() => {
+              setTurnstileToken(null);
+              enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
+                variant: 'warning',
+              });
+            }}
           />
         )}
       </DialogContent>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { pocketbase } from '@/functions/database/authentication-setup';
@@ -168,6 +168,7 @@ export const UserUploadForm = () => {
   const [customPatternKey, setCustomPatternKey] = React.useState(false);
 
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = React.useState('');
   const formOpenTime = React.useRef(0);
   const [uploadState, setUploadState] = React.useState<UploadState>('idle');
@@ -262,6 +263,18 @@ export const UserUploadForm = () => {
     if (honeypot) return;
     if (!canSubmit || !file) return;
 
+    // Read the widget directly rather than trusting the token captured in
+    // state minutes ago - Turnstile tokens expire after ~5 minutes, and this
+    // form has enough fields that a user can easily blow past that before
+    // ever reaching submit. On 'auto' refresh mode the widget should already
+    // have a fresh token waiting; getResponse() picks that up without a page reload.
+    const currentToken = turnstileRef.current?.getResponse() || turnstileToken;
+    if (!currentToken) {
+      enqueueSnackbar('Security check expired - please re-verify below and try again.', { variant: 'warning' });
+      turnstileRef.current?.reset();
+      return;
+    }
+
     const authToken = pocketbase.authStore.token;
     if (!authToken) {
       enqueueSnackbar('You must be logged in to submit a pattern.', { variant: 'warning' });
@@ -292,7 +305,7 @@ export const UserUploadForm = () => {
     fd.append('custom_pattern_key_requested', String(customPatternKey));
     fd.append('layers_map', JSON.stringify(layersMap));
     fd.append('authToken', authToken);
-    fd.append('token', turnstileToken ?? '');
+    fd.append('token', currentToken);
     fd.append('hp', honeypot);
     fd.append('ts', String(formOpenTime.current));
 
@@ -679,10 +692,16 @@ export const UserUploadForm = () => {
           />
 
           <Turnstile
+            ref={turnstileRef}
             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
             onSuccess={(token) => setTurnstileToken(token)}
             onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
+            onExpire={() => {
+              setTurnstileToken(null);
+              enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
+                variant: 'warning',
+              });
+            }}
           />
 
           {cooldownRemaining > 0 && (

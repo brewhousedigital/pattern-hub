@@ -65,13 +65,23 @@ function RouteComponent() {
     if (!isValid) return;
     setIsLoading(true);
 
+    // Read the widget directly rather than trusting the token captured in
+    // state minutes ago - Turnstile tokens expire after ~5 minutes.
+    const currentToken = turnstileRef.current?.getResponse() || turnstileToken;
+    if (!currentToken) {
+      enqueueSnackbar('Security check expired - please re-verify below and try again.', { variant: 'warning' });
+      turnstileRef.current?.reset();
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // Create the user object and get the ID out so we can create the private user data next
       await createUser.mutateAsync({
         email,
         password,
         name: `NewUser_${Date.now()}`,
-        turnstileToken: turnstileToken ?? '',
+        turnstileToken: currentToken,
       });
 
       // Sign in the newly created user so we have a valid token
@@ -219,7 +229,12 @@ function RouteComponent() {
                 siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
                 onSuccess={(token) => setTurnstileToken(token)}
                 onError={() => setTurnstileToken(null)}
-                onExpire={() => setTurnstileToken(null)}
+                onExpire={() => {
+                  setTurnstileToken(null);
+                  enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
+                    variant: 'warning',
+                  });
+                }}
               />
             </Box>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import type { TypeViewData } from '@/functions/types/types';
 import { useGlobalAuthData } from '@/data/auth-data';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { enqueueSnackbar } from 'notistack';
 
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
@@ -22,6 +22,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
   const [category, setCategory] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = React.useState('');
 
   // Track when the form is opened for the timing guard
@@ -62,8 +63,12 @@ export const PatternReportIssue = (props: TypeViewData) => {
     const elapsed = Date.now() - formOpenTime.current;
     if (elapsed < 2000) return;
 
-    if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete yet - wait a moment and try again.', { variant: 'warning' });
+    // Read the widget directly rather than trusting the token captured in
+    // state minutes ago - Turnstile tokens expire after ~5 minutes.
+    const currentToken = turnstileRef.current?.getResponse() || turnstileToken;
+    if (!currentToken) {
+      enqueueSnackbar('Security check expired - please re-verify below and try again.', { variant: 'warning' });
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -79,7 +84,7 @@ export const PatternReportIssue = (props: TypeViewData) => {
           email,
           reason,
           category,
-          token: turnstileToken,
+          token: currentToken,
           hp: honeypot,
           ts: formOpenTime.current,
         }),
@@ -179,10 +184,16 @@ export const PatternReportIssue = (props: TypeViewData) => {
           />
 
           <Turnstile
+            ref={turnstileRef}
             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
             onSuccess={(token) => setTurnstileToken(token)}
             onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
+            onExpire={() => {
+              setTurnstileToken(null);
+              enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
+                variant: 'warning',
+              });
+            }}
           />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 3 }}>

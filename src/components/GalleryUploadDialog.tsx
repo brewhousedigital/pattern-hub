@@ -2,7 +2,7 @@ import React from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useQuerySearchPatternsByName, type TypePatternSearchResult } from '@/functions/database/gallery';
 import { generatePbImage } from '@/functions/utilities/generate-pb-image';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { enqueueSnackbar } from 'notistack';
 
@@ -55,6 +55,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
 
   // Bot prevention
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = React.useState('');
   const formOpenTime = React.useRef(Date.now());
 
@@ -123,8 +124,12 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
       enqueueSnackbar('Please add a title.', { variant: 'warning' });
       return;
     }
-    if (!turnstileToken) {
-      enqueueSnackbar('Security check not complete - wait a moment and try again.', { variant: 'warning' });
+    // Read the widget directly rather than trusting the token captured in
+    // state minutes ago - Turnstile tokens expire after ~5 minutes.
+    const currentToken = turnstileRef.current?.getResponse() || turnstileToken;
+    if (!currentToken) {
+      enqueueSnackbar('Security check expired - please re-verify below and try again.', { variant: 'warning' });
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -144,7 +149,7 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
     fd.append('description', description.trim());
     fd.append('pattern_id', selectedPattern?.id ?? '');
     fd.append('authToken', authToken);
-    fd.append('token', turnstileToken);
+    fd.append('token', currentToken);
     fd.append('hp', honeypot);
     fd.append('ts', String(formOpenTime.current));
 
@@ -386,10 +391,16 @@ export const GalleryUploadDialog = (props: GalleryUploadDialogProps) => {
         {uploadError && <Alert severity="error">{uploadError}</Alert>}
 
         <Turnstile
+          ref={turnstileRef}
           siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
           onSuccess={(token) => setTurnstileToken(token)}
           onError={() => setTurnstileToken(null)}
-          onExpire={() => setTurnstileToken(null)}
+          onExpire={() => {
+            setTurnstileToken(null);
+            enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
+              variant: 'warning',
+            });
+          }}
         />
       </DialogContent>
 
