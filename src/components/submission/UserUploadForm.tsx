@@ -10,14 +10,10 @@ import { useQuerySearchTags, useQueryGetTagHierarchy, getAncestors } from '@/fun
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
-import {
-  useQueryGetAllPatternKeys,
-  type TypePatternKeyReferenceObject,
-  type TypePatternLayersMapItem,
-} from '@/functions/database/patterns';
+import { PatternKeyBuilder } from '@/components/admin/PatternKeyBuilder';
+import { type TypePatternKeyReferenceObject, type TypePatternLayersMapItem } from '@/functions/database/patterns';
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { convertPdfFirstPageToImageFile, MultiPagePdfError } from '@/functions/utilities/pdf-to-image';
-import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
@@ -168,17 +164,8 @@ export const UserUploadForm = () => {
     [tagValue, inheritedTags, hierarchyData],
   );
 
-  const { data: patternKeys } = useQueryGetAllPatternKeys();
   const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>([]);
   const [customPatternKey, setCustomPatternKey] = React.useState(false);
-
-  const toggleKey = (id: string, name: string, fullPath?: string) => {
-    setSelectedKeys((prev) =>
-      prev.some((k) => k.name === name)
-        ? prev.filter((k) => k.name !== name)
-        : [...prev, { image: id, name, fullPath }],
-    );
-  };
 
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [honeypot, setHoneypot] = React.useState('');
@@ -680,61 +667,12 @@ export const UserUploadForm = () => {
           <FormSection label="Pattern Keys" />
 
           <Typography variant="body2" color="text.secondary">
-            Select the pattern keys your design uses. Not sure which key is which? Download the reference images below.
+            Add each pattern key your design uses: pick its reference image, give it a name, then click "Add key".
+            Not sure which key is which? Download any reference image before deciding.
           </Typography>
 
-          <Grid container spacing={1}>
-            {patternKeys?.map((key) => {
-              const isSelected = selectedKeys.some((k) => k.name === key.name);
-              return (
-                <Grid size={4} key={key.id}>
-                  <Paper
-                    variant="outlined"
-                    onClick={() => toggleKey(key.id, key.name)}
-                    sx={{
-                      px: 1,
-                      py: 1.5,
-                      position: 'relative',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      borderColor: isSelected ? 'primary.main' : undefined,
-                      backgroundColor: isSelected ? 'action.selected' : undefined,
-                    }}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onChange={() => toggleKey(key.id, key.name)}
-                      onClick={(e) => e.stopPropagation()}
-                      size="small"
-                      sx={{}}
-                    />
+          <PatternKeyBuilder value={selectedKeys} onChange={setSelectedKeys} variant="filled" />
 
-                    <Stack sx={{ gap: 1 }}>
-                      <Box
-                        component="img"
-                        src={generatePbImagePatternKeyRef(key)}
-                        alt={key.name}
-                        sx={{ width: '100%', height: 32, objectFit: 'contain' }}
-                      />
-                      {/*<Typography variant="body2" sx={{ flex: 1 }}>
-                    {key.name}
-                  </Typography>*/}
-                      <MuiLink
-                        href={generatePbImagePatternKeyRef(key)}
-                        download
-                        onClick={(e) => e.stopPropagation()}
-                        variant="caption"
-                      >
-                        Download
-                      </MuiLink>
-                    </Stack>
-                  </Paper>
-                </Grid>
-              );
-            })}
-          </Grid>
           <FormControlLabel
             control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}
             label="This pattern uses a custom key not listed above"

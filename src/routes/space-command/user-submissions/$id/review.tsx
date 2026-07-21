@@ -3,7 +3,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
 import { enqueueSnackbar } from 'notistack';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
-import { PatternEditFields } from '@/components/admin/PatternEditFields';
+import {
+  PatternDetailsForm,
+  type PatternDetailsFormHandle,
+  type TypePatternDetailsFormValues,
+} from '@/components/admin/PatternDetailsForm';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useQueryGetUserSubmissionById,
@@ -12,11 +16,7 @@ import {
   useMutationAdminReuploadSvg,
   type TypeUserSubmittedPatternResponse,
 } from '@/functions/database/user-submissions';
-import {
-  useMutationEditPattern,
-  type TypePatternLayersMapItem,
-  type TypePatternKeyReferenceObject,
-} from '@/functions/database/patterns';
+import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
 import {
   sanitizeSvgFile,
   analyzeSvgThreats,
@@ -24,10 +24,11 @@ import {
   type SvgThreat,
 } from '@/functions/utilities/sanitize-svg';
 import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb-image';
-import dayjs, { type Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 
 import {
   Alert,
@@ -67,24 +68,7 @@ function RouteComponent() {
   const [rawSvgText, setRawSvgText] = React.useState('');
   const [svgThreats, setSvgThreats] = React.useState<SvgThreat[]>([]);
 
-  const [name, setName] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [instructions, setInstructions] = React.useState('');
-  const [sourceUrl, setSourceUrl] = React.useState('');
-  const [designDate, setDesignDate] = React.useState<Dayjs | null>(null);
-  const [pieces, setPieces] = React.useState('1');
-  const [designWidth, setDesignWidth] = React.useState('0');
-  const [designWidthUnit, setDesignWidthUnit] = React.useState('in');
-  const [designHeight, setDesignHeight] = React.useState('0');
-  const [designHeightUnit, setDesignHeightUnit] = React.useState('in');
-  const [lineWidth, setLineWidth] = React.useState('0');
-  const [lineWidthUnit, setLineWidthUnit] = React.useState('in');
-  const [tagValue, setTagValue] = React.useState<string[]>([]);
-  const [authorValue, setAuthorValue] = React.useState<string[]>([]);
-  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>([]);
-  const [hasLayers, setHasLayers] = React.useState(false);
-  const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>([]);
-  const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>([]);
+  const formRef = React.useRef<PatternDetailsFormHandle>(null);
 
   const editPattern = useMutationEditPattern();
   const publishSubmission = useMutationPublishUserSubmission();
@@ -94,29 +78,17 @@ function RouteComponent() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isReuploading, setIsReuploading] = React.useState(false);
 
-  // Prefill from the submission once it loads
+  // Reset back to the code-review gate whenever a different submission loads.
+  // A reupload does NOT reset this: if the admin is already past the gate (either
+  // because they approved this submission's SVG, or because it was never svg to
+  // begin with), swapping the file shouldn't send them back to step 1 - codeApproved
+  // simply stays false until explicitly approved. A raster submission's first-ever
+  // SVG upload still lands on the code-review gate naturally, since codeApproved
+  // was never set true for it (that step doesn't render until file_type is svg).
   React.useEffect(() => {
     if (!submission) return;
-    setName(submission.name);
-    setDescription(submission.description ?? '');
-    setInstructions(submission.instructions ?? '');
-    setSourceUrl(submission.source_url ?? '');
-    setDesignDate(submission.design_date ? dayjs(submission.design_date) : null);
-    setPieces(String(submission.pieces ?? 1));
-    setDesignWidth(String(submission.design_width ?? 0));
-    setDesignWidthUnit(submission.design_width_unit || 'in');
-    setDesignHeight(String(submission.design_height ?? 0));
-    setDesignHeightUnit(submission.design_height_unit || 'in');
-    setLineWidth(String(submission.line_width ?? 0));
-    setLineWidthUnit(submission.line_width_unit || 'in');
-    setTagValue(submission.tags ?? []);
-    setManualAuthorValue(submission.author_manual_name ? [submission.author_manual_name] : []);
-    setAuthorValue(submission.is_author ? [submission.submitter] : []);
-    setHasLayers(submission.has_layers ?? false);
-    setLayersMap(submission.layers_map ?? []);
-    setSelectedKeys(submission.pattern_key_reference_list ?? []);
     setCodeApproved(false);
-  }, [submission?.id, submission?.file_type, submission?.admin_reupload_file]);
+  }, [submission?.id]);
 
   // For SVG submissions, fetch the (already-sanitized) source so it can be shown
   // for review, and re-run the client-side threat scan for display purposes.
@@ -146,6 +118,28 @@ function RouteComponent() {
   }
 
   const activeStep = submission.file_type === 'svg' && !codeApproved ? 0 : 1;
+
+  const initialValues: TypePatternDetailsFormValues = {
+    name: submission.name,
+    description: submission.description ?? '',
+    instructions: submission.instructions ?? '',
+    sourceUrl: submission.source_url ?? '',
+    designDate: submission.design_date ? dayjs(submission.design_date) : null,
+    pieces: String(submission.pieces ?? 1),
+    designWidth: String(submission.design_width ?? 0),
+    designWidthUnit: submission.design_width_unit || 'in',
+    designHeight: String(submission.design_height ?? 0),
+    designHeightUnit: submission.design_height_unit || 'in',
+    lineWidth: String(submission.line_width ?? 0),
+    lineWidthUnit: submission.line_width_unit || 'in',
+    tags: submission.tags ?? [],
+    authors: submission.is_author ? [submission.submitter] : [],
+    authorManual: submission.author_manual_name ? [submission.author_manual_name] : [],
+    hasLayers: submission.has_layers ?? false,
+    layersMap: submission.layers_map ?? [],
+    patternKeys: submission.pattern_key_reference_list ?? [],
+    isDraft: false,
+  };
 
   const handleReupload = async (file: File) => {
     setIsReuploading(true);
@@ -182,32 +176,35 @@ function RouteComponent() {
       return;
     }
 
+    const values = formRef.current?.getPayload();
+    if (!values) return;
+
     setIsSaving(true);
     try {
       const fileUrl = generateUserSubmissionFileUrl(submission);
       const blob = await fetch(fileUrl).then((r) => r.blob());
-      const patternFile = new File([blob], `${name || submission.name}.svg`, { type: 'image/svg+xml' });
+      const patternFile = new File([blob], `${values.name || submission.name}.svg`, { type: 'image/svg+xml' });
 
       const newPattern = await editPattern.mutateAsync({
-        name,
-        description,
-        instructions,
-        source_url: sourceUrl,
-        design_date: designDate,
-        tags: tagValue,
-        authors: authorValue,
-        author_manual: manualAuthorValue,
-        pieces,
-        design_width: designWidth,
-        design_height: designHeight,
-        line_width: lineWidth,
-        design_width_unit: designWidthUnit,
-        design_height_unit: designHeightUnit,
-        line_width_unit: lineWidthUnit,
+        name: values.name,
+        description: values.description,
+        instructions: values.instructions,
+        source_url: values.sourceUrl,
+        design_date: values.designDate,
+        tags: values.tags,
+        authors: values.authors,
+        author_manual: values.authorManual,
+        pieces: values.pieces,
+        design_width: values.designWidth,
+        design_height: values.designHeight,
+        line_width: values.lineWidth,
+        design_width_unit: values.designWidthUnit,
+        design_height_unit: values.designHeightUnit,
+        line_width_unit: values.lineWidthUnit,
         pattern_file: patternFile,
-        pattern_key_reference_list: selectedKeys,
-        has_layers: hasLayers,
-        layers_map: hasLayers ? layersMap : [],
+        pattern_key_reference_list: values.patternKeys,
+        has_layers: values.hasLayers,
+        layers_map: values.hasLayers ? values.layersMap : [],
         is_draft: false,
       });
 
@@ -222,7 +219,7 @@ function RouteComponent() {
   };
 
   return (
-    <Box sx={{ p: 2, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: 2, maxWidth: 1536, mx: 'auto' }}>
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
           Review Submission: {submission.name}
@@ -286,71 +283,66 @@ function RouteComponent() {
         )}
 
         {(submission.file_type !== 'svg' || codeApproved) && (
-          <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start', flexDirection: { xs: 'column', md: 'row' } }}>
-            {/* ── Preview - scrolls with the page, not pinned ── */}
-            <Box
-              sx={{ width: { xs: '100%', md: 320 }, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}
+          <>
+            <PatternDetailsForm
+              key={`${submission.id}:${submission.admin_reupload_file ?? ''}`}
+              ref={formRef}
+              initialValues={initialValues}
+              previewImageUrl={generateUserSubmissionFileUrl(submission)}
+              previewLayout="inline"
+              variant="filled"
+              resetKey={submission.id}
+              showDraftToggle={false}
             >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}
-              >
-                Preview
-              </Typography>
-
-              <Box
-                component="img"
-                src={generateUserSubmissionFileUrl(submission)}
-                alt={submission.name}
+              {/* ── Working file: always-available download + SVG upload/replace ── */}
+              <Paper
+                variant="outlined"
                 sx={{
-                  width: '100%',
-                  aspectRatio: '1/1',
-                  objectFit: 'contain',
-                  borderRadius: 1.5,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  backgroundColor: 'grey.50',
-                  p: 1,
+                  p: 2,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 1.5,
+                  backgroundColor: 'action.hover',
                 }}
-              />
+              >
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Working file
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {submission.file_type === 'svg'
+                      ? 'The SVG currently being reviewed.'
+                      : 'The originally submitted image - download it, trace it into an SVG in your design tool, then upload the SVG below.'}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  component="a"
+                  href={generateUserSubmissionFileUrl(submission)}
+                  download
+                  startIcon={<DownloadRoundedIcon />}
+                  sx={{ flexShrink: 0 }}
+                >
+                  Download {submission.file_type === 'svg' ? 'SVG' : 'image'}
+                </Button>
+              </Paper>
 
-              {name && (
-                <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 600 }}>
-                  {name}
-                </Typography>
-              )}
-            </Box>
-
-            {/* ── Form fields ── */}
-            <Stack sx={{ flex: 1, minWidth: 0, gap: 2.5 }}>
               {submission.file_type !== 'svg' && (
                 <Alert severity="warning">
-                  This was submitted as an image, not an SVG. Download it, trace it into an SVG in your design tool,
-                  then re-upload it below to enable layer mode and continue the review.
-                  <Box sx={{ mt: 1 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      component="a"
-                      href={generateUserSubmissionFileUrl(submission)}
-                      download
-                    >
-                      Download image
-                    </Button>
-                  </Box>
+                  This was submitted as an image, not an SVG. Trace it into an SVG in your design tool, then upload it
+                  below to enable layer mode and continue the review.
                 </Alert>
               )}
 
-              {submission.file_type !== 'svg' && (
-                <SvgDropZone
-                  accept=".svg,image/svg+xml"
-                  acceptLabel="Traced SVG replacement"
-                  label="Re-upload the traced SVG"
-                  onFile={handleReupload}
-                  isLoading={isReuploading}
-                />
-              )}
+              <SvgDropZone
+                accept=".svg,image/svg+xml"
+                acceptLabel={submission.file_type === 'svg' ? 'Replacement SVG' : 'Traced SVG replacement'}
+                label={submission.file_type === 'svg' ? 'Upload a replacement SVG' : 'Re-upload the traced SVG'}
+                onFile={handleReupload}
+                isLoading={isReuploading}
+              />
 
               {!submission.is_author && (submission.source_url || submission.source_notes) && (
                 <Alert severity="info">
@@ -368,62 +360,22 @@ function RouteComponent() {
                   The submitter noted this pattern uses a custom key not listed below.
                 </Alert>
               )}
+            </PatternDetailsForm>
 
-              <PatternEditFields
-                resetKey={submission.id}
-                name={name}
-                onNameChange={setName}
-                description={description}
-                onDescriptionChange={setDescription}
-                designDate={designDate}
-                onDesignDateChange={setDesignDate}
-                sourceUrl={sourceUrl}
-                onSourceUrlChange={setSourceUrl}
-                pieces={pieces}
-                onPiecesChange={setPieces}
-                designWidth={designWidth}
-                designWidthUnit={designWidthUnit}
-                onDesignWidthChange={setDesignWidth}
-                onDesignWidthUnitChange={setDesignWidthUnit}
-                designHeight={designHeight}
-                designHeightUnit={designHeightUnit}
-                onDesignHeightChange={setDesignHeight}
-                onDesignHeightUnitChange={setDesignHeightUnit}
-                lineWidth={lineWidth}
-                lineWidthUnit={lineWidthUnit}
-                onLineWidthChange={setLineWidth}
-                onLineWidthUnitChange={setLineWidthUnit}
-                instructions={instructions}
-                onInstructionsChange={setInstructions}
-                tags={tagValue}
-                onTagsChange={setTagValue}
-                authors={authorValue}
-                onAuthorsChange={setAuthorValue}
-                authorManual={manualAuthorValue}
-                onAuthorManualChange={setManualAuthorValue}
-                hasLayers={hasLayers}
-                onHasLayersChange={setHasLayers}
-                layersMap={layersMap}
-                onLayersMapChange={setLayersMap}
-                patternKeys={selectedKeys}
-                onPatternKeysChange={setSelectedKeys}
-              />
-
-              <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end', mt: 2 }}>
-                <Button color="error" variant="outlined" onClick={handleReject} disabled={isSaving}>
-                  Reject
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handlePublish}
-                  disabled={isSaving || submission.file_type !== 'svg'}
-                  startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : null}
-                >
-                  Save and Publish
-                </Button>
-              </Stack>
+            <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end', mt: 2 }}>
+              <Button color="error" variant="outlined" onClick={handleReject} disabled={isSaving}>
+                Reject
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handlePublish}
+                disabled={isSaving || submission.file_type !== 'svg'}
+                startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : null}
+              >
+                Save and Publish
+              </Button>
             </Stack>
-          </Box>
+          </>
         )}
       </Paper>
     </Box>

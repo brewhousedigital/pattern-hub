@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Grid,
   IconButton,
+  Link as MuiLink,
   List,
   ListItem,
   ListItemText,
@@ -105,6 +106,7 @@ export const PatternKeyBuilder = (props: PatternKeyBuilderProps) => {
         <TextField
           select
           size="small"
+          variant={variant}
           label="Quick-add collection"
           sx={{ minWidth: 200 }}
           value={quickAddKeyCollection}
@@ -224,13 +226,20 @@ export const PatternKeyBuilder = (props: PatternKeyBuilderProps) => {
                     </Typography>
                   }
                   secondary={
-                    <Box
-                      component="img"
-                      loading="lazy"
-                      src={item.fullPath}
-                      alt={`pattern-key-img-added-${item.name}`}
-                      sx={{ width: '100%', maxWidth: 200, height: 'auto', mt: 0.5 }}
-                    />
+                    <Stack sx={{ gap: 0.5, alignItems: 'flex-start', mt: 0.5 }}>
+                      <Box
+                        component="img"
+                        loading="lazy"
+                        src={item.fullPath}
+                        alt={`pattern-key-img-added-${item.name}`}
+                        sx={{ width: '100%', maxWidth: 200, height: 'auto' }}
+                      />
+                      {item.fullPath && (
+                        <MuiLink href={item.fullPath} download variant="caption">
+                          Download
+                        </MuiLink>
+                      )}
+                    </Stack>
                   }
                 />
               </ListItem>
