@@ -65,6 +65,31 @@ export const useQueryGetAllUserSubmissionsByPagination = (page: number, sort = '
   });
 };
 
+export type TypeProcessedSubmissionFilter = 'all' | 'rejected' | 'published';
+
+// Processed queue - the mirror of the working queue above: submissions that
+// have been actioned (hidden = true) and dropped off the active list.
+// statusFilter narrows further to just rejected, just published, or both.
+export const useQueryGetProcessedUserSubmissionsByPagination = (
+  page: number,
+  statusFilter: TypeProcessedSubmissionFilter = 'all',
+  sort = '-updated',
+) => {
+  return useQuery({
+    queryKey: ['GetProcessedUserSubmissionsByPagination', page, statusFilter, sort],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeUserSubmittedPatternResponse>> => {
+      const filter = statusFilter === 'all' ? 'hidden = true' : `hidden = true && status = "${statusFilter}"`;
+      return await pocketbase.collection('user_submitted_patterns').getList(page, 25, {
+        filter,
+        expand: 'submitter,reviewing_admin',
+        sort,
+      });
+    },
+    enabled: !!page,
+    placeholderData: keepPreviousData,
+  });
+};
+
 export const useQueryGetUserSubmissionById = (id: string) => {
   return useQuery({
     queryKey: ['GetUserSubmissionById', id],
