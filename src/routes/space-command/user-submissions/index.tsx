@@ -17,8 +17,9 @@ import { UserSubmissionViewModal } from '@/components/admin/UserSubmissionViewMo
 
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
 
-import { Box, Chip, Stack, Typography, IconButton, Tooltip, Link as MuiLink } from '@mui/material';
+import { Box, Chip, Stack, Typography, IconButton, Tooltip, Link as MuiLink, Button } from '@mui/material';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 
 export const Route = createFileRoute('/space-command/user-submissions/')({
@@ -148,9 +149,20 @@ function RouteComponent() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-        User Submissions
-      </Typography>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          User Submissions
+        </Typography>
+
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<ArchiveRoundedIcon fontSize="small" />}
+          onClick={() => navigate({ to: '/space-command/user-submissions/processed' })}
+        >
+          Processed Submissions
+        </Button>
+      </Stack>
 
       <DataGrid
         rows={data?.items ?? []}
