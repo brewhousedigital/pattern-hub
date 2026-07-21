@@ -149,6 +149,23 @@ export const useMutationPublishUserSubmission = () => {
   });
 };
 
+// Reverses a reject/publish action - clears the review claim and puts the
+// submission back at the top of the working queue as if it were never
+// actioned. Note: for a published submission, the resulting `patterns` record
+// is left in place - undo only rewinds the submission's own workflow state.
+export const useMutationUndoUserSubmission = () => {
+  return useMutation({
+    mutationFn: async (id: string): Promise<TypeUserSubmittedPatternResponse> => {
+      return await pocketbase.collection('user_submitted_patterns').update(id, {
+        status: 'pending',
+        hidden: false,
+        reviewing_admin: null,
+        review_started_at: null,
+      });
+    },
+  });
+};
+
 export type TypeAdminReuploadPayload = {
   id: string;
   file: File;

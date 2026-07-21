@@ -2,10 +2,13 @@ import React from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
 import dayjs from 'dayjs';
+import { enqueueSnackbar } from 'notistack';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import {
   useQueryGetProcessedUserSubmissionsByPagination,
+  useMutationUndoUserSubmission,
   type TypeUserSubmittedPatternResponse,
   type TypeProcessedSubmissionFilter,
 } from '@/functions/database/user-submissions';
@@ -13,6 +16,7 @@ import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb
 import { UserSubmissionViewModal } from '@/components/admin/UserSubmissionViewModal';
 
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 
 import { Box, Chip, Stack, Typography, IconButton, Tooltip, Link as MuiLink, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
@@ -24,19 +28,33 @@ export const Route = createFileRoute('/space-command/user-submissions/processed'
 
 function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
+  const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = React.useState<TypeProcessedSubmissionFilter>('all');
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
   const [viewingSubmission, setViewingSubmission] = React.useState<TypeUserSubmittedPatternResponse | null>(null);
 
   const { data, isLoading } = useQueryGetProcessedUserSubmissionsByPagination(paginationModel.page + 1, statusFilter);
+  const undoSubmission = useMutationUndoUserSubmission();
 
   const canRead = checkAccess(EnumLevelsAdmin.USER_SUBMIT_AR);
+  const canUpdate = checkAccess(EnumLevelsAdmin.USER_SUBMIT_AU);
 
   const handleStatusFilterChange = (_event: React.MouseEvent<HTMLElement>, value: TypeProcessedSubmissionFilter | null) => {
     if (!value) return;
     setStatusFilter(value);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
+
+  const handleUndo = async (row: TypeUserSubmittedPatternResponse) => {
+    try {
+      await undoSubmission.mutateAsync(row.id);
+      queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
+      queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
+      enqueueSnackbar('Submission sent back to the queue.', { variant: 'info' });
+    } catch {
+      enqueueSnackbar('Failed to undo - please try again.', { variant: 'error' });
+    }
   };
 
   const columns: GridColDef<TypeUserSubmittedPatternResponse>[] = [
@@ -109,7 +127,7 @@ function RouteComponent() {
     {
       field: 'actions',
       headerName: '',
-      width: 70,
+      width: 100,
       sortable: false,
       align: 'center',
       headerAlign: 'center',
@@ -119,6 +137,13 @@ function RouteComponent() {
             <Tooltip title="View">
               <IconButton size="small" onClick={() => setViewingSubmission(params.row)}>
                 <VisibilityRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canUpdate && params.row.status === 'rejected' && (
+            <Tooltip title="Send back to queue">
+              <IconButton size="small" onClick={() => handleUndo(params.row)} disabled={undoSubmission.isPending}>
+                <UndoRoundedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
