@@ -54,10 +54,10 @@ function getTokenLabel(token: Token): string {
   if (token.type === 'filesize') return `filesize${token.operator}${token.value}`;
 
   // Custom string prefix filters
-  if (token.type === 'author') return `author:${token.value}`;
-  if (token.type === 'id') return `id:${token.value}`;
-  if (token.type === 'title') return `title:${token.value}`;
-  if (token.type === 'description') return `description:${token.value}`;
+  if (token.type === 'author') return `${token.exclude ? '-' : ''}author:${token.value}`;
+  if (token.type === 'id') return `${token.exclude ? '-' : ''}id:${token.value}`;
+  if (token.type === 'title') return `${token.exclude ? '-' : ''}title:${token.value}`;
+  if (token.type === 'description') return `${token.exclude ? '-' : ''}description:${token.value}`;
 
   // Default tag / text search
   return token.exclude ? `-${token.value}` : token.value;
@@ -71,10 +71,13 @@ function getTokenTooltip(token: Token): string {
   if (token.type === 'filesize') return `File size in Bytes ${token.operator} ${token.value}`;
 
   // Custom string prefix filters
-  if (token.type === 'author') return `Filtering by author "${token.value}"`;
-  if (token.type === 'id') return `Filtering by ID "${token.value}"`;
-  if (token.type === 'title') return `Filtering by title "${token.value}"`;
-  if (token.type === 'description') return `Filtering by description "${token.value}"`;
+  if (token.type === 'author')
+    return token.exclude ? `Excluding author "${token.value}"` : `Filtering by author "${token.value}"`;
+  if (token.type === 'id') return token.exclude ? `Excluding ID "${token.value}"` : `Filtering by ID "${token.value}"`;
+  if (token.type === 'title')
+    return token.exclude ? `Excluding title "${token.value}"` : `Filtering by title "${token.value}"`;
+  if (token.type === 'description')
+    return token.exclude ? `Excluding description "${token.value}"` : `Filtering by description "${token.value}"`;
 
   // Default tag / text search
   return token.exclude ? `Excluding "${token.value}"` : `Searching for "${token.value}"`;
@@ -99,22 +102,30 @@ const PREFIX_MAP: Record<string, PrefixMode> = {
   filesize: 'suppress',
 };
 
-function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string } {
-  const lower = input.toLowerCase();
+function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string; negated: boolean } {
+  // Strip a leading "-" (negative search, e.g. "-author:Clay" or "-cat") up
+  // front so every check below matches on the bare prefix - callers get
+  // `negated` back separately to re-apply it when committing the token.
+  const negated = input.startsWith('-');
+  const bare = negated ? input.slice(1) : input;
+  const lower = bare.toLowerCase();
 
   for (const [prefix, mode] of Object.entries(PREFIX_MAP)) {
-    if (lower.startsWith(prefix) || lower.startsWith(`-${prefix}`)) {
-      const searchTerm = input.slice(input.toLowerCase().indexOf(prefix) + prefix.length);
-      return { mode, searchTerm };
+    if (lower.startsWith(prefix)) {
+      const searchTerm = bare.slice(lower.indexOf(prefix) + prefix.length);
+      return { mode, searchTerm, negated };
     }
-    // User is mid-typing a known prefix (e.g. "auth") - suppress dropdown
-    // so we don't show tag results while they're still typing the prefix
+    // User is mid-typing a known prefix (e.g. "auth" or "-auth") - suppress
+    // the dropdown so we don't show tag results while they're still typing.
     if (prefix.startsWith(lower) && lower.length > 0) {
-      return { mode: 'suppress', searchTerm: '' };
+      return { mode: 'suppress', searchTerm: '', negated };
     }
   }
 
-  return { mode: 'tag', searchTerm: input };
+  // No known prefix - plain tag/text search. `bare` already has any leading
+  // "-" stripped, so a negative tag search (e.g. "-cat") still looks up
+  // "cat" in the tags collection instead of always coming back empty.
+  return { mode: 'tag', searchTerm: bare, negated };
 }
 
 type TokenizedSearchBarProps = {
@@ -137,7 +148,7 @@ export const HomepageSearchV3 = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const suppressNextFocusRef = useRef(false);
 
-  const { mode, searchTerm } = useMemo(() => detectPrefixMode(inputValue), [inputValue]);
+  const { mode, searchTerm, negated } = useMemo(() => detectPrefixMode(inputValue), [inputValue]);
 
   // No debounce delay when the field is empty so the top-100 list appears immediately on focus.
   const debouncedSearchTerm = useDebounce(searchTerm, searchTerm ? 600 : 0);
@@ -173,16 +184,19 @@ export const HomepageSearchV3 = ({
 
   /**
    * Commit a dropdown item. For author mode, prepend "author:" so
-   * parseRawInput produces the correct token type.
+   * parseRawInput produces the correct token type. Re-applies a leading "-"
+   * when the user was typing a negative search (e.g. "-author:Clay" or
+   * "-cat") so picking an item from the dropdown doesn't flip it positive.
    * Extend this for future prefix modes (e.g. title:) here.
    */
   const commitDropdownItem = useCallback(
     (item: TypeReadOnlyDatabaseItem) => {
-      const prefix = mode === 'author' ? 'author:' : '';
-      commitInput(`${prefix}${item.tag}`);
+      const excludePrefix = negated ? '-' : '';
+      const modePrefix = mode === 'author' ? 'author:' : '';
+      commitInput(`${excludePrefix}${modePrefix}${item.tag}`);
       inputRef.current?.focus();
     },
-    [mode, commitInput],
+    [mode, negated, commitInput],
   );
 
   const handleKeyDown = useCallback(
