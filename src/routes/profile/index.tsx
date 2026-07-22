@@ -277,13 +277,16 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
   const youtubeUrl = thisAuthData?.profile_youtube_url ?? '';
   const socialLinks = thisAuthData?.social_links ?? [];
 
+  // Visibility toggles are for visitors, not the owner - on your own
+  // profile (isPublicView false) every tab always shows regardless of what
+  // you've hidden from the public.
   const tabVisibility = {
-    0: thisAuthData?.tab_show_favorites !== false,
-    1: thisAuthData?.tab_show_done !== false,
-    2: thisAuthData?.tab_show_ratings !== false,
-    3: thisAuthData?.tab_show_difficulty !== false,
-    4: thisAuthData?.tab_show_gallery !== false,
-    5: thisAuthData?.tab_show_collections !== false,
+    0: !isPublicView || thisAuthData?.tab_show_favorites !== false,
+    1: !isPublicView || thisAuthData?.tab_show_done !== false,
+    2: !isPublicView || thisAuthData?.tab_show_ratings !== false,
+    3: !isPublicView || thisAuthData?.tab_show_difficulty !== false,
+    4: !isPublicView || thisAuthData?.tab_show_gallery !== false,
+    5: !isPublicView || thisAuthData?.tab_show_collections !== false,
   } as Record<number, boolean>;
 
   const fontStack = profileFont
