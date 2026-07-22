@@ -43,7 +43,7 @@
     "jspdf": "4.2.1",
     "jszip": "3.10.1",
     "leaflet": "1.9.4",
-    "linkedom": "^0.18.13",
+    "linkedom": "0.18.13",
     "marked": "18.0.6",
     "notistack": "3.0.2",
     "pdfjs-dist": "6.1.200",
