@@ -285,15 +285,25 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // rated, no difficulty votes, never favorited/completed), so it would
   // otherwise flood the front of the list ahead of patterns with actual
   // low-but-real values. Filter those out whenever sorting by one of these.
+  //
+  // The "no_ratings"/"unloved"/etc. sorts below are the opposite ask - show
+  // ONLY the untouched patterns - so they filter to exactly 0 instead. Every
+  // matching row ties at 0 on that column, so there's no meaningful order of
+  // its own; dbSort supplies a real fallback field for findRecordsByFilter.
   const ZERO_FILTERED_SORTS = {
-    avg_rating: 'avg_rating',
-    total_ratings: 'total_ratings',
-    avg_difficulty: 'avg_difficulty',
-    total_difficulty_ratings: 'total_difficulty_ratings',
-    favorite_count: 'favorite_count',
-    done_count: 'done_count',
+    avg_rating: { column: 'avg_rating', op: '>' },
+    total_ratings: { column: 'total_ratings', op: '>' },
+    avg_difficulty: { column: 'avg_difficulty', op: '>' },
+    total_difficulty_ratings: { column: 'total_difficulty_ratings', op: '>' },
+    favorite_count: { column: 'favorite_count', op: '>' },
+    done_count: { column: 'done_count', op: '>' },
+    no_ratings: { column: 'total_ratings', op: '=', dbSort: '-created' },
+    no_difficulty_ratings: { column: 'total_difficulty_ratings', op: '=', dbSort: '-created' },
+    unloved: { column: 'favorite_count', op: '=', dbSort: '-created' },
+    never_completed: { column: 'done_count', op: '=', dbSort: '-created' },
   };
-  const zeroFilterColumn = ZERO_FILTERED_SORTS[sort];
+  const zeroFilter = ZERO_FILTERED_SORTS[sort];
+  const dbSort = zeroFilter?.dbSort || sort;
 
   function countRows(table, whereSQL, params) {
     try {
@@ -313,13 +323,15 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
     'isDeleted = false && is_draft = false' +
-    (zeroFilterColumn ? ` && ${zeroFilterColumn} > 0` : '');
+    (zeroFilter ? ` && ${zeroFilter.column} ${zeroFilter.op} 0` : '');
   const baseSql =
-    sqlWhere + ' AND isDeleted = 0 AND is_draft = 0' + (zeroFilterColumn ? ` AND ${zeroFilterColumn} > 0` : '');
+    sqlWhere +
+    ' AND isDeleted = 0 AND is_draft = 0' +
+    (zeroFilter ? ` AND ${zeroFilter.column} ${zeroFilter.op} 0` : '');
 
   let items = [];
   try {
-    const records = $app.findRecordsByFilter('patterns', baseDsl, sort, perPage, (page - 1) * perPage);
+    const records = $app.findRecordsByFilter('patterns', baseDsl, dbSort, perPage, (page - 1) * perPage);
     $app.expandRecords(records, ['authors'], null);
     items = records;
   } catch (err) {
