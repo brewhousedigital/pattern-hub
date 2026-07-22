@@ -9,107 +9,97 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WikiIndexRouteImport } from './routes/wiki/index'
-import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/index'
-import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
-import { Route as SetsIndexRouteImport } from './routes/sets/index'
-import { Route as ProfileIndexRouteImport } from './routes/profile/index'
-import { Route as PatternIndexRouteImport } from './routes/pattern/index'
-import { Route as NewsIndexRouteImport } from './routes/news/index'
-import { Route as GuidesIndexRouteImport } from './routes/guides/index'
-import { Route as CommunityIndexRouteImport } from './routes/community/index'
-import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
-import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
-import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
-import { Route as SpaceCommandSetsRouteImport } from './routes/space-command/sets'
-import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
-import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-command/pattern-key-mgmt'
-import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
-import { Route as SpaceCommandManualAuthorsRouteImport } from './routes/space-command/manual-authors'
-import { Route as SpaceCommandLogsRouteImport } from './routes/space-command/logs'
-import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
-import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
-import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
-import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
-import { Route as ProfileEditRouteImport } from './routes/profile/edit'
-import { Route as ProfileUserIdRouteImport } from './routes/profile/$userId'
-import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
-import { Route as NewsPageSlugRouteImport } from './routes/news/$pageSlug'
-import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
-import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
-import { Route as HelpFaqRouteImport } from './routes/help/faq'
-import { Route as HelpContactRouteImport } from './routes/help/contact'
-import { Route as HelpAboutRouteImport } from './routes/help/about'
-import { Route as AuthorsSlugRouteImport } from './routes/authors/$slug'
-import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
-import { Route as AuthRegisterRouteImport } from './routes/auth/register'
-import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as SpaceCommandRouteRouteImport } from './routes/space-command/route'
 import { Route as AuthConfirmVerificationRouteImport } from './routes/auth/confirm-verification'
-import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
-import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
-import { Route as SpaceCommandUserSubmissionsIndexRouteImport } from './routes/space-command/user-submissions/index'
-import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
-import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
-import { Route as ProfileSubmitPatternIndexRouteImport } from './routes/profile/submit-pattern/index'
-import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
-import { Route as SpaceCommandUserSubmissionsProcessedRouteImport } from './routes/space-command/user-submissions/processed'
-import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
-import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
-import { Route as ProfileSubmitPatternCompleteRouteImport } from './routes/profile/submit-pattern/complete'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
+import { Route as AuthorsSlugRouteImport } from './routes/authors/$slug'
+import { Route as CommunityIndexRouteImport } from './routes/community/index'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as HelpAboutRouteImport } from './routes/help/about'
+import { Route as HelpContactRouteImport } from './routes/help/contact'
+import { Route as HelpFaqRouteImport } from './routes/help/faq'
+import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
+import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
+import { Route as NewsIndexRouteImport } from './routes/news/index'
+import { Route as NewsPageSlugRouteImport } from './routes/news/$pageSlug'
+import { Route as PatternIndexRouteImport } from './routes/pattern/index'
+import { Route as PatternPatternIdRouteImport } from './routes/pattern/$patternId'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as ProfileUserIdRouteImport } from './routes/profile/$userId'
+import { Route as ProfileEditRouteImport } from './routes/profile/edit'
+import { Route as SetsIndexRouteImport } from './routes/sets/index'
+import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
+import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
+import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
+import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
+import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
+import { Route as SpaceCommandLogsRouteImport } from './routes/space-command/logs'
+import { Route as SpaceCommandManualAuthorsRouteImport } from './routes/space-command/manual-authors'
+import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
+import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-command/pattern-key-mgmt'
+import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
+import { Route as SpaceCommandSetsRouteImport } from './routes/space-command/sets'
+import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
+import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
+import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
+import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/index'
+import { Route as WikiIndexRouteImport } from './routes/wiki/index'
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
+import { Route as ProfileSubmitPatternIndexRouteImport } from './routes/profile/submit-pattern/index'
+import { Route as ProfileSubmitPatternCompleteRouteImport } from './routes/profile/submit-pattern/complete'
+import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
+import { Route as SpaceCommandComplaintsReviewedRouteImport } from './routes/space-command/complaints/reviewed'
+import { Route as SpaceCommandContactIndexRouteImport } from './routes/space-command/contact/index'
+import { Route as SpaceCommandContactReviewedRouteImport } from './routes/space-command/contact/reviewed'
+import { Route as SpaceCommandUserSubmissionsIndexRouteImport } from './routes/space-command/user-submissions/index'
+import { Route as SpaceCommandUserSubmissionsProcessedRouteImport } from './routes/space-command/user-submissions/processed'
+import { Route as SpaceCommandWikiIndexRouteImport } from './routes/space-command/wiki/index'
+import { Route as WikiCategorySlugIndexRouteImport } from './routes/wiki/$categorySlug/index'
+import { Route as WikiCategorySlugPageSlugRouteImport } from './routes/wiki/$categorySlug/$pageSlug'
 import { Route as SpaceCommandUserSubmissionsIdReviewRouteImport } from './routes/space-command/user-submissions/$id/review'
 
-const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
-  id: '/space-command',
-  path: '/space-command',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WikiIndexRoute = WikiIndexRouteImport.update({
-  id: '/wiki/',
-  path: '/wiki/',
+const SpaceCommandRouteRoute = SpaceCommandRouteRouteImport.update({
+  id: '/space-command',
+  path: '/space-command',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StoreLocatorIndexRoute = StoreLocatorIndexRouteImport.update({
-  id: '/store-locator/',
-  path: '/store-locator/',
+const AuthConfirmVerificationRoute = AuthConfirmVerificationRouteImport.update({
+  id: '/auth/confirm-verification',
+  path: '/auth/confirm-verification',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SpaceCommandRouteRoute,
-} as any)
-const SetsIndexRoute = SetsIndexRouteImport.update({
-  id: '/sets/',
-  path: '/sets/',
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileIndexRoute = ProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PatternIndexRoute = PatternIndexRouteImport.update({
-  id: '/pattern/',
-  path: '/pattern/',
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewsIndexRoute = NewsIndexRouteImport.update({
-  id: '/news/',
-  path: '/news/',
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuidesIndexRoute = GuidesIndexRouteImport.update({
-  id: '/guides/',
-  path: '/guides/',
+const AuthorsSlugRoute = AuthorsSlugRouteImport.update({
+  id: '/authors/$slug',
+  path: '/authors/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommunityIndexRoute = CommunityIndexRouteImport.update({
@@ -117,41 +107,104 @@ const CommunityIndexRoute = CommunityIndexRouteImport.update({
   path: '/community/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpAboutRoute = HelpAboutRouteImport.update({
+  id: '/help/about',
+  path: '/help/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpContactRoute = HelpContactRouteImport.update({
+  id: '/help/contact',
+  path: '/help/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpFaqRoute = HelpFaqRouteImport.update({
+  id: '/help/faq',
+  path: '/help/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpPrivacyPolicyRoute = HelpPrivacyPolicyRouteImport.update({
+  id: '/help/privacy-policy',
+  path: '/help/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
+  id: '/help/terms-of-service',
+  path: '/help/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsPageSlugRoute = NewsPageSlugRouteImport.update({
+  id: '/news/$pageSlug',
+  path: '/news/$pageSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternIndexRoute = PatternIndexRouteImport.update({
+  id: '/pattern/',
+  path: '/pattern/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
+  id: '/pattern/$patternId',
+  path: '/pattern/$patternId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetsIndexRoute = SetsIndexRouteImport.update({
+  id: '/sets/',
+  path: '/sets/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetsSetIdRoute = SetsSetIdRouteImport.update({
+  id: '/sets/$setId',
+  path: '/sets/$setId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpaceCommandIndexRoute = SpaceCommandIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandTagsRoute = SpaceCommandTagsRouteImport.update({
-  id: '/tags',
-  path: '/tags',
+const SpaceCommandAdminsRoute = SpaceCommandAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandStoreLocatorRoute =
-  SpaceCommandStoreLocatorRouteImport.update({
-    id: '/store-locator',
-    path: '/store-locator',
-    getParentRoute: () => SpaceCommandRouteRoute,
-  } as any)
-const SpaceCommandSetsRoute = SpaceCommandSetsRouteImport.update({
-  id: '/sets',
-  path: '/sets',
+const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandPatternsRoute = SpaceCommandPatternsRouteImport.update({
-  id: '/patterns',
-  path: '/patterns',
+const SpaceCommandKanbanRoute = SpaceCommandKanbanRouteImport.update({
+  id: '/kanban',
+  path: '/kanban',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandPatternKeyMgmtRoute =
-  SpaceCommandPatternKeyMgmtRouteImport.update({
-    id: '/pattern-key-mgmt',
-    path: '/pattern-key-mgmt',
-    getParentRoute: () => SpaceCommandRouteRoute,
-  } as any)
-const SpaceCommandMapRoute = SpaceCommandMapRouteImport.update({
-  id: '/map',
-  path: '/map',
+const SpaceCommandLogsRoute = SpaceCommandLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
 const SpaceCommandManualAuthorsRoute =
@@ -160,133 +213,58 @@ const SpaceCommandManualAuthorsRoute =
     path: '/manual-authors',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
-const SpaceCommandLogsRoute = SpaceCommandLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
+const SpaceCommandMapRoute = SpaceCommandMapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandKanbanRoute = SpaceCommandKanbanRouteImport.update({
-  id: '/kanban',
-  path: '/kanban',
+const SpaceCommandPatternKeyMgmtRoute =
+  SpaceCommandPatternKeyMgmtRouteImport.update({
+    id: '/pattern-key-mgmt',
+    path: '/pattern-key-mgmt',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const SpaceCommandPatternsRoute = SpaceCommandPatternsRouteImport.update({
+  id: '/patterns',
+  path: '/patterns',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
+const SpaceCommandSetsRoute = SpaceCommandSetsRouteImport.update({
+  id: '/sets',
+  path: '/sets',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SpaceCommandAdminsRoute = SpaceCommandAdminsRouteImport.update({
-  id: '/admins',
-  path: '/admins',
+const SpaceCommandStoreLocatorRoute =
+  SpaceCommandStoreLocatorRouteImport.update({
+    id: '/store-locator',
+    path: '/store-locator',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const SpaceCommandTagsRoute = SpaceCommandTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
-const SetsSetIdRoute = SetsSetIdRouteImport.update({
-  id: '/sets/$setId',
-  path: '/sets/$setId',
+const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const StoreLocatorIndexRoute = StoreLocatorIndexRouteImport.update({
+  id: '/store-locator/',
+  path: '/store-locator/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/profile/edit',
-  path: '/profile/edit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
-  id: '/profile/$userId',
-  path: '/profile/$userId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PatternPatternIdRoute = PatternPatternIdRouteImport.update({
-  id: '/pattern/$patternId',
-  path: '/pattern/$patternId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsPageSlugRoute = NewsPageSlugRouteImport.update({
-  id: '/news/$pageSlug',
-  path: '/news/$pageSlug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
-  id: '/help/terms-of-service',
-  path: '/help/terms-of-service',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpPrivacyPolicyRoute = HelpPrivacyPolicyRouteImport.update({
-  id: '/help/privacy-policy',
-  path: '/help/privacy-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpFaqRoute = HelpFaqRouteImport.update({
-  id: '/help/faq',
-  path: '/help/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpContactRoute = HelpContactRouteImport.update({
-  id: '/help/contact',
-  path: '/help/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpAboutRoute = HelpAboutRouteImport.update({
-  id: '/help/about',
-  path: '/help/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthorsSlugRoute = AuthorsSlugRouteImport.update({
-  id: '/authors/$slug',
-  path: '/authors/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
-  id: '/auth/reset-password',
-  path: '/auth/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRegisterRoute = AuthRegisterRouteImport.update({
-  id: '/auth/register',
-  path: '/auth/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/auth/login',
-  path: '/auth/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: '/auth/forgot-password',
-  path: '/auth/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthConfirmVerificationRoute = AuthConfirmVerificationRouteImport.update({
-  id: '/auth/confirm-verification',
-  path: '/auth/confirm-verification',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WikiCategorySlugIndexRoute = WikiCategorySlugIndexRouteImport.update({
-  id: '/wiki/$categorySlug/',
-  path: '/wiki/$categorySlug/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
+const WikiIndexRoute = WikiIndexRouteImport.update({
   id: '/wiki/',
   path: '/wiki/',
-  getParentRoute: () => SpaceCommandRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const SpaceCommandUserSubmissionsIndexRoute =
-  SpaceCommandUserSubmissionsIndexRouteImport.update({
-    id: '/user-submissions/',
-    path: '/user-submissions/',
-    getParentRoute: () => SpaceCommandRouteRoute,
-  } as any)
-const SpaceCommandContactIndexRoute =
-  SpaceCommandContactIndexRouteImport.update({
-    id: '/contact/',
-    path: '/contact/',
-    getParentRoute: () => SpaceCommandRouteRoute,
-  } as any)
-const SpaceCommandComplaintsIndexRoute =
-  SpaceCommandComplaintsIndexRouteImport.update({
-    id: '/complaints/',
-    path: '/complaints/',
-    getParentRoute: () => SpaceCommandRouteRoute,
+const ProfileCollectionsCollectionIdRoute =
+  ProfileCollectionsCollectionIdRouteImport.update({
+    id: '/profile/collections/$collectionId',
+    path: '/profile/collections/$collectionId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ProfileSubmitPatternIndexRoute =
   ProfileSubmitPatternIndexRouteImport.update({
@@ -294,22 +272,16 @@ const ProfileSubmitPatternIndexRoute =
     path: '/profile/submit-pattern/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const WikiCategorySlugPageSlugRoute =
-  WikiCategorySlugPageSlugRouteImport.update({
-    id: '/wiki/$categorySlug/$pageSlug',
-    path: '/wiki/$categorySlug/$pageSlug',
+const ProfileSubmitPatternCompleteRoute =
+  ProfileSubmitPatternCompleteRouteImport.update({
+    id: '/profile/submit-pattern/complete',
+    path: '/profile/submit-pattern/complete',
     getParentRoute: () => rootRouteImport,
   } as any)
-const SpaceCommandUserSubmissionsProcessedRoute =
-  SpaceCommandUserSubmissionsProcessedRouteImport.update({
-    id: '/user-submissions/processed',
-    path: '/user-submissions/processed',
-    getParentRoute: () => SpaceCommandRouteRoute,
-  } as any)
-const SpaceCommandContactReviewedRoute =
-  SpaceCommandContactReviewedRouteImport.update({
-    id: '/contact/reviewed',
-    path: '/contact/reviewed',
+const SpaceCommandComplaintsIndexRoute =
+  SpaceCommandComplaintsIndexRouteImport.update({
+    id: '/complaints/',
+    path: '/complaints/',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
 const SpaceCommandComplaintsReviewedRoute =
@@ -318,16 +290,44 @@ const SpaceCommandComplaintsReviewedRoute =
     path: '/complaints/reviewed',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
-const ProfileSubmitPatternCompleteRoute =
-  ProfileSubmitPatternCompleteRouteImport.update({
-    id: '/profile/submit-pattern/complete',
-    path: '/profile/submit-pattern/complete',
-    getParentRoute: () => rootRouteImport,
+const SpaceCommandContactIndexRoute =
+  SpaceCommandContactIndexRouteImport.update({
+    id: '/contact/',
+    path: '/contact/',
+    getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
-const ProfileCollectionsCollectionIdRoute =
-  ProfileCollectionsCollectionIdRouteImport.update({
-    id: '/profile/collections/$collectionId',
-    path: '/profile/collections/$collectionId',
+const SpaceCommandContactReviewedRoute =
+  SpaceCommandContactReviewedRouteImport.update({
+    id: '/contact/reviewed',
+    path: '/contact/reviewed',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const SpaceCommandUserSubmissionsIndexRoute =
+  SpaceCommandUserSubmissionsIndexRouteImport.update({
+    id: '/user-submissions/',
+    path: '/user-submissions/',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const SpaceCommandUserSubmissionsProcessedRoute =
+  SpaceCommandUserSubmissionsProcessedRouteImport.update({
+    id: '/user-submissions/processed',
+    path: '/user-submissions/processed',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
+const SpaceCommandWikiIndexRoute = SpaceCommandWikiIndexRouteImport.update({
+  id: '/wiki/',
+  path: '/wiki/',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
+const WikiCategorySlugIndexRoute = WikiCategorySlugIndexRouteImport.update({
+  id: '/wiki/$categorySlug/',
+  path: '/wiki/$categorySlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WikiCategorySlugPageSlugRoute =
+  WikiCategorySlugPageSlugRouteImport.update({
+    id: '/wiki/$categorySlug/$pageSlug',
+    path: '/wiki/$categorySlug/$pageSlug',
     getParentRoute: () => rootRouteImport,
   } as any)
 const SpaceCommandUserSubmissionsIdReviewRoute =
@@ -699,13 +699,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/space-command': {
-      id: '/space-command'
-      path: '/space-command'
-      fullPath: '/space-command'
-      preLoaderRoute: typeof SpaceCommandRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -713,256 +706,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wiki/': {
-      id: '/wiki/'
-      path: '/wiki'
-      fullPath: '/wiki/'
-      preLoaderRoute: typeof WikiIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/store-locator/': {
-      id: '/store-locator/'
-      path: '/store-locator'
-      fullPath: '/store-locator/'
-      preLoaderRoute: typeof StoreLocatorIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/space-command/': {
-      id: '/space-command/'
-      path: '/'
-      fullPath: '/space-command/'
-      preLoaderRoute: typeof SpaceCommandIndexRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/sets/': {
-      id: '/sets/'
-      path: '/sets'
-      fullPath: '/sets/'
-      preLoaderRoute: typeof SetsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/': {
-      id: '/profile/'
-      path: '/profile'
-      fullPath: '/profile/'
-      preLoaderRoute: typeof ProfileIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pattern/': {
-      id: '/pattern/'
-      path: '/pattern'
-      fullPath: '/pattern/'
-      preLoaderRoute: typeof PatternIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news/': {
-      id: '/news/'
-      path: '/news'
-      fullPath: '/news/'
-      preLoaderRoute: typeof NewsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/guides/': {
-      id: '/guides/'
-      path: '/guides'
-      fullPath: '/guides/'
-      preLoaderRoute: typeof GuidesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community/': {
-      id: '/community/'
-      path: '/community'
-      fullPath: '/community/'
-      preLoaderRoute: typeof CommunityIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/space-command/users': {
-      id: '/space-command/users'
-      path: '/users'
-      fullPath: '/space-command/users'
-      preLoaderRoute: typeof SpaceCommandUsersRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/tags': {
-      id: '/space-command/tags'
-      path: '/tags'
-      fullPath: '/space-command/tags'
-      preLoaderRoute: typeof SpaceCommandTagsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/store-locator': {
-      id: '/space-command/store-locator'
-      path: '/store-locator'
-      fullPath: '/space-command/store-locator'
-      preLoaderRoute: typeof SpaceCommandStoreLocatorRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/sets': {
-      id: '/space-command/sets'
-      path: '/sets'
-      fullPath: '/space-command/sets'
-      preLoaderRoute: typeof SpaceCommandSetsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/patterns': {
-      id: '/space-command/patterns'
-      path: '/patterns'
-      fullPath: '/space-command/patterns'
-      preLoaderRoute: typeof SpaceCommandPatternsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/pattern-key-mgmt': {
-      id: '/space-command/pattern-key-mgmt'
-      path: '/pattern-key-mgmt'
-      fullPath: '/space-command/pattern-key-mgmt'
-      preLoaderRoute: typeof SpaceCommandPatternKeyMgmtRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/map': {
-      id: '/space-command/map'
-      path: '/map'
-      fullPath: '/space-command/map'
-      preLoaderRoute: typeof SpaceCommandMapRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/manual-authors': {
-      id: '/space-command/manual-authors'
-      path: '/manual-authors'
-      fullPath: '/space-command/manual-authors'
-      preLoaderRoute: typeof SpaceCommandManualAuthorsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/logs': {
-      id: '/space-command/logs'
-      path: '/logs'
-      fullPath: '/space-command/logs'
-      preLoaderRoute: typeof SpaceCommandLogsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/kanban': {
-      id: '/space-command/kanban'
-      path: '/kanban'
-      fullPath: '/space-command/kanban'
-      preLoaderRoute: typeof SpaceCommandKanbanRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/faq': {
-      id: '/space-command/faq'
-      path: '/faq'
-      fullPath: '/space-command/faq'
-      preLoaderRoute: typeof SpaceCommandFaqRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/admins': {
-      id: '/space-command/admins'
-      path: '/admins'
-      fullPath: '/space-command/admins'
-      preLoaderRoute: typeof SpaceCommandAdminsRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/sets/$setId': {
-      id: '/sets/$setId'
-      path: '/sets/$setId'
-      fullPath: '/sets/$setId'
-      preLoaderRoute: typeof SetsSetIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/edit': {
-      id: '/profile/edit'
-      path: '/profile/edit'
-      fullPath: '/profile/edit'
-      preLoaderRoute: typeof ProfileEditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/$userId': {
-      id: '/profile/$userId'
-      path: '/profile/$userId'
-      fullPath: '/profile/$userId'
-      preLoaderRoute: typeof ProfileUserIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pattern/$patternId': {
-      id: '/pattern/$patternId'
-      path: '/pattern/$patternId'
-      fullPath: '/pattern/$patternId'
-      preLoaderRoute: typeof PatternPatternIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news/$pageSlug': {
-      id: '/news/$pageSlug'
-      path: '/news/$pageSlug'
-      fullPath: '/news/$pageSlug'
-      preLoaderRoute: typeof NewsPageSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/terms-of-service': {
-      id: '/help/terms-of-service'
-      path: '/help/terms-of-service'
-      fullPath: '/help/terms-of-service'
-      preLoaderRoute: typeof HelpTermsOfServiceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/privacy-policy': {
-      id: '/help/privacy-policy'
-      path: '/help/privacy-policy'
-      fullPath: '/help/privacy-policy'
-      preLoaderRoute: typeof HelpPrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/faq': {
-      id: '/help/faq'
-      path: '/help/faq'
-      fullPath: '/help/faq'
-      preLoaderRoute: typeof HelpFaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/contact': {
-      id: '/help/contact'
-      path: '/help/contact'
-      fullPath: '/help/contact'
-      preLoaderRoute: typeof HelpContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/about': {
-      id: '/help/about'
-      path: '/help/about'
-      fullPath: '/help/about'
-      preLoaderRoute: typeof HelpAboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/authors/$slug': {
-      id: '/authors/$slug'
-      path: '/authors/$slug'
-      fullPath: '/authors/$slug'
-      preLoaderRoute: typeof AuthorsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/reset-password': {
-      id: '/auth/reset-password'
-      path: '/auth/reset-password'
-      fullPath: '/auth/reset-password'
-      preLoaderRoute: typeof AuthResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/register': {
-      id: '/auth/register'
-      path: '/auth/register'
-      fullPath: '/auth/register'
-      preLoaderRoute: typeof AuthRegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/login': {
-      id: '/auth/login'
-      path: '/auth/login'
-      fullPath: '/auth/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/forgot-password': {
-      id: '/auth/forgot-password'
-      path: '/auth/forgot-password'
-      fullPath: '/auth/forgot-password'
-      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+    '/space-command': {
+      id: '/space-command'
+      path: '/space-command'
+      fullPath: '/space-command'
+      preLoaderRoute: typeof SpaceCommandRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/confirm-verification': {
@@ -972,40 +720,264 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmVerificationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wiki/$categorySlug/': {
-      id: '/wiki/$categorySlug/'
-      path: '/wiki/$categorySlug'
-      fullPath: '/wiki/$categorySlug/'
-      preLoaderRoute: typeof WikiCategorySlugIndexRouteImport
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/space-command/wiki/': {
-      id: '/space-command/wiki/'
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authors/$slug': {
+      id: '/authors/$slug'
+      path: '/authors/$slug'
+      fullPath: '/authors/$slug'
+      preLoaderRoute: typeof AuthorsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/': {
+      id: '/community/'
+      path: '/community'
+      fullPath: '/community/'
+      preLoaderRoute: typeof CommunityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/about': {
+      id: '/help/about'
+      path: '/help/about'
+      fullPath: '/help/about'
+      preLoaderRoute: typeof HelpAboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/contact': {
+      id: '/help/contact'
+      path: '/help/contact'
+      fullPath: '/help/contact'
+      preLoaderRoute: typeof HelpContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/faq': {
+      id: '/help/faq'
+      path: '/help/faq'
+      fullPath: '/help/faq'
+      preLoaderRoute: typeof HelpFaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/privacy-policy': {
+      id: '/help/privacy-policy'
+      path: '/help/privacy-policy'
+      fullPath: '/help/privacy-policy'
+      preLoaderRoute: typeof HelpPrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/terms-of-service': {
+      id: '/help/terms-of-service'
+      path: '/help/terms-of-service'
+      fullPath: '/help/terms-of-service'
+      preLoaderRoute: typeof HelpTermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/$pageSlug': {
+      id: '/news/$pageSlug'
+      path: '/news/$pageSlug'
+      fullPath: '/news/$pageSlug'
+      preLoaderRoute: typeof NewsPageSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pattern/': {
+      id: '/pattern/'
+      path: '/pattern'
+      fullPath: '/pattern/'
+      preLoaderRoute: typeof PatternIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pattern/$patternId': {
+      id: '/pattern/$patternId'
+      path: '/pattern/$patternId'
+      fullPath: '/pattern/$patternId'
+      preLoaderRoute: typeof PatternPatternIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/$userId': {
+      id: '/profile/$userId'
+      path: '/profile/$userId'
+      fullPath: '/profile/$userId'
+      preLoaderRoute: typeof ProfileUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sets/': {
+      id: '/sets/'
+      path: '/sets'
+      fullPath: '/sets/'
+      preLoaderRoute: typeof SetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sets/$setId': {
+      id: '/sets/$setId'
+      path: '/sets/$setId'
+      fullPath: '/sets/$setId'
+      preLoaderRoute: typeof SetsSetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/space-command/': {
+      id: '/space-command/'
+      path: '/'
+      fullPath: '/space-command/'
+      preLoaderRoute: typeof SpaceCommandIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/admins': {
+      id: '/space-command/admins'
+      path: '/admins'
+      fullPath: '/space-command/admins'
+      preLoaderRoute: typeof SpaceCommandAdminsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/faq': {
+      id: '/space-command/faq'
+      path: '/faq'
+      fullPath: '/space-command/faq'
+      preLoaderRoute: typeof SpaceCommandFaqRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/kanban': {
+      id: '/space-command/kanban'
+      path: '/kanban'
+      fullPath: '/space-command/kanban'
+      preLoaderRoute: typeof SpaceCommandKanbanRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/logs': {
+      id: '/space-command/logs'
+      path: '/logs'
+      fullPath: '/space-command/logs'
+      preLoaderRoute: typeof SpaceCommandLogsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/manual-authors': {
+      id: '/space-command/manual-authors'
+      path: '/manual-authors'
+      fullPath: '/space-command/manual-authors'
+      preLoaderRoute: typeof SpaceCommandManualAuthorsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/map': {
+      id: '/space-command/map'
+      path: '/map'
+      fullPath: '/space-command/map'
+      preLoaderRoute: typeof SpaceCommandMapRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/pattern-key-mgmt': {
+      id: '/space-command/pattern-key-mgmt'
+      path: '/pattern-key-mgmt'
+      fullPath: '/space-command/pattern-key-mgmt'
+      preLoaderRoute: typeof SpaceCommandPatternKeyMgmtRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/patterns': {
+      id: '/space-command/patterns'
+      path: '/patterns'
+      fullPath: '/space-command/patterns'
+      preLoaderRoute: typeof SpaceCommandPatternsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/sets': {
+      id: '/space-command/sets'
+      path: '/sets'
+      fullPath: '/space-command/sets'
+      preLoaderRoute: typeof SpaceCommandSetsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/store-locator': {
+      id: '/space-command/store-locator'
+      path: '/store-locator'
+      fullPath: '/space-command/store-locator'
+      preLoaderRoute: typeof SpaceCommandStoreLocatorRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/tags': {
+      id: '/space-command/tags'
+      path: '/tags'
+      fullPath: '/space-command/tags'
+      preLoaderRoute: typeof SpaceCommandTagsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/users': {
+      id: '/space-command/users'
+      path: '/users'
+      fullPath: '/space-command/users'
+      preLoaderRoute: typeof SpaceCommandUsersRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/store-locator/': {
+      id: '/store-locator/'
+      path: '/store-locator'
+      fullPath: '/store-locator/'
+      preLoaderRoute: typeof StoreLocatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wiki/': {
+      id: '/wiki/'
       path: '/wiki'
-      fullPath: '/space-command/wiki/'
-      preLoaderRoute: typeof SpaceCommandWikiIndexRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
+      fullPath: '/wiki/'
+      preLoaderRoute: typeof WikiIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/space-command/user-submissions/': {
-      id: '/space-command/user-submissions/'
-      path: '/user-submissions'
-      fullPath: '/space-command/user-submissions/'
-      preLoaderRoute: typeof SpaceCommandUserSubmissionsIndexRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/contact/': {
-      id: '/space-command/contact/'
-      path: '/contact'
-      fullPath: '/space-command/contact/'
-      preLoaderRoute: typeof SpaceCommandContactIndexRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/complaints/': {
-      id: '/space-command/complaints/'
-      path: '/complaints'
-      fullPath: '/space-command/complaints/'
-      preLoaderRoute: typeof SpaceCommandComplaintsIndexRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
+    '/profile/collections/$collectionId': {
+      id: '/profile/collections/$collectionId'
+      path: '/profile/collections/$collectionId'
+      fullPath: '/profile/collections/$collectionId'
+      preLoaderRoute: typeof ProfileCollectionsCollectionIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/profile/submit-pattern/': {
       id: '/profile/submit-pattern/'
@@ -1014,25 +986,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileSubmitPatternIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wiki/$categorySlug/$pageSlug': {
-      id: '/wiki/$categorySlug/$pageSlug'
-      path: '/wiki/$categorySlug/$pageSlug'
-      fullPath: '/wiki/$categorySlug/$pageSlug'
-      preLoaderRoute: typeof WikiCategorySlugPageSlugRouteImport
+    '/profile/submit-pattern/complete': {
+      id: '/profile/submit-pattern/complete'
+      path: '/profile/submit-pattern/complete'
+      fullPath: '/profile/submit-pattern/complete'
+      preLoaderRoute: typeof ProfileSubmitPatternCompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/space-command/user-submissions/processed': {
-      id: '/space-command/user-submissions/processed'
-      path: '/user-submissions/processed'
-      fullPath: '/space-command/user-submissions/processed'
-      preLoaderRoute: typeof SpaceCommandUserSubmissionsProcessedRouteImport
-      parentRoute: typeof SpaceCommandRouteRoute
-    }
-    '/space-command/contact/reviewed': {
-      id: '/space-command/contact/reviewed'
-      path: '/contact/reviewed'
-      fullPath: '/space-command/contact/reviewed'
-      preLoaderRoute: typeof SpaceCommandContactReviewedRouteImport
+    '/space-command/complaints/': {
+      id: '/space-command/complaints/'
+      path: '/complaints'
+      fullPath: '/space-command/complaints/'
+      preLoaderRoute: typeof SpaceCommandComplaintsIndexRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/complaints/reviewed': {
@@ -1042,18 +1007,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandComplaintsReviewedRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
-    '/profile/submit-pattern/complete': {
-      id: '/profile/submit-pattern/complete'
-      path: '/profile/submit-pattern/complete'
-      fullPath: '/profile/submit-pattern/complete'
-      preLoaderRoute: typeof ProfileSubmitPatternCompleteRouteImport
+    '/space-command/contact/': {
+      id: '/space-command/contact/'
+      path: '/contact'
+      fullPath: '/space-command/contact/'
+      preLoaderRoute: typeof SpaceCommandContactIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/contact/reviewed': {
+      id: '/space-command/contact/reviewed'
+      path: '/contact/reviewed'
+      fullPath: '/space-command/contact/reviewed'
+      preLoaderRoute: typeof SpaceCommandContactReviewedRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/user-submissions/': {
+      id: '/space-command/user-submissions/'
+      path: '/user-submissions'
+      fullPath: '/space-command/user-submissions/'
+      preLoaderRoute: typeof SpaceCommandUserSubmissionsIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/user-submissions/processed': {
+      id: '/space-command/user-submissions/processed'
+      path: '/user-submissions/processed'
+      fullPath: '/space-command/user-submissions/processed'
+      preLoaderRoute: typeof SpaceCommandUserSubmissionsProcessedRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/wiki/': {
+      id: '/space-command/wiki/'
+      path: '/wiki'
+      fullPath: '/space-command/wiki/'
+      preLoaderRoute: typeof SpaceCommandWikiIndexRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/wiki/$categorySlug/': {
+      id: '/wiki/$categorySlug/'
+      path: '/wiki/$categorySlug'
+      fullPath: '/wiki/$categorySlug/'
+      preLoaderRoute: typeof WikiCategorySlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/collections/$collectionId': {
-      id: '/profile/collections/$collectionId'
-      path: '/profile/collections/$collectionId'
-      fullPath: '/profile/collections/$collectionId'
-      preLoaderRoute: typeof ProfileCollectionsCollectionIdRouteImport
+    '/wiki/$categorySlug/$pageSlug': {
+      id: '/wiki/$categorySlug/$pageSlug'
+      path: '/wiki/$categorySlug/$pageSlug'
+      fullPath: '/wiki/$categorySlug/$pageSlug'
+      preLoaderRoute: typeof WikiCategorySlugPageSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/space-command/user-submissions/$id/review': {
