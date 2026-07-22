@@ -28,6 +28,7 @@ import {
   Checkbox,
   FormControlLabel,
 } from '@mui/material';
+import { generatePatternLink } from '@/functions/utilities/generate-pattern-link.ts';
 
 type AdminComplaintsModalProps = {
   open: boolean;
@@ -136,7 +137,9 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
 
           <Box>
             <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
-              {pattern?.name ?? props.complaint?.pattern_id}
+              <a href={generatePatternLink(pattern?.id || '')} target="_blank">
+                {pattern?.name ?? props.complaint?.pattern_id}
+              </a>
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ display: 'block' }}>
@@ -150,14 +153,20 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
             {props.complaint?.expand?.owner_id?.id && (
               <>
                 <Typography variant="body2" color="text.secondary">
-                  Authenticated User ID: {props.complaint?.expand?.owner_id?.id}
+                  User ID: {props.complaint?.expand?.owner_id?.id}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  Authenticated Username: {props.complaint?.expand?.owner_id?.name}
+                  Username: {props.complaint?.expand?.owner_id?.name}
                 </Typography>
               </>
             )}
+
+            <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
+              <a href={`/space-command/patterns?filter=id='${pattern?.id}'`} target="_blank">
+                View on the Admin Pattern Table
+              </a>
+            </Typography>
           </Box>
         </Box>
 
