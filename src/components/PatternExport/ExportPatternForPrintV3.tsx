@@ -222,6 +222,13 @@ export interface SinglePdfArgs {
 // (this panel's own "Download PDF" button, and the Quick Export wizard's
 // Printing/Saving-for-later flows) can decide whether to .save() it, extract
 // a Blob for the "Print Now" iframe flow, etc.
+//
+// Pure PDF-builder shared with ExportWizard.tsx and preparePdfExport.ts; it and buildTiledPdf
+// below are tightly coupled to this file's local constants/helpers (margins, DPI,
+// prepareSvgForPrint, svgToPng, addInstructionPages), so extracting them is a real refactor of
+// core print/export logic, not a mechanical move - not worth doing for a dev-only Fast Refresh
+// rule right before launch.
+// eslint-disable-next-line react-refresh/only-export-components
 export async function buildSinglePdf(a: SinglePdfArgs): Promise<jsPDF> {
   const fw = a.orientation === 'landscape' ? Math.max(a.pageWIn, a.pageHIn) : Math.min(a.pageWIn, a.pageHIn);
   const fh = a.orientation === 'landscape' ? Math.min(a.pageWIn, a.pageHIn) : Math.max(a.pageWIn, a.pageHIn);
@@ -276,6 +283,7 @@ export interface TiledPdfArgs {
   instructionsMarkdown: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- see buildSinglePdf above
 export async function buildTiledPdf(a: TiledPdfArgs): Promise<jsPDF> {
   // Each sheet: top + bottom margin, then pattern tile area, then optional gap + legend
   const tileW = TILE_SHEET_W - 2 * TILE_MARGIN;

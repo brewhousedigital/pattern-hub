@@ -70,7 +70,7 @@ export const AdminWikiCategoryModal = (props: AdminWikiCategoryModalProps) => {
       setOrder(String(props.category?.order ?? 0));
       setSlugTouched(isEdit);
     }
-  }, [props.open, props.category]);
+  }, [props.open, props.category, isEdit]);
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -212,7 +212,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
       setOrder(String(props.page?.order ?? 0));
       setSlugTouched(isEdit);
     }
-  }, [props.open, props.page, props.defaultCategoryId]);
+  }, [props.open, props.page, props.defaultCategoryId, isEdit]);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);

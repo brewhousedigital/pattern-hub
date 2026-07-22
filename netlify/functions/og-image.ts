@@ -34,7 +34,6 @@ function buildElement(
   subtitle: string,
   cta: string,
   fontSize: number,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   const row = (children: unknown[], style: Record<string, unknown> = {}) => ({
     type: 'div',

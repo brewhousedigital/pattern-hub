@@ -16,12 +16,8 @@ import {
   generateUserMobileHeaderUrl,
 } from '@/functions/utilities/generate-pb-image';
 import { sanitizeHex, extractYouTubeId } from '@/constants/profile-customization';
-import {
-  type CustomizationForm,
-  DEFAULT_CUSTOMIZATION,
-  SectionCard,
-  SectionTitle,
-} from '../../components/profile/_shared';
+import { type CustomizationForm, SectionCard, SectionTitle } from '../../components/profile/_shared';
+import { DEFAULT_CUSTOMIZATION } from '@/components/profile/default-customization.ts';
 import { ColorsSection } from '../../components/profile/ColorsSection';
 import { TypographySection } from '../../components/profile/TypographySection';
 import { MoodSection } from '../../components/profile/MoodSection';

@@ -959,7 +959,7 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, refetchHierarchy, log],
+    [queryClient, refetchHierarchy, log, setIsFetchingPatterns],
   );
 
   const startOp = useCallback(
@@ -974,7 +974,7 @@ const TagManagementPage = () => {
       setPendingOp({ type, tag, newTag, affectedCount: records.length, childTags });
       setIsFetchingPatterns(false);
     },
-    [hierarchy],
+    [hierarchy, setIsFetchingPatterns],
   );
 
   const startDeleteMany = useCallback(async (tags: string[]) => {
@@ -991,7 +991,7 @@ const TagManagementPage = () => {
     setPendingOp({ type: 'delete', tag: `${tags.length} tags`, affectedCount: total });
     (window as any).__pendingDeleteTags = tags;
     setIsFetchingPatterns(false);
-  }, []);
+  }, [setIsFetchingPatterns]);
 
   const confirmOp = useCallback(async () => {
     if (!pendingOp) return;
@@ -1119,7 +1119,7 @@ const TagManagementPage = () => {
     } finally {
       setIsFetchingPatterns(false);
     }
-  }, [hierarchy, queryClient, log]);
+  }, [hierarchy, queryClient, log, setIsFetchingPatterns]);
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);

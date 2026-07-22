@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
-import { BrowseSearchBar, type BrowseSortValue, applyBrowseSort } from '@/components/browse/BrowseSearchBar';
+import { BrowseSearchBar } from '@/components/browse/BrowseSearchBar';
+import { type BrowseSortValue, applyBrowseSort } from '@/components/browse/browse-sort';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { useGlobalAuthData } from '@/data/auth-data';
 import {

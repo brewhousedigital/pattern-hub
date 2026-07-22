@@ -1,4 +1,3 @@
-// @ts-ignore
 import sharp from 'sharp';
 
 const PB_URL = 'https://stained-glass.pockethost.io';
