@@ -44,7 +44,7 @@ const NAME_FONT_SIZE = 20;
 const NAME_LINE_H = 26; // line height for the pattern name rows
 
 function wrapText(text: string, maxWidth: number, fontSize: number, bold: boolean): string[] {
-  const avgCharW = fontSize * (bold ? 0.60 : 0.52);
+  const avgCharW = fontSize * (bold ? 0.6 : 0.52);
   const charsPerLine = Math.floor(maxWidth / avgCharW);
   const words = text.split(' ');
   const lines: string[] = [];
@@ -72,7 +72,7 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
 
   const statsBlockH = STAT_COUNT * STAT_ROW_H;
   const keysBlockH = input.keys.length * KEY_ROW_H;
-  let height = 100;
+  let height: number;
 
   // Recalculate height based on content
   if (input.isSmall) {
@@ -101,7 +101,7 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
   y += SUB_H + 6;
 
   // Stats - label : value pairs aligned in two columns
-  let stats: [string, string][] = [];
+  let stats: [string, string][];
 
   if (input.isSmall) {
     stats = [

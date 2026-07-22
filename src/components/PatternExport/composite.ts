@@ -111,7 +111,7 @@ async function buildCompositeSvgBlob(scaledPatternSvg: string, input: TypeCompos
   const patternInner = stripSvgWrapper(scaledPatternSvg);
 
   // Legend placed bottom-right of pattern area
-  let legendBlock = '';
+  const legendBlock = '';
 
   /*if (input.legend) {
     const lx = patternW - input.legend.width - LEGEND_MARGIN;

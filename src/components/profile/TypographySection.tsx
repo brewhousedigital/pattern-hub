@@ -1,7 +1,13 @@
 import React from 'react';
 import { Box, Chip, FormControlLabel, MenuItem, Select, Stack, Switch, Typography } from '@mui/material';
 import { alpha, keyframes } from '@mui/material/styles';
-import { PROFILE_FONTS, AVATAR_SHAPES, CURSOR_OPTIONS, NAME_EFFECTS, getAvatarShapeStyles } from '@/constants/profile-customization';
+import {
+  PROFILE_FONTS,
+  AVATAR_SHAPES,
+  CURSOR_OPTIONS,
+  NAME_EFFECTS,
+  getAvatarShapeStyles,
+} from '@/constants/profile-customization';
 import { SectionCard, SectionHeader, type SectionCustProps, type CustomizationForm } from './_shared';
 
 // ─── Keyframes (mirrors profile/index.tsx) ────────────────────────────────────
@@ -29,13 +35,13 @@ const TypographyPreview = ({ customization }: { customization: CustomizationForm
 
   const fontStack = customization.profile_font
     ? (PROFILE_FONTS.find((f) => f.value === customization.profile_font)?.cssStack ??
-       `'${customization.profile_font}', sans-serif`)
+      `'${customization.profile_font}', sans-serif`)
     : undefined;
 
   const avatarShapeSx = getAvatarShapeStyles(customization.profile_avatar_shape);
 
   // Name effect — mirrors profile page logic
-  let nameEffectSx: Record<string, unknown> = {};
+  let nameEffectSx: Record<string, unknown>;
   switch (customization.profile_name_effect) {
     case 'gradient':
       nameEffectSx = {
