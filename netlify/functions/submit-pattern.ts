@@ -3,7 +3,7 @@ import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sa
 
 const PB_URL = 'https://stained-glass.pockethost.io';
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
-const RATE_LIMIT_MS = 5_000; // one submission per 10 seconds per user
+const RATE_LIMIT_MS = 5_000; // one submission per 5 seconds per user
 const MAX_RASTER_DIMENSION = 3000; // preserve more resolution than the gallery pipeline - these get traced
 
 function jsonError(message: string, status: number) {

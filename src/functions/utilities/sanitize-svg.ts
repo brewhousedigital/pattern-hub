@@ -480,11 +480,6 @@ const normalizeSvgDimensions = async (svg: string): Promise<string> => {
   const newW = Math.max(vx + vw, maxX) - newX;
   const newH = Math.max(vy + vh, maxY) - newY;
 
-  console.log('1 before:', vbAttr);
-  console.log('1 bbox:', bbox);
-  console.log('1 stroke:', stroke);
-  console.log('1 after:', [newX, newY, newW, newH]);
-
   // Skip if no change (within 0.5 unit tolerance)
   const changed =
     Math.abs(newX - vx) > 0.5 || Math.abs(newY - vy) > 0.5 || Math.abs(newW - vw) > 0.5 || Math.abs(newH - vh) > 0.5;

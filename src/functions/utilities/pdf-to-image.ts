@@ -18,7 +18,8 @@ export async function convertPdfFirstPageToImageFile(file: File): Promise<File> 
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
   const buffer = await file.arrayBuffer();
-  const doc = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  const doc = await loadingTask.promise;
 
   try {
     if (doc.numPages > 1) {
@@ -48,6 +49,6 @@ export async function convertPdfFirstPageToImageFile(file: File): Promise<File> 
     const newName = file.name.replace(/\.[^.]+$/, '') + '.png';
     return new File([blob], newName, { type: 'image/png' });
   } finally {
-    await doc.destroy();
+    await loadingTask.destroy();
   }
 }
