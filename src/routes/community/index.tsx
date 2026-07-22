@@ -13,9 +13,58 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import CelebrationRoundedIcon from '@mui/icons-material/CelebrationRounded';
 import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRounded';
+import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 
 import { alpha, styled } from '@mui/material/styles';
 import { Box, Button, Chip, Container, Grid, Skeleton, Stack, Typography } from '@mui/material';
+
+// In no particular order - see WALL_OF_FAME.txt at the project root for the source list.
+const WALL_OF_FAME: { name: string; blurb: string }[] = [
+  {
+    name: 'Raine',
+    blurb:
+      'Vectorizing hundreds of patterns, providing dozens of their own patterns, helping us deal with Cricut and its stupidness while testing the vast majority of the site.',
+  },
+  {
+    name: 'Jog',
+    blurb: 'Helping dig through dozens of websites to collect patterns, vectorizing dozens of patterns and connecting with pattern authors.',
+  },
+  {
+    name: 'Axin',
+    blurb: 'Creating the site, dealing with all the mess we made and stepping into the great unknown of creating a project like this.',
+  },
+  {
+    name: 'KGlassPatterns',
+    blurb:
+      'Agreeing to be our first pattern author directly involved with the project, all the feedback on the author account pages and providing their entire pattern catalog (our first full catalog) for archiving.',
+  },
+  {
+    name: 'Kristin',
+    blurb: 'Vectorizing and helpful feedback on layouts of pages.',
+  },
+  {
+    name: 'Autumn',
+    blurb: 'Vectorizing, feedback on various elements and helping with vectorizing guidelines.',
+  },
+  {
+    name: 'Ollie',
+    blurb: 'Sharing with their local glass shop owner to get feedback and for helping out testing features.',
+  },
+  {
+    name: 'Alicia',
+    blurb: 'Helping test out the processes we use for vectorizing, worker tracking and vectorizing patterns.',
+  },
+  {
+    name: 'Frank & Crow',
+    blurb: 'Helping us decide how to try to fairly represent paid for patterns.',
+  },
+  {
+    name: 'Deejiraffe',
+    blurb: 'Connecting us with Axin for creating all of this while giving tons of feedback at every step of the process.',
+  },
+];
 
 export const Route = createFileRoute('/community/')({
   component: RouteComponent,
@@ -179,6 +228,61 @@ function RouteComponent() {
               />
             </Grid>
           </Grid>
+
+          {/* ─── Wall of Fame ─────────────────────────────────────────────── */}
+          <SectionHeading variant="h2">Wall of Fame!</SectionHeading>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <EmojiEventsRoundedIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+            <Typography color="text.secondary">
+              In no particular order - the community members who helped make Pattern Archive what it is.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={2}>
+            {WALL_OF_FAME.map((person) => (
+              <Grid size={{ xs: 12, sm: 6 }} key={person.name}>
+                <FameCard>
+                  <FameNameRow>
+                    <AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      {person.name}
+                    </Typography>
+                  </FameNameRow>
+                  <Typography variant="body2" color="text.secondary">
+                    {person.blurb}
+                  </Typography>
+                </FameCard>
+              </Grid>
+            ))}
+
+            <Grid size={{ xs: 12 }}>
+              <FameCard sx={{ textAlign: 'center' }}>
+                <FameNameRow sx={{ justifyContent: 'center' }}>
+                  <DiscordIcon style={{ fontSize: 18 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    The Stained Glass Discord
+                  </Typography>
+                </FameNameRow>
+                <Typography variant="body2" color="text.secondary">
+                  Everyone who jumped in whenever we needed extra eyes to check something out, give feedback, or test a
+                  feature.
+                </Typography>
+              </FameCard>
+            </Grid>
+          </Grid>
+
+          <ThankYouBanner>
+            <FavoriteRoundedIcon sx={{ color: 'primary.main', fontSize: 28, mb: 1 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: '1.05rem', mb: 0.5 }}>
+              Without these people this project wouldn't exist, wouldn't be this awesome, and wouldn't have all the
+              content it does.
+            </Typography>
+            <Typography color="text.secondary">
+              Thank you. You all should be extremely proud to know you've helped the glass community (and possibly
+              others!) in unmeasurable ways.
+            </Typography>
+          </ThankYouBanner>
         </Container>
       </PageWrapper>
     </GeneralLayout>
@@ -294,4 +398,35 @@ const TimeCapsuleImage = styled('img')(({ theme }) => ({
   borderRadius: 12,
   border: `1px solid ${theme.palette.divider}`,
   display: 'block',
+}));
+
+const FameCard = styled(Box)(({ theme }) => ({
+  height: '100%',
+  padding: theme.spacing(2.5),
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 12,
+  backgroundColor: theme.palette.background.paper,
+  transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[2],
+    borderColor: theme.palette.primary.main,
+  },
+}));
+
+const FameNameRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.75),
+  marginBottom: theme.spacing(0.75),
+  color: theme.palette.primary.main,
+}));
+
+const ThankYouBanner = styled(Box)(({ theme }) => ({
+  textAlign: 'center',
+  padding: theme.spacing(5, 3),
+  marginTop: theme.spacing(4),
+  borderRadius: 16,
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.06)}, ${alpha(theme.palette.primary.main, 0.02)})`,
 }));
