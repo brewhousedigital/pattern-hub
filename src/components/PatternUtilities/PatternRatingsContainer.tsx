@@ -21,7 +21,7 @@ import {
 import { useQueryGetPatternDrawerData, useInvalidateDrawerData } from '@/functions/database/pattern-drawer-data';
 
 import { alpha } from '@mui/material/styles';
-import { Box, Button, Typography, Rating, Chip, Stack } from '@mui/material';
+import { Box, Button, Typography, Rating, Chip, Stack, useMediaQuery } from '@mui/material';
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import { getDifficultyInfo, toScale10, toRatingValue as toRatingVal } from '@/functions/utilities/difficulty';
@@ -34,6 +34,12 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
 
   const [userStarRating, setUserStarRating] = useState<number | null>(0);
   const [diffHover, setDiffHover] = useState(-1);
+
+  // Half-star precision relies on hover preview to place a tap accurately - fine with a
+  // mouse, a guessing game with a fingertip. Coarsen to whole steps for touch input;
+  // checking pointer precision rather than viewport width so a touch-capable laptop
+  // with a trackpad (fine pointer) still gets the desktop behavior.
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)');
 
   const patternId = viewData?.id || '';
   const userId = authData?.id || '';
@@ -214,9 +220,11 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mb: 2.5 }}>
             <Rating
               precision={1}
+              size={isCoarsePointer ? 'large' : 'medium'}
               value={userStarRating}
               onChange={handleStarChange}
               sx={{
+                fontSize: isCoarsePointer ? '2.5rem' : undefined,
                 '& .MuiRating-iconFilled': { color: 'primary.main' },
                 '& .MuiRating-iconHover': { color: '#DDB97E' },
                 '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
@@ -239,9 +247,14 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
           <SectionLabel>Your Difficulty</SectionLabel>
 
           <Box sx={{ mb: 0 }}>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }} spacing={1.5}>
+            <Stack
+              direction={isCoarsePointer ? 'column' : 'row'}
+              sx={{ alignItems: isCoarsePointer ? 'flex-start' : 'center', justifyContent: 'space-between' }}
+              spacing={isCoarsePointer ? 0.75 : 1.5}
+            >
               <Rating
-                precision={0.5}
+                precision={isCoarsePointer ? 1 : 0.5}
+                size={isCoarsePointer ? 'large' : 'medium'}
                 value={userDifficultyVal}
                 onChange={handleDifficultyChange}
                 onChangeActive={(_, newHover) => setDiffHover(newHover)}
@@ -252,6 +265,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                 icon={<BrokenImageOutlinedIcon fontSize="inherit" />}
                 emptyIcon={<BrokenImageOutlinedIcon fontSize="inherit" />}
                 sx={{
+                  fontSize: isCoarsePointer ? '2.5rem' : undefined,
                   '& .MuiRating-iconFilled': { color: activeDiffInfo?.hex ?? 'primary.main' },
                   '& .MuiRating-iconHover': { color: activeDiffInfo?.hex ?? 'primary.main' },
                   '& .MuiRating-iconEmpty': { color: alpha('#888888', 0.35) },
@@ -264,8 +278,8 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                   sx={{
                     fontWeight: 600,
                     color: activeDiffInfo?.hex ?? 'text.secondary',
-                    minWidth: 90,
-                    textAlign: 'right',
+                    minWidth: isCoarsePointer ? undefined : 90,
+                    textAlign: isCoarsePointer ? 'left' : 'right',
                   }}
                 >
                   {activeDiffLabel}
