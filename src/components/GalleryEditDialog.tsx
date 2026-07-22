@@ -63,7 +63,7 @@ export const GalleryEditDialog = (props: GalleryEditDialogProps) => {
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = React.useState('');
-  const formOpenTime = React.useRef(Date.now());
+  const formOpenTime = React.useRef<number>(0);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();

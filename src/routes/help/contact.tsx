@@ -32,9 +32,13 @@ function RouteComponent() {
   const turnstileRef = React.useRef<TurnstileInstance>(null);
   const [honeypot, setHoneypot] = useState('');
 
-  const formOpenTime = React.useRef(Date.now());
+  const formOpenTime = React.useRef(0);
 
   const { authData } = useGlobalAuthData();
+
+  React.useEffect(() => {
+    formOpenTime.current = Date.now();
+  }, []);
 
   React.useEffect(() => {
     if (authData?.email) {

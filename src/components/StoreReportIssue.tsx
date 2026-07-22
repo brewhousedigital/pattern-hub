@@ -61,11 +61,12 @@ export const StoreReportIssue = ({ store }: StoreReportIssueProps) => {
     if (isOpen) formOpenTime.current = Date.now();
   }, [isOpen]);
 
-  const isInCooldown = React.useMemo(() => {
+  // Check cooldown on mount - lazy initializer so it only reads localStorage once
+  const [isInCooldown] = React.useState(() => {
     if (typeof window === 'undefined') return false; // SSR - no localStorage
     const last = localStorage.getItem(COOLDOWN_KEY);
     return !!(last && Date.now() - parseInt(last) < COOLDOWN_MS);
-  }, []);
+  });
 
   React.useEffect(() => {
     if (authData?.email) setEmail(authData.email);
