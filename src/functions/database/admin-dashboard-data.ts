@@ -3,12 +3,13 @@ import { pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useAuthorizationHeaders } from '@/functions/database/useAuthorizationHeaders';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
-// Consolidates the 3 sidebar-badge lookups AdminLayout fires on every single
-// space-command page into one request instead of 3.
+// Consolidates the 4 sidebar-badge lookups AdminLayout fires on every single
+// space-command page into one request instead of 4.
 export type TypeAdminNavBadges = {
   complaints: number;
   contentReports: number;
   contactSubmissions: number;
+  userSubmissions: number;
 };
 
 export const useQueryGetAdminNavBadges = () => {

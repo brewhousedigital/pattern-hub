@@ -737,7 +737,7 @@ routerAdd('GET', '/api/profile-data', (c) => {
   }
 });
 
-// Consolidates the 3 sidebar-badge lookups the admin layout fires on every
+// Consolidates the 4 sidebar-badge lookups the admin layout fires on every
 // single space-command page into one call.
 routerAdd(
   'GET',
@@ -761,6 +761,7 @@ routerAdd(
       complaints: countRows('complaints', "reviewed = 0 AND pattern_id != ''"),
       contentReports: countRows('content_reports', 'reviewed = 0'),
       contactSubmissions: countRows('contact_submissions', 'reviewed = 0'),
+      userSubmissions: countRows('user_submitted_patterns', 'hidden = 0'),
     });
   },
   $apis.requireAuth('admins'),

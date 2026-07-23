@@ -91,6 +91,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/user-submissions',
           icon: <UploadFileRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.USER_SUBMIT_AR,
+          badge: badgesData?.userSubmissions,
         },
       ],
     },
