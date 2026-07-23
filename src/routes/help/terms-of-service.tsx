@@ -138,14 +138,14 @@ const sections: TosSection[] = [
     title: 'Pattern Use',
     body: (
       <>
-        Pattern Archive does not have restrictions on how you use the downloadable patterns available through this
-        service. Some patterns may still be protected by other copyright holders though.
+        Pattern Archive does not restrict how you use downloaded patterns, and we cannot legally police the use of the
+        files. However, we operate on a community honor system expecting the patterns to be used for art purposes.
         <br />
         <br />
-        External Source Patterns follow the terms and copyright policies set by their original creators. We include them
-        here to make them easier to discover, and when possible, we display images from the source location you are
-        linked to which may change at any time outside of Pattern Archive's control. Because these patterns come from
-        other platforms, their availability and pricing are determined solely by the provider, not by Pattern Archive.
+        External Source Patterns follow the terms and policies set at their source. We include them here to make them
+        easier to discover, and when possible, we display images from the source location you are linked to, which may
+        change at any time outside of Pattern Archive's control. As these patterns come from other platforms, their
+        availability and pricing are determined solely by the provider, not by Pattern Archive.
       </>
     ),
   },
