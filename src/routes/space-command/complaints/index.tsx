@@ -153,9 +153,11 @@ function RouteComponent() {
                                   {pattern?.name ?? '-'}
                                 </Typography>
                               </a>
-                              <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
-                                {complaint?.pattern_id}
-                              </Typography>
+                              <a href={`/space-command/patterns?filter=id='${pattern?.id}'`} target="_blank">
+                                <Typography color="text.disabled" sx={{ fontSize: 11, fontFamily: 'monospace' }}>
+                                  Admin Search for ID: {complaint?.pattern_id}
+                                </Typography>
+                              </a>
                             </Box>
                           </Box>
                         </TableCell>
