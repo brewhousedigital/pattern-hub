@@ -1,5 +1,11 @@
 import dayjs, { type Dayjs } from 'dayjs';
 
+// PocketBase returns UTC timestamps as "YYYY-MM-DD HH:mm:ss.SSSZ" (space-separated,
+// not the 'T' ISO-8601 separator) - Safari/Firefox reject that form, so normalize
+// before handing it to dayjs/Date. Shared by createPrettyDate below and anything
+// that needs the parsed value itself (e.g. bucketing records by day/month/year).
+export const parsePbDate = (date: string): Dayjs => dayjs(date.replace(' ', 'T'));
+
 export const createPrettyDate = (date: string | Date | Dayjs) => {
   if (!date) {
     return 'No Date Selected';

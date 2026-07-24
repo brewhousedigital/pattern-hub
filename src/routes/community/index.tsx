@@ -2,6 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { useQueryGetPublicSiteStats } from '@/functions/database/site-stats';
+import {
+  bucketPublicStatsByPeriod,
+  computeGrowthSeries,
+  useQueryGetPublicDatabaseStatsHistory,
+} from '@/functions/database/database-stats';
+import { TrendChartCard } from '@/components/charts/TrendChartCard';
 import { COMMUNITY_BANNERS, type CommunityBanner } from '@/constants/community-banners';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import { DOMAIN_URL, DISCORD_SERVER_LINK, REDDIT_LINK } from '@/data/constants';
@@ -16,6 +22,8 @@ import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRou
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 
 import { alpha, styled } from '@mui/material/styles';
 import { Box, Button, Chip, Container, Grid, Skeleton, Stack, Typography } from '@mui/material';
@@ -79,6 +87,13 @@ export const Route = createFileRoute('/community/')({
 
 function RouteComponent() {
   const { data: stats, isPending: statsPending } = useQueryGetPublicSiteStats();
+  const { data: statsHistory } = useQueryGetPublicDatabaseStatsHistory();
+
+  // Monthly, not weekly - a year+ of raw weekly points would be too dense for
+  // a simple public-facing chart. Admin's page exposes the full period/year
+  // picker; this is a fixed, simpler view for a general audience.
+  const monthlyBuckets = bucketPublicStatsByPeriod(statsHistory ?? [], 'monthly');
+  const memberGrowthSeries = computeGrowthSeries(monthlyBuckets, (s) => s.total_users);
 
   return (
     <GeneralLayout>
@@ -142,6 +157,36 @@ function RouteComponent() {
               </StatCard>
             </Grid>
           </Grid>
+
+          {/* ─── Growing Together ─────────────────────────────────────────── */}
+          {monthlyBuckets.length >= 2 && (
+            <>
+              <SectionHeading variant="h2">Growing Together</SectionHeading>
+
+              <Typography color="text.secondary" sx={{ mb: 3 }}>
+                A look at how the community has grown over time, updated weekly.
+              </Typography>
+
+              <Grid container spacing={2} sx={{ mb: 16 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TrendChartCard
+                    title="Members Over Time"
+                    icon={<PeopleRoundedIcon sx={{ fontSize: 18 }} />}
+                    points={monthlyBuckets.map((b) => ({ label: b.label, value: b.snapshot.total_users }))}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TrendChartCard
+                    title="Member Growth %"
+                    icon={<TrendingUpRoundedIcon sx={{ fontSize: 18 }} />}
+                    points={memberGrowthSeries}
+                    colorMode="status"
+                    valueFormatter={(v) => (v === null ? 'N/A' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`)}
+                  />
+                </Grid>
+              </Grid>
+            </>
+          )}
 
           {/* ─── Banners & Graphics ───────────────────────────────────────── */}
           <SectionHeading variant="h2">Banners &amp; Graphics</SectionHeading>

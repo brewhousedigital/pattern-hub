@@ -909,6 +909,360 @@ routerAdd(
   $apis.requireAuth('admins'),
 );
 
+// ─── Database stats snapshots ──────────────────────────────────────────────
+//
+// Weekly historical record of site-wide metrics for the admin "Database
+// Stats" page and a curated public subset on /community. Unlike the small
+// helpers above (duplicated per-route by convention since they're ~10 lines
+// each), this computation runs 15+ queries and must stay byte-identical
+// between the cron trigger and the manual "Run snapshot now" button, so it's
+// defined once here instead of copy-pasted across two routes.
+
+// An external cron service (netlify/functions/sync-database-stats.ts) sends a
+// POST to /api/sync-database-stats with the X-Sync-Key header, once a week,
+// to record a new snapshot. Mirrors /api/sync-aggregates' auth exactly.
+routerAdd('POST', '/api/sync-database-stats', (c) => {
+  function computeDatabaseStatsSnapshot() {
+    function countRows(table, whereSQL, params) {
+      try {
+        const rows = arrayOf(new DynamicModel({ count: 0 }));
+        $app
+          .db()
+          .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+          .bind(params || {})
+          .all(rows);
+        return parseInt(rows[0]?.count || 0, 10);
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function avgField(table, field, whereSQL, params) {
+      try {
+        const rows = arrayOf(new DynamicModel({ avg: 0 }));
+        $app
+          .db()
+          .newQuery('SELECT AVG(' + field + ') as avg FROM ' + table + ' WHERE ' + whereSQL)
+          .bind(params || {})
+          .all(rows);
+        return parseFloat(rows[0]?.avg || 0);
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    // Matches PocketBase's own stored `created` format ("YYYY-MM-DD HH:mm:ss.SSSZ")
+    // so the trailing-7-day filters below compare like-for-like.
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
+
+    const exportsByHour = new Array(24).fill(0);
+    try {
+      const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          "SELECT strftime('%H', created) AS bucket, COUNT(*) AS count FROM analytics_exports " +
+            'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+        )
+        .bind({ cutoff })
+        .all(rows);
+      for (let i = 0; i < rows.length; i++) {
+        const idx = parseInt(rows[i].bucket, 10);
+        if (idx >= 0 && idx < 24) exportsByHour[idx] = parseInt(rows[i].count, 10) || 0;
+      }
+    } catch (_) {}
+
+    const exportsByWeekday = new Array(7).fill(0);
+    try {
+      const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          "SELECT strftime('%w', created) AS bucket, COUNT(*) AS count FROM analytics_exports " +
+            'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+        )
+        .bind({ cutoff })
+        .all(rows);
+      for (let i = 0; i < rows.length; i++) {
+        const idx = parseInt(rows[i].bucket, 10);
+        if (idx >= 0 && idx < 7) exportsByWeekday[idx] = parseInt(rows[i].count, 10) || 0;
+      }
+    } catch (_) {}
+
+    const exportsByFileType = { pdf: 0, png: 0, jpg: 0, webp: 0, svg: 0 };
+    try {
+      const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT file_type AS bucket, COUNT(*) AS count FROM analytics_exports ' +
+            'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+        )
+        .bind({ cutoff })
+        .all(rows);
+      for (let i = 0; i < rows.length; i++) {
+        const key = rows[i].bucket;
+        if (Object.prototype.hasOwnProperty.call(exportsByFileType, key)) {
+          exportsByFileType[key] = parseInt(rows[i].count, 10) || 0;
+        }
+      }
+    } catch (_) {}
+
+    const exportsByFlow = {
+      cricut: 0,
+      'craft cutter': 0,
+      printing: 0,
+      'saving for later': 0,
+      editing: 0,
+      generic: 0,
+    };
+    try {
+      const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT flow AS bucket, COUNT(*) AS count FROM analytics_exports ' +
+            'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+        )
+        .bind({ cutoff })
+        .all(rows);
+      for (let i = 0; i < rows.length; i++) {
+        const key = rows[i].bucket;
+        if (Object.prototype.hasOwnProperty.call(exportsByFlow, key)) {
+          exportsByFlow[key] = parseInt(rows[i].count, 10) || 0;
+        }
+      }
+    } catch (_) {}
+
+    return {
+      total_patterns: countRows('patterns', 'isDeleted = 0'),
+      published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
+      draft_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 1'),
+      total_tags: countRows('tags', "id != ''"),
+      total_users: countRows('users', "id != ''"),
+      verified_users: countRows('users', 'verified = 1'),
+      artist_users: countRows('users', 'is_artist = 1'),
+      total_marked_done: countRows('user_marked_done', "id != ''"),
+      total_exports: countRows('analytics_exports', "id != ''"),
+      total_user_submissions: countRows('user_submitted_patterns', "id != ''"),
+      total_pattern_sets: countRows('pattern_sets', "id != ''"),
+      total_store_locations: countRows('store_locations', "id != ''"),
+      new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+      new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
+        cutoff,
+      }),
+      new_exports_7d: countRows('analytics_exports', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+      new_marked_done_7d: countRows('user_marked_done', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+      new_user_submissions_7d: countRows('user_submitted_patterns', 'datetime(created) >= datetime({:cutoff})', {
+        cutoff,
+      }),
+      // Never-rated patterns store avg_rating/avg_difficulty as 0 (see
+      // /api/sync-aggregates above) - excluding them keeps the average honest
+      // instead of dragging it toward 0 as the unrated backlog grows.
+      avg_pattern_rating: avgField('patterns', 'avg_rating', 'isDeleted = 0 AND avg_rating > 0'),
+      avg_pattern_difficulty: avgField('patterns', 'avg_difficulty', 'isDeleted = 0 AND avg_difficulty > 0'),
+      // Trailing-7-day windows (not all-time cumulative) so each weekly snapshot
+      // is a genuine week-over-week comparison instead of a slow-moving average
+      // diluted by months of history.
+      exports_by_hour_7d: exportsByHour,
+      exports_by_weekday_7d: exportsByWeekday,
+      exports_by_file_type_7d: exportsByFileType,
+      exports_by_flow_7d: exportsByFlow,
+    };
+  }
+
+  function saveDatabaseStatsSnapshot() {
+    const collection = $app.findCollectionByNameOrId('database_stats_snapshots');
+    const record = new Record(collection, computeDatabaseStatsSnapshot());
+    $app.save(record);
+    return record;
+  }
+
+  try {
+    const apiKey = c.request.header.get('X-Sync-Key');
+    if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
+      return c.json(401, { error: 'unauthorized' });
+    }
+    const record = saveDatabaseStatsSnapshot();
+    return c.json(200, { ok: true, id: record.id });
+  } catch (error) {
+    console.log('>>>sync-database-stats error', error?.message);
+    return c.json(500, { error: 'something went wrong', message: error?.message });
+  }
+});
+
+// Admin-triggered "Run snapshot now" button (DB_STATS_AC-gated client-side).
+routerAdd(
+  'POST',
+  '/api/admin-run-database-stats-snapshot',
+  (c) => {
+    function computeDatabaseStatsSnapshot() {
+      function countRows(table, whereSQL, params) {
+        try {
+          const rows = arrayOf(new DynamicModel({ count: 0 }));
+          $app
+            .db()
+            .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+            .bind(params || {})
+            .all(rows);
+          return parseInt(rows[0]?.count || 0, 10);
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function avgField(table, field, whereSQL, params) {
+        try {
+          const rows = arrayOf(new DynamicModel({ avg: 0 }));
+          $app
+            .db()
+            .newQuery('SELECT AVG(' + field + ') as avg FROM ' + table + ' WHERE ' + whereSQL)
+            .bind(params || {})
+            .all(rows);
+          return parseFloat(rows[0]?.avg || 0);
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      // Matches PocketBase's own stored `created` format ("YYYY-MM-DD HH:mm:ss.SSSZ")
+      // so the trailing-7-day filters below compare like-for-like.
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
+
+      const exportsByHour = new Array(24).fill(0);
+      try {
+        const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            "SELECT strftime('%H', created) AS bucket, COUNT(*) AS count FROM analytics_exports " +
+              'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+          )
+          .bind({ cutoff })
+          .all(rows);
+        for (let i = 0; i < rows.length; i++) {
+          const idx = parseInt(rows[i].bucket, 10);
+          if (idx >= 0 && idx < 24) exportsByHour[idx] = parseInt(rows[i].count, 10) || 0;
+        }
+      } catch (_) {}
+
+      const exportsByWeekday = new Array(7).fill(0);
+      try {
+        const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            "SELECT strftime('%w', created) AS bucket, COUNT(*) AS count FROM analytics_exports " +
+              'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+          )
+          .bind({ cutoff })
+          .all(rows);
+        for (let i = 0; i < rows.length; i++) {
+          const idx = parseInt(rows[i].bucket, 10);
+          if (idx >= 0 && idx < 7) exportsByWeekday[idx] = parseInt(rows[i].count, 10) || 0;
+        }
+      } catch (_) {}
+
+      const exportsByFileType = { pdf: 0, png: 0, jpg: 0, webp: 0, svg: 0 };
+      try {
+        const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            'SELECT file_type AS bucket, COUNT(*) AS count FROM analytics_exports ' +
+              'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+          )
+          .bind({ cutoff })
+          .all(rows);
+        for (let i = 0; i < rows.length; i++) {
+          const key = rows[i].bucket;
+          if (Object.prototype.hasOwnProperty.call(exportsByFileType, key)) {
+            exportsByFileType[key] = parseInt(rows[i].count, 10) || 0;
+          }
+        }
+      } catch (_) {}
+
+      const exportsByFlow = {
+        cricut: 0,
+        'craft cutter': 0,
+        printing: 0,
+        'saving for later': 0,
+        editing: 0,
+        generic: 0,
+      };
+      try {
+        const rows = arrayOf(new DynamicModel({ bucket: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            'SELECT flow AS bucket, COUNT(*) AS count FROM analytics_exports ' +
+              'WHERE datetime(created) >= datetime({:cutoff}) GROUP BY bucket',
+          )
+          .bind({ cutoff })
+          .all(rows);
+        for (let i = 0; i < rows.length; i++) {
+          const key = rows[i].bucket;
+          if (Object.prototype.hasOwnProperty.call(exportsByFlow, key)) {
+            exportsByFlow[key] = parseInt(rows[i].count, 10) || 0;
+          }
+        }
+      } catch (_) {}
+
+      return {
+        total_patterns: countRows('patterns', 'isDeleted = 0'),
+        published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
+        draft_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 1'),
+        total_tags: countRows('tags', "id != ''"),
+        total_users: countRows('users', "id != ''"),
+        verified_users: countRows('users', 'verified = 1'),
+        artist_users: countRows('users', 'is_artist = 1'),
+        total_marked_done: countRows('user_marked_done', "id != ''"),
+        total_exports: countRows('analytics_exports', "id != ''"),
+        total_user_submissions: countRows('user_submitted_patterns', "id != ''"),
+        total_pattern_sets: countRows('pattern_sets', "id != ''"),
+        total_store_locations: countRows('store_locations', "id != ''"),
+        new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+        new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
+          cutoff,
+        }),
+        new_exports_7d: countRows('analytics_exports', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+        new_marked_done_7d: countRows('user_marked_done', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
+        new_user_submissions_7d: countRows('user_submitted_patterns', 'datetime(created) >= datetime({:cutoff})', {
+          cutoff,
+        }),
+        // Never-rated patterns store avg_rating/avg_difficulty as 0 (see
+        // /api/sync-aggregates above) - excluding them keeps the average honest
+        // instead of dragging it toward 0 as the unrated backlog grows.
+        avg_pattern_rating: avgField('patterns', 'avg_rating', 'isDeleted = 0 AND avg_rating > 0'),
+        avg_pattern_difficulty: avgField('patterns', 'avg_difficulty', 'isDeleted = 0 AND avg_difficulty > 0'),
+        // Trailing-7-day windows (not all-time cumulative) so each weekly snapshot
+        // is a genuine week-over-week comparison instead of a slow-moving average
+        // diluted by months of history.
+        exports_by_hour_7d: exportsByHour,
+        exports_by_weekday_7d: exportsByWeekday,
+        exports_by_file_type_7d: exportsByFileType,
+        exports_by_flow_7d: exportsByFlow,
+      };
+    }
+
+    function saveDatabaseStatsSnapshot() {
+      const collection = $app.findCollectionByNameOrId('database_stats_snapshots');
+      const record = new Record(collection, computeDatabaseStatsSnapshot());
+      $app.save(record);
+      return record;
+    }
+
+    try {
+      const record = saveDatabaseStatsSnapshot();
+      return c.json(200, { ok: true, id: record.id });
+    } catch (error) {
+      console.log('>>>admin-run-database-stats-snapshot error', error?.message);
+      return c.json(500, { error: 'something went wrong', message: error?.message });
+    }
+  },
+  $apis.requireAuth('admins'),
+);
+
 // Public, unauthenticated aggregate counts for the /community page's stats strip.
 // Intentionally minimal - just enough for a "join N members, browse M patterns"
 // blurb, nothing sensitive.
@@ -931,6 +1285,25 @@ routerAdd('GET', '/api/public-site-stats', (c) => {
     members: countRows('users', "id != ''"),
     tags: countRows('tags', "id != ''"),
   });
+});
+
+// Public, unauthenticated curated history for the /community page's growth
+// charts - same "hand-picked non-sensitive projection" shape as
+// /api/public-site-stats just above. The full snapshot (export breakdowns,
+// ratings, etc.) stays admin-only behind database_stats_snapshots' List rule.
+routerAdd('GET', '/api/public-database-stats-history', (c) => {
+  try {
+    const records = $app.findRecordsByFilter('database_stats_snapshots', "id != ''", 'created', 0, 0);
+    const items = records.map((r) => ({
+      created: r.getString('created'),
+      total_patterns: r.getInt('total_patterns'),
+      total_users: r.getInt('total_users'),
+      total_tags: r.getInt('total_tags'),
+    }));
+    return c.json(200, { items });
+  } catch (error) {
+    return c.json(500, { error: 'failed to load stats history' });
+  }
 });
 
 onRecordAfterCreateSuccess((e) => {

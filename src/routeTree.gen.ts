@@ -34,6 +34,7 @@ import { Route as SetsIndexRouteImport } from './routes/sets/index'
 import { Route as SetsSetIdRouteImport } from './routes/sets/$setId'
 import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/index'
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
+import { Route as SpaceCommandDatabaseStatsRouteImport } from './routes/space-command/database-stats'
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
 import { Route as SpaceCommandLearningResourcesRouteImport } from './routes/space-command/learning-resources'
@@ -187,6 +188,12 @@ const SpaceCommandAdminsRoute = SpaceCommandAdminsRouteImport.update({
   path: '/admins',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandDatabaseStatsRoute =
+  SpaceCommandDatabaseStatsRouteImport.update({
+    id: '/database-stats',
+    path: '/database-stats',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandFaqRoute = SpaceCommandFaqRouteImport.update({
   id: '/faq',
   path: '/faq',
@@ -357,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
+  '/space-command/database-stats': typeof SpaceCommandDatabaseStatsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
@@ -410,6 +418,7 @@ export interface FileRoutesByTo {
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
+  '/space-command/database-stats': typeof SpaceCommandDatabaseStatsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
@@ -465,6 +474,7 @@ export interface FileRoutesById {
   '/profile/edit': typeof ProfileEditRoute
   '/sets/$setId': typeof SetsSetIdRoute
   '/space-command/admins': typeof SpaceCommandAdminsRoute
+  '/space-command/database-stats': typeof SpaceCommandDatabaseStatsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
   '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
+    | '/space-command/database-stats'
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/learning-resources'
@@ -574,6 +585,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
+    | '/space-command/database-stats'
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/learning-resources'
@@ -628,6 +640,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/sets/$setId'
     | '/space-command/admins'
+    | '/space-command/database-stats'
     | '/space-command/faq'
     | '/space-command/kanban'
     | '/space-command/learning-resources'
@@ -874,6 +887,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandAdminsRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/database-stats': {
+      id: '/space-command/database-stats'
+      path: '/database-stats'
+      fullPath: '/space-command/database-stats'
+      preLoaderRoute: typeof SpaceCommandDatabaseStatsRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/faq': {
       id: '/space-command/faq'
       path: '/faq'
@@ -1068,6 +1088,7 @@ declare module '@tanstack/react-router' {
 
 interface SpaceCommandRouteRouteChildren {
   SpaceCommandAdminsRoute: typeof SpaceCommandAdminsRoute
+  SpaceCommandDatabaseStatsRoute: typeof SpaceCommandDatabaseStatsRoute
   SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
   SpaceCommandKanbanRoute: typeof SpaceCommandKanbanRoute
   SpaceCommandLearningResourcesRoute: typeof SpaceCommandLearningResourcesRoute
@@ -1093,6 +1114,7 @@ interface SpaceCommandRouteRouteChildren {
 
 const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandAdminsRoute: SpaceCommandAdminsRoute,
+  SpaceCommandDatabaseStatsRoute: SpaceCommandDatabaseStatsRoute,
   SpaceCommandFaqRoute: SpaceCommandFaqRoute,
   SpaceCommandKanbanRoute: SpaceCommandKanbanRoute,
   SpaceCommandLearningResourcesRoute: SpaceCommandLearningResourcesRoute,

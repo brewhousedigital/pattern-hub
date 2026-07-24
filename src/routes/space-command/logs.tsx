@@ -51,6 +51,7 @@ const ENTITY_TYPES = [
   'Contact Submission',
   'Content Report',
   'User Submission',
+  'Database Stats',
 ];
 
 function RouteComponent() {

@@ -29,6 +29,7 @@ import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
+import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import {
@@ -188,6 +189,12 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           href: '/space-command/logs',
           icon: <HistoryRoundedIcon fontSize="small" />,
           view: EnumLevelsAdmin.LOGS_VIEW_AR,
+        },
+        {
+          label: 'Database Stats',
+          href: '/space-command/database-stats',
+          icon: <InsightsRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.DB_STATS_AR,
         },
       ],
     },
