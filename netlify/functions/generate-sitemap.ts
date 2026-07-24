@@ -63,6 +63,7 @@ const STATIC_URLS: SitemapUrl[] = [
   { loc: `${SITE_URL}/pattern/`, changefreq: 'daily', priority: '0.9' },
   { loc: `${SITE_URL}/sets/`, changefreq: 'weekly', priority: '0.8' },
   { loc: `${SITE_URL}/wiki/`, changefreq: 'weekly', priority: '0.8' },
+  { loc: `${SITE_URL}/learning-resources/`, changefreq: 'weekly', priority: '0.7' },
   { loc: `${SITE_URL}/guides/`, changefreq: 'weekly', priority: '0.7' },
   { loc: `${SITE_URL}/store-locator/`, changefreq: 'monthly', priority: '0.6' },
   { loc: `${SITE_URL}/help/about`, changefreq: 'monthly', priority: '0.5' },

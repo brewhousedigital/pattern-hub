@@ -141,7 +141,7 @@ const ExtraLinks = ({ centered = false }: { centered?: boolean }) => {
         Sets
       </MuiLink>
 
-      {/*<MuiLink component={Link} to="/guides" sx={activeLinkStyles('/guides')}>
+      {/*<MuiLink component={Link} to="/learning-resources" sx={activeLinkStyles('/learning-resources')}>
         Guides
       </MuiLink>*/}
 

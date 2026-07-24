@@ -68,7 +68,11 @@ export type TypeLevelsAdmin =
   | 'USER_SUBMIT_AR'
   | 'USER_SUBMIT_AU'
   | 'USER_SUBMIT_AD'
-  | 'LOGS_VIEW_AR';
+  | 'LOGS_VIEW_AR'
+  | 'LEARN_AC'
+  | 'LEARN_AR'
+  | 'LEARN_AU'
+  | 'LEARN_AD';
 
 // NAME_TYPE_CRUD
 // A - Admin
@@ -132,6 +136,10 @@ export const EnumLevelsAdmin = {
   USER_SUBMIT_AU: 'USER_SUBMIT_AU',
   USER_SUBMIT_AD: 'USER_SUBMIT_AD',
   LOGS_VIEW_AR: 'LOGS_VIEW_AR',
+  LEARN_AC: 'LEARN_AC',
+  LEARN_AR: 'LEARN_AR',
+  LEARN_AU: 'LEARN_AU',
+  LEARN_AD: 'LEARN_AD',
 } as const;
 
 // This is the data from the pocketbase user and admin table

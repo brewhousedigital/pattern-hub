@@ -106,24 +106,24 @@ export const Footer = () => {
             <Stack spacing={1} sx={{ mb: { xs: 4, md: 0 } }}>
               <SectionLabel>Explore</SectionLabel>
 
-              {/*<MuiLink component={Link} to="/collections" sx={subLinkStyles}>
-                Collections
-              </MuiLink>*/}
-
-              {/*<MuiLink component={Link} to="/guides" sx={subLinkStyles}>
-                Guides
-              </MuiLink>*/}
-
               <MuiLink component={Link} to="/help/faq" sx={subLinkStyles}>
                 FAQ
               </MuiLink>
 
-              <MuiLink component={Link} to="/wiki" sx={subLinkStyles}>
-                Wiki
-              </MuiLink>
+              {/*<MuiLink component={Link} to="/learning-resources" sx={subLinkStyles}>
+                Guides
+              </MuiLink>*/}
 
               <MuiLink component={Link} to="/sets" sx={subLinkStyles}>
                 Sets
+              </MuiLink>
+
+              {/*<MuiLink component={Link} to="/store-locator" sx={subLinkStyles}>
+                Store Locator
+              </MuiLink>*/}
+
+              <MuiLink component={Link} to="/wiki" sx={subLinkStyles}>
+                Wiki
               </MuiLink>
             </Stack>
           </Grid>
@@ -131,10 +131,6 @@ export const Footer = () => {
           <Grid size={{ xs: 12, md: 3 }}>
             <Stack spacing={1} sx={{ mb: { xs: 4, md: 0 } }}>
               <SectionLabel>Helpful Links</SectionLabel>
-
-              {/*<MuiLink component={Link} to="/help/about" sx={subLinkStyles}>
-                About
-              </MuiLink>*/}
 
               <MuiLink component={Link} to="/community" sx={subLinkStyles}>
                 Community

@@ -18,12 +18,11 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthorsSlugRouteImport } from './routes/authors/$slug'
 import { Route as CommunityIndexRouteImport } from './routes/community/index'
-import { Route as GuidesIndexRouteImport } from './routes/guides/index'
-import { Route as HelpAboutRouteImport } from './routes/help/about'
 import { Route as HelpContactRouteImport } from './routes/help/contact'
 import { Route as HelpFaqRouteImport } from './routes/help/faq'
 import { Route as HelpPrivacyPolicyRouteImport } from './routes/help/privacy-policy'
 import { Route as HelpTermsOfServiceRouteImport } from './routes/help/terms-of-service'
+import { Route as LearningResourcesIndexRouteImport } from './routes/learning-resources/index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as NewsPageSlugRouteImport } from './routes/news/$pageSlug'
 import { Route as PatternIndexRouteImport } from './routes/pattern/index'
@@ -37,6 +36,7 @@ import { Route as SpaceCommandIndexRouteImport } from './routes/space-command/in
 import { Route as SpaceCommandAdminsRouteImport } from './routes/space-command/admins'
 import { Route as SpaceCommandFaqRouteImport } from './routes/space-command/faq'
 import { Route as SpaceCommandKanbanRouteImport } from './routes/space-command/kanban'
+import { Route as SpaceCommandLearningResourcesRouteImport } from './routes/space-command/learning-resources'
 import { Route as SpaceCommandLogsRouteImport } from './routes/space-command/logs'
 import { Route as SpaceCommandManualAuthorsRouteImport } from './routes/space-command/manual-authors'
 import { Route as SpaceCommandMapRouteImport } from './routes/space-command/map'
@@ -107,16 +107,6 @@ const CommunityIndexRoute = CommunityIndexRouteImport.update({
   path: '/community/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuidesIndexRoute = GuidesIndexRouteImport.update({
-  id: '/guides/',
-  path: '/guides/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpAboutRoute = HelpAboutRouteImport.update({
-  id: '/help/about',
-  path: '/help/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HelpContactRoute = HelpContactRouteImport.update({
   id: '/help/contact',
   path: '/help/contact',
@@ -135,6 +125,11 @@ const HelpPrivacyPolicyRoute = HelpPrivacyPolicyRouteImport.update({
 const HelpTermsOfServiceRoute = HelpTermsOfServiceRouteImport.update({
   id: '/help/terms-of-service',
   path: '/help/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearningResourcesIndexRoute = LearningResourcesIndexRouteImport.update({
+  id: '/learning-resources/',
+  path: '/learning-resources/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsIndexRoute = NewsIndexRouteImport.update({
@@ -202,6 +197,12 @@ const SpaceCommandKanbanRoute = SpaceCommandKanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => SpaceCommandRouteRoute,
 } as any)
+const SpaceCommandLearningResourcesRoute =
+  SpaceCommandLearningResourcesRouteImport.update({
+    id: '/learning-resources',
+    path: '/learning-resources',
+    getParentRoute: () => SpaceCommandRouteRoute,
+  } as any)
 const SpaceCommandLogsRoute = SpaceCommandLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -346,7 +347,6 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/authors/$slug': typeof AuthorsSlugRoute
-  '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
@@ -359,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
+  '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
   '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
@@ -369,7 +370,7 @@ export interface FileRoutesByFullPath {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/community/': typeof CommunityIndexRoute
-  '/guides/': typeof GuidesIndexRoute
+  '/learning-resources/': typeof LearningResourcesIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pattern/': typeof PatternIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -399,7 +400,6 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/authors/$slug': typeof AuthorsSlugRoute
-  '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
@@ -412,6 +412,7 @@ export interface FileRoutesByTo {
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
+  '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
   '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
@@ -422,7 +423,7 @@ export interface FileRoutesByTo {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/community': typeof CommunityIndexRoute
-  '/guides': typeof GuidesIndexRoute
+  '/learning-resources': typeof LearningResourcesIndexRoute
   '/news': typeof NewsIndexRoute
   '/pattern': typeof PatternIndexRoute
   '/profile': typeof ProfileIndexRoute
@@ -454,7 +455,6 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/authors/$slug': typeof AuthorsSlugRoute
-  '/help/about': typeof HelpAboutRoute
   '/help/contact': typeof HelpContactRoute
   '/help/faq': typeof HelpFaqRoute
   '/help/privacy-policy': typeof HelpPrivacyPolicyRoute
@@ -467,6 +467,7 @@ export interface FileRoutesById {
   '/space-command/admins': typeof SpaceCommandAdminsRoute
   '/space-command/faq': typeof SpaceCommandFaqRoute
   '/space-command/kanban': typeof SpaceCommandKanbanRoute
+  '/space-command/learning-resources': typeof SpaceCommandLearningResourcesRoute
   '/space-command/logs': typeof SpaceCommandLogsRoute
   '/space-command/manual-authors': typeof SpaceCommandManualAuthorsRoute
   '/space-command/map': typeof SpaceCommandMapRoute
@@ -477,7 +478,7 @@ export interface FileRoutesById {
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
   '/community/': typeof CommunityIndexRoute
-  '/guides/': typeof GuidesIndexRoute
+  '/learning-resources/': typeof LearningResourcesIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pattern/': typeof PatternIndexRoute
   '/profile/': typeof ProfileIndexRoute
@@ -510,7 +511,6 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/authors/$slug'
-    | '/help/about'
     | '/help/contact'
     | '/help/faq'
     | '/help/privacy-policy'
@@ -523,6 +523,7 @@ export interface FileRouteTypes {
     | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/kanban'
+    | '/space-command/learning-resources'
     | '/space-command/logs'
     | '/space-command/manual-authors'
     | '/space-command/map'
@@ -533,7 +534,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/community/'
-    | '/guides/'
+    | '/learning-resources/'
     | '/news/'
     | '/pattern/'
     | '/profile/'
@@ -563,7 +564,6 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/authors/$slug'
-    | '/help/about'
     | '/help/contact'
     | '/help/faq'
     | '/help/privacy-policy'
@@ -576,6 +576,7 @@ export interface FileRouteTypes {
     | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/kanban'
+    | '/space-command/learning-resources'
     | '/space-command/logs'
     | '/space-command/manual-authors'
     | '/space-command/map'
@@ -586,7 +587,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/community'
-    | '/guides'
+    | '/learning-resources'
     | '/news'
     | '/pattern'
     | '/profile'
@@ -617,7 +618,6 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/authors/$slug'
-    | '/help/about'
     | '/help/contact'
     | '/help/faq'
     | '/help/privacy-policy'
@@ -630,6 +630,7 @@ export interface FileRouteTypes {
     | '/space-command/admins'
     | '/space-command/faq'
     | '/space-command/kanban'
+    | '/space-command/learning-resources'
     | '/space-command/logs'
     | '/space-command/manual-authors'
     | '/space-command/map'
@@ -640,7 +641,7 @@ export interface FileRouteTypes {
     | '/space-command/tags'
     | '/space-command/users'
     | '/community/'
-    | '/guides/'
+    | '/learning-resources/'
     | '/news/'
     | '/pattern/'
     | '/profile/'
@@ -672,7 +673,6 @@ export interface RootRouteChildren {
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthorsSlugRoute: typeof AuthorsSlugRoute
-  HelpAboutRoute: typeof HelpAboutRoute
   HelpContactRoute: typeof HelpContactRoute
   HelpFaqRoute: typeof HelpFaqRoute
   HelpPrivacyPolicyRoute: typeof HelpPrivacyPolicyRoute
@@ -683,7 +683,7 @@ export interface RootRouteChildren {
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
   CommunityIndexRoute: typeof CommunityIndexRoute
-  GuidesIndexRoute: typeof GuidesIndexRoute
+  LearningResourcesIndexRoute: typeof LearningResourcesIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   PatternIndexRoute: typeof PatternIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
@@ -762,20 +762,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunityIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/guides/': {
-      id: '/guides/'
-      path: '/guides'
-      fullPath: '/guides/'
-      preLoaderRoute: typeof GuidesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help/about': {
-      id: '/help/about'
-      path: '/help/about'
-      fullPath: '/help/about'
-      preLoaderRoute: typeof HelpAboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/help/contact': {
       id: '/help/contact'
       path: '/help/contact'
@@ -802,6 +788,13 @@ declare module '@tanstack/react-router' {
       path: '/help/terms-of-service'
       fullPath: '/help/terms-of-service'
       preLoaderRoute: typeof HelpTermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learning-resources/': {
+      id: '/learning-resources/'
+      path: '/learning-resources'
+      fullPath: '/learning-resources/'
+      preLoaderRoute: typeof LearningResourcesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news/': {
@@ -893,6 +886,13 @@ declare module '@tanstack/react-router' {
       path: '/kanban'
       fullPath: '/space-command/kanban'
       preLoaderRoute: typeof SpaceCommandKanbanRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
+    '/space-command/learning-resources': {
+      id: '/space-command/learning-resources'
+      path: '/learning-resources'
+      fullPath: '/space-command/learning-resources'
+      preLoaderRoute: typeof SpaceCommandLearningResourcesRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
     '/space-command/logs': {
@@ -1070,6 +1070,7 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandAdminsRoute: typeof SpaceCommandAdminsRoute
   SpaceCommandFaqRoute: typeof SpaceCommandFaqRoute
   SpaceCommandKanbanRoute: typeof SpaceCommandKanbanRoute
+  SpaceCommandLearningResourcesRoute: typeof SpaceCommandLearningResourcesRoute
   SpaceCommandLogsRoute: typeof SpaceCommandLogsRoute
   SpaceCommandManualAuthorsRoute: typeof SpaceCommandManualAuthorsRoute
   SpaceCommandMapRoute: typeof SpaceCommandMapRoute
@@ -1094,6 +1095,7 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandAdminsRoute: SpaceCommandAdminsRoute,
   SpaceCommandFaqRoute: SpaceCommandFaqRoute,
   SpaceCommandKanbanRoute: SpaceCommandKanbanRoute,
+  SpaceCommandLearningResourcesRoute: SpaceCommandLearningResourcesRoute,
   SpaceCommandLogsRoute: SpaceCommandLogsRoute,
   SpaceCommandManualAuthorsRoute: SpaceCommandManualAuthorsRoute,
   SpaceCommandMapRoute: SpaceCommandMapRoute,
@@ -1128,7 +1130,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterRoute: AuthRegisterRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthorsSlugRoute: AuthorsSlugRoute,
-  HelpAboutRoute: HelpAboutRoute,
   HelpContactRoute: HelpContactRoute,
   HelpFaqRoute: HelpFaqRoute,
   HelpPrivacyPolicyRoute: HelpPrivacyPolicyRoute,
@@ -1139,7 +1140,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
   CommunityIndexRoute: CommunityIndexRoute,
-  GuidesIndexRoute: GuidesIndexRoute,
+  LearningResourcesIndexRoute: LearningResourcesIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   PatternIndexRoute: PatternIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,

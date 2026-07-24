@@ -23,6 +23,7 @@
     "@mui/material": "9.2.0",
     "@mui/x-data-grid": "9.10.0",
     "@mui/x-date-pickers": "9.10.0",
+    "@mui/x-charts": "9.10.0",
     "@netlify/blobs": "10.7.9",
     "@react-three/drei": "10.7.7",
     "@react-three/fiber": "9.6.1",
