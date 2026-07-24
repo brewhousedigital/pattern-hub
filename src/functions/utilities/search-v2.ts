@@ -62,6 +62,37 @@ export type FileSizeToken = {
   value: number;
 };
 
+// Distinct from WidthToken/HeightToken (which compare against the pattern's
+// native design_width/design_height, whatever unit that happens to be in) -
+// these compare against the precomputed size_width_in/size_width_cm/
+// size_height_in/size_height_cm columns instead, so the filter is correct
+// regardless of the pattern's native unit. Use these when the user explicitly
+// asks for inches or centimeters; plain WidthToken/HeightToken are for
+// "whatever unit it was uploaded in".
+export type WidthInToken = {
+  type: 'width_in';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type HeightInToken = {
+  type: 'height_in';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type WidthCmToken = {
+  type: 'width_cm';
+  operator: NumericOperator;
+  value: number;
+};
+
+export type HeightCmToken = {
+  type: 'height_cm';
+  operator: NumericOperator;
+  value: number;
+};
+
 export type Token =
   | TextToken
   | TagToken
@@ -72,7 +103,11 @@ export type Token =
   | PartsToken
   | WidthToken
   | HeightToken
-  | FileSizeToken;
+  | FileSizeToken
+  | WidthInToken
+  | HeightInToken
+  | WidthCmToken
+  | HeightCmToken;
 
 // URL Search Params Schema
 export const SORT_OPTIONS = [
@@ -126,6 +161,10 @@ export const patternSearchSchema = z.object({
   width: z.array(z.string()).default([]),
   height: z.array(z.string()).default([]),
   filesize: z.array(z.string()).default([]),
+  width_in: z.array(z.string()).default([]),
+  height_in: z.array(z.string()).default([]),
+  width_cm: z.array(z.string()).default([]),
+  height_cm: z.array(z.string()).default([]),
   sort: z
     .enum([
       '-created',
@@ -215,7 +254,9 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     exclude: description.startsWith('-'),
   }));
 
-  function parseNumericTokens<T extends 'parts' | 'width' | 'height' | 'filesize'>(type: T, values: string[]): Token[] {
+  function parseNumericTokens<
+    T extends 'parts' | 'width' | 'height' | 'filesize' | 'width_in' | 'height_in' | 'width_cm' | 'height_cm',
+  >(type: T, values: string[]): Token[] {
     return values
       .map((v): Token | null => {
         const operator = v.startsWith('>') ? '>' : v.startsWith('<') ? '<' : v.startsWith('=') ? '=' : null;
@@ -231,6 +272,10 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
   const widthTokens = parseNumericTokens('width', search.width);
   const heightTokens = parseNumericTokens('height', search.height);
   const filesizeTokens = parseNumericTokens('filesize', search.filesize);
+  const widthInTokens = parseNumericTokens('width_in', search.width_in);
+  const heightInTokens = parseNumericTokens('height_in', search.height_in);
+  const widthCmTokens = parseNumericTokens('width_cm', search.width_cm);
+  const heightCmTokens = parseNumericTokens('height_cm', search.height_cm);
 
   return [
     ...textTokens,
@@ -242,6 +287,10 @@ export function tokensFromSearch(search: PatternSearch): Token[] {
     ...partsTokens,
     ...widthTokens,
     ...heightTokens,
+    ...widthInTokens,
+    ...heightInTokens,
+    ...widthCmTokens,
+    ...heightCmTokens,
     ...filesizeTokens,
   ];
 }
@@ -283,7 +332,23 @@ export function searchFromTokens(
     .filter((t): t is FileSizeToken => t.type === 'filesize')
     .map((t) => `${t.operator}${t.value}`);
 
-  return { q, tags, authors, id, title, description, parts, width, height, filesize };
+  const width_in = tokens
+    .filter((t): t is WidthInToken => t.type === 'width_in')
+    .map((t) => `${t.operator}${t.value}`);
+
+  const height_in = tokens
+    .filter((t): t is HeightInToken => t.type === 'height_in')
+    .map((t) => `${t.operator}${t.value}`);
+
+  const width_cm = tokens
+    .filter((t): t is WidthCmToken => t.type === 'width_cm')
+    .map((t) => `${t.operator}${t.value}`);
+
+  const height_cm = tokens
+    .filter((t): t is HeightCmToken => t.type === 'height_cm')
+    .map((t) => `${t.operator}${t.value}`);
+
+  return { q, tags, authors, id, title, description, parts, width, height, filesize, width_in, height_in, width_cm, height_cm };
 }
 
 /**
@@ -319,10 +384,24 @@ export function parseRawInput(raw: string): Token {
   // \s* around the operator tolerates stray spaces like "parts> 50" or
   // "parts > 50" - the outer .trim() above only strips leading/trailing
   // whitespace, not whitespace inside the expression itself.
-  const numericMatch = stripped.match(/^(width|height|parts|pieces|filesize)\s*([><=])\s*([\d.]+)$/i);
+  // "width_in"/"height_in"/"width_cm"/"height_cm" must be listed before the
+  // bare "width"/"height" so the longer prefix wins (regex alternation would
+  // otherwise backtrack into it anyway, but listing it first keeps the
+  // intent obvious).
+  const numericMatch = stripped.match(
+    /^(width_in|height_in|width_cm|height_cm|width|height|parts|pieces|filesize)\s*([><=])\s*([\d.]+)$/i,
+  );
   if (numericMatch) {
     const rawType = numericMatch[1].toLowerCase();
-    const type = (rawType === 'pieces' ? 'parts' : rawType) as 'width' | 'height' | 'parts' | 'filesize';
+    const type = (rawType === 'pieces' ? 'parts' : rawType) as
+      | 'width'
+      | 'height'
+      | 'parts'
+      | 'filesize'
+      | 'width_in'
+      | 'height_in'
+      | 'width_cm'
+      | 'height_cm';
     const operator = numericMatch[2] as NumericOperator;
     const value = parseFloat(numericMatch[3]);
     if (!isNaN(value)) return { type, operator, value };
@@ -341,7 +420,21 @@ export function parseRawInput(raw: string): Token {
 // cause social-media link parsers to truncate the URL.
 // These replacements use repeated params instead: ?authors=Raine — no quotes.
 
-const ARRAY_KEYS = new Set(['tags', 'authors', 'id', 'title', 'description', 'parts', 'width', 'height', 'filesize']);
+const ARRAY_KEYS = new Set([
+  'tags',
+  'authors',
+  'id',
+  'title',
+  'description',
+  'parts',
+  'width',
+  'height',
+  'filesize',
+  'width_in',
+  'height_in',
+  'width_cm',
+  'height_cm',
+]);
 
 export function stringifySearch(search: Record<string, unknown>): string {
   const params = new URLSearchParams();

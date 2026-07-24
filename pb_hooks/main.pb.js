@@ -229,12 +229,33 @@ routerAdd('GET', '/api/pattern-search', (c) => {
           dslParts.push(`(description ~ "${escDq(t.value)}")`);
           sqlParts.push(`description LIKE '%' || ${b} || '%'`);
         }
-      } else if (t.type === 'parts' || t.type === 'width' || t.type === 'height' || t.type === 'filesize') {
+      } else if (
+        t.type === 'parts' ||
+        t.type === 'width' ||
+        t.type === 'height' ||
+        t.type === 'filesize' ||
+        t.type === 'width_in' ||
+        t.type === 'height_in' ||
+        t.type === 'width_cm' ||
+        t.type === 'height_cm'
+      ) {
+        // width_in/height_in/width_cm/height_cm compare against the
+        // precomputed size_width_in/size_height_in/size_width_cm/
+        // size_height_cm columns instead of the native design_width/
+        // design_height - these are unit-normalized at write time (see
+        // convertToAllUnits below / the admin panel's save path), so the
+        // filter is correct regardless of what unit the pattern was authored
+        // in. Plain width/height stay pointed at the native columns - "use
+        // whatever unit it was uploaded in".
         const column = {
           parts: 'pieces',
           width: 'design_width',
           height: 'design_height',
           filesize: 'pattern_file_size',
+          width_in: 'size_width_in',
+          height_in: 'size_height_in',
+          width_cm: 'size_width_cm',
+          height_cm: 'size_height_cm',
         }[t.type];
         const b = bind(t.value);
         dslParts.push(`(${column} ${t.operator} ${t.value})`);

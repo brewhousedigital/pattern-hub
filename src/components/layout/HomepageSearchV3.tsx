@@ -6,6 +6,7 @@ import { useQuerySearchTags } from '@/functions/database/tags';
 import { useQuerySearchAuthors } from '@/functions/database/authors';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { SearchResultsDropdown } from '@/components/layout/SearchResultsDropdown';
+import { AdvancedSearchModal } from '@/components/layout/AdvancedSearchModal';
 
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -14,8 +15,9 @@ import LabelIcon from '@mui/icons-material/Label';
 import SortIcon from '@mui/icons-material/Sort';
 import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
+import ManageSearchRoundedIcon from '@mui/icons-material/ManageSearchRounded';
 
-import { Box, Chip, InputBase, IconButton, MenuItem, Paper, Select, Tooltip } from '@mui/material';
+import { Box, Button, Chip, InputBase, IconButton, MenuItem, Paper, Select, Tooltip } from '@mui/material';
 
 type TypeReadOnlyDatabaseItem = {
   id: string;
@@ -39,6 +41,10 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   width: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
   height: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
   filesize: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  width_in: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  height_in: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  width_cm: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
+  height_cm: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
 };
 
 function getTokenStyle(token: Token) {
@@ -52,6 +58,10 @@ function getTokenLabel(token: Token): string {
   if (token.type === 'width') return `width${token.operator}${token.value}`;
   if (token.type === 'height') return `height${token.operator}${token.value}`;
   if (token.type === 'filesize') return `filesize${token.operator}${token.value}`;
+  if (token.type === 'width_in') return `width_in${token.operator}${token.value}`;
+  if (token.type === 'height_in') return `height_in${token.operator}${token.value}`;
+  if (token.type === 'width_cm') return `width_cm${token.operator}${token.value}`;
+  if (token.type === 'height_cm') return `height_cm${token.operator}${token.value}`;
 
   // Custom string prefix filters
   if (token.type === 'author') return `${token.exclude ? '-' : ''}author:${token.value}`;
@@ -69,6 +79,10 @@ function getTokenTooltip(token: Token): string {
   if (token.type === 'width') return `Width ${token.operator} ${token.value}`;
   if (token.type === 'height') return `Height ${token.operator} ${token.value}`;
   if (token.type === 'filesize') return `File size in Bytes ${token.operator} ${token.value}`;
+  if (token.type === 'width_in') return `Width (in) ${token.operator} ${token.value}`;
+  if (token.type === 'height_in') return `Height (in) ${token.operator} ${token.value}`;
+  if (token.type === 'width_cm') return `Width (cm) ${token.operator} ${token.value}`;
+  if (token.type === 'height_cm') return `Height (cm) ${token.operator} ${token.value}`;
 
   // Custom string prefix filters
   if (token.type === 'author')
@@ -100,6 +114,10 @@ const PREFIX_MAP: Record<string, PrefixMode> = {
   width: 'suppress',
   height: 'suppress',
   filesize: 'suppress',
+  width_in: 'suppress',
+  height_in: 'suppress',
+  width_cm: 'suppress',
+  height_cm: 'suppress',
 };
 
 function detectPrefixMode(input: string): { mode: PrefixMode; searchTerm: string; negated: boolean } {
@@ -142,6 +160,7 @@ export const HomepageSearchV3 = ({
   const [inputValue, setInputValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -385,13 +404,56 @@ export const HomepageSearchV3 = ({
             </Tooltip>
           )}
 
+          <Button
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAdvancedSearchOpen(true);
+            }}
+            startIcon={<ManageSearchRoundedIcon fontSize="small" />}
+            sx={{
+              display: { xs: 'none', md: 'inline-flex' },
+              ml: hasContent ? 0 : 'auto',
+              flexShrink: 0,
+              color: 'text.disabled',
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              lineHeight: 1.2,
+              minWidth: 'auto',
+              px: 1,
+              py: 0.25,
+              '& .MuiButton-startIcon': { mr: 0.5 },
+            }}
+          >
+            Advanced Search
+          </Button>
+
+          <Tooltip title="Advanced search" arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAdvancedSearchOpen(true);
+              }}
+              sx={{
+                display: { xs: 'inline-flex', md: 'none' },
+                ml: hasContent ? 0 : 'auto',
+                flexShrink: 0,
+                color: 'text.disabled',
+              }}
+              aria-label="Advanced search"
+            >
+              <ManageSearchRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Search help" arrow>
             <IconButton
               size="small"
               component={Link}
               to="/wiki/site-functions/search"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              sx={{ ml: hasContent ? 0 : 'auto', flexShrink: 0, color: 'text.disabled' }}
+              sx={{ flexShrink: 0, color: 'text.disabled' }}
               aria-label="Search help"
             >
               <HelpOutlineRoundedIcon fontSize="small" />
@@ -411,6 +473,12 @@ export const HomepageSearchV3 = ({
             onItemSelect={commitDropdownItem}
           />
         )}
+
+        <AdvancedSearchModal
+          open={isAdvancedSearchOpen}
+          onClose={() => setIsAdvancedSearchOpen(false)}
+          onApply={addRawInput}
+        />
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>

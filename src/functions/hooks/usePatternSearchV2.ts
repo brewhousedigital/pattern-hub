@@ -86,9 +86,26 @@ export function usePatternSearch(): UsePatternSearchReturn {
   }
 
   function updateTokens(nextTokens: Token[]) {
-    const { q, tags, authors, id, title, description, parts, width, height, filesize } = searchFromTokens(nextTokens);
+    const { q, tags, authors, id, title, description, parts, width, height, filesize, width_in, height_in, width_cm, height_cm } =
+      searchFromTokens(nextTokens);
     // When tokens change, set the pageNumber back to 1
-    updateSearch({ q, tags, authors, id, title, description, parts, width, height, filesize, pageNumber: 1 });
+    updateSearch({
+      q,
+      tags,
+      authors,
+      id,
+      title,
+      description,
+      parts,
+      width,
+      height,
+      filesize,
+      width_in,
+      height_in,
+      width_cm,
+      height_cm,
+      pageNumber: 1,
+    });
   }
 
   /**
@@ -174,7 +191,21 @@ export function usePatternSearch(): UsePatternSearchReturn {
 
   /** Wipe all tokens, leaving patternId and other params intact. */
   function clearTokens() {
-    updateSearch({ q: '', tags: [], authors: [], title: [], description: [], parts: [], width: [], height: [], filesize: [] });
+    updateSearch({
+      q: '',
+      tags: [],
+      authors: [],
+      title: [],
+      description: [],
+      parts: [],
+      width: [],
+      height: [],
+      filesize: [],
+      width_in: [],
+      height_in: [],
+      width_cm: [],
+      height_cm: [],
+    });
   }
 
   // Tag toggle (sidebar)
