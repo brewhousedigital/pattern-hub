@@ -4,7 +4,12 @@ import { StatCardShell } from '@/components/charts/StatCardShell';
 import { EmptyChartNotice } from '@/components/charts/EmptyChartNotice';
 import { sequentialStep } from '@/components/charts/chart-colors';
 
-const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+const formatHour12 = (hour: number): string => {
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}${hour < 12 ? 'am' : 'pm'}`;
+};
+
+const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => formatHour12(i));
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export type ExportTimeIntensityGridProps = {

@@ -147,7 +147,7 @@ const formatBucketLabel = (date: Dayjs, period: TypeStatsPeriod): string => {
   }
 };
 
-const sumField = <T,>(group: T[], getter: (item: T) => number): number =>
+const sumField = <T>(group: T[], getter: (item: T) => number): number =>
   group.reduce((sum, item) => sum + getter(item), 0);
 
 // Groups any date-stamped items into period buckets, keeping every item in
@@ -206,7 +206,12 @@ export const bucketSnapshotsByPeriod = (
     },
   }));
 
-export type TypePublicStatsBucket = { key: string; label: string; date: Dayjs; snapshot: TypePublicDatabaseStatsSnapshot };
+export type TypePublicStatsBucket = {
+  key: string;
+  label: string;
+  date: Dayjs;
+  snapshot: TypePublicDatabaseStatsSnapshot;
+};
 
 // Same rollup, for the narrower public projection the /community page gets -
 // no _7d fields exist on that type, so there's no periodTotals to compute.
@@ -266,7 +271,12 @@ export const computeVelocityComparison = (buckets: TypeStatsBucket[]): TypeVeloc
   if (!latest || !prior) return [];
 
   return [
-    { key: 'new_users', label: 'New Users', current: latest.periodTotals.new_users, previous: prior.periodTotals.new_users },
+    {
+      key: 'new_users',
+      label: 'New Users',
+      current: latest.periodTotals.new_users,
+      previous: prior.periodTotals.new_users,
+    },
     {
       key: 'new_patterns',
       label: 'New Patterns',

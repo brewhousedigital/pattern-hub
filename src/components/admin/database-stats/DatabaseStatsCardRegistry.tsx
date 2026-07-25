@@ -233,7 +233,7 @@ export const buildDatabaseStatsCardRegistry = (
   {
     id: 'export-time-grid',
     title: 'Exports By Time',
-    gridSize: FULL_SIZE,
+    gridSize: STAT_SIZE,
     render: () => (
       <ExportTimeIntensityGrid
         title="Exports By Time (trailing 7 days)"
@@ -302,7 +302,11 @@ export const buildDatabaseStatsCardRegistry = (
     title: 'Verified Users',
     gridSize: STAT_SIZE,
     render: () => (
-      <StatTile title="Verified Users" icon={<VerifiedRoundedIcon sx={{ fontSize: 18 }} />} value={latest.verified_users} />
+      <StatTile
+        title="Verified Users"
+        icon={<VerifiedRoundedIcon sx={{ fontSize: 18 }} />}
+        value={latest.verified_users}
+      />
     ),
   },
   {
@@ -318,7 +322,11 @@ export const buildDatabaseStatsCardRegistry = (
     title: 'Pattern Sets',
     gridSize: STAT_SIZE,
     render: () => (
-      <StatTile title="Pattern Sets" icon={<StyleRoundedIcon sx={{ fontSize: 18 }} />} value={latest.total_pattern_sets} />
+      <StatTile
+        title="Pattern Sets"
+        icon={<StyleRoundedIcon sx={{ fontSize: 18 }} />}
+        value={latest.total_pattern_sets}
+      />
     ),
   },
   {
