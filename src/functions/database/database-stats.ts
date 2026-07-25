@@ -23,6 +23,7 @@ export type TypeDatabaseStatsSnapshot = {
   total_user_submissions: number;
   total_pattern_sets: number;
   total_store_locations: number;
+  total_site_visits: number;
   new_users_7d: number;
   new_patterns_7d: number;
   new_exports_7d: number;
@@ -111,18 +112,6 @@ export const useMutationTriggerDatabaseStatsSnapshot = () => {
       if (!res.ok) throw new Error('Failed to run snapshot');
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DATABASE_STATS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: PUBLIC_DATABASE_STATS_QUERY_KEY });
-    },
-  });
-};
-
-// Delete a bad/erroneous snapshot row - gate the calling button with
-// checkAccess(DB_STATS_AD).
-export const useMutationDeleteDatabaseStatsSnapshot = () => {
-  return useMutation({
-    mutationFn: (id: string) => pocketbase.collection('database_stats_snapshots').delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DATABASE_STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: PUBLIC_DATABASE_STATS_QUERY_KEY });

@@ -17,6 +17,7 @@ import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 
 import { StatTile } from '@/components/charts/StatTile';
 import { TrendChartCard } from '@/components/charts/TrendChartCard';
@@ -88,6 +89,30 @@ export const buildDatabaseStatsCardRegistry = (
         title="Patterns Over Time"
         icon={<ExtensionRoundedIcon sx={{ fontSize: 18 }} />}
         points={toPoints(buckets, (s) => s.total_patterns)}
+      />
+    ),
+  },
+  {
+    id: 'total-site-visits-stat',
+    title: 'Site Visits',
+    gridSize: STAT_SIZE,
+    render: () => (
+      <StatTile
+        title="Site Visits"
+        icon={<VisibilityRoundedIcon sx={{ fontSize: 18 }} />}
+        value={latest.total_site_visits}
+      />
+    ),
+  },
+  {
+    id: 'total-site-visits-trend',
+    title: 'Site Visits Over Time',
+    gridSize: CHART_SIZE,
+    render: () => (
+      <TrendChartCard
+        title="Site Visits Over Time"
+        icon={<VisibilityRoundedIcon sx={{ fontSize: 18 }} />}
+        points={toPoints(buckets, (s) => s.total_site_visits)}
       />
     ),
   },

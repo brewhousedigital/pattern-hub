@@ -16,6 +16,32 @@ export type ExportTimeIntensityGridProps = {
   weekdayCounts: number[];
 };
 
+// The stored breakdown is bucketed by UTC hour (computed server-side, where
+// "local" has no single meaning). Rotate it to whichever hour bucket that UTC
+// hour actually lands on for the person looking at the chart - local = UTC +
+// offsetHours, so a count recorded at UTC hour H belongs in local bucket
+// (H + offsetHours) mod 24. Timezones with a half-hour offset (India, etc.)
+// round to the nearest hour bucket - this is a "roughly when" chart, not a
+// precise instrument, so splitting counts across two buckets isn't worth it.
+const rotateHourCountsToLocal = (utcHourCounts: number[]): number[] => {
+  const offsetHours = Math.round(-new Date().getTimezoneOffset() / 60);
+  const local = new Array(24).fill(0);
+  for (let utcHour = 0; utcHour < 24; utcHour++) {
+    const localHour = (((utcHour + offsetHours) % 24) + 24) % 24;
+    local[localHour] += utcHourCounts[utcHour] ?? 0;
+  }
+  return local;
+};
+
+const getLocalTimezoneLabel = (): string => {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).formatToParts(new Date());
+    return parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+  } catch {
+    return '';
+  }
+};
+
 const IntensityStrip = ({ counts, labels }: { counts: number[]; labels: string[] }) => {
   const max = Math.max(1, ...counts);
   return (
@@ -56,12 +82,18 @@ export const ExportTimeIntensityGrid = ({ title, icon, hourCounts, weekdayCounts
     );
   }
 
+  // Only the admin page uses this card, and /space-command renders client-only
+  // (ssr: false) - so this always reflects the actual viewer's browser
+  // timezone, never a server default, with no hydration-mismatch risk.
+  const localHourCounts = rotateHourCountsToLocal(hourCounts);
+  const tzLabel = getLocalTimezoneLabel();
+
   return (
     <StatCardShell title={title} icon={icon}>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
-        By hour of day (UTC)
+        By hour of day{tzLabel ? ` (${tzLabel})` : ' (your local time)'}
       </Typography>
-      <IntensityStrip counts={hourCounts} labels={HOUR_LABELS} />
+      <IntensityStrip counts={localHourCounts} labels={HOUR_LABELS} />
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, mb: 0.75 }}>
         By day of week

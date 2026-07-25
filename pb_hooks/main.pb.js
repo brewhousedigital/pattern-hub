@@ -1034,6 +1034,15 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       }
     } catch (_) {}
 
+    // Backs the retro footer visitor counter (see /api/count-visit below) - one
+    // row, one running total, incremented once per browser session.
+    let totalSiteVisits = 0;
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app.db().newQuery("SELECT count FROM counters WHERE key = 'visits' LIMIT 1").all(rows);
+      totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
+    } catch (_) {}
+
     return {
       total_patterns: countRows('patterns', 'isDeleted = 0'),
       published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
@@ -1047,6 +1056,7 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       total_user_submissions: countRows('user_submitted_patterns', "id != ''"),
       total_pattern_sets: countRows('pattern_sets', "id != ''"),
       total_store_locations: countRows('store_locations', "id != ''"),
+      total_site_visits: totalSiteVisits,
       new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
       new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
         cutoff,
@@ -1208,6 +1218,15 @@ routerAdd(
         }
       } catch (_) {}
 
+      // Backs the retro footer visitor counter (see /api/count-visit below) - one
+      // row, one running total, incremented once per browser session.
+      let totalSiteVisits = 0;
+      try {
+        const rows = arrayOf(new DynamicModel({ count: 0 }));
+        $app.db().newQuery("SELECT count FROM counters WHERE key = 'visits' LIMIT 1").all(rows);
+        totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
+      } catch (_) {}
+
       return {
         total_patterns: countRows('patterns', 'isDeleted = 0'),
         published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
@@ -1221,6 +1240,7 @@ routerAdd(
         total_user_submissions: countRows('user_submitted_patterns', "id != ''"),
         total_pattern_sets: countRows('pattern_sets', "id != ''"),
         total_store_locations: countRows('store_locations', "id != ''"),
+        total_site_visits: totalSiteVisits,
         new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
         new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
           cutoff,

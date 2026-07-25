@@ -44,6 +44,7 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
+import { useGlobalAuthData } from '@/data/auth-data.ts';
 
 export const Route = createFileRoute('/space-command/user-submissions/$id/review')({
   component: RouteComponent,
@@ -60,6 +61,7 @@ function highlightSvgSource(raw: string): string {
 }
 
 function RouteComponent() {
+  const { authData } = useGlobalAuthData();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -219,6 +221,7 @@ function RouteComponent() {
         has_layers: values.hasLayers,
         layers_map: values.hasLayers ? values.layersMap : [],
         is_draft: false,
+        uploaded_by: authData?.name,
       });
 
       await publishSubmission.mutateAsync({ id: submission.id, resultingPatternId: newPattern.id });

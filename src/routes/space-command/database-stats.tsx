@@ -13,7 +13,6 @@ import {
   filterBucketsByYear,
   getAvailableYears,
   STATS_PERIODS,
-  useMutationDeleteDatabaseStatsSnapshot,
   useMutationTriggerDatabaseStatsSnapshot,
   useQueryGetDatabaseStatsHistory,
   type TypeDatabaseStatsSnapshot,
@@ -24,18 +23,12 @@ import { DatabaseStatsGrid } from '@/components/admin/database-stats/DatabaseSta
 
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 
 import {
   Alert,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   IconButton,
   Tab,
   Tabs,
@@ -55,16 +48,13 @@ function RouteComponent() {
   const { checkAccess } = useCheckAdminAccess();
   const canView = checkAccess(EnumLevelsAdmin.DB_STATS_AR);
   const canCreate = checkAccess(EnumLevelsAdmin.DB_STATS_AC);
-  const canDelete = checkAccess(EnumLevelsAdmin.DB_STATS_AD);
 
   const { log } = useAdminLogger();
   const { data, isPending, isError, error, refetch } = useQueryGetDatabaseStatsHistory();
   const triggerSnapshot = useMutationTriggerDatabaseStatsSnapshot();
-  const deleteSnapshot = useMutationDeleteDatabaseStatsSnapshot();
 
   const [period, setPeriod] = React.useState<TypeStatsPeriod>('weekly');
   const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<TypeDatabaseStatsSnapshot | null>(null);
 
   const snapshots = data ?? [];
   const years = getAvailableYears(snapshots);
@@ -105,25 +95,6 @@ function RouteComponent() {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await deleteSnapshot.mutateAsync(deleteTarget.id);
-      log({
-        action: 'Database Stats Snapshot Deleted',
-        entity_type: 'Database Stats',
-        entity_id: deleteTarget.id,
-        entity_name: createPrettyDate(deleteTarget.created),
-        changes: {},
-        metadata: {},
-      });
-      enqueueSnackbar('Snapshot deleted.', { variant: 'success' });
-      setDeleteTarget(null);
-    } catch {
-      enqueueSnackbar('Failed to delete snapshot.', { variant: 'error' });
-    }
-  };
-
   const historyColumns: GridColDef<TypeDatabaseStatsSnapshot>[] = [
     {
       field: 'created',
@@ -141,20 +112,7 @@ function RouteComponent() {
     { field: 'total_marked_done', headerName: 'Marked Done', width: 120 },
     { field: 'total_exports', headerName: 'Exports', width: 100 },
     { field: 'total_user_submissions', headerName: 'Submissions', width: 120 },
-    {
-      field: '_delete',
-      headerName: '',
-      width: 52,
-      sortable: false,
-      renderCell: ({ row }) =>
-        canDelete ? (
-          <Tooltip title="Delete snapshot">
-            <IconButton size="small" onClick={() => setDeleteTarget(row)}>
-              <DeleteRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ) : null,
-    },
+    { field: 'total_site_visits', headerName: 'Site Visits', width: 110 },
   ];
 
   return (
@@ -269,28 +227,6 @@ function RouteComponent() {
           )}
         </AdminCardWrapper>
       )}
-
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Delete this snapshot?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {deleteTarget
-              ? `The snapshot from ${createPrettyDate(deleteTarget.created)} will be permanently removed. This can't be undone.`
-              : ''}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleConfirmDelete}
-            loading={deleteSnapshot.isPending}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }
