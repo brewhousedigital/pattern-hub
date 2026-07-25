@@ -122,15 +122,15 @@ function RouteComponent() {
         subtitle="Weekly snapshots of site-wide metrics, charted over time."
         actionNode={
           <Tooltip title="Refresh">
-            <IconButton onClick={() => void refetch()} sx={{ mr: canCreate ? 1 : 0 }}>
-              <RefreshRoundedIcon fontSize="small" />
-            </IconButton>
+            <Button startIcon={<RefreshRoundedIcon />} onClick={() => void refetch()} sx={{ mr: canCreate ? 1 : 0 }}>
+              Refresh Data
+            </Button>
           </Tooltip>
         }
-        action={canCreate ? handleRunSnapshot : undefined}
-        actionText="Run Snapshot Now"
-        actionIcon={<PlayArrowRoundedIcon />}
-        actionLoading={triggerSnapshot.isPending}
+        //action={canCreate ? handleRunSnapshot : undefined}
+        //actionText="Run Snapshot Now"
+        //actionIcon={<PlayArrowRoundedIcon />}
+        //actionLoading={triggerSnapshot.isPending}
       />
 
       {!canView ? (
