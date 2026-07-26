@@ -53,11 +53,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: 'icon', type: 'image/png', href: '/images/icons/favicon.png' },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
       {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap',
+        rel: 'preload',
+        href: '/fonts/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf',
+        as: 'font',
+        type: 'font/ttf',
+        crossOrigin: 'anonymous',
       },
       { rel: 'stylesheet', href: '/stylesheet.css' },
     ],
