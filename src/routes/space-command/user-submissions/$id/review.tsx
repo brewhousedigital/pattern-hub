@@ -312,15 +312,25 @@ function RouteComponent() {
               />
             </Paper>
 
-            <Button
-              variant="contained"
-              color="warning"
-              startIcon={<CheckRoundedIcon />}
-              onClick={() => setCodeApproved(true)}
-              disabled={!rawSvgText}
-            >
-              I've reviewed this code and approve it
-            </Button>
+            <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end' }}>
+              <Button
+                color="error"
+                variant="outlined"
+                onClick={() => setRejectDialogOpen(true)}
+                disabled={rejectSubmission.isPending}
+              >
+                Reject
+              </Button>
+              <Button
+                variant="contained"
+                color="warning"
+                startIcon={<CheckRoundedIcon />}
+                onClick={() => setCodeApproved(true)}
+                disabled={!rawSvgText}
+              >
+                I've reviewed this code and approve it
+              </Button>
+            </Stack>
           </Stack>
         )}
 
