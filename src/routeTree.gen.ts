@@ -50,6 +50,7 @@ import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/us
 import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/index'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
+import { Route as ProfileSubmissionsIndexRouteImport } from './routes/profile/submissions/index'
 import { Route as ProfileSubmitPatternIndexRouteImport } from './routes/profile/submit-pattern/index'
 import { Route as ProfileSubmitPatternCompleteRouteImport } from './routes/profile/submit-pattern/complete'
 import { Route as SpaceCommandComplaintsIndexRouteImport } from './routes/space-command/complaints/index'
@@ -274,6 +275,11 @@ const ProfileCollectionsCollectionIdRoute =
     path: '/profile/collections/$collectionId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProfileSubmissionsIndexRoute = ProfileSubmissionsIndexRouteImport.update({
+  id: '/profile/submissions/',
+  path: '/profile/submissions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileSubmitPatternIndexRoute =
   ProfileSubmitPatternIndexRouteImport.update({
     id: '/profile/submit-pattern/',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/space-command/user-submissions/processed': typeof SpaceCommandUserSubmissionsProcessedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submissions/': typeof ProfileSubmissionsIndexRoute
   '/profile/submit-pattern/': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/space-command/user-submissions/processed': typeof SpaceCommandUserSubmissionsProcessedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submissions': typeof ProfileSubmissionsIndexRoute
   '/profile/submit-pattern': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact': typeof SpaceCommandContactIndexRoute
@@ -502,6 +510,7 @@ export interface FileRoutesById {
   '/space-command/contact/reviewed': typeof SpaceCommandContactReviewedRoute
   '/space-command/user-submissions/processed': typeof SpaceCommandUserSubmissionsProcessedRoute
   '/wiki/$categorySlug/$pageSlug': typeof WikiCategorySlugPageSlugRoute
+  '/profile/submissions/': typeof ProfileSubmissionsIndexRoute
   '/profile/submit-pattern/': typeof ProfileSubmitPatternIndexRoute
   '/space-command/complaints/': typeof SpaceCommandComplaintsIndexRoute
   '/space-command/contact/': typeof SpaceCommandContactIndexRoute
@@ -559,6 +568,7 @@ export interface FileRouteTypes {
     | '/space-command/contact/reviewed'
     | '/space-command/user-submissions/processed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submissions/'
     | '/profile/submit-pattern/'
     | '/space-command/complaints/'
     | '/space-command/contact/'
@@ -613,6 +623,7 @@ export interface FileRouteTypes {
     | '/space-command/contact/reviewed'
     | '/space-command/user-submissions/processed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submissions'
     | '/profile/submit-pattern'
     | '/space-command/complaints'
     | '/space-command/contact'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/space-command/contact/reviewed'
     | '/space-command/user-submissions/processed'
     | '/wiki/$categorySlug/$pageSlug'
+    | '/profile/submissions/'
     | '/profile/submit-pattern/'
     | '/space-command/complaints/'
     | '/space-command/contact/'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   ProfileCollectionsCollectionIdRoute: typeof ProfileCollectionsCollectionIdRoute
   ProfileSubmitPatternCompleteRoute: typeof ProfileSubmitPatternCompleteRoute
   WikiCategorySlugPageSlugRoute: typeof WikiCategorySlugPageSlugRoute
+  ProfileSubmissionsIndexRoute: typeof ProfileSubmissionsIndexRoute
   ProfileSubmitPatternIndexRoute: typeof ProfileSubmitPatternIndexRoute
   WikiCategorySlugIndexRoute: typeof WikiCategorySlugIndexRoute
 }
@@ -999,6 +1012,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileCollectionsCollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/submissions/': {
+      id: '/profile/submissions/'
+      path: '/profile/submissions'
+      fullPath: '/profile/submissions/'
+      preLoaderRoute: typeof ProfileSubmissionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/submit-pattern/': {
       id: '/profile/submit-pattern/'
       path: '/profile/submit-pattern'
@@ -1172,6 +1192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileCollectionsCollectionIdRoute: ProfileCollectionsCollectionIdRoute,
   ProfileSubmitPatternCompleteRoute: ProfileSubmitPatternCompleteRoute,
   WikiCategorySlugPageSlugRoute: WikiCategorySlugPageSlugRoute,
+  ProfileSubmissionsIndexRoute: ProfileSubmissionsIndexRoute,
   ProfileSubmitPatternIndexRoute: ProfileSubmitPatternIndexRoute,
   WikiCategorySlugIndexRoute: WikiCategorySlugIndexRoute,
 }

@@ -1,5 +1,9 @@
 /// <reference path="./types.d.ts" />
 
+// NOTICE: When working in this file, never add functions or variables at the root
+// Always add them inside the pocketbase functions, even if it means duplicating them.
+// Pocketbase does NOT support outside functions or variables.
+
 // Combines all per-pattern drawer lookups into a single HTTP call to reduce
 // request volume. Each sub-query is isolated in its own try/catch so a missing
 // record in one table never blocks the others from returning.
@@ -1724,3 +1728,48 @@ routerAdd(
   },
   $apis.requireAuth('admins'),
 );
+
+// ─── Submission review notifications ──────────────────────────────────────────
+// Fires whenever a user's pattern submission is approved (published) or
+// rejected by an admin - writes a row to user_submission_notifications so the
+// submitter sees it in their notification bell (see NotificationBell.tsx).
+// Requires that collection to exist (submitter/submission/status/reason
+// fields) - see the schema notes shared alongside this change.
+//
+// Uses $app.save/$app.delete (internal access, bypasses collection API
+// rules) since submitters never write these rows directly - only this hook
+// does, and its own create/update rules stay locked accordingly.
+onRecordAfterUpdateSuccess((e) => {
+  try {
+    const prevStatus = e.record.original().getString('status');
+    const newStatus = e.record.getString('status');
+
+    if (prevStatus !== newStatus) {
+      if (newStatus === 'published' || newStatus === 'rejected') {
+        const collection = $app.findCollectionByNameOrId('user_submission_notifications');
+        const notification = new Record(collection, {
+          submitter: e.record.getString('submitter'),
+          submission: e.record.id,
+          status: newStatus,
+          reason: newStatus === 'rejected' ? e.record.getString('rejection_reason') : '',
+        });
+        $app.save(notification);
+      } else if (newStatus === 'pending') {
+        // An admin reversed their decision ("send back to queue") before the
+        // submitter ever saw the notification - drop the stale row instead
+        // of leaving a "rejected"/"published" ping next to a submission
+        // that's actually back in the working queue.
+        const stale = $app.findRecordsByFilter('user_submission_notifications', 'submission = {:id}', '', 0, 0, {
+          id: e.record.id,
+        });
+        for (let i = 0; i < stale.length; i++) {
+          $app.delete(stale[i]);
+        }
+      }
+    }
+  } catch (err) {
+    console.log('Submission notification hook error:', err);
+  }
+
+  e.next();
+}, 'user_submitted_patterns');

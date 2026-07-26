@@ -11,18 +11,26 @@ import {
   useMutationDismissSetNotification,
   type TypeFollowedSetResponse,
 } from '@/functions/database/sets';
+import {
+  useQueryGetUserSubmissionNotifications,
+  useMutationDismissSubmissionNotification,
+  type TypeUserSubmissionNotificationResponse,
+} from '@/functions/database/user-submissions';
 
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import BookmarksOutlinedIcon from '@mui/icons-material/BookmarksOutlined';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 import { Badge, Box, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
 
 type CollectionUpdate = { type: 'collection'; record: TypeFollowedCollectionResponse };
 type SetUpdate = { type: 'set'; record: TypeFollowedSetResponse };
-type AnyUpdate = CollectionUpdate | SetUpdate;
+type SubmissionUpdate = { type: 'submission'; record: TypeUserSubmissionNotificationResponse };
+type AnyUpdate = CollectionUpdate | SetUpdate | SubmissionUpdate;
 
 export const NotificationBell = () => {
   const { authData } = useGlobalAuthData();
@@ -33,9 +41,13 @@ export const NotificationBell = () => {
     authData?.id || '',
   );
   const { data: followedSets = [], refetch: refetchSets } = useQueryGetUserFollowedSets(authData?.id || '');
+  const { data: submissionNotifications = [], refetch: refetchSubmissions } = useQueryGetUserSubmissionNotifications(
+    authData?.id || '',
+  );
 
   const dismissCollectionNotification = useMutationDismissCollectionNotification();
   const dismissSetNotification = useMutationDismissSetNotification();
+  const dismissSubmissionNotification = useMutationDismissSubmissionNotification();
   const navigate = useNavigate();
 
   const collectionUpdates: AnyUpdate[] = followedCollections
@@ -52,7 +64,12 @@ export const NotificationBell = () => {
     })
     .map((record) => ({ type: 'set', record }));
 
-  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates];
+  // Every row here is an unread notification - dismissing one deletes it
+  // outright (see useMutationDismissSubmissionNotification), so unlike the
+  // collection/set follows above there's no timestamp filter to apply.
+  const submissionUpdates: AnyUpdate[] = submissionNotifications.map((record) => ({ type: 'submission', record }));
+
+  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates, ...submissionUpdates];
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -81,7 +98,7 @@ export const NotificationBell = () => {
       } catch {
         // Silent — badge will reappear on next mount if dismiss failed
       }
-    } else {
+    } else if (update.type === 'set') {
       const setUpdated = update.record.expand?.set_id?.updated;
       if (!setUpdated) return;
       try {
@@ -94,6 +111,19 @@ export const NotificationBell = () => {
           to: '/sets/$setId',
           params: { setId: update.record.set_id },
         });
+      } catch {
+        // Silent — badge will reappear on next mount if dismiss failed
+      }
+    } else {
+      const resultingPatternId = update.record.expand?.submission?.resulting_pattern;
+      try {
+        await dismissSubmissionNotification.mutateAsync(update.record.id);
+        await refetchSubmissions();
+        if (update.record.status === 'published' && resultingPatternId) {
+          void navigate({ to: '/pattern/$patternId', params: { patternId: resultingPatternId } });
+        } else {
+          void navigate({ to: '/profile/submissions' });
+        }
       } catch {
         // Silent — badge will reappear on next mount if dismiss failed
       }
@@ -177,7 +207,7 @@ export const NotificationBell = () => {
                   </Box>
                 </MenuItem>
               );
-            } else {
+            } else if (update.type === 'set') {
               const set = update.record.expand?.set_id;
               return (
                 <MenuItem
@@ -197,6 +227,39 @@ export const NotificationBell = () => {
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                       Updated with new patterns
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              );
+            } else {
+              const submission = update.record.expand?.submission;
+              const isPublished = update.record.status === 'published';
+              return (
+                <MenuItem
+                  key={update.record.id}
+                  onClick={() => handleNotificationClick(update)}
+                  sx={{ ...menuItemStyles, alignItems: 'flex-start' }}
+                >
+                  <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
+                    {isPublished ? (
+                      <CheckCircleRoundedIcon fontSize="small" color="success" />
+                    ) : (
+                      <CancelRoundedIcon fontSize="small" color="error" />
+                    )}
+                  </ListItemIcon>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+                        {submission?.name ?? 'Your submission'}
+                      </Typography>
+                      <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {isPublished
+                        ? 'Approved — now live'
+                        : update.record.reason
+                          ? `Rejected: ${update.record.reason}`
+                          : 'Rejected'}
                     </Typography>
                   </Box>
                 </MenuItem>

@@ -37,11 +37,16 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Paper,
   Stack,
   Step,
   StepLabel,
   Stepper,
+  TextField,
   Typography,
 } from '@mui/material';
 import { useGlobalAuthData } from '@/data/auth-data.ts';
@@ -82,6 +87,8 @@ function RouteComponent() {
 
   const [isSaving, setIsSaving] = React.useState(false);
   const [isReuploading, setIsReuploading] = React.useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
+  const [rejectReason, setRejectReason] = React.useState('');
 
   // Reset back to the code-review gate whenever a different submission loads.
   // A reupload does NOT reset this: if the admin is already past the gate (either
@@ -168,7 +175,8 @@ function RouteComponent() {
   };
 
   const handleReject = async () => {
-    await rejectSubmission.mutateAsync(submission.id);
+    const reason = rejectReason.trim();
+    await rejectSubmission.mutateAsync({ id: submission.id, reason });
     queryClient.invalidateQueries({ queryKey: ['GetAllUserSubmissionsByPagination'] });
     queryClient.invalidateQueries({ queryKey: ['GetProcessedUserSubmissionsByPagination'] });
     log({
@@ -177,8 +185,9 @@ function RouteComponent() {
       entity_id: submission.id,
       entity_name: submission.name,
       changes: { status: { from: submission.status, to: 'rejected' } },
-      metadata: {},
+      metadata: reason ? { reason } : {},
     });
+    setRejectDialogOpen(false);
     enqueueSnackbar('Submission rejected.', { variant: 'info' });
     navigate({ to: '/space-command/user-submissions' });
   };
@@ -396,7 +405,12 @@ function RouteComponent() {
             </PatternDetailsForm>
 
             <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end', mt: 2 }}>
-              <Button color="error" variant="outlined" onClick={handleReject} disabled={isSaving}>
+              <Button
+                color="error"
+                variant="outlined"
+                onClick={() => setRejectDialogOpen(true)}
+                disabled={isSaving || rejectSubmission.isPending}
+              >
                 Reject
               </Button>
               <Button
@@ -411,6 +425,39 @@ function RouteComponent() {
           </>
         )}
       </Paper>
+
+      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Reject submission</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            The submitter will see this note in their notification. Leave it blank to send a plain rejection with no
+            explanation.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            minRows={3}
+            label="Reason (optional)"
+            placeholder="e.g. Image resolution is too low to trace accurately"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)} disabled={rejectSubmission.isPending}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleReject}
+            loading={rejectSubmission.isPending}
+          >
+            Reject Submission
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

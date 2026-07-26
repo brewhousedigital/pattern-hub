@@ -55,8 +55,17 @@ function RouteComponent() {
               </Button>
               <Button
                 component={Link}
-                to="/"
+                to="/profile/submissions"
                 variant="outlined"
+                fullWidth
+                sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 700 }}
+              >
+                View my submissions
+              </Button>
+              <Button
+                component={Link}
+                to="/"
+                variant="text"
                 fullWidth
                 sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 700 }}
               >

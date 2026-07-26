@@ -9,6 +9,7 @@ import HowToRegRoundedIcon from '@mui/icons-material/HowToRegRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import Settings from '@mui/icons-material/Settings';
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import Logout from '@mui/icons-material/Logout';
 
 import { Avatar, IconButton, ListItemIcon, Menu, MenuItem } from '@mui/material';
@@ -113,6 +114,13 @@ const getAuthenticatedMenuItems = (verified: boolean) => [
           icon: <UploadFileRoundedIcon />,
           onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
             navigateTo({ to: '/profile/submit-pattern' });
+          },
+        },
+        {
+          label: 'My Submissions',
+          icon: <FactCheckRoundedIcon />,
+          onClick: (navigateTo: ReturnType<typeof useNavigate>) => {
+            navigateTo({ to: '/profile/submissions' });
           },
         },
       ]

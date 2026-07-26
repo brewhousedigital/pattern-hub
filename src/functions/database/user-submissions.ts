@@ -1,7 +1,11 @@
 import { useQuery, keepPreviousData, useMutation } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
-import type { TypePatternKeyReferenceObject, TypePatternLayersMapItem } from '@/functions/database/patterns';
+import type {
+  TypePatternKeyReferenceObject,
+  TypePatternLayersMapItem,
+  TypePatternResponse,
+} from '@/functions/database/patterns';
 import type { TypeAuthData } from '@/functions/database/authentication';
 
 export type TypeUserSubmissionFileType = 'svg' | 'webp';
@@ -38,6 +42,7 @@ export type TypeUserSubmittedPatternResponse = {
   reviewing_admin?: string | null;
   review_started_at?: string | null;
   resulting_pattern?: string | null;
+  rejection_reason?: string;
   admin_reupload_file?: string | null;
   hidden: boolean;
   created: string;
@@ -45,6 +50,7 @@ export type TypeUserSubmittedPatternResponse = {
   expand?: {
     submitter?: TypeAuthData;
     reviewing_admin?: TypeAuthData;
+    resulting_pattern?: TypePatternResponse;
   };
 };
 
@@ -119,12 +125,18 @@ export const useMutationBeginReview = () => {
   });
 };
 
+export type TypeRejectUserSubmissionPayload = {
+  id: string;
+  reason?: string;
+};
+
 export const useMutationRejectUserSubmission = () => {
   return useMutation({
-    mutationFn: async (id: string): Promise<TypeUserSubmittedPatternResponse> => {
-      return await pocketbase.collection('user_submitted_patterns').update(id, {
+    mutationFn: async (payload: TypeRejectUserSubmissionPayload): Promise<TypeUserSubmittedPatternResponse> => {
+      return await pocketbase.collection('user_submitted_patterns').update(payload.id, {
         status: 'rejected',
         hidden: true,
+        rejection_reason: payload.reason?.trim() || '',
       });
     },
   });
@@ -185,6 +197,76 @@ export const useMutationAdminReuploadSvg = () => {
       formData.append('has_layers', String(payload.layersMap.length > 0));
       formData.append('layers_map', JSON.stringify(payload.layersMap));
       return await pocketbase.collection('user_submitted_patterns').update(payload.id, formData);
+    },
+  });
+};
+
+// ─── "My Submissions" (submitter-facing) ──────────────────────────────────────
+// Powers /profile/submissions - the submitter's own view of everything they've
+// sent in, across every status. Relies on the collection's existing view/list
+// rule (submitter = @request.auth.id), so no schema change is needed for this
+// query itself.
+export const useQueryGetMySubmissions = (userId: string, page: number) => {
+  return useQuery({
+    queryKey: ['GetMySubmissions', userId, page],
+    queryFn: async (): Promise<TypePaginationDatabaseResponse<TypeUserSubmittedPatternResponse>> => {
+      return await pocketbase.collection('user_submitted_patterns').getList(page, 20, {
+        filter: `submitter = "${userId}"`,
+        expand: 'resulting_pattern',
+        sort: '-created',
+      });
+    },
+    enabled: !!userId && !!page,
+    placeholderData: keepPreviousData,
+  });
+};
+
+// ─── Submission review notifications (bell) ───────────────────────────────────
+// Backs the "approved/rejected" entries in NotificationBell.tsx. Rows are
+// created server-side by the pb_hooks onRecordAfterUpdateSuccess hook on
+// user_submitted_patterns (see pb_hooks/main.pb.js) - the client never
+// creates these directly, only reads and dismisses (deletes) its own.
+export type TypeSubmissionNotificationStatus = 'published' | 'rejected';
+
+export type TypeUserSubmissionNotificationResponse = {
+  collectionId: string;
+  collectionName: string;
+  id: string;
+  submitter: string;
+  submission: string;
+  status: TypeSubmissionNotificationStatus;
+  reason?: string;
+  created: string;
+  updated: string;
+  expand?: {
+    submission?: TypeUserSubmittedPatternResponse;
+  };
+};
+
+export const SUBMISSION_NOTIFICATIONS_QUERY_KEY = ['UserSubmissionNotifications'] as const;
+
+export const useQueryGetUserSubmissionNotifications = (userId: string) => {
+  return useQuery({
+    queryKey: [...SUBMISSION_NOTIFICATIONS_QUERY_KEY, userId],
+    queryFn: async (): Promise<TypeUserSubmissionNotificationResponse[]> => {
+      return await pocketbase.collection('user_submission_notifications').getFullList({
+        filter: `submitter = "${userId}"`,
+        expand: 'submission,submission.resulting_pattern',
+        sort: '-created',
+      });
+    },
+    enabled: !!userId,
+  });
+};
+
+// Dismissing a submission notification deletes the row outright (unlike the
+// collection/set follow notifications, which persist and just move their
+// last_checked_updated marker) - this is a one-off event, not an ongoing
+// subscription, so there's nothing left to track once it's been seen.
+export const useMutationDismissSubmissionNotification = () => {
+  return useMutation({
+    mutationFn: async (notificationId: string): Promise<void> => {
+      await pocketbase.collection('user_submission_notifications').delete(notificationId);
     },
   });
 };
