@@ -915,16 +915,22 @@ routerAdd(
 
 // ─── Database stats snapshots ──────────────────────────────────────────────
 //
-// Weekly historical record of site-wide metrics for the admin "Database
-// Stats" page and a curated public subset on /community. Unlike the small
-// helpers above (duplicated per-route by convention since they're ~10 lines
-// each), this computation runs 15+ queries and must stay byte-identical
-// between the cron trigger and the manual "Run snapshot now" button, so it's
-// defined once here instead of copy-pasted across two routes.
+// Daily historical record of site-wide metrics for the admin "Database
+// Stats" page and a curated public subset on /community. computeDatabaseStats-
+// Snapshot/saveDatabaseStatsSnapshot are intentionally duplicated in full
+// across both routes below (per the file NOTICE at the top: no root-level
+// functions/variables - PocketBase doesn't support them, so every helper has
+// to live inside the routerAdd callback that uses it). If you change one
+// copy, change both - they must stay byte-identical.
 
-// An external cron service (netlify/functions/sync-database-stats.ts) sends a
-// POST to /api/sync-database-stats with the X-Sync-Key header, once a week,
-// to record a new snapshot. Mirrors /api/sync-aggregates' auth exactly.
+// A cloud-hosted cron tool sends a POST to /api/sync-database-stats with the
+// X-Sync-Key header once a day, plus a backup run a bit later the same day in
+// case the first one is missed (e.g. the PocketBase host being briefly
+// offline) - there's no retry once that window passes, so the backup is the
+// retry. A day with both runs ends up with 2 rows; the frontend (see
+// dedupeSnapshotsByDay in src/functions/database/database-stats.ts) collapses
+// same-day duplicates down to the later one before charting, so a duplicate
+// here is harmless. Mirrors /api/sync-aggregates' auth exactly.
 routerAdd('POST', '/api/sync-database-stats', (c) => {
   function computeDatabaseStatsSnapshot() {
     function countRows(table, whereSQL, params) {
@@ -1075,8 +1081,8 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       // instead of dragging it toward 0 as the unrated backlog grows.
       avg_pattern_rating: avgField('patterns', 'avg_rating', 'isDeleted = 0 AND avg_rating > 0'),
       avg_pattern_difficulty: avgField('patterns', 'avg_difficulty', 'isDeleted = 0 AND avg_difficulty > 0'),
-      // Trailing-7-day windows (not all-time cumulative) so each weekly snapshot
-      // is a genuine week-over-week comparison instead of a slow-moving average
+      // Trailing-7-day windows (not all-time cumulative) so each snapshot is a
+      // genuine week-over-week comparison instead of a slow-moving average
       // diluted by months of history.
       exports_by_hour_7d: exportsByHour,
       exports_by_weekday_7d: exportsByWeekday,
@@ -1106,6 +1112,8 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
 });
 
 // Admin-triggered "Run snapshot now" button (DB_STATS_AC-gated client-side).
+// Duplicates computeDatabaseStatsSnapshot/saveDatabaseStatsSnapshot from
+// /api/sync-database-stats above - see the NOTICE at the top of this file.
 routerAdd(
   'POST',
   '/api/admin-run-database-stats-snapshot',
@@ -1259,8 +1267,8 @@ routerAdd(
         // instead of dragging it toward 0 as the unrated backlog grows.
         avg_pattern_rating: avgField('patterns', 'avg_rating', 'isDeleted = 0 AND avg_rating > 0'),
         avg_pattern_difficulty: avgField('patterns', 'avg_difficulty', 'isDeleted = 0 AND avg_difficulty > 0'),
-        // Trailing-7-day windows (not all-time cumulative) so each weekly snapshot
-        // is a genuine week-over-week comparison instead of a slow-moving average
+        // Trailing-7-day windows (not all-time cumulative) so each snapshot is a
+        // genuine week-over-week comparison instead of a slow-moving average
         // diluted by months of history.
         exports_by_hour_7d: exportsByHour,
         exports_by_weekday_7d: exportsByWeekday,

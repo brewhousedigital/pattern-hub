@@ -53,7 +53,7 @@ function RouteComponent() {
   const { data, isPending, isError, error, refetch } = useQueryGetDatabaseStatsHistory();
   const triggerSnapshot = useMutationTriggerDatabaseStatsSnapshot();
 
-  const [period, setPeriod] = React.useState<TypeStatsPeriod>('weekly');
+  const [period, setPeriod] = React.useState<TypeStatsPeriod>('daily');
   const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
 
   const snapshots = data ?? [];
@@ -119,7 +119,7 @@ function RouteComponent() {
     <>
       <AdminHeaderContainer
         title="Database Stats"
-        subtitle="Weekly snapshots of site-wide metrics, charted over time."
+        subtitle="Daily snapshots of site-wide metrics, charted over time."
         actionNode={
           <Tooltip title="Refresh">
             <Button startIcon={<RefreshRoundedIcon />} onClick={() => void refetch()} sx={{ mr: canCreate ? 1 : 0 }}>
@@ -152,7 +152,7 @@ function RouteComponent() {
               <InsightsRoundedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
               <Typography sx={{ fontWeight: 600, mb: 0.5 }}>No snapshots yet</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: canCreate ? 2 : 0 }}>
-                The weekly cron hasn't run yet.
+                The daily cron hasn't run yet.
                 {canCreate ? ' Record the first one now to start building history.' : ''}
               </Typography>
               {canCreate && (

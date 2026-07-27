@@ -46,10 +46,10 @@ export type TypePublicDatabaseStatsSnapshot = {
   total_tags: number;
 };
 
-export type TypeStatsPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type TypeStatsPeriod = 'daily' | 'monthly' | 'quarterly' | 'yearly';
 
 export const STATS_PERIODS: { value: TypeStatsPeriod; label: string }[] = [
-  { value: 'weekly', label: 'Weekly' },
+  { value: 'daily', label: 'Daily' },
   { value: 'monthly', label: 'Monthly' },
   { value: 'quarterly', label: 'Quarterly' },
   { value: 'yearly', label: 'Yearly' },
@@ -79,13 +79,17 @@ export const PUBLIC_DATABASE_STATS_QUERY_KEY = ['PublicDatabaseStatsHistory'] as
 
 // Admin, full history. The collection's List rule already restricts reads to
 // admins, so this goes straight through the client SDK - no custom route needed.
+// Deduped to one snapshot per calendar day here, at the fetch boundary, so
+// every downstream consumer (charts, the Snapshot History table) sees a clean
+// series without having to know the primary/backup cron setup exists.
 export const useQueryGetDatabaseStatsHistory = () => {
   return useQuery({
     queryKey: DATABASE_STATS_QUERY_KEY,
     queryFn: async (): Promise<TypeDatabaseStatsSnapshot[]> => {
-      return await pocketbase.collection('database_stats_snapshots').getFullList<TypeDatabaseStatsSnapshot>({
-        sort: 'created',
-      });
+      const records = await pocketbase
+        .collection('database_stats_snapshots')
+        .getFullList<TypeDatabaseStatsSnapshot>({ sort: 'created' });
+      return dedupeSnapshotsByDay(records);
     },
   });
 };
@@ -123,7 +127,7 @@ export const useMutationTriggerDatabaseStatsSnapshot = () => {
 
 const getBucketKey = (date: Dayjs, period: TypeStatsPeriod): string => {
   switch (period) {
-    case 'weekly':
+    case 'daily':
       return date.format('YYYY-MM-DD');
     case 'monthly':
       return date.format('YYYY-MM');
@@ -136,7 +140,7 @@ const getBucketKey = (date: Dayjs, period: TypeStatsPeriod): string => {
 
 const formatBucketLabel = (date: Dayjs, period: TypeStatsPeriod): string => {
   switch (period) {
-    case 'weekly':
+    case 'daily':
       return date.format('MMM D');
     case 'monthly':
       return date.format('MMM YYYY');
@@ -181,12 +185,26 @@ const groupByPeriod = <T extends { created: string }>(
   return result.sort((a, b) => a.date.valueOf() - b.date.valueOf());
 };
 
+// The primary cron can occasionally miss its run entirely (e.g. the
+// PocketBase host being briefly offline) with no way to retry once the
+// window's passed, so a backup cron fires a bit later the same day to fill
+// the gap. On a normal day both succeed and the table ends up with 2 rows for
+// one calendar day. Duplicates are left in the table itself on purpose -
+// better a duplicate than a silent gap - but every chart/aggregate should
+// only ever see one point per day: the later of the two, since it reflects
+// the more complete same-day picture (and is the *only* one recorded on a day
+// the primary failed and the backup caught it).
+export const dedupeSnapshotsByDay = (snapshots: TypeDatabaseStatsSnapshot[]): TypeDatabaseStatsSnapshot[] =>
+  groupByPeriod(snapshots, 'daily').map((bucket) => bucket.latest);
+
 /**
- * Rolls raw (weekly) snapshots up to the requested period. `weekly` returns
+ * Rolls raw (daily) snapshots up to the requested period. `daily` returns
  * one bucket per snapshot; `monthly`/`quarterly`/`yearly` group snapshots by
  * period, keeping the *last* snapshot's cumulative totals (most accurate
  * point-in-time state) while summing the rolling-7d fields across the group
- * (an approximation of "new X this period" from weekly deltas).
+ * (an approximation of "new X this period" from daily deltas). Callers should
+ * dedupe with dedupeSnapshotsByDay first - otherwise a duplicate day's _7d
+ * fields get summed twice into whatever period bucket it falls in.
  */
 export const bucketSnapshotsByPeriod = (
   snapshots: TypeDatabaseStatsSnapshot[],
