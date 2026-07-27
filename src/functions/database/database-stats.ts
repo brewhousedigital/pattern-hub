@@ -24,6 +24,7 @@ export type TypeDatabaseStatsSnapshot = {
   total_pattern_sets: number;
   total_store_locations: number;
   total_site_visits: number;
+  top_exported_patterns_30d: { pattern_id: string; name: string; count: number }[];
   new_users_7d: number;
   new_patterns_7d: number;
   new_exports_7d: number;

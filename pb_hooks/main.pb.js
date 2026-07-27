@@ -1053,6 +1053,36 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
     } catch (_) {}
 
+    // Trailing 30 days (not all-time) so this actually moves month to month -
+    // an all-time leaderboard would be frozen solid with the same handful of
+    // long-popular patterns forever. Name is denormalized at snapshot time so
+    // a later rename/deletion doesn't corrupt the historical record - this is
+    // "what was popular then", not a live lookup.
+    const topExportedPatterns = [];
+    try {
+      const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
+      const rows = arrayOf(new DynamicModel({ pattern_id: '', name: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT ae.pattern_id AS pattern_id, p.name AS name, COUNT(*) AS count ' +
+            'FROM analytics_exports ae JOIN patterns p ON p.id = ae.pattern_id ' +
+            'WHERE datetime(ae.created) >= datetime({:cutoff30}) ' +
+            'GROUP BY ae.pattern_id ' +
+            'ORDER BY count DESC ' +
+            'LIMIT 10',
+        )
+        .bind({ cutoff30 })
+        .all(rows);
+      for (let i = 0; i < rows.length; i++) {
+        topExportedPatterns.push({
+          pattern_id: rows[i].pattern_id,
+          name: rows[i].name,
+          count: parseInt(rows[i].count, 10) || 0,
+        });
+      }
+    } catch (_) {}
+
     return {
       total_patterns: countRows('patterns', 'isDeleted = 0'),
       published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
@@ -1067,6 +1097,7 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       total_pattern_sets: countRows('pattern_sets', "id != ''"),
       total_store_locations: countRows('store_locations', "id != ''"),
       total_site_visits: totalSiteVisits,
+      top_exported_patterns_30d: topExportedPatterns,
       new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
       new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
         cutoff,
@@ -1239,6 +1270,36 @@ routerAdd(
         totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
       } catch (_) {}
 
+      // Trailing 30 days (not all-time) so this actually moves month to month -
+      // an all-time leaderboard would be frozen solid with the same handful of
+      // long-popular patterns forever. Name is denormalized at snapshot time so
+      // a later rename/deletion doesn't corrupt the historical record - this is
+      // "what was popular then", not a live lookup.
+      const topExportedPatterns = [];
+      try {
+        const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
+        const rows = arrayOf(new DynamicModel({ pattern_id: '', name: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            'SELECT ae.pattern_id AS pattern_id, p.name AS name, COUNT(*) AS count ' +
+              'FROM analytics_exports ae JOIN patterns p ON p.id = ae.pattern_id ' +
+              'WHERE datetime(ae.created) >= datetime({:cutoff30}) ' +
+              'GROUP BY ae.pattern_id ' +
+              'ORDER BY count DESC ' +
+              'LIMIT 10',
+          )
+          .bind({ cutoff30 })
+          .all(rows);
+        for (let i = 0; i < rows.length; i++) {
+          topExportedPatterns.push({
+            pattern_id: rows[i].pattern_id,
+            name: rows[i].name,
+            count: parseInt(rows[i].count, 10) || 0,
+          });
+        }
+      } catch (_) {}
+
       return {
         total_patterns: countRows('patterns', 'isDeleted = 0'),
         published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
@@ -1253,6 +1314,7 @@ routerAdd(
         total_pattern_sets: countRows('pattern_sets', "id != ''"),
         total_store_locations: countRows('store_locations', "id != ''"),
         total_site_visits: totalSiteVisits,
+        top_exported_patterns_30d: topExportedPatterns,
         new_users_7d: countRows('users', 'datetime(created) >= datetime({:cutoff})', { cutoff }),
         new_patterns_7d: countRows('patterns', 'isDeleted = 0 AND datetime(created) >= datetime({:cutoff})', {
           cutoff,

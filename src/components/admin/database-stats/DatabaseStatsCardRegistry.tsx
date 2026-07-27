@@ -18,12 +18,14 @@ import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 
 import { StatTile } from '@/components/charts/StatTile';
 import { TrendChartCard } from '@/components/charts/TrendChartCard';
 import { BreakdownPieCard } from '@/components/charts/BreakdownPieCard';
 import { RadarComparisonCard } from '@/components/charts/RadarComparisonCard';
 import { ExportTimeIntensityGrid } from '@/components/charts/ExportTimeIntensityGrid';
+import { TopExportedPatternsCard } from '@/components/charts/TopExportedPatternsCard';
 import {
   computeExportsPerPattern,
   computeGrowthSeries,
@@ -268,6 +270,18 @@ export const buildDatabaseStatsCardRegistry = (
         data={latest.exports_by_flow_7d}
         categoryOrder={['cricut', 'craft cutter', 'printing', 'saving for later', 'editing', 'generic']}
         labelFormatter={(k) => k.replace(/\b\w/g, (c) => c.toUpperCase())}
+      />
+    ),
+  },
+  {
+    id: 'top-exported-patterns',
+    title: 'Top Exported Patterns',
+    gridSize: FULL_SIZE,
+    render: () => (
+      <TopExportedPatternsCard
+        title="Top Exported Patterns (trailing 30 days)"
+        icon={<EmojiEventsRoundedIcon sx={{ fontSize: 18 }} />}
+        patterns={latest.top_exported_patterns_30d}
       />
     ),
   },
