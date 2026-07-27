@@ -236,10 +236,21 @@ export const authSignOut = () => {
 };
 
 export const authRefreshSession = async (): AuthCreationType => {
+  // Skip the network round-trip when there's no token, or it's already locally
+  // known to be expired - either way the request would just be a guaranteed
+  // 401. isValid decodes the JWT's exp claim client-side, so this check is free.
+  if (!pocketbase.authStore.isValid) {
+    throw new Error('No valid auth token present');
+  }
+
   return await pocketbase.collection('users').authRefresh();
 };
 
 export const authRefreshAdminSession = async (): AuthCreationType => {
+  if (!pocketbase.authStore.isValid) {
+    throw new Error('No valid auth token present');
+  }
+
   return await pocketbase.collection('admins').authRefresh();
 };
 
