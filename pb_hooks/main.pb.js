@@ -1053,11 +1053,13 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
     } catch (_) {}
 
-    // Trailing 30 days (not all-time) so this actually moves month to month -
-    // an all-time leaderboard would be frozen solid with the same handful of
-    // long-popular patterns forever. Name is denormalized at snapshot time so
-    // a later rename/deletion doesn't corrupt the historical record - this is
-    // "what was popular then", not a live lookup.
+    // Trailing 30 days (not all-time) so this actually moves over time - an
+    // all-time leaderboard would be frozen solid with the same handful of
+    // long-popular patterns forever. Kept alongside monthly_top_exports (see
+    // captureMonthlyTopExportsIfNeeded below): this is the always-fresh
+    // "right now" view, that's the exact-calendar-month historical record -
+    // different jobs, both worth keeping. Name is denormalized at snapshot
+    // time so a later rename/deletion doesn't corrupt the historical record.
     const topExportedPatterns = [];
     try {
       const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
@@ -1129,12 +1131,83 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
     return record;
   }
 
+  // Captures an exact, immutable top-10 for the most recently CONCLUDED
+  // calendar month (not a rolling window) into the monthly_top_exports
+  // collection - one row per month, computed once. Re-derives "last month"
+  // from today's date on every run instead of only firing "if today is the
+  // 1st", so a run that's missed on the 1st still self-heals: whichever run
+  // succeeds next finds last month has no row yet and backfills it. The
+  // existence check makes this safe to call from both the daily cron and the
+  // backup/manual-trigger runs without creating duplicate months.
+  function captureMonthlyTopExportsIfNeeded() {
+    try {
+      const now = new Date();
+      const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+      const monthKey = prevMonth.getUTCFullYear() + '-' + String(prevMonth.getUTCMonth() + 1).padStart(2, '0');
+
+      const existingRows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery('SELECT COUNT(*) as count FROM monthly_top_exports WHERE month = {:monthKey}')
+        .bind({ monthKey })
+        .all(existingRows);
+      if ((parseInt(existingRows[0]?.count || 0, 10) || 0) > 0) return;
+
+      const nextMonth = new Date(Date.UTC(prevMonth.getUTCFullYear(), prevMonth.getUTCMonth() + 1, 1));
+      const monthStart = monthKey + '-01 00:00:00.000Z';
+      const monthEnd =
+        nextMonth.getUTCFullYear() + '-' + String(nextMonth.getUTCMonth() + 1).padStart(2, '0') + '-01 00:00:00.000Z';
+
+      const topRows = arrayOf(new DynamicModel({ pattern_id: '', name: '', count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT ae.pattern_id AS pattern_id, p.name AS name, COUNT(*) AS count ' +
+            'FROM analytics_exports ae JOIN patterns p ON p.id = ae.pattern_id ' +
+            'WHERE datetime(ae.created) >= datetime({:monthStart}) AND datetime(ae.created) < datetime({:monthEnd}) ' +
+            'GROUP BY ae.pattern_id ORDER BY count DESC LIMIT 10',
+        )
+        .bind({ monthStart, monthEnd })
+        .all(topRows);
+
+      const topPatterns = [];
+      for (let i = 0; i < topRows.length; i++) {
+        topPatterns.push({
+          pattern_id: topRows[i].pattern_id,
+          name: topRows[i].name,
+          count: parseInt(topRows[i].count, 10) || 0,
+        });
+      }
+
+      const totalRows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT COUNT(*) as count FROM analytics_exports ' +
+            'WHERE datetime(created) >= datetime({:monthStart}) AND datetime(created) < datetime({:monthEnd})',
+        )
+        .bind({ monthStart, monthEnd })
+        .all(totalRows);
+
+      const collection = $app.findCollectionByNameOrId('monthly_top_exports');
+      const record = new Record(collection, {
+        month: monthKey,
+        top_patterns: topPatterns,
+        total_exports_in_month: parseInt(totalRows[0]?.count || 0, 10) || 0,
+      });
+      $app.save(record);
+    } catch (_) {
+      // Never let this block the daily snapshot save below.
+    }
+  }
+
   try {
     const apiKey = c.request.header.get('X-Sync-Key');
     if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
       return c.json(401, { error: 'unauthorized' });
     }
     const record = saveDatabaseStatsSnapshot();
+    captureMonthlyTopExportsIfNeeded();
     return c.json(200, { ok: true, id: record.id });
   } catch (error) {
     console.log('>>>sync-database-stats error', error?.message);
@@ -1270,11 +1343,13 @@ routerAdd(
         totalSiteVisits = parseInt(rows[0]?.count || 0, 10);
       } catch (_) {}
 
-      // Trailing 30 days (not all-time) so this actually moves month to month -
-      // an all-time leaderboard would be frozen solid with the same handful of
-      // long-popular patterns forever. Name is denormalized at snapshot time so
-      // a later rename/deletion doesn't corrupt the historical record - this is
-      // "what was popular then", not a live lookup.
+      // Trailing 30 days (not all-time) so this actually moves over time - an
+      // all-time leaderboard would be frozen solid with the same handful of
+      // long-popular patterns forever. Kept alongside monthly_top_exports (see
+      // captureMonthlyTopExportsIfNeeded below): this is the always-fresh
+      // "right now" view, that's the exact-calendar-month historical record -
+      // different jobs, both worth keeping. Name is denormalized at snapshot
+      // time so a later rename/deletion doesn't corrupt the historical record.
       const topExportedPatterns = [];
       try {
         const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ');
@@ -1346,8 +1421,79 @@ routerAdd(
       return record;
     }
 
+    // Captures an exact, immutable top-10 for the most recently CONCLUDED
+    // calendar month (not a rolling window) into the monthly_top_exports
+    // collection - one row per month, computed once. Re-derives "last month"
+    // from today's date on every run instead of only firing "if today is the
+    // 1st", so a run that's missed on the 1st still self-heals: whichever run
+    // succeeds next finds last month has no row yet and backfills it. The
+    // existence check makes this safe to call from both the daily cron and the
+    // backup/manual-trigger runs without creating duplicate months.
+    function captureMonthlyTopExportsIfNeeded() {
+      try {
+        const now = new Date();
+        const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+        const monthKey = prevMonth.getUTCFullYear() + '-' + String(prevMonth.getUTCMonth() + 1).padStart(2, '0');
+
+        const existingRows = arrayOf(new DynamicModel({ count: 0 }));
+        $app
+          .db()
+          .newQuery('SELECT COUNT(*) as count FROM monthly_top_exports WHERE month = {:monthKey}')
+          .bind({ monthKey })
+          .all(existingRows);
+        if ((parseInt(existingRows[0]?.count || 0, 10) || 0) > 0) return;
+
+        const nextMonth = new Date(Date.UTC(prevMonth.getUTCFullYear(), prevMonth.getUTCMonth() + 1, 1));
+        const monthStart = monthKey + '-01 00:00:00.000Z';
+        const monthEnd =
+          nextMonth.getUTCFullYear() + '-' + String(nextMonth.getUTCMonth() + 1).padStart(2, '0') + '-01 00:00:00.000Z';
+
+        const topRows = arrayOf(new DynamicModel({ pattern_id: '', name: '', count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            'SELECT ae.pattern_id AS pattern_id, p.name AS name, COUNT(*) AS count ' +
+              'FROM analytics_exports ae JOIN patterns p ON p.id = ae.pattern_id ' +
+              'WHERE datetime(ae.created) >= datetime({:monthStart}) AND datetime(ae.created) < datetime({:monthEnd}) ' +
+              'GROUP BY ae.pattern_id ORDER BY count DESC LIMIT 10',
+          )
+          .bind({ monthStart, monthEnd })
+          .all(topRows);
+
+        const topPatterns = [];
+        for (let i = 0; i < topRows.length; i++) {
+          topPatterns.push({
+            pattern_id: topRows[i].pattern_id,
+            name: topRows[i].name,
+            count: parseInt(topRows[i].count, 10) || 0,
+          });
+        }
+
+        const totalRows = arrayOf(new DynamicModel({ count: 0 }));
+        $app
+          .db()
+          .newQuery(
+            'SELECT COUNT(*) as count FROM analytics_exports ' +
+              'WHERE datetime(created) >= datetime({:monthStart}) AND datetime(created) < datetime({:monthEnd})',
+          )
+          .bind({ monthStart, monthEnd })
+          .all(totalRows);
+
+        const collection = $app.findCollectionByNameOrId('monthly_top_exports');
+        const record = new Record(collection, {
+          month: monthKey,
+          top_patterns: topPatterns,
+          total_exports_in_month: parseInt(totalRows[0]?.count || 0, 10) || 0,
+        });
+        $app.save(record);
+      } catch (_) {
+        // Never let this block the daily snapshot save below.
+      }
+    }
+
     try {
       const record = saveDatabaseStatsSnapshot();
+      captureMonthlyTopExportsIfNeeded();
       return c.json(200, { ok: true, id: record.id });
     } catch (error) {
       console.log('>>>admin-run-database-stats-snapshot error', error?.message);

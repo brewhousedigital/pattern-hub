@@ -9,6 +9,12 @@ export type TopExportedPatternsCardProps = {
   title: string;
   icon: ReactNode;
   patterns: { pattern_id: string; name: string; count: number }[];
+  /** Rendered in StatCardShell's action slot, e.g. a month picker. */
+  action?: ReactNode;
+  /** Small caption above the list, e.g. "August 2026 · 142 total exports". */
+  subtitle?: ReactNode;
+  /** Shown instead of the empty-state notice when patterns.length === 0. */
+  emptyMessage?: string;
 };
 
 // A ranked list, not a stock chart type - MUI X Charts doesn't have a "top N
@@ -16,11 +22,23 @@ export type TopExportedPatternsCardProps = {
 // make its category labels link out to the pattern. Hand-rolled bars (a
 // per-row width percentage) instead, same spirit as the export-time intensity
 // grid.
-export const TopExportedPatternsCard = ({ title, icon, patterns }: TopExportedPatternsCardProps) => {
+export const TopExportedPatternsCard = ({
+  title,
+  icon,
+  patterns,
+  action,
+  subtitle,
+  emptyMessage,
+}: TopExportedPatternsCardProps) => {
   if (patterns.length === 0) {
     return (
-      <StatCardShell title={title} icon={icon}>
-        <EmptyChartNotice />
+      <StatCardShell title={title} icon={icon} action={action}>
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
+            {subtitle}
+          </Typography>
+        )}
+        <EmptyChartNotice message={emptyMessage} />
       </StatCardShell>
     );
   }
@@ -28,7 +46,12 @@ export const TopExportedPatternsCard = ({ title, icon, patterns }: TopExportedPa
   const max = Math.max(1, ...patterns.map((p) => p.count));
 
   return (
-    <StatCardShell title={title} icon={icon}>
+    <StatCardShell title={title} icon={icon} action={action}>
+      {subtitle && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.25 }}>
+          {subtitle}
+        </Typography>
+      )}
       <Stack spacing={1.25}>
         {patterns.map((pattern, i) => (
           <Box key={pattern.pattern_id} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>

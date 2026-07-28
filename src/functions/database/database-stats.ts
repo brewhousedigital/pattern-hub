@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import type { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { pocketbase, pocketbaseDomain, queryClient } from '@/functions/database/authentication-setup';
 import { useAuthorizationHeaders } from '@/functions/database/useAuthorizationHeaders';
 import { parsePbDate } from '@/functions/utilities/dates';
@@ -24,6 +24,8 @@ export type TypeDatabaseStatsSnapshot = {
   total_pattern_sets: number;
   total_store_locations: number;
   total_site_visits: number;
+  /** Rolling, recomputed every snapshot - always-fresh "right now" view. Compare
+   * to TypeMonthlyTopExports, which is an exact, immutable per-calendar-month record. */
   top_exported_patterns_30d: { pattern_id: string; name: string; count: number }[];
   new_users_7d: number;
   new_patterns_7d: number;
@@ -45,6 +47,18 @@ export type TypePublicDatabaseStatsSnapshot = {
   total_patterns: number;
   total_users: number;
   total_tags: number;
+};
+
+// Mirrors the `monthly_top_exports` PocketBase collection - one row per
+// concluded calendar month (see pb_hooks/main.pb.js
+// `captureMonthlyTopExportsIfNeeded`), computed once and never touched again.
+// Unlike TypeDatabaseStatsSnapshot's rolling _7d/_30d windows, `month` is an
+// exact "YYYY-MM" boundary, not a lookback from whenever it was computed.
+export type TypeMonthlyTopExports = {
+  id: string;
+  month: string;
+  top_patterns: { pattern_id: string; name: string; count: number }[];
+  total_exports_in_month: number;
 };
 
 export type TypeStatsPeriod = 'daily' | 'monthly' | 'quarterly' | 'yearly';
@@ -104,6 +118,22 @@ export const useQueryGetPublicDatabaseStatsHistory = () => {
       if (!res.ok) throw new Error('Failed to load stats history');
       const data = await res.json();
       return data.items ?? [];
+    },
+  });
+};
+
+export const MONTHLY_TOP_EXPORTS_QUERY_KEY = ['MonthlyTopExports'] as const;
+
+// Admin, one row per concluded month, most recent first. Same "no custom
+// route needed" reasoning as useQueryGetDatabaseStatsHistory - the
+// collection's List rule already restricts this to admins.
+export const useQueryGetMonthlyTopExports = () => {
+  return useQuery({
+    queryKey: MONTHLY_TOP_EXPORTS_QUERY_KEY,
+    queryFn: async (): Promise<TypeMonthlyTopExports[]> => {
+      return await pocketbase
+        .collection('monthly_top_exports')
+        .getFullList<TypeMonthlyTopExports>({ sort: '-month' });
     },
   });
 };
@@ -250,6 +280,9 @@ export const getAvailableYears = (snapshots: TypeDatabaseStatsSnapshot[]): numbe
   }
   return Array.from(years).sort((a, b) => a - b);
 };
+
+// "2026-08" -> "August 2026", for the monthly-top-exports dropdown.
+export const formatMonthLabel = (monthKey: string): string => dayjs(`${monthKey}-01`).format('MMMM YYYY');
 
 export const filterBucketsByYear = (buckets: TypeStatsBucket[], year: number): TypeStatsBucket[] =>
   buckets.filter((bucket) => bucket.date.year() === year);

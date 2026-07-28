@@ -3,7 +3,11 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { pocketbase } from '@/functions/database/authentication-setup';
-import { useMutationAuthCreateUser, useMutationAuthSignIn } from '@/functions/database/authentication';
+import {
+  useMutationAuthCreateUser,
+  useMutationAuthSignIn,
+  useMutationResendVerificationCode,
+} from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { generateSEO } from '@/functions/utilities/seo';
 import { enqueueSnackbar } from 'notistack';
@@ -58,6 +62,7 @@ function RouteComponent() {
 
   const createUser = useMutationAuthCreateUser();
   const signIn = useMutationAuthSignIn();
+  const requestVerification = useMutationResendVerificationCode();
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -83,6 +88,15 @@ function RouteComponent() {
         name: `NewUser_${Date.now()}`,
         turnstileToken: currentToken,
       });
+
+      // Send the initial verification email - best-effort, since a mail-send
+      // hiccup shouldn't block registration; the account still exists and
+      // AccountVerificationBox's "Resend Code" button covers retries
+      try {
+        await requestVerification.mutateAsync(email);
+      } catch {
+        // non-fatal
+      }
 
       // Sign in the newly created user so we have a valid token
       await signIn.mutateAsync({ email, password });

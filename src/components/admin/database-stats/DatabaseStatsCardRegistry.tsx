@@ -26,6 +26,7 @@ import { BreakdownPieCard } from '@/components/charts/BreakdownPieCard';
 import { RadarComparisonCard } from '@/components/charts/RadarComparisonCard';
 import { ExportTimeIntensityGrid } from '@/components/charts/ExportTimeIntensityGrid';
 import { TopExportedPatternsCard } from '@/components/charts/TopExportedPatternsCard';
+import { MonthlyTopExportsCard } from '@/components/admin/database-stats/MonthlyTopExportsCard';
 import {
   computeExportsPerPattern,
   computeGrowthSeries,
@@ -274,16 +275,22 @@ export const buildDatabaseStatsCardRegistry = (
     ),
   },
   {
-    id: 'top-exported-patterns',
-    title: 'Top Exported Patterns',
+    id: 'top-exported-patterns-30d',
+    title: 'Top Exported Patterns (Trailing 30 Days)',
     gridSize: FULL_SIZE,
     render: () => (
       <TopExportedPatternsCard
-        title="Top Exported Patterns (trailing 30 days)"
+        title="Top Exported Patterns (Trailing 30 Days)"
         icon={<EmojiEventsRoundedIcon sx={{ fontSize: 18 }} />}
         patterns={latest.top_exported_patterns_30d}
       />
     ),
+  },
+  {
+    id: 'top-exported-patterns-monthly',
+    title: 'Top Exported Patterns (By Month)',
+    gridSize: FULL_SIZE,
+    render: () => <MonthlyTopExportsCard />,
   },
   {
     id: 'published-draft-pie',
@@ -301,11 +308,11 @@ export const buildDatabaseStatsCardRegistry = (
   },
   {
     id: 'growth-velocity-radar',
-    title: 'Growth Velocity',
+    title: 'Growth Radar',
     gridSize: CHART_SIZE,
     render: () => (
       <RadarComparisonCard
-        title="Growth Velocity"
+        title="Growth Radar"
         icon={<CompareArrowsRoundedIcon sx={{ fontSize: 18 }} />}
         metrics={computeVelocityComparison(buckets)}
       />
