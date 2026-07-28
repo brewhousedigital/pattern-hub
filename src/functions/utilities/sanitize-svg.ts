@@ -70,12 +70,15 @@ export function extractSvgLayerIds(svgText: string): string[] {
     .filter(Boolean);
 }
 
+// Deletes hidden layers outright (rather than display:none) so exported files
+// don't retain content the user chose to exclude - a recipient opening the SVG
+// in Illustrator/Inkscape can't toggle a "hidden" layer back on if it was
+// never in the file to begin with.
 export function applyHiddenLayers(svgText: string, hiddenLayers: Set<string>): string {
   if (hiddenLayers.size === 0) return svgText;
   const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
   hiddenLayers.forEach((id) => {
-    const el = doc.getElementById(id);
-    if (el) el.setAttribute('style', 'display:none');
+    doc.getElementById(id)?.remove();
   });
   return new XMLSerializer().serializeToString(doc);
 }
