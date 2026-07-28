@@ -25,7 +25,9 @@ import {
   extractSvgLayerIds,
   type SvgThreat,
 } from '@/functions/utilities/sanitize-svg';
-import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb-image';
+import { generateUserSubmissionFileUrl, generatePbImage } from '@/functions/utilities/generate-pb-image';
+import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
+import { pocketbase } from '@/functions/database/authentication-setup';
 import dayjs from 'dayjs';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
@@ -232,6 +234,14 @@ function RouteComponent() {
         is_draft: false,
         uploaded_by: authData?.name,
       });
+
+      try {
+        const svgUrl = generatePbImage(newPattern);
+        const ogImage = await generateOpengraphImage({ type: 'svg', url: svgUrl }, values.name);
+        await pocketbase.collection('patterns').update(newPattern.id, { opengraph_image: ogImage });
+      } catch (err) {
+        console.warn('OG image generation failed', err);
+      }
 
       await publishSubmission.mutateAsync({ id: submission.id, resultingPatternId: newPattern.id });
 

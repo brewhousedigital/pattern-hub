@@ -310,6 +310,30 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         }
       }
 
+      // No new file was uploaded, but the pattern name is baked into the OG image -
+      // regenerate it against the existing file so a title-only edit doesn't leave
+      // a stale name on the stored image.
+      if (
+        !(file && previewUrl) &&
+        !(externalFile && previewExternalUrl) &&
+        props.mode === 'edit' &&
+        values.name !== props.name
+      ) {
+        try {
+          if (savedPattern.pattern_file) {
+            const svgUrl = generatePbImage(savedPattern);
+            const ogImage = await generateOpengraphImage({ type: 'svg', url: svgUrl }, values.name);
+            await pocketbase.collection('patterns').update(savedPattern.id, { opengraph_image: ogImage });
+          } else if (savedPattern.pattern_file_external) {
+            const fileUrl = generatePbImageExternalFile(savedPattern);
+            const ogImage = await generateOpengraphImage({ type: 'webp', url: fileUrl }, values.name);
+            await pocketbase.collection('patterns').update(savedPattern.id, { opengraph_image: ogImage });
+          }
+        } catch (err) {
+          console.warn('OG image generation failed', err);
+        }
+      }
+
       await refetchPatterns();
       await refetchTagManagementStats();
       handleClose();
