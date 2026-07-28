@@ -212,17 +212,20 @@ function RouteComponent() {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 4, mb: 1.5 }}>
                 Snapshot History
               </Typography>
-              <DataGrid
-                rows={snapshots}
-                columns={historyColumns}
-                initialState={{
-                  sorting: { sortModel: [{ field: 'created', sort: 'desc' }] },
-                  pagination: { paginationModel: { pageSize: 10 } },
-                }}
-                pageSizeOptions={[10, 25, 50]}
-                disableRowSelectionOnClick
-                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-              />
+
+              <Box sx={{ height: 400 }}>
+                <DataGrid
+                  rows={snapshots}
+                  columns={historyColumns}
+                  initialState={{
+                    sorting: { sortModel: [{ field: 'created', sort: 'desc' }] },
+                    pagination: { paginationModel: { pageSize: 10 } },
+                  }}
+                  pageSizeOptions={[10, 25, 50]}
+                  disableRowSelectionOnClick
+                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
+                />
+              </Box>
             </>
           )}
         </AdminCardWrapper>
