@@ -1989,3 +1989,37 @@ onRecordAfterUpdateSuccess((e) => {
 
   e.next();
 }, 'user_submitted_patterns');
+
+// ─── Complaint resolution notifications ────────────────────────────────────────
+// Fires when an admin marks a pattern report/complaint as reviewed - writes a
+// row to complaint_notifications so the reporter sees it in their notification
+// bell (see NotificationBell.tsx), carrying over the admin's review_notes as
+// the reason. Only signed-in reporters have an owner_id to notify - anonymous
+// reports (owner_id empty) have no account to write a notification against, so
+// those are silently skipped. Requires the complaint_notifications collection
+// to exist (owner_id/complaint/reason fields) - see pb_schema.json.
+//
+// Uses $app.save (internal access, bypasses collection API rules) since
+// reporters never write these rows directly - only this hook does, and its
+// own create/update rules stay locked accordingly.
+onRecordAfterUpdateSuccess((e) => {
+  try {
+    const wasReviewed = e.record.original().getBool('reviewed');
+    const isReviewed = e.record.getBool('reviewed');
+    const ownerId = e.record.getString('owner_id');
+
+    if (!wasReviewed && isReviewed && ownerId) {
+      const collection = $app.findCollectionByNameOrId('complaint_notifications');
+      const notification = new Record(collection, {
+        owner_id: ownerId,
+        complaint: e.record.id,
+        reason: e.record.getString('review_notes'),
+      });
+      $app.save(notification);
+    }
+  } catch (err) {
+    console.log('Complaint notification hook error:', err);
+  }
+
+  e.next();
+}, 'complaints');

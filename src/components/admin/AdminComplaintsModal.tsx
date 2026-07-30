@@ -214,6 +214,12 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           />
         </FormGroup>
 
+        {props.complaint?.expand?.owner_id?.id && (
+          <Typography variant="body2" color="text.secondary">
+            The reporter will see this note in their notification. Please keep it clear and kind.
+          </Typography>
+        )}
+
         <TextField
           variant="filled"
           label="Review notes"

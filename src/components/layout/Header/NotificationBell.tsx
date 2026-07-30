@@ -16,6 +16,11 @@ import {
   useMutationDismissSubmissionNotification,
   type TypeUserSubmissionNotificationResponse,
 } from '@/functions/database/user-submissions';
+import {
+  useQueryGetComplaintNotifications,
+  useMutationDismissComplaintNotification,
+  type TypeComplaintNotificationResponse,
+} from '@/functions/database/complaints';
 
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -30,7 +35,8 @@ import { Badge, Box, IconButton, ListItemIcon, Menu, MenuItem, Typography } from
 type CollectionUpdate = { type: 'collection'; record: TypeFollowedCollectionResponse };
 type SetUpdate = { type: 'set'; record: TypeFollowedSetResponse };
 type SubmissionUpdate = { type: 'submission'; record: TypeUserSubmissionNotificationResponse };
-type AnyUpdate = CollectionUpdate | SetUpdate | SubmissionUpdate;
+type ComplaintUpdate = { type: 'complaint'; record: TypeComplaintNotificationResponse };
+type AnyUpdate = CollectionUpdate | SetUpdate | SubmissionUpdate | ComplaintUpdate;
 
 export const NotificationBell = () => {
   const { authData } = useGlobalAuthData();
@@ -44,10 +50,14 @@ export const NotificationBell = () => {
   const { data: submissionNotifications = [], refetch: refetchSubmissions } = useQueryGetUserSubmissionNotifications(
     authData?.id || '',
   );
+  const { data: complaintNotifications = [], refetch: refetchComplaints } = useQueryGetComplaintNotifications(
+    authData?.id || '',
+  );
 
   const dismissCollectionNotification = useMutationDismissCollectionNotification();
   const dismissSetNotification = useMutationDismissSetNotification();
   const dismissSubmissionNotification = useMutationDismissSubmissionNotification();
+  const dismissComplaintNotification = useMutationDismissComplaintNotification();
   const navigate = useNavigate();
 
   const collectionUpdates: AnyUpdate[] = followedCollections
@@ -69,7 +79,9 @@ export const NotificationBell = () => {
   // collection/set follows above there's no timestamp filter to apply.
   const submissionUpdates: AnyUpdate[] = submissionNotifications.map((record) => ({ type: 'submission', record }));
 
-  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates, ...submissionUpdates];
+  const complaintUpdates: AnyUpdate[] = complaintNotifications.map((record) => ({ type: 'complaint', record }));
+
+  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates, ...submissionUpdates, ...complaintUpdates];
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -114,7 +126,7 @@ export const NotificationBell = () => {
       } catch {
         // Silent — badge will reappear on next mount if dismiss failed
       }
-    } else {
+    } else if (update.type === 'submission') {
       const resultingPatternId = update.record.expand?.submission?.resulting_pattern;
       try {
         await dismissSubmissionNotification.mutateAsync(update.record.id);
@@ -123,6 +135,17 @@ export const NotificationBell = () => {
           void navigate({ to: '/pattern/$patternId', params: { patternId: resultingPatternId } });
         } else {
           void navigate({ to: '/profile/submissions' });
+        }
+      } catch {
+        // Silent — badge will reappear on next mount if dismiss failed
+      }
+    } else {
+      const patternId = update.record.expand?.complaint?.pattern_id;
+      try {
+        await dismissComplaintNotification.mutateAsync(update.record.id);
+        await refetchComplaints();
+        if (patternId) {
+          void navigate({ to: '/pattern/$patternId', params: { patternId } });
         }
       } catch {
         // Silent — badge will reappear on next mount if dismiss failed
@@ -231,7 +254,7 @@ export const NotificationBell = () => {
                   </Box>
                 </MenuItem>
               );
-            } else {
+            } else if (update.type === 'submission') {
               const submission = update.record.expand?.submission;
               const isPublished = update.record.status === 'published';
               return (
@@ -260,6 +283,30 @@ export const NotificationBell = () => {
                         : update.record.reason
                           ? `Rejected: ${update.record.reason}`
                           : 'Rejected'}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              );
+            } else {
+              const pattern = update.record.expand?.complaint?.expand?.pattern_id;
+              return (
+                <MenuItem
+                  key={update.record.id}
+                  onClick={() => handleNotificationClick(update)}
+                  sx={{ ...menuItemStyles, alignItems: 'flex-start' }}
+                >
+                  <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
+                    <CheckCircleRoundedIcon fontSize="small" color="success" />
+                  </ListItemIcon>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+                        {pattern?.name ?? 'Your report'}
+                      </Typography>
+                      <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {update.record.reason ? `Resolved: ${update.record.reason}` : 'Resolved'}
                     </Typography>
                   </Box>
                 </MenuItem>
