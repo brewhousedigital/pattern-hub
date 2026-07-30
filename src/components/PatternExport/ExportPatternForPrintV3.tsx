@@ -58,7 +58,7 @@ const DPI_TILED = 150;
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type PrintMode = 'single' | 'tiled';
-type Orientation = 'portrait' | 'landscape';
+export type Orientation = 'portrait' | 'landscape';
 export type PrintUnit = 'in' | 'cm' | 'mm';
 
 const SUPPORTED_UNITS: PrintUnit[] = ['in', 'cm', 'mm'];

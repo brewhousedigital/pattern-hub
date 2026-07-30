@@ -32,3 +32,4 @@ dist-ssr
 
 # Pocketbase
 /src/functions/database/pb_schema.json
+CLAUDE.md

@@ -8,7 +8,7 @@ import { buildPatternXmpMeta, buildXmpPacket } from '@/functions/utilities/xmp/b
 import { useExportPattern, downloadBlob } from './useExportPattern';
 import { buildSvgExportBlob } from './buildSvgExport';
 import { preparePdfExportInputs } from './preparePdfExport';
-import { buildSinglePdf, buildTiledPdf, type PrintUnit } from './ExportPatternForPrintV3';
+import { buildSinglePdf, buildTiledPdf, type PrintUnit, type Orientation } from './ExportPatternForPrintV3';
 import { printPdfBlob } from './PrintNowFrame';
 import { trackExportEvent, type ExportFlow } from '@/functions/database/export-analytics';
 import { SectionLabel } from '@/components/ViewHelpers';
@@ -27,6 +27,10 @@ import LocalPrintshopRoundedIcon from '@mui/icons-material/LocalPrintshopRounded
 import LockIcon from '@mui/icons-material/Lock';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import GridOnIcon from '@mui/icons-material/GridOn';
+import CropPortraitIcon from '@mui/icons-material/CropPortrait';
+import CropLandscapeIcon from '@mui/icons-material/CropLandscape';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 import {
   Alert,
@@ -95,6 +99,28 @@ function slugify(s: string): string {
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
+}
+
+// ─── Fits-check constants (mirrors the Custom PDF panel's fitsCheck in
+// ExportPatternForPrintV3.tsx; small, deliberately duplicated - see the unit
+// helpers note above) ───────────────────────────────────────────────────────
+const PAGE_MARGIN_IN = 0.25;
+const LEGEND_W_IN = 2.5;
+const LEGEND_SVG_PX = 320;
+const LEGEND_GAP_IN = 0.2;
+const LETTER_W_IN = 8.5;
+const LETTER_H_IN = 11;
+
+function legendPhysicalHeightIn(keyCount: number): number {
+  const PAD = 20,
+    HEADER_H = 32,
+    SUB_H = 22,
+    STAT_H = 20,
+    STATS = 4,
+    DIV_H = 16,
+    KEY_H = 32;
+  const px = PAD + HEADER_H + SUB_H + 6 + STATS * STAT_H + DIV_H + keyCount * KEY_H + PAD;
+  return px * (LEGEND_W_IN / LEGEND_SVG_PX);
 }
 
 // ─── Flow definitions (Step 1) ─────────────────────────────────────────────────
@@ -173,6 +199,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
   const [includeLegend, setIncludeLegend] = useState(true);
   const [includeInstructions, setIncludeInstructions] = useState(!!viewData?.instructions);
   const [printTiled, setPrintTiled] = useState(false);
+  const [orientation, setOrientation] = useState<Orientation>('portrait');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -197,6 +224,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
     setIncludeInstructions(!!viewData.instructions);
     setIncludeLegend(true);
     setPrintTiled(false);
+    setOrientation('portrait');
     setError(null);
     // Intentional reset-on-key: re-initialise the wizard only when the viewed
     // pattern changes. Reacting to the other values read here (auth's preferred
@@ -419,9 +447,9 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
             patternWIn,
             patternHIn,
             lineWidthIn,
-            pageWIn: 8.5,
-            pageHIn: 11,
-            orientation: 'portrait',
+            pageWIn: LETTER_W_IN,
+            pageHIn: LETTER_H_IN,
+            orientation,
             includeLegend,
             legendSvg: prepared.legendSvg,
             legendHIn: prepared.legendHIn,
@@ -442,6 +470,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
       includeInstructions,
       hiddenLayers,
       queryClient,
+      orientation,
     ],
   );
 
@@ -775,6 +804,19 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
     }
 
     if (flow === 'printing') {
+      // Fits check for single-page mode only - tiled mode has no page-size limit
+      // to warn about, so this mirrors the Custom PDF panel's fitsCheck but
+      // against a fixed Letter page (the wizard doesn't expose a paper-size picker).
+      const pageWIn = orientation === 'landscape' ? LETTER_H_IN : LETTER_W_IN;
+      const pageHIn = orientation === 'landscape' ? LETTER_W_IN : LETTER_H_IN;
+      const availW = pageWIn - 2 * PAGE_MARGIN_IN;
+      const availH = pageHIn - 2 * PAGE_MARGIN_IN;
+      const keyCount = viewData?.pattern_key_reference_list?.length ?? 0;
+      const legendHIn = legendPhysicalHeightIn(keyCount);
+      const requiredH = patternHIn + (includeLegend ? LEGEND_GAP_IN + legendHIn : 0);
+      const fitsCheck: 'ok' | 'warn' | null =
+        !printTiled && patternWIn > 0 ? (patternWIn <= availW && requiredH <= availH ? 'ok' : 'warn') : null;
+
       return (
         <Box>
           <SectionLabel>Options</SectionLabel>
@@ -799,6 +841,53 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
+
+          <Collapse in={!printTiled}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                Orientation
+              </Typography>
+              <ToggleButtonGroup
+                value={orientation}
+                exclusive
+                size="small"
+                onChange={(_, v) => v && setOrientation(v)}
+                sx={toggleGroupSx}
+              >
+                <ToggleButton value="portrait">
+                  <CropPortraitIcon fontSize="small" />
+                  Portrait
+                </ToggleButton>
+                <ToggleButton value="landscape">
+                  <CropLandscapeIcon fontSize="small" />
+                  Landscape
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {fitsCheck !== null && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    mt: 1,
+                    color: fitsCheck === 'ok' ? 'success.main' : 'warning.main',
+                  }}
+                >
+                  {fitsCheck === 'ok' ? (
+                    <CheckCircleOutlineIcon fontSize="small" sx={{ mt: '1px', flexShrink: 0 }} />
+                  ) : (
+                    <WarningAmberIcon fontSize="small" sx={{ mt: '1px', flexShrink: 0 }} />
+                  )}
+                  <Typography variant="caption" sx={{ lineHeight: 1.5 }}>
+                    {fitsCheck === 'ok'
+                      ? `Pattern${includeLegend ? ' with legend' : ''} fits on the Letter page (${orientation}).`
+                      : `The pattern (${r2(patternWIn)}" × ${r2(patternHIn)}")${includeLegend ? ` with legend (${r2(legendHIn)}" tall)` : ''} needs ${r2(patternWIn)}" × ${r2(requiredH)}" of space. The ${orientation} Letter page has ${r2(availW)}" × ${r2(availH)}" available. Switch to Tiled mode, or use the other orientation.`}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Collapse>
 
           {renderLegendInstructionsToggles()}
 
