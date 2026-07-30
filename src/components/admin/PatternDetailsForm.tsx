@@ -169,7 +169,7 @@ export const PatternDetailsForm = React.forwardRef<PatternDetailsFormHandle, Pat
       setSourceUrl('');
       setPieces('1');
       setLineWidth('0');
-      setLineWidthUnit('in');
+      setLineWidthUnit('mm');
       setDesignWidth('0');
       setDesignWidthUnit('in');
       setDesignHeight('0');

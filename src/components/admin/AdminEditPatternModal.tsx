@@ -122,7 +122,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     designHeight: String(props?.design_height) || '0',
     designHeightUnit: String(props?.design_height_unit) || 'in',
     lineWidth: String(props?.line_width) || '0',
-    lineWidthUnit: String(props?.line_width_unit) || 'in',
+    // Lead/came line widths are conventionally specified in mm (unlike overall
+    // pattern size, which is inches) - defaulting to 'in' here silently turns a
+    // ~1mm line into a 1-inch one on export, blowing out every stroke.
+    lineWidthUnit: String(props?.line_width_unit) || 'mm',
     tags: props?.tags || [],
     authors: props?.authors || [],
     authorManual: props?.author_manual || [],
@@ -214,7 +217,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         tags: filteredTags?.sort() || [],
         authors: filteredAuthors || [],
         author_manual: filteredManualAuthors || [],
-        line_width_unit: values.lineWidthUnit && values.lineWidthUnit !== 'undefined' ? values.lineWidthUnit : 'in',
+        line_width_unit: values.lineWidthUnit && values.lineWidthUnit !== 'undefined' ? values.lineWidthUnit : 'mm',
         design_width_unit:
           values.designWidthUnit && values.designWidthUnit !== 'undefined' ? values.designWidthUnit : 'in',
         design_height_unit:

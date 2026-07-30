@@ -93,7 +93,7 @@ export const UserUploadForm = () => {
   const [designHeight, setDesignHeight] = React.useState('');
   const [designHeightUnit, setDesignHeightUnit] = React.useState('in');
   const [lineWidth, setLineWidth] = React.useState('');
-  const [lineWidthUnit, setLineWidthUnit] = React.useState('in');
+  const [lineWidthUnit, setLineWidthUnit] = React.useState('mm');
 
   const [isAuthor, setIsAuthor] = React.useState(true);
   const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>([]);

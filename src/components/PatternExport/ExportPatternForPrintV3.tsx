@@ -142,7 +142,15 @@ async function svgToPng(svgStr: string, wPx: number, hPx: number): Promise<strin
       const c = document.createElement('canvas');
       c.width = wPx;
       c.height = hPx;
-      c.getContext('2d')!.drawImage(img, 0, 0, wPx, hPx);
+      const ctx = c.getContext('2d')!;
+      // Flatten onto opaque white before handing off to jsPDF. PDF/print consumers
+      // (including this app's own Print Now -> browser print pipeline) unreliably
+      // honor SMask transparency; a mostly-transparent pattern (e.g. fill:none
+      // line art) then prints with its unpainted canvas pixels - rgba(0,0,0,0) -
+      // rendered as opaque black instead of blank paper.
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, wPx, hPx);
+      ctx.drawImage(img, 0, 0, wPx, hPx);
       URL.revokeObjectURL(url);
       resolve(c.toDataURL('image/png'));
     };
