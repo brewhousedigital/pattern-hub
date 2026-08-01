@@ -307,18 +307,6 @@ export const buildDatabaseStatsCardRegistry = (
     ),
   },
   {
-    id: 'growth-velocity-radar',
-    title: 'Growth Radar',
-    gridSize: CHART_SIZE,
-    render: () => (
-      <RadarComparisonCard
-        title="Growth Radar"
-        icon={<CompareArrowsRoundedIcon sx={{ fontSize: 18 }} />}
-        metrics={computeVelocityComparison(buckets)}
-      />
-    ),
-  },
-  {
     id: 'verified-users-stat',
     title: 'Verified Users',
     gridSize: STAT_SIZE,
@@ -359,58 +347,6 @@ export const buildDatabaseStatsCardRegistry = (
         title="Store Locations"
         icon={<StoreRoundedIcon sx={{ fontSize: 18 }} />}
         value={latest.total_store_locations}
-      />
-    ),
-  },
-  {
-    id: 'avg-rating-trend',
-    title: 'Average Pattern Rating',
-    gridSize: CHART_SIZE,
-    render: () => (
-      <TrendChartCard
-        title="Average Pattern Rating"
-        icon={<StarRoundedIcon sx={{ fontSize: 18 }} />}
-        points={toPoints(buckets, (s) => s.avg_pattern_rating)}
-        valueFormatter={(v) => (v === null ? 'N/A' : v.toFixed(2))}
-      />
-    ),
-  },
-  {
-    id: 'avg-difficulty-trend',
-    title: 'Average Pattern Difficulty',
-    gridSize: CHART_SIZE,
-    render: () => (
-      <TrendChartCard
-        title="Average Pattern Difficulty"
-        icon={<SpeedRoundedIcon sx={{ fontSize: 18 }} />}
-        points={toPoints(buckets, (s) => s.avg_pattern_difficulty)}
-        valueFormatter={(v) => (v === null ? 'N/A' : v.toFixed(2))}
-      />
-    ),
-  },
-  {
-    id: 'marked-done-intensity-stat',
-    title: 'Marked-Done Intensity',
-    gridSize: STAT_SIZE,
-    render: () => (
-      <StatTile
-        title="Marked-Done Intensity"
-        icon={<FavoriteRoundedIcon sx={{ fontSize: 18 }} />}
-        value={computeMarkedDoneIntensity(latest)}
-        formatValue={(v) => `${v.toFixed(2)}x`}
-      />
-    ),
-  },
-  {
-    id: 'exports-per-pattern-stat',
-    title: 'Exports Per Pattern',
-    gridSize: STAT_SIZE,
-    render: () => (
-      <StatTile
-        title="Exports Per Pattern"
-        icon={<FileDownloadRoundedIcon sx={{ fontSize: 18 }} />}
-        value={computeExportsPerPattern(latest)}
-        formatValue={(v) => v.toFixed(2)}
       />
     ),
   },
