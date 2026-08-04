@@ -37,11 +37,13 @@ const WALL_OF_FAME: { name: string; blurb: string }[] = [
   },
   {
     name: 'Jog',
-    blurb: 'Helping dig through dozens of websites to collect patterns, vectorizing dozens of patterns and connecting with pattern authors.',
+    blurb:
+      'Helping dig through dozens of websites to collect patterns, vectorizing dozens of patterns and connecting with pattern authors.',
   },
   {
     name: 'Axin',
-    blurb: 'Creating the site, dealing with all the mess we made and stepping into the great unknown of creating a project like this.',
+    blurb:
+      'Creating the site, dealing with all the mess we made and stepping into the great unknown of creating a project like this.',
   },
   {
     name: 'KGlassPatterns',
@@ -70,7 +72,8 @@ const WALL_OF_FAME: { name: string; blurb: string }[] = [
   },
   {
     name: 'Deejiraffe',
-    blurb: 'Connecting us with Axin for creating all of this while giving tons of feedback at every step of the process.',
+    blurb:
+      'Connecting us with Axin for creating all of this while giving tons of feedback at every step of the process.',
   },
 ];
 
@@ -159,7 +162,7 @@ function RouteComponent() {
           </Grid>
 
           {/* ─── Growing Together ─────────────────────────────────────────── */}
-          {monthlyBuckets.length >= 2 && (
+          {/*{monthlyBuckets.length >= 2 && (
             <>
               <SectionHeading variant="h2">Growing Together</SectionHeading>
 
@@ -186,7 +189,7 @@ function RouteComponent() {
                 </Grid>
               </Grid>
             </>
-          )}
+          )}*/}
 
           {/* ─── Banners & Graphics ───────────────────────────────────────── */}
           <SectionHeading variant="h2">Banners &amp; Graphics</SectionHeading>
