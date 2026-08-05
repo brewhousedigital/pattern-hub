@@ -29,8 +29,9 @@ import StyleRoundedIcon from '@mui/icons-material/StyleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import CloseIcon from '@mui/icons-material/Close';
 
-import { Badge, Box, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
+import { Badge, Box, Button, IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
 
 type CollectionUpdate = { type: 'collection'; record: TypeFollowedCollectionResponse };
 type SetUpdate = { type: 'set'; record: TypeFollowedSetResponse };
@@ -38,9 +39,21 @@ type SubmissionUpdate = { type: 'submission'; record: TypeUserSubmissionNotifica
 type ComplaintUpdate = { type: 'complaint'; record: TypeComplaintNotificationResponse };
 type AnyUpdate = CollectionUpdate | SetUpdate | SubmissionUpdate | ComplaintUpdate;
 
+// Collection/set updates aren't rows with their own "created" moment - the
+// notification-worthy event is the followed collection/set itself changing,
+// so that's the timestamp used for sorting (falls back to the follow record's
+// own `created` only if expand somehow came back empty; in practice the
+// collectionUpdates/setUpdates filters above already guarantee this is set).
+function getUpdateTimestamp(update: AnyUpdate): string {
+  if (update.type === 'collection') return update.record.expand?.collection_id?.updated ?? update.record.created;
+  if (update.type === 'set') return update.record.expand?.set_id?.updated ?? update.record.created;
+  return update.record.created;
+}
+
 export const NotificationBell = () => {
   const { authData } = useGlobalAuthData();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [isClearingAll, setIsClearingAll] = React.useState(false);
   const open = Boolean(anchorEl);
 
   const { data: followedCollections = [], refetch: refetchCollections } = useQueryGetUserFollowedCollections(
@@ -81,7 +94,12 @@ export const NotificationBell = () => {
 
   const complaintUpdates: AnyUpdate[] = complaintNotifications.map((record) => ({ type: 'complaint', record }));
 
-  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates, ...submissionUpdates, ...complaintUpdates];
+  // Most-recently-created first, across all four sources - a plain concat
+  // would otherwise just group by type (all collection updates, then all
+  // set updates, ...) regardless of when each actually happened.
+  const updates: AnyUpdate[] = [...collectionUpdates, ...setUpdates, ...submissionUpdates, ...complaintUpdates].sort(
+    (a, b) => new Date(getUpdateTimestamp(b)).getTime() - new Date(getUpdateTimestamp(a)).getTime(),
+  );
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -91,71 +109,103 @@ export const NotificationBell = () => {
     setAnchorEl(null);
   };
 
-  const handleNotificationClick = async (update: AnyUpdate) => {
-    handleClose();
-
-    if (update.type === 'collection') {
-      const collectionUpdated = update.record.expand?.collection_id?.updated;
-      if (!collectionUpdated) return;
-      try {
+  /**
+   * Dismisses a single notification - deletes the row for submission/complaint
+   * notifications, or bumps the collection/set follow's last_checked_updated
+   * marker forward. Shared by the per-row Clear button (refetch: true, no
+   * navigation) and Clear All (refetch: false, batched into one refetch round
+   * afterward via refetchAll). Silently swallows failures, same as the
+   * original per-type handling this was extracted from - a failed dismiss
+   * just means the notification reappears on next mount.
+   */
+  const dismissUpdate = async (update: AnyUpdate, { refetch = true }: { refetch?: boolean } = {}): Promise<boolean> => {
+    try {
+      if (update.type === 'collection') {
+        const collectionUpdated = update.record.expand?.collection_id?.updated;
+        if (!collectionUpdated) return false;
         await dismissCollectionNotification.mutateAsync({
           followRecordId: update.record.id,
           collectionUpdated,
         });
-        await refetchCollections();
-        void navigate({
-          to: '/profile/collections/$collectionId',
-          params: { collectionId: update.record.collection_id },
-        });
-      } catch {
-        // Silent — badge will reappear on next mount if dismiss failed
-      }
-    } else if (update.type === 'set') {
-      const setUpdated = update.record.expand?.set_id?.updated;
-      if (!setUpdated) return;
-      try {
+        if (refetch) await refetchCollections();
+      } else if (update.type === 'set') {
+        const setUpdated = update.record.expand?.set_id?.updated;
+        if (!setUpdated) return false;
         await dismissSetNotification.mutateAsync({
           followRecordId: update.record.id,
           setUpdated,
         });
-        await refetchSets();
-        void navigate({
-          to: '/sets/$setId',
-          params: { setId: update.record.set_id },
-        });
-      } catch {
-        // Silent — badge will reappear on next mount if dismiss failed
+        if (refetch) await refetchSets();
+      } else if (update.type === 'submission') {
+        await dismissSubmissionNotification.mutateAsync(update.record.id);
+        if (refetch) await refetchSubmissions();
+      } else {
+        await dismissComplaintNotification.mutateAsync(update.record.id);
+        if (refetch) await refetchComplaints();
       }
+      return true;
+    } catch {
+      // Silent — badge will reappear on next mount if dismiss failed
+      return false;
+    }
+  };
+
+  const handleNotificationClick = async (update: AnyUpdate) => {
+    handleClose();
+    const dismissed = await dismissUpdate(update);
+    if (!dismissed) return;
+
+    if (update.type === 'collection') {
+      void navigate({
+        to: '/profile/collections/$collectionId',
+        params: { collectionId: update.record.collection_id },
+      });
+    } else if (update.type === 'set') {
+      void navigate({ to: '/sets/$setId', params: { setId: update.record.set_id } });
     } else if (update.type === 'submission') {
       const resultingPatternId = update.record.expand?.submission?.resulting_pattern;
-      try {
-        await dismissSubmissionNotification.mutateAsync(update.record.id);
-        await refetchSubmissions();
-        if (update.record.status === 'published' && resultingPatternId) {
-          void navigate({ to: '/pattern/$patternId', params: { patternId: resultingPatternId } });
-        } else {
-          void navigate({ to: '/profile/submissions' });
-        }
-      } catch {
-        // Silent — badge will reappear on next mount if dismiss failed
+      if (update.record.status === 'published' && resultingPatternId) {
+        void navigate({ to: '/pattern/$patternId', params: { patternId: resultingPatternId } });
+      } else {
+        void navigate({ to: '/profile/submissions' });
       }
     } else {
       const patternId = update.record.expand?.complaint?.pattern_id;
-      try {
-        await dismissComplaintNotification.mutateAsync(update.record.id);
-        await refetchComplaints();
-        if (patternId) {
-          void navigate({ to: '/pattern/$patternId', params: { patternId } });
-        }
-      } catch {
-        // Silent — badge will reappear on next mount if dismiss failed
+      if (patternId) {
+        void navigate({ to: '/pattern/$patternId', params: { patternId } });
       }
+    }
+  };
+
+  // Per-row Clear button - dismiss only, no navigation. stopPropagation keeps
+  // the click from also bubbling to the MenuItem's own onClick (which navigates).
+  const handleDismissClick = (e: React.MouseEvent, update: AnyUpdate) => {
+    e.stopPropagation();
+    void dismissUpdate(update);
+  };
+
+  const handleClearAll = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsClearingAll(true);
+    try {
+      await Promise.allSettled(updates.map((update) => dismissUpdate(update, { refetch: false })));
+      await Promise.all([refetchCollections(), refetchSets(), refetchSubmissions(), refetchComplaints()]);
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
   const menuItemStyles = {
     padding: '12px 20px',
     maxWidth: 320,
+  };
+
+  const dismissButtonSx = {
+    ml: 'auto',
+    mt: -0.5,
+    mr: -1,
+    flexShrink: 0,
+    color: 'text.disabled',
   };
 
   if (!authData) return null;
@@ -186,14 +236,37 @@ export const NotificationBell = () => {
         }}
       >
         {/* Header */}
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            Notifications
-          </Typography>
-          {updates.length > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              {updates.length} update{updates.length !== 1 ? 's' : ''}
+        <Box
+          sx={{
+            px: 2.5,
+            py: 1.5,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              Notifications
             </Typography>
+            {updates.length > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {updates.length} update{updates.length !== 1 ? 's' : ''}
+              </Typography>
+            )}
+          </Box>
+          {updates.length > 0 && (
+            <Button
+              size="small"
+              onClick={handleClearAll}
+              disabled={isClearingAll}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', minWidth: 0, flexShrink: 0, py: 0.25 }}
+            >
+              {isClearingAll ? 'Clearing…' : 'Clear all'}
+            </Button>
           )}
         </Box>
 
@@ -217,7 +290,7 @@ export const NotificationBell = () => {
                   <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
                     <BookmarksOutlinedIcon fontSize="small" color="primary" />
                   </ListItemIcon>
-                  <Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                         {col?.name ?? 'Collection'}
@@ -228,6 +301,14 @@ export const NotificationBell = () => {
                       {ownerName ? `by ${ownerName} · ` : ''}Updated with new patterns
                     </Typography>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDismissClick(e, update)}
+                    sx={dismissButtonSx}
+                    aria-label="Dismiss notification"
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
                 </MenuItem>
               );
             } else if (update.type === 'set') {
@@ -241,7 +322,7 @@ export const NotificationBell = () => {
                   <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
                     <StyleRoundedIcon fontSize="small" color="primary" />
                   </ListItemIcon>
-                  <Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                         {set?.title ?? 'Set'}
@@ -252,6 +333,14 @@ export const NotificationBell = () => {
                       Updated with new patterns
                     </Typography>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDismissClick(e, update)}
+                    sx={dismissButtonSx}
+                    aria-label="Dismiss notification"
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
                 </MenuItem>
               );
             } else if (update.type === 'submission') {
@@ -270,7 +359,7 @@ export const NotificationBell = () => {
                       <CancelRoundedIcon fontSize="small" color="error" />
                     )}
                   </ListItemIcon>
-                  <Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                         {submission?.name ?? 'Your submission'}
@@ -285,6 +374,14 @@ export const NotificationBell = () => {
                           : 'Rejected'}
                     </Typography>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDismissClick(e, update)}
+                    sx={dismissButtonSx}
+                    aria-label="Dismiss notification"
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
                 </MenuItem>
               );
             } else {
@@ -298,7 +395,7 @@ export const NotificationBell = () => {
                   <ListItemIcon sx={{ mt: 0.5, minWidth: 32 }}>
                     <CheckCircleRoundedIcon fontSize="small" color="success" />
                   </ListItemIcon>
-                  <Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                         {pattern?.name ?? 'Your report'}
@@ -309,6 +406,14 @@ export const NotificationBell = () => {
                       {update.record.reason ? `Resolved: ${update.record.reason}` : 'Resolved'}
                     </Typography>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDismissClick(e, update)}
+                    sx={dismissButtonSx}
+                    aria-label="Dismiss notification"
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
                 </MenuItem>
               );
             }
