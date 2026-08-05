@@ -112,7 +112,15 @@ export const useQueryGetAllPatternsByPagination = () => {
   // ids up front so the server can filter the `authors` relation directly
   // instead.
   const authorNames = tokens.filter((t): t is AuthorToken => t.type === 'author').map((t) => t.value);
-  const { data: authorIdMap } = useQueryResolveAuthorUserIds(authorNames);
+  const { data: authorIdMap, isError: authorIdsErrored } = useQueryResolveAuthorUserIds(authorNames);
+  // Resolution runs as its own query and starts out `undefined` while in
+  // flight - without this gate, the search below fires immediately with an
+  // empty map, silently drops the `authors ~ id` half of the filter, and
+  // returns a false "0 results" that self-corrects a moment later once
+  // resolution lands (see the queryKey below, which then triggers a refetch).
+  // Falls through to "ready" on error too, so a broken resolve endpoint
+  // degrades to author_manual-only matching instead of freezing the search.
+  const authorIdsReady = authorNames.length === 0 || authorIdMap !== undefined || authorIdsErrored;
 
   // Silently exclude the user's blocked tags - unless they've explicitly
   // searched for that exact tag right now, in which case honor the search
@@ -144,7 +152,7 @@ export const useQueryGetAllPatternsByPagination = () => {
       if (!res.ok) throw new Error('Failed to search patterns');
       return res.json();
     },
-    enabled: !!pageNumber,
+    enabled: !!pageNumber && authorIdsReady,
     placeholderData: keepPreviousData,
   });
 };
