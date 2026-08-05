@@ -327,7 +327,7 @@ export const ExportWizard = ({ viewData, hiddenLayers = new Set<string>(), onOpe
           height: patternHIn,
           unit: 'in',
           dpi: 72,
-          jpgBackground: 'white',
+          background: 'transparent',
           includeInstructions: false,
           includeLegend: false,
         },

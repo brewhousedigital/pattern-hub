@@ -8,7 +8,7 @@ import { trackExportEvent } from '@/functions/database/export-analytics';
 import { SectionLabel } from '@/components/ViewHelpers';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import type { TypeViewData } from '@/functions/types/types';
-import type { JpgBackground } from './composite';
+import type { ExportBackground } from './composite';
 
 import { alpha } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -112,7 +112,7 @@ export const ExportPatternForImage = ({
   );
 
   const [format, setFormat] = useState<ImageFormat>('png');
-  const [jpgBackground, setJpgBackground] = useState<JpgBackground>('white');
+  const [background, setBackground] = useState<ExportBackground>('transparent');
   const [unit, setUnit] = useState<ImageUnit>(defaultUnit);
   const [dpi, setDpi] = useState(300);
   const [widthInput, setWidthInput] = useState(() => fmt(baseWIn, defaultUnit));
@@ -209,7 +209,7 @@ export const ExportPatternForImage = ({
           height: isNaN(heightVal) ? 0 : heightVal,
           unit,
           dpi,
-          jpgBackground,
+          background,
           includeInstructions,
           includeLegend,
         },
@@ -241,7 +241,7 @@ export const ExportPatternForImage = ({
     viewData,
     canExport,
     format,
-    jpgBackground,
+    background,
     unit,
     dpi,
     widthInput,
@@ -262,7 +262,12 @@ export const ExportPatternForImage = ({
           value={format}
           exclusive
           size="small"
-          onChange={(_, v) => v && setFormat(v as ImageFormat)}
+          onChange={(_, v) => {
+            if (!v) return;
+            setFormat(v as ImageFormat);
+            // JPEG has no alpha channel - fall back to white if transparent was selected.
+            if (v === 'jpg' && background === 'transparent') setBackground('white');
+          }}
           sx={toggleGroupSx}
         >
           <ToggleButton value="png">PNG</ToggleButton>
@@ -270,28 +275,32 @@ export const ExportPatternForImage = ({
           <ToggleButton value="jpg">JPG</ToggleButton>
         </ToggleButtonGroup>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75 }}>
-          {format === 'png' && 'Lossless with transparent background.'}
-          {format === 'webp' && 'Modern format with transparent background.'}
+          {format === 'png' && 'Lossless, with your choice of background.'}
+          {format === 'webp' && 'Modern format, with your choice of background.'}
           {format === 'jpg' && 'Compressed with a solid background color.'}
         </Typography>
       </Box>
 
-      {/* JPG background */}
-      <Collapse in={format === 'jpg'}>
-        <Box sx={{ mb: 2.5 }}>
-          <SectionLabel>Background Color</SectionLabel>
-          <ToggleButtonGroup
-            value={jpgBackground}
-            exclusive
-            size="small"
-            onChange={(_, v) => v && setJpgBackground(v as JpgBackground)}
-            sx={toggleGroupSx}
-          >
-            <ToggleButton value="white">White</ToggleButton>
-            <ToggleButton value="black">Black</ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
-      </Collapse>
+      {/* Background */}
+      <Box sx={{ mb: 2.5 }}>
+        <SectionLabel>Background Color</SectionLabel>
+        <ToggleButtonGroup
+          value={background}
+          exclusive
+          size="small"
+          onChange={(_, v) => v && setBackground(v as ExportBackground)}
+          sx={toggleGroupSx}
+        >
+          {format !== 'jpg' && <ToggleButton value="transparent">Transparent</ToggleButton>}
+          <ToggleButton value="white">White</ToggleButton>
+          <ToggleButton value="black">Black</ToggleButton>
+        </ToggleButtonGroup>
+        {format === 'jpg' && (
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75 }}>
+            JPG doesn't support transparency, so a solid background is required.
+          </Typography>
+        )}
+      </Box>
 
       <Divider sx={{ borderColor: alpha('#C8A96E', 0.12), mb: 2.5 }} />
 

@@ -22,7 +22,8 @@ import { injectXmpForFormat } from '@/functions/utilities/xmp/injectRasterXmp';
 
 export type ExportFormat = 'png' | 'jpg' | 'webp' | 'svg';
 export type SvgVariant = 'scaled' | 'original';
-export type JpgBackground = 'white' | 'black';
+// 'transparent' is only valid for png/webp - JPEG has no alpha channel.
+export type ExportBackground = 'transparent' | 'white' | 'black';
 
 const LEGEND_MARGIN = 24; // px breathing room from pattern edges
 const INSTRUCTIONS_GAP = 60; // px between pattern and instructions block
@@ -42,7 +43,7 @@ export interface TypeCompositeInput {
   // Export config
   format: ExportFormat;
   svgVariant?: SvgVariant; // only meaningful when format === 'svg'
-  jpgBackground?: JpgBackground;
+  background: ExportBackground; // only meaningful for raster formats (png/jpg/webp)
   // Optional XMP packet embedded into the output (SVG <metadata> / raster binary).
   xmpPacket?: string;
 }
@@ -173,8 +174,10 @@ async function buildRasterBlob(scaledPatternSvg: string, input: TypeCompositeInp
   const ctx = canvas.getContext('2d')!;
   ctx.scale(SUPERSAMPLE, SUPERSAMPLE);
 
-  if (input.format === 'jpg') {
-    ctx.fillStyle = input.jpgBackground === 'black' ? '#000000' : '#ffffff';
+  // JPEG has no alpha channel - an unfilled canvas would encode as black, so
+  // 'transparent' only applies to png/webp.
+  if (input.background !== 'transparent') {
+    ctx.fillStyle = input.background === 'black' ? '#000000' : '#ffffff';
     ctx.fillRect(0, 0, totalW, totalH);
   }
 

@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { compositeExport, type ExportFormat, type JpgBackground, type SvgVariant } from './composite';
+import { compositeExport, type ExportFormat, type ExportBackground, type SvgVariant } from './composite';
 import { buildLegend } from './render-legend';
 import { renderInstructions } from './render-instructions';
 import { normalizeUnit, toPx, type TypePatternExportUnit } from './units';
@@ -25,7 +25,7 @@ export interface TypeExportFormState {
   height: number;
   unit: TypePatternExportUnit;
   dpi: number;
-  jpgBackground: JpgBackground;
+  background: ExportBackground;
   includeInstructions: boolean;
   includeLegend: boolean;
 }
@@ -120,7 +120,7 @@ export function useExportPattern() {
         instructions,
         format: form.format,
         svgVariant: form.svgVariant,
-        jpgBackground: form.jpgBackground,
+        background: form.background,
         xmpPacket: ctx.xmpPacket,
       });
 
