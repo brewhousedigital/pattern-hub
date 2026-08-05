@@ -260,7 +260,7 @@ function RouteComponent() {
             One very good dog, a search bar, and absolutely no ratings system yet. We've come a long way.
           </Typography>
 
-          <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid container spacing={2} sx={{ mb: 16 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TimeCapsuleImage
                 src="/images/history/history-1.webp"
