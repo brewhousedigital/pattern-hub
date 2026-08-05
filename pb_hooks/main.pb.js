@@ -344,6 +344,43 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     }
   }
 
+  // Reconstructs a readable label from the token walk (e.g. 'lighthouse
+  // tag:ocean -author:jane width>10') for logging zero-result searches - see
+  // the totalItems === 0 block below. Mirrors the prefixes parseRawInput
+  // (search-v2.ts) accepts, so the label reads the same as what a user would
+  // type, even though value tokens here can also arrive from UI clicks (tag
+  // chips, author links) that never went through that parser.
+  function formatSearchQueryLabel(tokens) {
+    const parts = [];
+    for (const t of tokens || []) {
+      const sign = t.exclude ? '-' : '';
+      if (t.type === 'text') parts.push(sign + t.value);
+      else if (t.type === 'tag') parts.push(sign + 'tag:' + t.value);
+      else if (t.type === 'author') parts.push(sign + 'author:' + t.value);
+      else if (t.type === 'id') parts.push(sign + 'id:' + t.value);
+      else if (t.type === 'title') parts.push(sign + 'title:' + t.value);
+      else if (t.type === 'description') parts.push(sign + 'description:' + t.value);
+      else if (t.operator) parts.push(t.type + t.operator + t.value);
+    }
+    return parts.join(' ').trim();
+  }
+
+  // Fire-and-forget: logs a search that matched nothing, so admins can see
+  // what people want but can't find (see search_logs / search_logs_by_query
+  // in pb_schema.json). Server-side, internal-access only (no public write
+  // path) since this runs right where totalItems is already known - no
+  // separate client call needed.
+  function logZeroResultSearch(tokens) {
+    try {
+      console.log('>>>Zero Search Results found:', JSON.stringify(tokens));
+      const label = formatSearchQueryLabel(tokens);
+      if (!label) return;
+      const collection = $app.findCollectionByNameOrId('search_logs');
+      const record = new Record(collection, { query: label });
+      $app.save(record);
+    } catch (_) {}
+  }
+
   const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags);
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
@@ -364,6 +401,14 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   }
 
   const totalItems = countRows('patterns', baseSql, sqlParams);
+
+  // Only an explicit search (at least one real token) that matched nothing
+  // counts - the default "browse everything" view (tokens.length === 0)
+  // isn't a search, and blockedTags alone silently filtering everything out
+  // isn't something the searcher typed or clicked.
+  if (totalItems === 0 && tokens.length > 0) {
+    logZeroResultSearch(tokens);
+  }
 
   const tagFacets = [];
   try {

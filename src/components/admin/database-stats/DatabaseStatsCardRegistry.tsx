@@ -27,6 +27,7 @@ import { RadarComparisonCard } from '@/components/charts/RadarComparisonCard';
 import { ExportTimeIntensityGrid } from '@/components/charts/ExportTimeIntensityGrid';
 import { TopExportedPatternsCard } from '@/components/charts/TopExportedPatternsCard';
 import { MonthlyTopExportsCard } from '@/components/admin/database-stats/MonthlyTopExportsCard';
+import { TopZeroResultSearchesCard } from '@/components/admin/database-stats/TopZeroResultSearchesCard';
 import {
   computeExportsPerPattern,
   computeGrowthSeries,
@@ -291,6 +292,12 @@ export const buildDatabaseStatsCardRegistry = (
     title: 'Top Exported Patterns (By Month)',
     gridSize: FULL_SIZE,
     render: () => <MonthlyTopExportsCard />,
+  },
+  {
+    id: 'top-zero-result-searches',
+    title: 'Top Zero-Result Searches',
+    gridSize: FULL_SIZE,
+    render: () => <TopZeroResultSearchesCard />,
   },
   {
     id: 'published-draft-pie',
