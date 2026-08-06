@@ -14,6 +14,7 @@ import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb
 
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 
 import { Alert, Box, Button, Chip, CircularProgress, Container, Grid, Paper, Stack, Typography } from '@mui/material';
 
@@ -144,6 +145,20 @@ const SubmissionRow = ({ submission }: { submission: TypeUserSubmittedPatternRes
             </Alert>
           )}
         </Box>
+
+        {submission.status === 'pending' && (
+          <Button
+            component={Link as any}
+            to="/profile/submit-pattern/$submissionId"
+            params={{ submissionId: submission.id }}
+            startIcon={<EditRoundedIcon />}
+            variant="outlined"
+            size="small"
+            sx={{ flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'center' } }}
+          >
+            Edit
+          </Button>
+        )}
 
         {submission.status === 'published' && submission.resulting_pattern && (
           <Button

@@ -12,8 +12,10 @@ import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 import { PatternKeyBuilder } from '@/components/admin/PatternKeyBuilder';
 import { type TypePatternKeyReferenceObject, type TypePatternLayersMapItem } from '@/functions/database/patterns';
+import type { TypeUserSubmittedPatternResponse } from '@/functions/database/user-submissions';
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { convertPdfFirstPageToImageFile, MultiPagePdfError } from '@/functions/utilities/pdf-to-image';
+import { generateUserSubmissionFileUrl } from '@/functions/utilities/generate-pb-image';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
@@ -65,17 +67,36 @@ const FormSection = ({ label }: { label: string }) => (
 
 type UploadState = 'idle' | 'loading';
 
-export const UserUploadForm = () => {
+type UserUploadFormProps = {
+  /** When set, the form edits this existing (must be 'pending') submission
+   * instead of creating a new one - same fields, same validation, posts to
+   * /api/edit-pattern-submission instead of /api/submit-pattern. Pass a
+   * `key={editSubmission.id}` at the call site so switching between two
+   * different submissions' edit pages remounts (and re-initializes) the form
+   * instead of reusing stale state. */
+  editSubmission?: TypeUserSubmittedPatternResponse;
+};
+
+export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => {
   const { authData } = useGlobalAuthData();
   const navigate = useNavigate();
+  const isEditMode = !!editSubmission;
 
+  // `file`/`previewUrl` only ever represent a NEWLY picked replacement file -
+  // in edit mode, the existing file is shown via existingFileUrl below until
+  // (unless) the user picks one. Leaving `file` null on submit means "keep
+  // the current file" (see handleSubmit).
   const [file, setFile] = React.useState<File | null>(null);
   const [fileError, setFileError] = React.useState('');
   const [svgWarning, setSvgWarning] = React.useState('');
-  const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>([]);
+  const [layersMap, setLayersMap] = React.useState<TypePatternLayersMapItem[]>(() => editSubmission?.layers_map ?? []);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [fileKind, setFileKind] = React.useState<'svg' | 'image' | null>(null);
+  const [fileKind, setFileKind] = React.useState<'svg' | 'image' | null>(() =>
+    editSubmission ? (editSubmission.file_type === 'svg' ? 'svg' : 'image') : null,
+  );
   const [pdfConverting, setPdfConverting] = React.useState(false);
+
+  const existingFileUrl = editSubmission ? generateUserSubmissionFileUrl(editSubmission) : null;
 
   React.useEffect(() => {
     return () => {
@@ -83,28 +104,36 @@ export const UserUploadForm = () => {
     };
   }, [previewUrl]);
 
-  const [name, setName] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [instructions, setInstructions] = React.useState('');
-  const [designDate, setDesignDate] = React.useState<Dayjs | null>(dayjs());
-  const [pieces, setPieces] = React.useState('1');
-  const [designWidth, setDesignWidth] = React.useState('');
-  const [designWidthUnit, setDesignWidthUnit] = React.useState('in');
-  const [designHeight, setDesignHeight] = React.useState('');
-  const [designHeightUnit, setDesignHeightUnit] = React.useState('in');
-  const [lineWidth, setLineWidth] = React.useState('');
-  const [lineWidthUnit, setLineWidthUnit] = React.useState('mm');
+  const [name, setName] = React.useState(() => editSubmission?.name ?? '');
+  const [description, setDescription] = React.useState(() => editSubmission?.description ?? '');
+  const [instructions, setInstructions] = React.useState(() => editSubmission?.instructions ?? '');
+  const [designDate, setDesignDate] = React.useState<Dayjs | null>(() =>
+    editSubmission ? (editSubmission.design_date ? dayjs(editSubmission.design_date) : null) : dayjs(),
+  );
+  const [pieces, setPieces] = React.useState(() => String(editSubmission?.pieces ?? 1));
+  const [designWidth, setDesignWidth] = React.useState(() =>
+    editSubmission ? String(editSubmission.design_width) : '',
+  );
+  const [designWidthUnit, setDesignWidthUnit] = React.useState(() => editSubmission?.design_width_unit ?? 'in');
+  const [designHeight, setDesignHeight] = React.useState(() =>
+    editSubmission ? String(editSubmission.design_height) : '',
+  );
+  const [designHeightUnit, setDesignHeightUnit] = React.useState(() => editSubmission?.design_height_unit ?? 'in');
+  const [lineWidth, setLineWidth] = React.useState(() => (editSubmission ? String(editSubmission.line_width) : ''));
+  const [lineWidthUnit, setLineWidthUnit] = React.useState(() => editSubmission?.line_width_unit ?? 'mm');
 
-  const [isAuthor, setIsAuthor] = React.useState(true);
-  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>([]);
+  const [isAuthor, setIsAuthor] = React.useState(() => editSubmission?.is_author ?? true);
+  const [manualAuthorValue, setManualAuthorValue] = React.useState<string[]>(() =>
+    editSubmission?.author_manual_name ? editSubmission.author_manual_name.split(', ') : [],
+  );
   const [manualAuthorInput, setManualAuthorInput] = React.useState('');
   const debouncedManualAuthorSearch = useDebounce(manualAuthorInput, 300);
   const { data: manualAuthorData, isFetching: manualAuthorFetching } =
     useQuerySearchManualAuthors(debouncedManualAuthorSearch);
-  const [sourceUrl, setSourceUrl] = React.useState('');
-  const [sourceNotes, setSourceNotes] = React.useState('');
+  const [sourceUrl, setSourceUrl] = React.useState(() => editSubmission?.source_url ?? '');
+  const [sourceNotes, setSourceNotes] = React.useState(() => editSubmission?.source_notes ?? '');
 
-  const [tagValue, setTagValue] = React.useState<string[]>([]);
+  const [tagValue, setTagValue] = React.useState<string[]>(() => editSubmission?.tags ?? []);
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
   const { data: tagSearchData, isFetching: tagSearchFetching } = useQuerySearchTags(debouncedTagSearch);
@@ -164,8 +193,12 @@ export const UserUploadForm = () => {
     [tagValue, inheritedTags, hierarchyData],
   );
 
-  const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>([]);
-  const [customPatternKey, setCustomPatternKey] = React.useState(false);
+  const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>(
+    () => editSubmission?.pattern_key_reference_list ?? [],
+  );
+  const [customPatternKey, setCustomPatternKey] = React.useState(
+    () => editSubmission?.custom_pattern_key_requested ?? false,
+  );
 
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const turnstileRef = React.useRef<TurnstileInstance>(null);
@@ -250,18 +283,18 @@ export const UserUploadForm = () => {
   };
 
   const canSubmit =
-    !!file &&
+    (isEditMode || !!file) &&
     !fileError &&
     !!name.trim() &&
     !!turnstileToken &&
     (isAuthor || manualAuthorValue.length > 0) &&
-    cooldownRemaining <= 0 &&
+    (isEditMode || cooldownRemaining <= 0) &&
     uploadState !== 'loading' &&
     !pdfConverting;
 
   const handleSubmit = async () => {
     if (honeypot) return;
-    if (!canSubmit || !file) return;
+    if (!canSubmit) return;
 
     // Read the widget directly rather than trusting the token captured in
     // state minutes ago - Turnstile tokens expire after ~5 minutes, and this
@@ -284,7 +317,8 @@ export const UserUploadForm = () => {
     setUploadState('loading');
 
     const fd = new FormData();
-    fd.append('file', file, file.name);
+    if (file) fd.append('file', file, file.name);
+    if (isEditMode && editSubmission) fd.append('submissionId', editSubmission.id);
     fd.append('name', name.trim());
     fd.append('description', description.trim());
     fd.append('instructions', instructions.trim());
@@ -310,7 +344,8 @@ export const UserUploadForm = () => {
     fd.append('ts', String(formOpenTime.current));
 
     try {
-      const res = await fetch('/api/submit-pattern', { method: 'POST', body: fd });
+      const endpoint = isEditMode ? '/api/edit-pattern-submission' : '/api/submit-pattern';
+      const res = await fetch(endpoint, { method: 'POST', body: fd });
       const data = (await res.json()) as { success?: boolean; error?: string };
 
       if (!res.ok) {
@@ -319,8 +354,13 @@ export const UserUploadForm = () => {
         return;
       }
 
-      localStorage.setItem(RATE_LIMIT_STORAGE_KEY, String(Date.now()));
-      navigate({ to: '/profile/submit-pattern/complete' });
+      if (isEditMode) {
+        enqueueSnackbar('Your changes have been saved.', { variant: 'success' });
+        navigate({ to: '/profile/submissions' });
+      } else {
+        localStorage.setItem(RATE_LIMIT_STORAGE_KEY, String(Date.now()));
+        navigate({ to: '/profile/submit-pattern/complete' });
+      }
     } catch {
       enqueueSnackbar('Something went wrong - please try again.', { variant: 'error' });
       setUploadState('idle');
@@ -330,29 +370,32 @@ export const UserUploadForm = () => {
   return (
     <Stack sx={{ gap: 2.5, maxWidth: 1100, mx: 'auto', py: 4, px: 2 }}>
       <Typography variant="h4" sx={{ fontWeight: 600 }}>
-        Submit a Pattern
+        {isEditMode ? 'Edit Your Submission' : 'Submit a Pattern'}
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Share your stained glass pattern with the community. Every submission is reviewed by our team before it appears
-        on the site.
+        {isEditMode
+          ? "Update your pattern while it's still pending review - change the file, tags, title, or any other detail below."
+          : 'Share your stained glass pattern with the community. Every submission is reviewed by our team before it appears on the site.'}
       </Typography>
 
       <Alert severity="info">
         Your pattern's unique key names may be adjusted to stay consistent with the rest of the archive.
       </Alert>
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Have a large number of patterns?
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          If you're an artist with many patterns to share, submitting them one by one can be slow. Reach out on our{' '}
-          <MuiLink component={Link} to="/help/contact">
-            contact page
-          </MuiLink>{' '}
-          and we can process them together.
-        </Typography>
-      </Paper>
+      {!isEditMode && (
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            Have a large number of patterns?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            If you're an artist with many patterns to share, submitting them one by one can be slow. Reach out on our{' '}
+            <MuiLink component={Link} to="/help/contact">
+              contact page
+            </MuiLink>{' '}
+            and we can process them together.
+          </Typography>
+        </Paper>
+      )}
 
       {/* Honeypot */}
       <input
@@ -386,10 +429,10 @@ export const UserUploadForm = () => {
             Preview
           </Typography>
 
-          {previewUrl ? (
+          {previewUrl || existingFileUrl ? (
             <Box
               component="img"
-              src={previewUrl}
+              src={previewUrl ?? existingFileUrl ?? undefined}
               alt="Pattern preview"
               sx={{
                 width: '100%',
@@ -421,19 +464,36 @@ export const UserUploadForm = () => {
             </Box>
           )}
 
-          {file && (
+          {file ? (
             <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 600 }}>
               {file.name}
             </Typography>
+          ) : (
+            isEditMode && (
+              <Typography variant="body2" color="text.secondary">
+                Current file - pick a new one below to replace it.
+              </Typography>
+            )
           )}
         </Box>
 
         {/* ── Right: form fields ── */}
         <Stack sx={{ flex: 1, minWidth: 0, gap: 2.5 }}>
           <FormSection label="Pattern File" />
+          <Alert severity="info" sx={{ py: 0.5 }}>
+            Patterns that are not SVG will be converted by a team member to an SVG file following our archive
+            standards.
+            <br />
+            <br />
+            SVG files will be modified to fit the archive standards where needed.
+          </Alert>
           <SvgDropZone
             accept="image/*,.svg,application/pdf"
-            acceptLabel="Image, SVG, or single-page PDF - max 15 MB"
+            acceptLabel={
+              isEditMode
+                ? 'Image, SVG, or single-page PDF - max 15 MB. Leave blank to keep your current file.'
+                : 'Image, SVG, or single-page PDF - max 15 MB'
+            }
             onFile={handleFileSelect}
             disabled={uploadState === 'loading' || pdfConverting}
           />
@@ -704,7 +764,7 @@ export const UserUploadForm = () => {
             }}
           />
 
-          {cooldownRemaining > 0 && (
+          {!isEditMode && cooldownRemaining > 0 && (
             <Alert severity="info">
               Please wait {Math.ceil(cooldownRemaining / 1000)}s before submitting another pattern.
             </Alert>
@@ -717,7 +777,13 @@ export const UserUploadForm = () => {
             onClick={handleSubmit}
             startIcon={uploadState === 'loading' ? <CircularProgress size={16} color="inherit" /> : null}
           >
-            {uploadState === 'loading' ? 'Submitting…' : 'Submit Pattern for Review'}
+            {uploadState === 'loading'
+              ? isEditMode
+                ? 'Saving…'
+                : 'Submitting…'
+              : isEditMode
+                ? 'Save Changes'
+                : 'Submit Pattern for Review'}
           </Button>
         </Stack>
       </Box>

@@ -68,7 +68,20 @@ export async function sanitizeSvgServer(raw: string): Promise<string> {
   // declaration (every design-tool export does), and PocketBase's
   // server-side MIME sniffing on the `submitted_file` field rejected a
   // declaration-less upload as not being image/svg+xml. Keep it.
-  return doc.toString();
+  const serialized = doc.toString();
+
+  // The DOCTYPE many design tools emit (Illustrator's SVG 1.1 PUBLIC/DTD
+  // declaration, etc.) is a different story: SVG doesn't need it, it's
+  // exactly the kind of external-entity-capable construct
+  // analyzeSvgThreatsServer already guards against elsewhere, and linkedom
+  // has no working DOM API to remove just the doctype node (doc.doctype
+  // exists but isn't a real child per its own removeChild) - so it's
+  // stripped as text here instead. Left in place, it would ride along as
+  // stored content and later get spliced as literal text into the middle of
+  // a composite <svg> wrapper at export time (see buildSvgExport.ts's
+  // extractSvgInner), which is invalid XML. The XML declaration above it is
+  // untouched - only DOCTYPE requires this special case.
+  return serialized.replace(/<!DOCTYPE[^>]*>\s*/i, '');
 }
 
 // Ported from src/functions/utilities/sanitize-svg.ts::analyzeSvgThreats - see

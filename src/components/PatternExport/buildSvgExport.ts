@@ -39,8 +39,14 @@ function parseSvgViewBox(svgStr: string): SvgViewBox | null {
 }
 
 // Strips the outer <svg ...> and </svg> wrapper, leaving inner content only.
+// The opening-tag match consumes everything from the START of the string
+// (not just the tag itself) - a source SVG carrying an XML declaration
+// and/or DOCTYPE before <svg> would otherwise survive untouched and get
+// spliced as literal content into the new composite <svg> wrapper below,
+// which is invalid XML (a declaration/DOCTYPE is only legal before the root
+// element, never inside it). Mirrors composite.ts's stripSvgWrapper.
 function extractSvgInner(svgStr: string): string {
-  return svgStr.replace(/<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
+  return svgStr.replace(/^[\s\S]*?<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
 }
 
 export interface BuildSvgExportOptions {
