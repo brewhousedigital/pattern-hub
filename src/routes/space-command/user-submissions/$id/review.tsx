@@ -27,8 +27,17 @@ import {
 } from '@/functions/utilities/sanitize-svg';
 import { generateUserSubmissionFileUrl, generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { generateOpengraphImage } from '@/functions/utilities/generate-opengraph-image';
+import { convertImageUrlToPngBlob } from '@/functions/utilities/convert-to-png';
+import { downloadBlob } from '@/components/PatternExport/useExportPattern';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import dayjs from 'dayjs';
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -89,6 +98,7 @@ function RouteComponent() {
 
   const [isSaving, setIsSaving] = React.useState(false);
   const [isReuploading, setIsReuploading] = React.useState(false);
+  const [isConvertingDownload, setIsConvertingDownload] = React.useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
   const [rejectReason, setRejectReason] = React.useState('');
 
@@ -173,6 +183,22 @@ function RouteComponent() {
       enqueueSnackbar(err?.message || 'Failed to process the re-uploaded SVG.', { variant: 'error' });
     } finally {
       setIsReuploading(false);
+    }
+  };
+
+  // Raster submissions are stored as WebP (see submit-pattern.ts); some admin
+  // tools don't support it yet. Strict format conversion only - no resize,
+  // no crop, no other transformation - see convert-to-png.ts. SVG submissions
+  // don't go through this at all; that download stays a plain file link.
+  const handleDownloadWorkingFile = async () => {
+    setIsConvertingDownload(true);
+    try {
+      const pngBlob = await convertImageUrlToPngBlob(generateUserSubmissionFileUrl(submission));
+      downloadBlob(pngBlob, `${slugify(submission.name) || 'submission'}.png`);
+    } catch (err: any) {
+      enqueueSnackbar(err?.message || 'Failed to convert the image to PNG.', { variant: 'error' });
+    } finally {
+      setIsConvertingDownload(false);
     }
   };
 
@@ -375,20 +401,34 @@ function RouteComponent() {
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {submission.file_type === 'svg'
-                      ? 'The SVG currently being reviewed.'
-                      : 'The originally submitted image - download it, trace it into an SVG in your design tool, then upload the SVG below.'}
+                      ? 'The SVG currently being reviewed'
+                      : 'The originally submitted image'}
                   </Typography>
                 </Box>
-                <Button
-                  variant="contained"
-                  component="a"
-                  href={generateUserSubmissionFileUrl(submission)}
-                  download
-                  startIcon={<DownloadRoundedIcon />}
-                  sx={{ flexShrink: 0 }}
-                >
-                  Download {submission.file_type === 'svg' ? 'SVG' : 'image'}
-                </Button>
+                {submission.file_type === 'svg' ? (
+                  <Button
+                    variant="contained"
+                    component="a"
+                    href={generateUserSubmissionFileUrl(submission)}
+                    download
+                    startIcon={<DownloadRoundedIcon />}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    Download SVG
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleDownloadWorkingFile}
+                    disabled={isConvertingDownload}
+                    startIcon={
+                      isConvertingDownload ? <CircularProgress size={16} color="inherit" /> : <DownloadRoundedIcon />
+                    }
+                    sx={{ flexShrink: 0 }}
+                  >
+                    {isConvertingDownload ? 'Converting…' : 'Download image (PNG)'}
+                  </Button>
+                )}
               </Paper>
 
               {submission.file_type !== 'svg' && (
@@ -468,12 +508,7 @@ function RouteComponent() {
           <Button onClick={() => setRejectDialogOpen(false)} disabled={rejectSubmission.isPending}>
             Cancel
           </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleReject}
-            loading={rejectSubmission.isPending}
-          >
+          <Button color="error" variant="contained" onClick={handleReject} loading={rejectSubmission.isPending}>
             Reject Submission
           </Button>
         </DialogActions>
