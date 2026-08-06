@@ -627,6 +627,11 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
           />
 
           <FormSection label="Measurements" />
+          <Alert severity="info" sx={{ py: 0.5 }}>
+            Please fill out the size of the pattern or it will be made so the smallest part will be 1/8th inch
+            (3.175mm) and uploaded as whatever overall size that turns out to be. Foil sized lines will be assumed
+            for line width unless otherwise set.
+          </Alert>
 
           <TextField
             label="Pieces"
