@@ -35,7 +35,7 @@ export const useQueryAdminUsersPaginated = (params: TypeAdminUsersPaginationPara
       const filters: string[] = [];
       if (params.search.trim()) {
         const safe = params.search.trim().replace(/"/g, '\\"');
-        filters.push(`(name ~ "${safe}" || email ~ "${safe}")`);
+        filters.push(`(name ~ "${safe}" || email ~ "${safe}" || id ~ "${safe}")`);
       }
       if (params.verifiedFilter === 'verified') filters.push('verified = true');
       else if (params.verifiedFilter === 'unverified') filters.push('verified = false');
