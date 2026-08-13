@@ -22,6 +22,7 @@ import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { downloadAllFilesAsZip } from '@/functions/utilities/download-all-files';
 import { BorderedCard } from '@/components/cards/BorderedCard';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
+import { PatternKeyLegendCard } from '@/components/admin/PatternKeyLegendCard';
 
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadForOfflineRoundedIcon from '@mui/icons-material/DownloadForOfflineRounded';
@@ -332,55 +333,16 @@ function RouteComponent() {
         </Typography>
       ) : (
         <Grid container spacing={4} sx={{ alignItems: 'center' }}>
-          {legends?.map((legend) => {
-            const url = generatePbImagePatternKeyRef(legend);
-            const filename = legend.name;
-
-            return (
-              <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }} sx={{ height: '100%' }}>
-                <BorderedCard>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      minHeight: 150,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      loading="lazy"
-                      src={url}
-                      alt={filename}
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        maxHeight: 100,
-                        borderRadius: 1,
-                      }}
-                    />
-
-                    <IconButton
-                      size="small"
-                      onClick={() => handleSoftDeleteKey(legend.id)}
-                      disabled={softDeleteKey.isPending}
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        zIndex: 6,
-                        backgroundColor: '#eee',
-                        '&:hover': { color: 'error.main', backgroundColor: '#eee' },
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </BorderedCard>
-              </Grid>
-            );
-          })}
+          {legends?.map((legend) => (
+            <Grid key={legend.id} size={{ xs: 6, md: 4, lg: 3, xl: 2.4 }} sx={{ height: '100%' }}>
+              <PatternKeyLegendCard
+                legend={legend}
+                canEdit={canEdit}
+                onDelete={handleSoftDeleteKey}
+                isDeleting={softDeleteKey.isPending}
+              />
+            </Grid>
+          ))}
         </Grid>
       )}
 

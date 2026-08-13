@@ -6,7 +6,12 @@ import { useGlobalAuthData } from '@/data/auth-data';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useQuerySearchManualAuthors } from '@/functions/database/authors';
-import { useQuerySearchTags, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
+import {
+  useQuerySearchTags,
+  useQueryGetTagHierarchy,
+  getAncestors,
+  mergeTagsCaseInsensitive,
+} from '@/functions/database/tags';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
@@ -749,7 +754,12 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             sure which key is which? Download any reference image before deciding.
           </Typography>
 
-          <PatternKeyBuilder value={selectedKeys} onChange={setSelectedKeys} variant="filled" />
+          <PatternKeyBuilder
+            value={selectedKeys}
+            onChange={setSelectedKeys}
+            variant="filled"
+            onKeyTagsAdded={(keyTags) => setTagValue((prev) => mergeTagsCaseInsensitive(prev, keyTags))}
+          />
 
           <FormControlLabel
             control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}

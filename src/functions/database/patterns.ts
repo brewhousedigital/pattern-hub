@@ -76,6 +76,10 @@ export type TypePatternKeyReferenceObject = {
 export type TypePatternKeyTableResponse = {
   id: string;
   name: string;
+  /** Human-readable label for this catalog key - distinct from `name`, which is the uploaded SVG file itself. */
+  display_name?: string;
+  /** Tags auto-applied to a pattern when this key gets assigned to it (see PatternKeyBuilder's onKeyTagsAdded). */
+  tags?: string[];
   fullPath?: string;
   isDeleted: boolean;
 };
@@ -464,6 +468,23 @@ export const useMutationSoftDeletePatternKey = () => {
   return useMutation({
     mutationFn: async (id: string): Promise<TypePatternResponse> => {
       return await pocketbase.collection('pattern_key_reference_images').update(id, { isDeleted: true });
+    },
+  });
+};
+
+export type TypeSavePatternKeyMetaPayload = {
+  id: string;
+  display_name?: string;
+  tags?: string[];
+};
+
+// Updates a catalog key's display name and/or auto-add tags - separate from
+// useMutationSavePatternKey, which only handles the initial SVG file upload.
+export const useMutationSavePatternKeyMeta = () => {
+  return useMutation({
+    mutationFn: async (payload: TypeSavePatternKeyMetaPayload): Promise<TypePatternKeyTableResponse> => {
+      const { id, ...rest } = payload;
+      return await pocketbase.collection('pattern_key_reference_images').update(id, rest);
     },
   });
 };

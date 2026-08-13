@@ -22,6 +22,7 @@ type FancyAutocompleteProps = {
    * noOptionsText. Use when options come from a server-side search query.
    */
   serverSide?: boolean;
+  disabled?: boolean;
 };
 
 const normalizeTag = (tag: string) => tag.trim().toLowerCase();
@@ -48,6 +49,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       disableClearable
       filterSelectedOptions
       fullWidth
+      disabled={props.disabled}
       id={`tags-filled-${props.label}`}
       options={props.data?.map((option) => option.tag)}
       getOptionLabel={(option) => String(option)}

@@ -168,6 +168,23 @@ export interface TypeTagStat {
   count: number;
 }
 
+/**
+ * Merges `incoming` into `existing`, skipping any tag that already matches
+ * (trimmed, case-insensitive) one already in `existing`. Preserves
+ * `existing`'s order/casing and appends only genuinely new tags.
+ */
+export function mergeTagsCaseInsensitive(existing: string[], incoming: string[]): string[] {
+  const seen = new Set(existing.map((t) => t.trim().toLowerCase()));
+  const result = [...existing];
+  for (const tag of incoming) {
+    const key = tag.trim().toLowerCase();
+    if (key === '' || seen.has(key)) continue;
+    seen.add(key);
+    result.push(tag);
+  }
+  return result;
+}
+
 export const ADMIN_TAG_STATS_QUERY_KEY = ['AdminTagStats'] as const;
 
 // Reads the pre-aggregated `tags` view (one row per unique tag + its pattern

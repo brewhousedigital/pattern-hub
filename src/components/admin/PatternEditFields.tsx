@@ -5,6 +5,7 @@ import { PatternMeasurementFields } from '@/components/admin/PatternMeasurementF
 import { PatternKeyBuilder } from '@/components/admin/PatternKeyBuilder';
 import { FormSection } from '@/components/admin/FormSection';
 import { useQuerySearchLinkedAuthors, useQuerySearchManualAuthors } from '@/functions/database/authors';
+import { mergeTagsCaseInsensitive } from '@/functions/database/tags';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import type { TypePatternLayersMapItem, TypePatternKeyReferenceObject } from '@/functions/database/patterns';
 import type { Dayjs } from 'dayjs';
@@ -298,7 +299,12 @@ export const PatternEditFields = (props: PatternEditFieldsProps) => {
       {showPatternKeyBuilder && (
         <>
           <FormSection label="Pattern Key" />
-          <PatternKeyBuilder value={props.patternKeys} onChange={props.onPatternKeysChange} variant={variant} />
+          <PatternKeyBuilder
+            value={props.patternKeys}
+            onChange={props.onPatternKeysChange}
+            variant={variant}
+            onKeyTagsAdded={(keyTags) => props.onTagsChange(mergeTagsCaseInsensitive(props.tags, keyTags))}
+          />
         </>
       )}
     </>
