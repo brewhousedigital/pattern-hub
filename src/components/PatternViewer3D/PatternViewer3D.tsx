@@ -38,7 +38,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { StainedGlassPlane, type StainedGlassHandle } from './StainedGlassPlane';
 import { usePatternRasterizer } from './usePatternRasterizer';
 import { ColorControls } from './ColorControls';
-import { STAINED_GLASS_COLORS, ENV_OPTIONS, type EnvPreset } from './ColorPalette';
+import { STAINED_GLASS_COLORS, ENV_OPTIONS, DEFAULT_BG_COLOR, type EnvPreset, type BgMode } from './ColorPalette';
 import { buildLegend } from '../PatternExport/render-legend';
 import { formatMeasurement } from '@/functions/utilities/format-measurement';
 import type { TypePatternResponse } from '@/functions/database/patterns.ts';
@@ -159,6 +159,8 @@ type SceneProps = {
   paintColor: string;
   planeWidth: number;
   planeHeight: number;
+  bgMode: BgMode;
+  bgColor: string;
   bgPreset: EnvPreset;
   glassRef: React.Ref<StainedGlassHandle>;
   exportRef: React.MutableRefObject<(() => Promise<void>) | null>;
@@ -178,6 +180,8 @@ const Scene = ({
   paintColor,
   planeWidth,
   planeHeight,
+  bgMode,
+  bgColor,
   bgPreset,
   glassRef,
   exportRef,
@@ -187,12 +191,20 @@ const Scene = ({
   onUndoStackChange,
 }: SceneProps) => (
   <>
-    {/* HDR environment - acts as both background and ambient light.
-        The bright sky shines through the transparent glass regions. */}
-    <Environment preset={bgPreset} background backgroundRotation={[0, 6.5 / 2, 0]} />
+    {bgMode === 'scene' ? (
+      <>
+        {/* HDR environment - acts as both background and ambient light.
+            The bright sky shines through the transparent glass regions. */}
+        <Environment preset={bgPreset} background backgroundRotation={[0, 6.5 / 2, 0]} />
 
-    {/* Optional ground plane for outdoor environments */}
-    <GroundPlane bgPreset={bgPreset} />
+        {/* Optional ground plane for outdoor environments */}
+        <GroundPlane bgPreset={bgPreset} />
+      </>
+    ) : (
+      /* Flat solid-color background. The glass plane uses an unlit material,
+         so no environment lighting is needed in this mode. */
+      <color attach="background" args={[bgColor]} />
+    )}
 
     {/* The stained glass panel */}
     <StainedGlassPlane
@@ -237,6 +249,8 @@ export const PatternViewer3D = ({ viewData, hiddenLayers }: PatternViewer3DProps
 
   const [paintColor, setPaintColor] = useState<string>(STAINED_GLASS_COLORS[0].hex);
   const [usedColors, setUsedColors] = useState<Map<string, string>>(new Map());
+  const [bgMode, setBgMode] = useState<BgMode>('color');
+  const [bgColor, setBgColor] = useState<string>(DEFAULT_BG_COLOR);
   const [bgPreset, setBgPreset] = useState<EnvPreset>('apartment');
   const [canUndo, setCanUndo] = useState<boolean>(false);
 
@@ -328,6 +342,8 @@ export const PatternViewer3D = ({ viewData, hiddenLayers }: PatternViewer3DProps
               paintColor={paintColor}
               planeWidth={planeWidth}
               planeHeight={planeHeight}
+              bgMode={bgMode}
+              bgColor={bgColor}
               bgPreset={bgPreset}
               glassRef={glassRef}
               exportRef={exportRef}
@@ -348,6 +364,10 @@ export const PatternViewer3D = ({ viewData, hiddenLayers }: PatternViewer3DProps
         onClearAll={handleClearAll}
         onExport={handleExport}
         usedColors={usedColors}
+        bgMode={bgMode}
+        onBgModeChange={setBgMode}
+        bgColor={bgColor}
+        onBgColorChange={setBgColor}
         bgPreset={bgPreset}
         onBgPresetChange={setBgPreset}
         canUndo={canUndo}

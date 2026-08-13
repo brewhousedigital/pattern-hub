@@ -17,6 +17,17 @@ export const STAINED_GLASS_COLORS: GlassColor[] = [
   { label: 'Smoke', hex: '#6b7280' },
 ];
 
+// ─── Background mode ──────────────────────────────────────────────────────────
+// 'color'  - flat solid-color background (default, fastest, no HDR load).
+// 'scene'  - HDR environment preset (see ENV_OPTIONS below).
+
+export type BgMode = 'color' | 'scene';
+
+export const DEFAULT_BG_COLOR = '#ffffff';
+
+/** Quick-pick swatches shown alongside the custom background color input. */
+export const BG_COLOR_SWATCHES: string[] = ['#ffffff', '#000000', '#9ca3af', '#1f2937', '#f5f0e6'];
+
 // ─── Environment presets ──────────────────────────────────────────────────────
 // Mapped to a friendly label for the background selector UI.
 // Presets come from @react-three/drei's built-in HDR library.

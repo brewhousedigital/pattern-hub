@@ -1,5 +1,5 @@
 import React from 'react';
-import { STAINED_GLASS_COLORS, ENV_OPTIONS, type EnvPreset } from './ColorPalette';
+import { STAINED_GLASS_COLORS, ENV_OPTIONS, BG_COLOR_SWATCHES, type EnvPreset, type BgMode } from './ColorPalette';
 import {
   Box,
   Button,
@@ -20,6 +20,8 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import LandscapeIcon from '@mui/icons-material/Landscape';
 import WeekendIcon from '@mui/icons-material/Weekend';
+import PaletteIcon from '@mui/icons-material/Palette';
+import ImageIcon from '@mui/icons-material/Image';
 
 type ColorControlsProps = {
   paintColor: string;
@@ -28,6 +30,10 @@ type ColorControlsProps = {
   onClearAll: () => void;
   onExport: () => void;
   usedColors: Map<string, string>;
+  bgMode: BgMode;
+  onBgModeChange: (mode: BgMode) => void;
+  bgColor: string;
+  onBgColorChange: (hex: string) => void;
   bgPreset: EnvPreset;
   onBgPresetChange: (preset: EnvPreset) => void;
   canUndo: boolean;
@@ -41,6 +47,10 @@ export const ColorControls = ({
   onClearAll,
   onExport,
   usedColors,
+  bgMode,
+  onBgModeChange,
+  bgColor,
+  onBgColorChange,
   bgPreset,
   onBgPresetChange,
   canUndo,
@@ -220,42 +230,109 @@ export const ColorControls = ({
 
       <Divider sx={{ mt: 1.5, mb: 1.5 }} />
 
-      {/* Background environment selector */}
+      {/* Background selector */}
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
           <Typography variant="caption" sx={{ fontWeight: 600 }} color="text.secondary">
-            Background scene:
+            Background:
           </Typography>
           <ToggleButtonGroup
-            value={envTab}
+            value={bgMode}
             exclusive
             onChange={(_, v) => {
-              if (v) setEnvTab(v);
+              if (v) onBgModeChange(v);
             }}
             size="small"
           >
-            <ToggleButton value="outdoor" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
-              <LandscapeIcon sx={{ fontSize: 14, mr: 0.5 }} /> Outdoor
+            <ToggleButton value="color" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+              <PaletteIcon sx={{ fontSize: 14, mr: 0.5 }} /> Color
             </ToggleButton>
-            <ToggleButton value="indoor" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
-              <WeekendIcon sx={{ fontSize: 14, mr: 0.5 }} /> Indoor
+            <ToggleButton value="scene" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+              <ImageIcon sx={{ fontSize: 14, mr: 0.5 }} /> Scene
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-          {filteredEnv.map((env) => (
-            <Button
-              key={env.preset}
-              size="small"
-              variant={bgPreset === env.preset ? 'contained' : 'outlined'}
-              onClick={() => onBgPresetChange(env.preset)}
-              sx={{ borderRadius: 1.5, fontSize: '0.72rem', py: 0.4, px: 1.25, minWidth: 0 }}
-            >
-              {env.label}
-            </Button>
-          ))}
-        </Box>
+        {bgMode === 'color' ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+            {BG_COLOR_SWATCHES.map((hex) => (
+              <Tooltip key={hex} title={hex} placement="top">
+                <Box
+                  component="button"
+                  onClick={() => onBgColorChange(hex)}
+                  sx={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    border: bgColor.toLowerCase() === hex ? '2.5px solid' : '2px solid transparent',
+                    borderColor: bgColor.toLowerCase() === hex ? 'primary.main' : 'transparent',
+                    outline: '1.5px solid',
+                    outlineColor: (t) => alpha(t.palette.divider, 0.8),
+                    backgroundColor: hex,
+                    cursor: 'pointer',
+                    p: 0,
+                    transition: 'transform 0.1s',
+                    '&:hover': { transform: 'scale(1.18)' },
+                  }}
+                />
+              </Tooltip>
+            ))}
+
+            <Box
+              component="input"
+              type="color"
+              value={bgColor}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onBgColorChange(e.target.value)}
+              sx={{
+                width: 36,
+                height: 28,
+                p: 0,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+              }}
+            />
+            <Typography variant="caption" sx={{ fontFamily: 'monospace' }} color="text.secondary">
+              {bgColor}
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <ToggleButtonGroup
+                value={envTab}
+                exclusive
+                onChange={(_, v) => {
+                  if (v) setEnvTab(v);
+                }}
+                size="small"
+              >
+                <ToggleButton value="outdoor" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+                  <LandscapeIcon sx={{ fontSize: 14, mr: 0.5 }} /> Outdoor
+                </ToggleButton>
+                <ToggleButton value="indoor" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+                  <WeekendIcon sx={{ fontSize: 14, mr: 0.5 }} /> Indoor
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+              {filteredEnv.map((env) => (
+                <Button
+                  key={env.preset}
+                  size="small"
+                  variant={bgPreset === env.preset ? 'contained' : 'outlined'}
+                  onClick={() => onBgPresetChange(env.preset)}
+                  sx={{ borderRadius: 1.5, fontSize: '0.72rem', py: 0.4, px: 1.25, minWidth: 0 }}
+                >
+                  {env.label}
+                </Button>
+              ))}
+            </Box>
+          </>
+        )}
       </Box>
 
       {/* Fill-All color picker dropdown */}
