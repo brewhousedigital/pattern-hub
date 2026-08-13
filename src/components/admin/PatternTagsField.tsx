@@ -1,6 +1,12 @@
 import React from 'react';
 import { useDebounce } from '@/functions/hooks/useDebounce';
-import { useQueryAdminTagStatsPaginated, useQueryGetTagHierarchy, getAncestors } from '@/functions/database/tags';
+import {
+  useQueryAdminTagStatsPaginated,
+  useQueryGetTagHierarchy,
+  deriveHierarchyInherited,
+  applyManualTagChange,
+  applyKeyTagChange,
+} from '@/functions/database/tags';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 
 type PatternTagsFieldProps = {
@@ -12,12 +18,20 @@ type PatternTagsFieldProps = {
    * from scratch instead of carrying over from whatever was previously loaded.
    */
   resetKey?: string;
+  /**
+   * Live union of tags carried by the pattern's currently-assigned pattern
+   * keys (see useResolveKeyTags in functions/database/patterns.ts). Tags no
+   * longer covered by any assigned key are dropped automatically, mirroring
+   * this field's own hierarchy-ancestor cleanup below.
+   */
+  keyTags?: string[];
 };
 
 // Shared by AdminEditPatternModal and the user-submission review page so tag
 // search + hierarchy behavior can't drift between the two editing surfaces.
 export const PatternTagsField = (props: PatternTagsFieldProps) => {
   const { value, onChange } = props;
+  const keyTags = props.keyTags ?? [];
 
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
@@ -32,75 +46,57 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
 
   /**
-   * Set of tag names that were auto-added as ancestors of a primary tag.
-   * Used to render inherited chips differently and to clean them up when their
-   * primary tag is removed.
+   * Tags present only because they're an ancestor of another tag currently
+   * present. Rendered as inherited chips and cleaned up when their primary
+   * tag is removed.
    */
-  const [inheritedTags, setInheritedTags] = React.useState<Set<string>>(new Set());
+  const [hierarchyInherited, setHierarchyInherited] = React.useState<Set<string>>(new Set());
+  /** Tags present only because a currently-assigned pattern key carries them. */
+  const [keyInherited, setKeyInherited] = React.useState<Set<string>>(new Set());
 
   // Once the hierarchy loads (or the underlying record changes), mark which
   // existing tags are ancestors of other tags already in the set so they
-  // render as inherited chips.
+  // render as inherited chips. keyInherited always resets to empty here -
+  // key provenance can't be honestly re-derived from the flat tag list
+  // alone, so only tags this component itself adds via keyTags get tracked.
   React.useEffect(() => {
-    if (value.length === 0) {
-      setInheritedTags(new Set());
-      return;
-    }
-    const inherited = new Set<string>();
-    for (const tag of value) {
-      for (const ancestor of getAncestors(tag, hierarchyData)) {
-        if (value.includes(ancestor)) inherited.add(ancestor);
-      }
-    }
-    setInheritedTags(inherited);
+    setHierarchyInherited(value.length === 0 ? new Set() : deriveHierarchyInherited(value, hierarchyData));
+    setKeyInherited(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hierarchyData.length, props.resetKey]);
 
-  /**
-   * Smart tag change handler.
-   * When a new tag is added, its full ancestor chain is auto-added as inherited tags.
-   * When a primary tag is removed, its orphaned ancestors are cleaned up.
-   */
+  // The tags Autocomplete's onChange - the user typed a new tag or removed a chip.
   const handleChange = React.useCallback(
     (newValue: string[]) => {
-      const added = newValue.filter((t) => !value.includes(t));
-      const removed = value.filter((t) => !newValue.includes(t));
-
-      let result = [...newValue];
-      const newInherited = new Set(inheritedTags);
-
-      // Auto-add ancestors for any newly added tags
-      for (const tag of added) {
-        newInherited.delete(tag); // Explicitly added → promote to primary
-        for (const ancestor of getAncestors(tag, hierarchyData)) {
-          if (!result.includes(ancestor)) {
-            result.push(ancestor);
-            newInherited.add(ancestor);
-          }
-        }
-      }
-
-      // When a primary tag is removed, clean up orphaned inherited ancestors
-      for (const tag of removed) {
-        if (!newInherited.has(tag)) {
-          // It was primary - check each of its ancestors
-          for (const ancestor of getAncestors(tag, hierarchyData)) {
-            const stillNeeded = result
-              .filter((t) => !newInherited.has(t) && t !== tag)
-              .some((primary) => getAncestors(primary, hierarchyData).includes(ancestor));
-            if (!stillNeeded) {
-              result = result.filter((t) => t !== ancestor);
-              newInherited.delete(ancestor);
-            }
-          }
-        }
-        newInherited.delete(tag);
-      }
-
-      onChange(result);
-      setInheritedTags(newInherited);
+      const next = applyManualTagChange({ tags: value, hierarchyInherited, keyInherited }, newValue, hierarchyData);
+      onChange(next.tags);
+      setHierarchyInherited(next.hierarchyInherited);
+      setKeyInherited(next.keyInherited);
     },
-    [value, inheritedTags, hierarchyData, onChange],
+    [value, hierarchyInherited, keyInherited, hierarchyData, onChange],
+  );
+
+  // Reconciles whenever the live key-tags union changes (a pattern key was
+  // added, removed, or quick-applied elsewhere in the form). Guarded so a
+  // keyTags array that's new-by-reference but unchanged in content (e.g.
+  // after the pattern-key catalog query refetches) doesn't churn state.
+  React.useEffect(() => {
+    const next = applyKeyTagChange({ tags: value, hierarchyInherited, keyInherited }, keyTags, hierarchyData);
+    const unchanged =
+      next.tags.length === value.length &&
+      next.tags.every((t, i) => t === value[i]) &&
+      next.hierarchyInherited.size === hierarchyInherited.size &&
+      next.keyInherited.size === keyInherited.size;
+    if (unchanged) return;
+    onChange(next.tags);
+    setHierarchyInherited(next.hierarchyInherited);
+    setKeyInherited(next.keyInherited);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyTags, hierarchyData]);
+
+  const inheritedValues = React.useMemo(
+    () => new Set([...hierarchyInherited, ...keyInherited]),
+    [hierarchyInherited, keyInherited],
   );
 
   return (
@@ -113,7 +109,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       onChange={handleChange}
       inputValue={tagInput}
       onInputChange={setTagInput}
-      inheritedValues={inheritedTags}
+      inheritedValues={inheritedValues}
       loading={tagSearchFetching}
     />
   );

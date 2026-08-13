@@ -29,14 +29,6 @@ type PatternKeyBuilderProps = {
   value: TypePatternKeyReferenceObject[];
   onChange: (newValue: TypePatternKeyReferenceObject[]) => void;
   variant?: 'outlined' | 'filled';
-  /**
-   * Fired with a catalog key's auto-add tags whenever it gets assigned here
-   * (single add or quick-add collection) - the caller merges them into its
-   * own tags state (case-insensitively deduped; see mergeTagsCaseInsensitive
-   * in functions/database/tags.ts). Never fires with tags to *remove* -
-   * removing an assigned key intentionally leaves its tags in place.
-   */
-  onKeyTagsAdded?: (tags: string[]) => void;
 };
 
 // Shared by AdminEditPatternModal and the user-submission review page: lets an
@@ -72,12 +64,6 @@ export const PatternKeyBuilder = (props: PatternKeyBuilderProps) => {
 
   const handleAddPatternKey = (newData: TypePatternKeyReferenceObject) => {
     onChange([...value, { ...newData }]);
-
-    const catalogMatch = patternKeys?.find((k) => generatePbImagePatternKeyRef(k) === newData.fullPath);
-    if (catalogMatch?.tags?.length) {
-      props.onKeyTagsAdded?.(catalogMatch.tags);
-    }
-
     setTimeout(() => handleResetChangePatternKey(), 100);
   };
 
@@ -102,16 +88,6 @@ export const PatternKeyBuilder = (props: PatternKeyBuilderProps) => {
   const handleClickQuickAddKeyCollection = () => {
     const quickAdd = JSON.parse(quickAddKeyCollection) as TypePatternKeyReferenceObject[];
     onChange(quickAdd);
-
-    const unionTags = new Set<string>();
-    for (const item of quickAdd) {
-      const catalogMatch = patternKeys?.find((k) => generatePbImagePatternKeyRef(k) === item.fullPath);
-      catalogMatch?.tags?.forEach((tag) => unionTags.add(tag));
-    }
-    if (unionTags.size > 0) {
-      props.onKeyTagsAdded?.([...unionTags]);
-    }
-
     setQuickAddKeyCollection('');
   };
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, keepPreviousData, useMutation, queryOptions } from '@tanstack/react-query';
 import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
@@ -8,6 +9,7 @@ import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useSessionUnblockedTags } from '@/data/blocked-tags-session';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
+import { generatePbImagePatternKeyRef } from '@/functions/utilities/generate-pb-image';
 import dayjs, { type Dayjs } from 'dayjs';
 
 export type TypePatternResponse = {
@@ -78,7 +80,7 @@ export type TypePatternKeyTableResponse = {
   name: string;
   /** Human-readable label for this catalog key - distinct from `name`, which is the uploaded SVG file itself. */
   display_name?: string;
-  /** Tags auto-applied to a pattern when this key gets assigned to it (see PatternKeyBuilder's onKeyTagsAdded). */
+  /** Tags auto-applied to a pattern when this key is assigned to it (see useResolveKeyTags below). */
   tags?: string[];
   fullPath?: string;
   isDeleted: boolean;
@@ -452,6 +454,30 @@ export const useQueryGetAllPatternKeys = () => {
       });
     },
   });
+};
+
+/**
+ * Resolves the union of tags carried by every entry in `assignedKeys`,
+ * matched back to its catalog record by generated file URL - the same
+ * identity PatternKeyBuilder uses to match a picker selection to a catalog
+ * record. `TypePatternKeyReferenceObject.image` isn't reliably populated
+ * for a single "Add key" pick (only for keys added via a saved collection),
+ * so `fullPath` is the only identity that works for both paths.
+ *
+ * Used to keep a pattern's tags in sync with whichever keys are currently
+ * assigned to it (see applyKeyTagChange in functions/database/tags.ts).
+ */
+export const useResolveKeyTags = (assignedKeys: TypePatternKeyReferenceObject[]): string[] => {
+  const { data: patternKeys } = useQueryGetAllPatternKeys();
+
+  return useMemo(() => {
+    const union = new Set<string>();
+    for (const item of assignedKeys) {
+      const catalogMatch = patternKeys?.find((k) => generatePbImagePatternKeyRef(k) === item.fullPath);
+      catalogMatch?.tags?.forEach((tag) => union.add(tag));
+    }
+    return [...union];
+  }, [assignedKeys, patternKeys]);
 };
 
 export const useMutationSavePatternKey = () => {

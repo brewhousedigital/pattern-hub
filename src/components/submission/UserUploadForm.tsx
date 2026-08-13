@@ -9,14 +9,19 @@ import { useQuerySearchManualAuthors } from '@/functions/database/authors';
 import {
   useQuerySearchTags,
   useQueryGetTagHierarchy,
-  getAncestors,
-  mergeTagsCaseInsensitive,
+  deriveHierarchyInherited,
+  applyManualTagChange,
+  applyKeyTagChange,
 } from '@/functions/database/tags';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 import { PatternKeyBuilder } from '@/components/admin/PatternKeyBuilder';
-import { type TypePatternKeyReferenceObject, type TypePatternLayersMapItem } from '@/functions/database/patterns';
+import {
+  useResolveKeyTags,
+  type TypePatternKeyReferenceObject,
+  type TypePatternLayersMapItem,
+} from '@/functions/database/patterns';
 import type { TypeUserSubmittedPatternResponse } from '@/functions/database/user-submissions';
 import { analyzeSvgThreats, extractSvgLayerIds } from '@/functions/utilities/sanitize-svg';
 import { convertPdfFirstPageToImageFile, MultiPagePdfError } from '@/functions/utilities/pdf-to-image';
@@ -144,62 +149,57 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const { data: tagSearchData, isFetching: tagSearchFetching } = useQuerySearchTags(debouncedTagSearch);
   const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
 
-  /**
-   * Set of tag names that were auto-added as ancestors of a primary tag.
-   * Used to render inherited chips differently and to clean them up when their
-   * primary tag is removed.
-   */
-  const [inheritedTags, setInheritedTags] = React.useState<Set<string>>(new Set());
+  /** Tags present only because they're an ancestor of another tag currently present. */
+  const [hierarchyInherited, setHierarchyInherited] = React.useState<Set<string>>(new Set());
+  /** Tags present only because a currently-assigned pattern key carries them. */
+  const [keyInherited, setKeyInherited] = React.useState<Set<string>>(new Set());
 
-  /**
-   * Smart tag change handler.
-   * When a new tag is added, its full ancestor chain is auto-added as inherited tags.
-   * When a primary tag is removed, its orphaned ancestors are cleaned up.
-   */
+  // Bootstraps hierarchyInherited for a submission loaded in edit mode (mirrors
+  // PatternTagsField's equivalent mount effect) - keyInherited always starts
+  // empty since key provenance can't be honestly re-derived from the flat tag
+  // list alone.
+  React.useEffect(() => {
+    setHierarchyInherited(deriveHierarchyInherited(editSubmission?.tags ?? [], hierarchyData));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hierarchyData.length]);
+
+  // The tags Autocomplete's onChange - the user typed a new tag or removed a chip.
   const handleTagChange = React.useCallback(
     (newValue: string[]) => {
-      const added = newValue.filter((t) => !tagValue.includes(t));
-      const removed = tagValue.filter((t) => !newValue.includes(t));
-
-      let result = [...newValue];
-      const newInherited = new Set(inheritedTags);
-
-      // Auto-add ancestors for any newly added tags
-      for (const tag of added) {
-        newInherited.delete(tag); // Explicitly added → promote to primary
-        for (const ancestor of getAncestors(tag, hierarchyData)) {
-          if (!result.includes(ancestor)) {
-            result.push(ancestor);
-            newInherited.add(ancestor);
-          }
-        }
-      }
-
-      // When a primary tag is removed, clean up orphaned inherited ancestors
-      for (const tag of removed) {
-        if (!newInherited.has(tag)) {
-          // It was primary - check each of its ancestors
-          for (const ancestor of getAncestors(tag, hierarchyData)) {
-            const stillNeeded = result
-              .filter((t) => !newInherited.has(t) && t !== tag)
-              .some((primary) => getAncestors(primary, hierarchyData).includes(ancestor));
-            if (!stillNeeded) {
-              result = result.filter((t) => t !== ancestor);
-              newInherited.delete(ancestor);
-            }
-          }
-        }
-        newInherited.delete(tag);
-      }
-
-      setTagValue(result);
-      setInheritedTags(newInherited);
+      const next = applyManualTagChange({ tags: tagValue, hierarchyInherited, keyInherited }, newValue, hierarchyData);
+      setTagValue(next.tags);
+      setHierarchyInherited(next.hierarchyInherited);
+      setKeyInherited(next.keyInherited);
     },
-    [tagValue, inheritedTags, hierarchyData],
+    [tagValue, hierarchyInherited, keyInherited, hierarchyData],
   );
 
   const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>(
     () => editSubmission?.pattern_key_reference_list ?? [],
+  );
+
+  const keyTags = useResolveKeyTags(selectedKeys);
+
+  // Reconciles whenever the live key-tags union changes (a pattern key was
+  // added, removed, or quick-applied). Guarded against a keyTags array
+  // that's new-by-reference but unchanged in content.
+  React.useEffect(() => {
+    const next = applyKeyTagChange({ tags: tagValue, hierarchyInherited, keyInherited }, keyTags, hierarchyData);
+    const unchanged =
+      next.tags.length === tagValue.length &&
+      next.tags.every((t, i) => t === tagValue[i]) &&
+      next.hierarchyInherited.size === hierarchyInherited.size &&
+      next.keyInherited.size === keyInherited.size;
+    if (unchanged) return;
+    setTagValue(next.tags);
+    setHierarchyInherited(next.hierarchyInherited);
+    setKeyInherited(next.keyInherited);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyTags, hierarchyData]);
+
+  const inheritedTagValues = React.useMemo(
+    () => new Set([...hierarchyInherited, ...keyInherited]),
+    [hierarchyInherited, keyInherited],
   );
   const [customPatternKey, setCustomPatternKey] = React.useState(
     () => editSubmission?.custom_pattern_key_requested ?? false,
@@ -743,7 +743,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             onChange={handleTagChange}
             inputValue={tagInput}
             onInputChange={setTagInput}
-            inheritedValues={inheritedTags}
+            inheritedValues={inheritedTagValues}
             loading={tagSearchFetching}
           />
 
@@ -754,12 +754,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             sure which key is which? Download any reference image before deciding.
           </Typography>
 
-          <PatternKeyBuilder
-            value={selectedKeys}
-            onChange={setSelectedKeys}
-            variant="filled"
-            onKeyTagsAdded={(keyTags) => setTagValue((prev) => mergeTagsCaseInsensitive(prev, keyTags))}
-          />
+          <PatternKeyBuilder value={selectedKeys} onChange={setSelectedKeys} variant="filled" />
 
           <FormControlLabel
             control={<Checkbox checked={customPatternKey} onChange={(e) => setCustomPatternKey(e.target.checked)} />}

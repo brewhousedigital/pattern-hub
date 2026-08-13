@@ -154,6 +154,167 @@ export function getDescendants(tagName: string, hierarchy: TypeTagHierarchyRecor
   return descendants;
 }
 
+// ─── Pattern tag state (hierarchy + pattern-key provenance) ──────────────────
+//
+// Shared reducer used by both PatternTagsField (admin) and UserUploadForm
+// (public submission) so hierarchy-ancestor expansion and pattern-key
+// auto-add/auto-remove behave identically on both tag-editing surfaces
+// instead of drifting apart as two separately-maintained copies.
+//
+// A tag can be present in the flat `tags` list for two different auto-added
+// reasons at once (e.g. it's both an ancestor of another tag AND carried by
+// an assigned pattern key) - it's only eligible for removal once neither
+// reason still applies. A tag with neither marker is "primary": the user
+// typed it directly, and it's never auto-removed.
+
+export interface TypePatternTagState {
+  tags: string[];
+  /** Tags present only because they're an ancestor of some other tag currently in `tags`. */
+  hierarchyInherited: Set<string>;
+  /** Tags present only because a currently-assigned pattern key carries them. */
+  keyInherited: Set<string>;
+}
+
+// Adds `tag`'s full ancestor chain to `tags`/`hierarchyInherited` if missing.
+function addAncestors(
+  tag: string,
+  tags: string[],
+  hierarchyInherited: Set<string>,
+  hierarchy: TypeTagHierarchyRecord[],
+) {
+  for (const ancestor of getAncestors(tag, hierarchy)) {
+    if (!tags.includes(ancestor)) {
+      tags.push(ancestor);
+      hierarchyInherited.add(ancestor);
+    }
+  }
+}
+
+// Walks `removedTag`'s ancestor chain and drops any ancestor no longer
+// needed by a remaining tag. Purely hierarchy-inherited tags don't count as
+// their own justification - they're byproducts, not an independent reason
+// to keep an ancestor around - but a tag that's key-inherited (or fully
+// primary) does count, same as before this file tracked key provenance too.
+function pruneOrphanedAncestors(
+  removedTag: string,
+  tags: string[],
+  hierarchyInherited: Set<string>,
+  keyInherited: Set<string>,
+  hierarchy: TypeTagHierarchyRecord[],
+) {
+  for (const ancestor of getAncestors(removedTag, hierarchy)) {
+    const stillNeeded = tags
+      .filter((t) => t !== removedTag && !hierarchyInherited.has(t))
+      .some((driver) => getAncestors(driver, hierarchy).includes(ancestor));
+    if (!stillNeeded) {
+      const idx = tags.indexOf(ancestor);
+      if (idx !== -1) tags.splice(idx, 1);
+      hierarchyInherited.delete(ancestor);
+      keyInherited.delete(ancestor);
+    }
+  }
+}
+
+/**
+ * Derives the initial `hierarchyInherited` set for a tag list loaded from
+ * storage (e.g. on mount): a tag counts as inherited if it's also the
+ * ancestor of some other tag already present. Pattern-key provenance is
+ * never bootstrapped this way (see `TypePatternTagState.keyInherited`)
+ * since it can't be honestly recovered from the flat tag list alone - a tag
+ * might just coincidentally match a key's tags without ever having come
+ * from it.
+ */
+export function deriveHierarchyInherited(tags: string[], hierarchy: TypeTagHierarchyRecord[]): Set<string> {
+  const inherited = new Set<string>();
+  for (const tag of tags) {
+    for (const ancestor of getAncestors(tag, hierarchy)) {
+      if (tags.includes(ancestor)) inherited.add(ancestor);
+    }
+  }
+  return inherited;
+}
+
+/**
+ * Recomputes tag state after the user's own explicit tag selection changes
+ * (typing a new tag, or removing a chip via the tags Autocomplete). Newly
+ * added tags pull in their full hierarchy-ancestor chain; removing a tag
+ * that was the sole reason an ancestor was present prunes that ancestor
+ * too. A tag touched here is always promoted to (or kept as) fully primary,
+ * overriding any inherited markers it carried - direct user action wins
+ * over an automatic reason.
+ */
+export function applyManualTagChange(
+  state: TypePatternTagState,
+  newTags: string[],
+  hierarchy: TypeTagHierarchyRecord[],
+): TypePatternTagState {
+  const added = newTags.filter((t) => !state.tags.includes(t));
+  const removed = state.tags.filter((t) => !newTags.includes(t));
+
+  const tags = [...newTags];
+  const hierarchyInherited = new Set(state.hierarchyInherited);
+  const keyInherited = new Set(state.keyInherited);
+
+  for (const tag of added) {
+    hierarchyInherited.delete(tag);
+    keyInherited.delete(tag);
+    addAncestors(tag, tags, hierarchyInherited, hierarchy);
+  }
+
+  for (const tag of removed) {
+    hierarchyInherited.delete(tag);
+    keyInherited.delete(tag);
+    pruneOrphanedAncestors(tag, tags, hierarchyInherited, keyInherited, hierarchy);
+  }
+
+  return { tags, hierarchyInherited, keyInherited };
+}
+
+/**
+ * Reconciles tag state against the current set of tags carried by assigned
+ * pattern keys (see `useResolveKeyTags` in functions/database/patterns.ts) -
+ * call whenever that union changes (a key was added, removed, or
+ * quick-applied via a collection). Tags no longer carried by any assigned
+ * key are dropped, unless the user separately typed them (never marked
+ * key-inherited to begin with) or a hierarchy-ancestor chain still needs
+ * them. Tags that already exist for another reason are left untouched and
+ * NOT retroactively marked key-inherited, so this can never start
+ * auto-deleting a tag that predates this reconciliation running.
+ */
+export function applyKeyTagChange(
+  state: TypePatternTagState,
+  currentKeyTags: string[],
+  hierarchy: TypeTagHierarchyRecord[],
+): TypePatternTagState {
+  const tags = [...state.tags];
+  const hierarchyInherited = new Set(state.hierarchyInherited);
+  const keyInherited = new Set(state.keyInherited);
+
+  const normalize = (t: string) => t.trim().toLowerCase();
+  const currentKeyTagSet = new Set(currentKeyTags.map(normalize));
+
+  // Newly justified by an assigned key - add + expand hierarchy.
+  for (const tag of currentKeyTags) {
+    if (tags.some((t) => normalize(t) === normalize(tag))) continue;
+    tags.push(tag);
+    keyInherited.add(tag);
+    addAncestors(tag, tags, hierarchyInherited, hierarchy);
+  }
+
+  // No longer justified by any assigned key - drop the marker, and remove
+  // the tag outright if nothing else (hierarchy) still needs it.
+  for (const tag of [...keyInherited]) {
+    if (currentKeyTagSet.has(normalize(tag))) continue;
+    keyInherited.delete(tag);
+    if (hierarchyInherited.has(tag)) continue;
+    const idx = tags.indexOf(tag);
+    if (idx !== -1) tags.splice(idx, 1);
+    pruneOrphanedAncestors(tag, tags, hierarchyInherited, keyInherited, hierarchy);
+  }
+
+  return { tags, hierarchyInherited, keyInherited };
+}
+
 // ─── Pattern tag helpers ──────────────────────────────────────────────────────
 
 export interface TypePatternRecord {
@@ -166,23 +327,6 @@ export interface TypePatternRecord {
 export interface TypeTagStat {
   tag: string;
   count: number;
-}
-
-/**
- * Merges `incoming` into `existing`, skipping any tag that already matches
- * (trimmed, case-insensitive) one already in `existing`. Preserves
- * `existing`'s order/casing and appends only genuinely new tags.
- */
-export function mergeTagsCaseInsensitive(existing: string[], incoming: string[]): string[] {
-  const seen = new Set(existing.map((t) => t.trim().toLowerCase()));
-  const result = [...existing];
-  for (const tag of incoming) {
-    const key = tag.trim().toLowerCase();
-    if (key === '' || seen.has(key)) continue;
-    seen.add(key);
-    result.push(tag);
-  }
-  return result;
 }
 
 export const ADMIN_TAG_STATS_QUERY_KEY = ['AdminTagStats'] as const;
