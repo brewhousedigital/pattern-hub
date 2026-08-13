@@ -24,7 +24,24 @@ type FancyAutocompleteProps = {
   serverSide?: boolean;
 };
 
+const normalizeTag = (tag: string) => tag.trim().toLowerCase();
+
 export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
+  // Set (not cleared) when the user tries to commit a freeSolo tag that
+  // already exists (case-insensitively) in `value`. Shown as helper text and
+  // auto-dismissed so it doesn't linger once the user moves on.
+  const [duplicateTag, setDuplicateTag] = React.useState<string | null>(null);
+  const duplicateTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  React.useEffect(() => {
+    return () => clearTimeout(duplicateTimeoutRef.current);
+  }, []);
+
+  const clearDuplicateWarning = () => {
+    clearTimeout(duplicateTimeoutRef.current);
+    setDuplicateTag(null);
+  };
+
   return (
     <Autocomplete
       multiple
@@ -41,6 +58,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       noOptionsText={props.serverSide ? (props.inputValue ? 'No tags found' : 'Type to search tags') : undefined}
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
+        clearDuplicateWarning();
         props.onChange(newValue);
       }}
       slotProps={{
@@ -58,6 +76,7 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       }}
       inputValue={props.inputValue}
       onInputChange={(event, newInputValue) => {
+        if (duplicateTag !== null) clearDuplicateWarning();
         props.onInputChange(newInputValue);
       }}
       renderValue={(value: readonly string[], getItemProps) =>
@@ -82,7 +101,38 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
           );
         })
       }
-      renderInput={(params) => <TextField {...params} variant="filled" label={props.label} />}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          variant="filled"
+          label={props.label}
+          error={duplicateTag !== null}
+          helperText={duplicateTag ? `"${duplicateTag}" is already added` : undefined}
+          slotProps={{
+            ...params.slotProps,
+            htmlInput: {
+              ...params.slotProps?.htmlInput,
+              onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+                if (event.key !== 'Enter') return;
+                const typed = props.inputValue.trim();
+                const isDuplicate =
+                  typed !== '' && (props.value ?? []).some((tag) => normalizeTag(tag) === normalizeTag(typed));
+                if (!isDuplicate) return;
+                // MUI's own root-level Enter handler (attached via getRootProps,
+                // not on this input) only dedupes freeSolo entries on exact
+                // string equality - "Dog" would slip through as a second tag
+                // alongside "dog". Stop it from ever seeing this keydown so our
+                // case-insensitive check is the one that decides.
+                event.preventDefault();
+                event.stopPropagation();
+                setDuplicateTag(typed);
+                clearTimeout(duplicateTimeoutRef.current);
+                duplicateTimeoutRef.current = setTimeout(() => setDuplicateTag(null), 3000);
+              },
+            },
+          }}
+        />
+      )}
     />
   );
 };
