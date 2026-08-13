@@ -151,17 +151,28 @@ export const PatternKeyBuilder = (props: PatternKeyBuilderProps) => {
                   onClose: () => setOpenKeySelectWindow(false),
                 },
               }}
-              onChange={(e) => handleNewChangePatternKey({ fullPath: e.target.value })}
+              onChange={(e) => {
+                const fullPath = e.target.value;
+                const catalogMatch = patternKeys.find((k) => generatePbImagePatternKeyRef(k) === fullPath);
+                handleNewChangePatternKey({ fullPath, name: catalogMatch?.display_name || '' });
+              }}
             >
               {patternKeys.map((item) => (
                 <MenuItem key={item.id} value={generatePbImagePatternKeyRef(item)}>
-                  <Box
-                    component="img"
-                    loading="lazy"
-                    src={generatePbImagePatternKeyRef(item)}
-                    alt={`pattern-key-img-${item.id}`}
-                    sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
-                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                    <Box
+                      component="img"
+                      loading="lazy"
+                      src={generatePbImagePatternKeyRef(item)}
+                      alt={`pattern-key-img-${item.id}`}
+                      sx={{ width: '100%', height: 'auto', maxHeight: 100 }}
+                    />
+                    {item.display_name && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {item.display_name}
+                      </Typography>
+                    )}
+                  </Box>
                 </MenuItem>
               ))}
             </TextField>
