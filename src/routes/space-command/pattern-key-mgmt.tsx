@@ -188,6 +188,7 @@ function RouteComponent() {
     e: React.ChangeEvent<HTMLInputElement>,
     name: string,
     fullPath: string,
+    displayName?: string,
   ) => {
     const isChecked = e.target.checked;
 
@@ -196,7 +197,7 @@ function RouteComponent() {
         return [
           ...prev,
           {
-            name: '',
+            name: displayName || '',
             // This is the name of the legend image... not the custom name
             image: name,
             fullPath: fullPath,
@@ -431,7 +432,7 @@ function RouteComponent() {
                     <Checkbox
                       checked={isSelected}
                       size="small"
-                      onChange={(e) => handleToggleLegendToNewCollection(e, legend.name, url)}
+                      onChange={(e) => handleToggleLegendToNewCollection(e, legend.name, url, legend.display_name)}
                       sx={{
                         p: 0,
                         color: 'divider',
