@@ -486,8 +486,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
         <Stack sx={{ flex: 1, minWidth: 0, gap: 2.5 }}>
           <FormSection label="Pattern File" />
           <Alert severity="info" sx={{ py: 0.5 }}>
-            Patterns that are not SVG will be converted by a team member to an SVG file following our archive
-            standards.
+            Patterns that are not SVG will be converted by a team member to an SVG file following our archive standards.
             <br />
             <br />
             SVG files will be modified to fit the archive standards where needed.
@@ -633,9 +632,9 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
 
           <FormSection label="Measurements" />
           <Alert severity="info" sx={{ py: 0.5 }}>
-            Please fill out the size of the pattern or it will be made so the smallest part will be 1/8th inch
-            (3.175mm) and uploaded as whatever overall size that turns out to be. Foil sized lines will be assumed
-            for line width unless otherwise set.
+            Please fill out the size of the pattern or it will be made so the smallest part will be 1/8th inch (3.175mm)
+            and uploaded as whatever overall size that turns out to be. Foil sized lines will be assumed for line width
+            unless otherwise set.
           </Alert>
 
           <TextField
@@ -766,12 +765,9 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
             onSuccess={(token) => setTurnstileToken(token)}
             onError={() => setTurnstileToken(null)}
-            onExpire={() => {
-              setTurnstileToken(null);
-              enqueueSnackbar('Security check expired - please re-verify below before submitting.', {
-                variant: 'warning',
-              });
-            }}
+            // No onExpire handler: refresh-expired/refresh-timeout default to
+            // 'auto', so Cloudflare mints a replacement token in the
+            // background on its own and onSuccess fires again with it.
           />
 
           {!isEditMode && cooldownRemaining > 0 && (

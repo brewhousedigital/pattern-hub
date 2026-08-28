@@ -5,6 +5,12 @@ const PB_URL = 'https://stained-glass.pockethost.io';
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const RATE_LIMIT_MS = 5_000; // one submission per 5 seconds per user
 const MAX_RASTER_DIMENSION = 3000; // preserve more resolution than the gallery pipeline - these get traced
+// This form is long (file upload, two markdown fields, measurements, pattern
+// keys) and a careful submitter can easily spend well over 5 minutes on it.
+// Turnstile refreshes its own token past its 5-min lifetime on its own, so
+// this window isn't a captcha-freshness check - it only needs to be generous
+// enough for a real user, while still rejecting a stale/replayed request.
+const MAX_SUBMISSION_AGE_MS = 60 * 60 * 1000; // 60 minutes
 
 function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status });
@@ -60,9 +66,10 @@ export default async (req: Request) => {
     return Response.json({ success: true });
   }
 
-  // 2. Timing guard
+  // 2. Timing guard - reject bot-fast submissions (<2s) and stale/replayed
+  // ones (see MAX_SUBMISSION_AGE_MS above for why the upper bound is wide).
   const now = Date.now();
-  if (!ts || now - ts < 2_000 || now - ts > 300_000) {
+  if (!ts || now - ts < 2_000 || now - ts > MAX_SUBMISSION_AGE_MS) {
     return jsonError('Invalid submission timing', 400);
   }
 

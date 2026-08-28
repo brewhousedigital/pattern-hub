@@ -4,6 +4,11 @@ import { sanitizeSvgServer, analyzeSvgThreatsServer } from './_lib/svg-server-sa
 const PB_URL = 'https://stained-glass.pockethost.io';
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const MAX_RASTER_DIMENSION = 3000; // preserve more resolution than the gallery pipeline - these get traced
+// Mirrors submit-pattern.ts's MAX_SUBMISSION_AGE_MS - this form is long enough
+// that a real user can pass 5 minutes on it, and Turnstile refreshes its own
+// token past that lifetime anyway, so this window only needs to catch a
+// stale/replayed request, not gate on captcha freshness.
+const MAX_SUBMISSION_AGE_MS = 60 * 60 * 1000; // 60 minutes
 
 function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status });
@@ -67,9 +72,10 @@ export default async (req: Request) => {
     return Response.json({ success: true });
   }
 
-  // 2. Timing guard
+  // 2. Timing guard - reject bot-fast submissions (<2s) and stale/replayed
+  // ones (see MAX_SUBMISSION_AGE_MS above for why the upper bound is wide).
   const now = Date.now();
-  if (!ts || now - ts < 2_000 || now - ts > 300_000) {
+  if (!ts || now - ts < 2_000 || now - ts > MAX_SUBMISSION_AGE_MS) {
     return jsonError('Invalid submission timing', 400);
   }
 
