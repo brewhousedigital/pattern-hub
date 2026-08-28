@@ -33,15 +33,19 @@ export const PatternSaveContainer = (props: TypeViewData) => {
   return (
     <Stack direction="row" sx={{ gap: 1 }}>
       <Tooltip title="Copy pattern link" arrow>
-        <IconButton onClick={handleCopyLink} disabled={!patternUrl}>
-          <LinkRoundedIcon color="primary" />
-        </IconButton>
+        <span>
+          <IconButton onClick={handleCopyLink} disabled={!patternUrl}>
+            <LinkRoundedIcon color="primary" />
+          </IconButton>
+        </span>
       </Tooltip>
 
       <Tooltip title="Open in new tab" arrow>
-        <IconButton onClick={handleOpenNewTab} disabled={!patternUrl}>
-          <OpenInNewRoundedIcon color="primary" />
-        </IconButton>
+        <span>
+          <IconButton onClick={handleOpenNewTab} disabled={!patternUrl}>
+            <OpenInNewRoundedIcon color="primary" />
+          </IconButton>
+        </span>
       </Tooltip>
 
       {authData && (
