@@ -13,6 +13,7 @@ import {
   applyManualTagChange,
   applyKeyTagChange,
 } from '@/functions/database/tags';
+import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
@@ -339,7 +340,14 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
     fd.append('design_height_unit', designHeightUnit);
     fd.append('line_width_unit', lineWidthUnit);
     if (designDate) fd.append('design_date', designDate.startOf('day').toISOString());
-    fd.append('tags', JSON.stringify(tagValue));
+    // normalizeTagName applies the canonical tag-casing rule (lowercase,
+    // trim, collapse internal whitespace) - see
+    // src/functions/utilities/normalize-tag.ts and
+    // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. AdminEditPatternModal.tsx's
+    // admin-side edit path applies the same function at its own submit step,
+    // so a tag ends up with the same stored casing regardless of which form
+    // it was typed into.
+    fd.append('tags', JSON.stringify(tagValue.map(normalizeTagName)));
     fd.append('pattern_key_reference_list', JSON.stringify(selectedKeys));
     fd.append('custom_pattern_key_requested', String(customPatternKey));
     fd.append('layers_map', JSON.stringify(layersMap));

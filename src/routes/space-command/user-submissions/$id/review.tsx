@@ -18,6 +18,7 @@ import {
 } from '@/functions/database/user-submissions';
 import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
 import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
+import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import {
   sanitizeSvgFile,
@@ -243,7 +244,14 @@ function RouteComponent() {
         instructions: values.instructions,
         source_url: values.sourceUrl,
         design_date: values.designDate,
-        tags: values.tags,
+        // normalizeTagName applies the canonical tag-casing rule (lowercase,
+        // trim, collapse internal whitespace) - see
+        // src/functions/utilities/normalize-tag.ts and
+        // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. This was the one tag
+        // save path with no normalization at all - AdminEditPatternModal.tsx
+        // and UserUploadForm.tsx both apply the same function at their own
+        // submit steps.
+        tags: values.tags.map(normalizeTagName),
         authors: values.authors,
         author_manual: values.authorManual,
         pieces: values.pieces,

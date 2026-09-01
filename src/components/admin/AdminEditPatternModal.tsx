@@ -8,6 +8,7 @@ import {
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryClient } from '@tanstack/react-query';
 import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
+import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 import {
   PatternDetailsForm,
@@ -198,8 +199,16 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     setIsButtonLoading(true);
 
     try {
+      // normalizeTagName applies the canonical tag-casing rule (lowercase,
+      // trim, collapse internal whitespace) - see
+      // src/functions/utilities/normalize-tag.ts and
+      // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. UserUploadForm.tsx's
+      // public submission path applies the same function at its own submit
+      // step, so a tag ends up with the same stored casing regardless of
+      // which form it was typed into.
       const filteredTags =
-        values.tags?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) || [];
+        values.tags?.filter((item) => item !== 'undefined')?.map((item) => normalizeTagName(item?.toString() ?? '')) ||
+        [];
       const filteredAuthors = values.authors || [];
       const filteredManualAuthors =
         values.authorManual?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) ||

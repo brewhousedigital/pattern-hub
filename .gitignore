@@ -33,3 +33,10 @@ dist-ssr
 # Pocketbase
 /src/functions/database/pb_schema.json
 CLAUDE.md
+
+# Documentation files
+TAG_REDESIGN_PROJECT.md
+TAG_REDESIGN_PROJECT_NOTES.md
+public/images/docs-tagging-system-example.jpg
+TANSTACK_POCKETBASE_GUIDE.md
+IDEAS.md

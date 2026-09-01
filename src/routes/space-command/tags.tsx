@@ -19,6 +19,7 @@ import {
   type TypePatternRecord,
   type TypeTagHierarchyRecord,
 } from '@/functions/database/tags';
+import { processSequentially } from '@/functions/utilities/batch-write';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
@@ -115,23 +116,11 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
   return records;
 }
 
-/**
- * Process an array of records one at a time, awaiting each before starting
- * the next, with BATCH_DELAY_MS between calls.
- */
-async function processSequentially<T>(
-  items: T[],
-  processOne: (item: T) => Promise<void>,
-  onProgress: (completed: number, total: number) => void,
-) {
-  for (let i = 0; i < items.length; i++) {
-    await processOne(items[i]);
-    onProgress(i + 1, items.length);
-    if (i < items.length - 1) {
-      await sleep(BATCH_DELAY_MS);
-    }
-  }
-}
+// processSequentially (batch-with-delay writes) now lives in
+// src/functions/utilities/batch-write.ts, imported above - see that file's
+// doc comment. `sleep`/`BATCH_DELAY_MS` above stay local: a few call sites
+// below use them directly for a standalone delay, outside of any
+// processSequentially batch.
 
 // ─── Hierarchy updater ────────────────────────────────────────────────────────
 //
