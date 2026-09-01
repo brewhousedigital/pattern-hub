@@ -1,5 +1,6 @@
 import PocketBase from 'pocketbase';
 import { QueryClient } from '@tanstack/react-query';
+import { parseRetryAfterSeconds } from '@/functions/utilities/rate-limit';
 
 export const pocketbaseDomain = 'https://stained-glass.pockethost.io';
 export const pocketbase = new PocketBase(pocketbaseDomain);
@@ -29,14 +30,19 @@ if (typeof window !== 'undefined') {
     try {
       const response = await _originalFetch(...args);
       if (response.status === 429) {
-        window.dispatchEvent(new CustomEvent('app:rate-limited'));
+        // Tell the modal how long the server actually wants us to wait, when the
+        // response says - see parseRetryAfterSeconds for the expected format.
+        const retryAfterSeconds = await parseRetryAfterSeconds(response);
+        window.dispatchEvent(new CustomEvent('app:rate-limited', { detail: { retryAfterSeconds } }));
       }
       return response;
     } catch (error) {
       // CORS failures and other server-side errors surface as TypeErrors with no HTTP
       // response. If the user is online, this most likely means the server is struggling.
+      // There's no response to read a retry time from here, so the modal falls back
+      // to its default wait.
       if (error instanceof TypeError && navigator.onLine) {
-        window.dispatchEvent(new CustomEvent('app:rate-limited'));
+        window.dispatchEvent(new CustomEvent('app:rate-limited', { detail: { retryAfterSeconds: null } }));
       }
       throw error;
     }
