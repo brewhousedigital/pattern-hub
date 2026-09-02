@@ -2417,6 +2417,221 @@ routerAdd(
   $apis.requireAuth('admins'),
 );
 
+// Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): keeps an author's tag
+// identity in sync with their account name. Without this, renaming an
+// account would stop automatically updating that person's credit on every
+// pattern - today it is instant, because patterns.authors is a live
+// relation; once an author is a tag string baked into patterns.tags,
+// nothing keeps it current unless something does this on purpose. This
+// hook restores that behavior, and goes one better: the old name becomes a
+// search alias, so a bookmark or a typed search for someone's old name
+// still finds their patterns.
+//
+// Fires after the account save has already succeeded - a rename must
+// always go through, even when the tag-sync step below cannot complete
+// (see the collision case). Catches every path that changes users.name,
+// not just the self-service profile editor - /api/admin-reset-user-name
+// above goes through $app.save() too, which still triggers this hook.
+//
+// onRecordAfterUpdateSuccess and record.original() verified against
+// PocketBase's own JSVM reference before writing this, rather than
+// guessed at - see https://pocketbase.io/jsvm/interfaces/core.Record.html
+// and TAG_REDESIGN_PROJECT_NOTES.md, Phase 4.
+onRecordAfterUpdateSuccess((e) => {
+  // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
+  // JSVM can't import a .ts file from src/ directly - keep this copy in
+  // sync if the canonical rule ever changes.
+  function normalizeTagName(raw) {
+    return String(raw).trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  // Mirrors slugifyTag() in src/functions/utilities/slugify-tag.ts.
+  function slugifyTag(tag) {
+    return tag
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function escDq(s) {
+    return String(s).replace(/"/g, '\\"');
+  }
+
+  function escSq(s) {
+    return String(s).replace(/'/g, "\\'");
+  }
+
+  try {
+    const oldName = e.record.original().getString('name');
+    const newName = e.record.getString('name');
+    const normalizedOldName = normalizeTagName(oldName || '');
+    const normalizedNewName = normalizeTagName(newName || '');
+    // Nothing to propagate - either name wasn't touched by this save, or it
+    // changed only in casing/whitespace, which isn't a different tag
+    // identity (same normalized-comparison rule the admin tag manager's own
+    // rename check already applies, for the same reason).
+    if (!normalizedNewName || normalizedOldName === normalizedNewName) return;
+
+    const linkedRows = $app.findRecordsByFilter('tags_v2', "linked_user = '" + escSq(e.record.id) + "'", '', 1, 0);
+    if (!linkedRows.length) return; // this account has no linked author tag - nothing to do
+
+    const authorTag = linkedRows[0];
+
+    // One edge case to handle, from the plan: does a different tag already
+    // own the new name? Never merge automatically - skip, log it, and leave
+    // it for an admin. The account rename itself has already succeeded and
+    // is not undone here either way.
+    const collisionRows = $app.findRecordsByFilter(
+      'tags_v2',
+      "tag = '" + escSq(normalizedNewName) + "'",
+      '',
+      1,
+      0,
+    );
+    if (collisionRows.length && collisionRows[0].id !== authorTag.id) {
+      try {
+        const logsCollection = $app.findCollectionByNameOrId('admin_logs');
+        const logRecord = new Record(logsCollection, {
+          admin_id: '',
+          admin_name: 'System (account rename)',
+          action: 'Author Tag Rename Skipped - Name Collision',
+          entity_type: 'Tag',
+          entity_id: authorTag.id,
+          entity_name: authorTag.getString('tag'),
+          changes: {},
+          metadata: {
+            user_id: e.record.id,
+            old_tag: normalizedOldName,
+            new_tag: normalizedNewName,
+            colliding_tag_id: collisionRows[0].id,
+            reason:
+              'A different tag already exists with this name. The account rename succeeded; the author tag was left as-is for an admin to resolve by hand.',
+          },
+        });
+        $app.save(logRecord);
+      } catch (logErr) {
+        console.log('>>>account-rename-sync: failed to write audit log', logErr.message);
+      }
+      return;
+    }
+
+    const oldSlug = authorTag.getString('slug');
+    let oldPreviousSlugs = [];
+    try {
+      oldPreviousSlugs = JSON.parse(authorTag.getString('previous_slugs')) || [];
+    } catch (_) {}
+
+    const baseSlug = slugifyTag(normalizedNewName) || 'author';
+    const otherTagRows = $app.findRecordsByFilter('tags_v2', "id != '" + escSq(authorTag.id) + "'", '', 0, 0);
+    const usedSlugs = {};
+    for (let i = 0; i < otherTagRows.length; i++) {
+      usedSlugs[otherTagRows[i].getString('slug')] = true;
+    }
+    let newSlug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs[newSlug]) newSlug = baseSlug + '-' + suffix++;
+
+    $app.runInTransaction((txApp) => {
+      // 1. Rename the tag itself, keeping the old slug reachable (mirrors
+      // syncSatelliteTablesForOp's rename behavior in space-command/tags.tsx).
+      authorTag.set('tag', normalizedNewName);
+      authorTag.set('slug', newSlug);
+      authorTag.set('previous_slugs', [oldSlug].concat(oldPreviousSlugs));
+      txApp.save(authorTag);
+
+      // 2. Rewrite every pattern crediting the old name to credit the new
+      // one - the same "instant credit update" the old patterns.authors
+      // relation gave for free.
+      const affectedPatterns = $app.findRecordsByFilter(
+        'patterns',
+        "tags ~ '\"" + escDq(normalizedOldName) + "\"'",
+        '',
+        0,
+        0,
+      );
+      for (let i = 0; i < affectedPatterns.length; i++) {
+        const pattern = affectedPatterns[i];
+        let tags = [];
+        try {
+          tags = JSON.parse(pattern.getString('tags')) || [];
+        } catch (_) {
+          continue;
+        }
+        const rewritten = tags.map(function (t) {
+          return t === normalizedOldName ? normalizedNewName : t;
+        });
+        try {
+          pattern.set('tags', rewritten);
+          txApp.save(pattern);
+        } catch (saveErr) {
+          console.log('>>>account-rename-sync: failed to update pattern', pattern.id, saveErr.message);
+        }
+      }
+
+      // 3. Retarget any existing alias that pointed at the old name, so a
+      // chain of renames (Jane Doe -> Jane Smith -> Jane Johnson) keeps
+      // every earlier name resolving to the current one, not a stale middle
+      // name. Alias resolution is single-hop by design (see
+      // resolveTagAlias in src/functions/database/tags.ts), so this matters:
+      // without it, an alias from two renames ago would point at a name
+      // that no longer exists as a tag at all.
+      const staleAliasRows = $app.findRecordsByFilter(
+        'tag_aliases',
+        "target_tag = '" + escSq(normalizedOldName) + "'",
+        '',
+        0,
+        0,
+      );
+      for (let i = 0; i < staleAliasRows.length; i++) {
+        try {
+          staleAliasRows[i].set('target_tag', normalizedNewName);
+          txApp.save(staleAliasRows[i]);
+        } catch (saveErr) {
+          console.log('>>>account-rename-sync: failed to retarget alias', staleAliasRows[i].id, saveErr.message);
+        }
+      }
+
+      // 4. Add the old name itself as a new alias of the new one, so a
+      // bookmark or a typed search for it still finds these patterns.
+      const existingAliasForOldName = $app.findRecordsByFilter(
+        'tag_aliases',
+        "alias = '" + escSq(normalizedOldName) + "'",
+        '',
+        1,
+        0,
+      );
+      try {
+        if (existingAliasForOldName.length) {
+          existingAliasForOldName[0].set('target_tag', normalizedNewName);
+          txApp.save(existingAliasForOldName[0]);
+        } else {
+          const aliasCollection = $app.findCollectionByNameOrId('tag_aliases');
+          const aliasRecord = new Record(aliasCollection, {
+            alias: normalizedOldName,
+            target_tag: normalizedNewName,
+          });
+          txApp.save(aliasRecord);
+        }
+      } catch (saveErr) {
+        console.log('>>>account-rename-sync: failed to add alias for old name', saveErr.message);
+      }
+    });
+  } catch (error) {
+    console.log('>>>account-rename-sync: error', error.message);
+  }
+}, 'users');
+
+// Not replicated here, on purpose: implied_tags edges pointing at or from
+// the renamed tag are not retargeted. That mirrors the full breadth of
+// retargetImpliedTagEdges/retargetTagAliases in space-command/tags.tsx,
+// which needed a full code review to get right (self-loop dedup, symmetric
+// guards) - out of scope for a first version of this hook, and a
+// personal-name tag having a pre-existing implied-tag edge is a much rarer
+// case than the alias-chain problem #3 above handles. If this ever proves
+// to matter in practice, extend this hook the same way, or point back at
+// that reviewed logic as a reference.
+
 // ─── Submission review notifications ──────────────────────────────────────────
 // Fires whenever a user's pattern submission is approved (published) or
 // rejected by an admin - writes a row to user_submission_notifications so the
