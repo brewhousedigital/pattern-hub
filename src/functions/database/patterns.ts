@@ -267,6 +267,16 @@ export type TypePatternCreatePayload = {
   author_manual?: string[];
   uploaded_by?: string;
   tags: string[];
+  /**
+   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+   * the tags_v2 row id for every entry in `tags`, resolved (or created) via
+   * resolveOrCreateTagRefs before this payload is built. Optional so a
+   * caller that hasn't been updated yet still compiles - PocketBase leaves
+   * the relation empty when the field is omitted, exactly like every other
+   * optional field here. Dual-write only: `tags` stays the field every
+   * read path actually uses until Phase R3's cutover.
+   */
+  tag_refs?: string[];
   pattern_file?: File;
   pattern_file_size?: number;
   pattern_file_external?: File;
@@ -307,6 +317,14 @@ export const useMutationEditPattern = () => {
       formData.append('instructions', payload?.instructions || '');
       formData.append('source_url', payload?.source_url || '');
       formData.append('tags', JSON.stringify(payload?.tags));
+      // Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md) - dual-write only;
+      // omitted entirely when a caller hasn't resolved refs yet rather than
+      // sending an empty array, so an un-migrated call site can't
+      // accidentally wipe out tag_refs that /api/sync-author-tags or a
+      // later save already populated for this pattern.
+      if (payload?.tag_refs) {
+        formData.append('tag_refs', JSON.stringify(payload.tag_refs));
+      }
       formData.append('authors', JSON.stringify(payload?.authors));
       formData.append('author_manual', JSON.stringify(payload?.author_manual));
       //formData.append('difficulty', "test");

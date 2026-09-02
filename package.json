@@ -11,7 +11,8 @@
     "audit:duplicate-authors": "node scripts/audit-duplicate-author-names.mjs",
     "backfill:tags-v2": "node scripts/backfill-tags-v2.mjs",
     "migrate:hierarchy-to-implied-tags": "node scripts/migrate-hierarchy-to-implied-tags.mjs",
-    "backfill:author-tags": "node scripts/backfill-author-tags.mjs"
+    "backfill:author-tags": "node scripts/backfill-author-tags.mjs",
+    "backfill:tag-refs": "node scripts/backfill-tag-refs.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

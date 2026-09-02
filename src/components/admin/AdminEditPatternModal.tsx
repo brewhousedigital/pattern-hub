@@ -7,7 +7,7 @@ import {
 } from '@/functions/utilities/generate-pb-image';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useQueryClient } from '@tanstack/react-query';
-import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
+import { ADMIN_TAG_STATS_QUERY_KEY, resolveOrCreateTagRefs } from '@/functions/database/tags';
 import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { useAdminLogger, diffAdminChanges } from '@/functions/database/admin-logs';
 import {
@@ -214,6 +214,13 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         values.authorManual?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) ||
         [];
 
+      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+      // patterns.tag_refs is a relation, so every tag in filteredTags needs a
+      // real tags_v2 row before this save can point at it - resolved (or
+      // created, for a brand-new tag) synchronously here rather than relying
+      // on /api/sync-tag-catalog to catch up later, on a schedule.
+      const tagRefs = await resolveOrCreateTagRefs(filteredTags);
+
       const payload: TypePatternCreatePayload = {
         name: values.name,
         description: values.description,
@@ -224,6 +231,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         design_width: values.designWidth && values.designWidth !== 'undefined' ? values.designWidth : '0',
         design_height: values.designHeight && values.designHeight !== 'undefined' ? values.designHeight : '0',
         tags: filteredTags?.sort() || [],
+        tag_refs: tagRefs,
         authors: filteredAuthors || [],
         author_manual: filteredManualAuthors || [],
         line_width_unit: values.lineWidthUnit && values.lineWidthUnit !== 'undefined' ? values.lineWidthUnit : 'mm',

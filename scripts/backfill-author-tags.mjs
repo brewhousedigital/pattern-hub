@@ -128,7 +128,7 @@ async function main() {
     pb.collection('users').getFullList({ fields: 'id,name' }),
     pb.collection('patterns').getFullList({
       filter: 'isDeleted = false && is_draft = false',
-      fields: 'id,name,tags,authors,author_manual',
+      fields: 'id,name,tags,tag_refs,authors,author_manual',
     }),
     pb.collection('manual_authors').getFullList({ fields: 'id,name,linked_tag' }),
     pb.collection('tag_types').getFullList({ fields: 'id,name' }),
@@ -238,33 +238,54 @@ async function main() {
   }
 
   // ─── Step 4: cascade resolved author tags into each pattern's own tags ──
+  // (and, Tag Relational Refactor Phase R1 - see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md - into tag_refs too, dual-write
+  // alongside the existing string cascade below.)
   const patternsToUpdate = [];
   for (const p of patterns) {
     // Resolves through each identity's tagValue, not the raw normalized
     // name directly - a pattern crediting an author with an override (e.g.
     // "autumn" -> "autumn (artist)") must be cascaded with the
     // disambiguated string, never the raw one, or it would recreate the
-    // exact collision the override exists to avoid.
+    // exact collision the override exists to avoid. resolvedNorms tracks
+    // the raw norms alongside tagValues - tagIdByNorm (used for tag_refs
+    // below) is keyed by norm, not tagValue, same as step 2 above.
     const resolvedTagValues = new Set();
+    const resolvedNorms = new Set();
     for (const uid of p.authors || []) {
       const user = userById.get(uid);
       if (!user?.name) continue;
-      const identity = identities.get(normalizeTagName(user.name));
-      resolvedTagValues.add(identity ? identity.tagValue : normalizeTagName(user.name));
+      const norm = normalizeTagName(user.name);
+      const identity = identities.get(norm);
+      resolvedTagValues.add(identity ? identity.tagValue : norm);
+      resolvedNorms.add(norm);
     }
     for (const raw of p.author_manual || []) {
       if (!raw || !String(raw).trim()) continue;
-      const identity = identities.get(normalizeTagName(String(raw)));
-      resolvedTagValues.add(identity ? identity.tagValue : normalizeTagName(String(raw)));
+      const norm = normalizeTagName(String(raw));
+      const identity = identities.get(norm);
+      resolvedTagValues.add(identity ? identity.tagValue : norm);
+      resolvedNorms.add(norm);
     }
     if (resolvedTagValues.size === 0) continue;
 
     const currentTags = Array.isArray(p.tags) ? p.tags : [];
     const currentTagSet = new Set(currentTags);
     const missing = [...resolvedTagValues].filter((n) => !currentTagSet.has(n));
-    if (missing.length === 0) continue;
 
-    patternsToUpdate.push({ id: p.id, missing, newTags: [...currentTags, ...missing] });
+    const currentRefs = Array.isArray(p.tag_refs) ? p.tag_refs : [];
+    const currentRefSet = new Set(currentRefs);
+    // tagIdByNorm may still hold a dry-run placeholder (e.g.
+    // "<new-tag-id:...>") for a tag this run would create - that's fine
+    // here, a placeholder string can never match a real id already in
+    // currentRefSet, so it still correctly counts as missing. Resolved to
+    // real ids at apply time, once every non-conflicted identity's create
+    // has run - see the apply loop below.
+    const missingRefNorms = [...resolvedNorms].filter((n) => !currentRefSet.has(tagIdByNorm.get(n)));
+
+    if (missing.length === 0 && missingRefNorms.length === 0) continue;
+
+    patternsToUpdate.push({ id: p.id, missing, newTags: [...currentTags, ...missing], missingRefNorms, currentRefs });
   }
 
   // ─── Report ───────────────────────────────────────────────────────────
@@ -327,10 +348,17 @@ async function main() {
   console.log();
 
   const totalMissingTags = patternsToUpdate.reduce((sum, p) => sum + p.missing.length, 0);
-  console.log(`Patterns needing an author tag added: ${patternsToUpdate.length} (${totalMissingTags} tag-adds total)`);
+  const totalMissingRefs = patternsToUpdate.reduce((sum, p) => sum + p.missingRefNorms.length, 0);
+  console.log(
+    `Patterns needing an author tag added: ${patternsToUpdate.length} ` +
+      `(${totalMissingTags} tag-adds, ${totalMissingRefs} tag_refs-adds total)`,
+  );
   if (!APPLY) {
     for (const p of patternsToUpdate.slice(0, 20)) {
-      console.log(`    would add  ${JSON.stringify(p.missing)}  to pattern ${p.id}`);
+      const parts = [];
+      if (p.missing.length) parts.push(`tags +${JSON.stringify(p.missing)}`);
+      if (p.missingRefNorms.length) parts.push(`tag_refs +${p.missingRefNorms.length}`);
+      console.log(`    would update  ${parts.join('  ')}  on pattern ${p.id}`);
     }
     if (patternsToUpdate.length > 20) console.log(`    ... and ${patternsToUpdate.length - 20} more`);
   }
@@ -411,9 +439,19 @@ async function main() {
 
   for (let i = 0; i < patternsToUpdate.length; i++) {
     const p = patternsToUpdate[i];
+    // Resolve missingRefNorms to real ids now - every non-failed create/
+    // retype above has already replaced its tagIdByNorm placeholder with a
+    // real id by this point. A norm whose id is still a placeholder (its
+    // create failed above) is left out here, not written - safe to re-run
+    // this script afterward to pick it up once the tag exists for real.
+    const newRefIds = [...new Set([...p.currentRefs, ...p.missingRefNorms.map((n) => tagIdByNorm.get(n))])].filter(
+      (id) => id && !String(id).startsWith('<'),
+    );
     try {
-      await pb.collection('patterns').update(p.id, { tags: p.newTags });
-      console.log(`  [pattern ${i + 1}/${patternsToUpdate.length}] ${p.id}  +${JSON.stringify(p.missing)}`);
+      await pb.collection('patterns').update(p.id, { tags: p.newTags, tag_refs: newRefIds });
+      console.log(
+        `  [pattern ${i + 1}/${patternsToUpdate.length}] ${p.id}  +${JSON.stringify(p.missing)}  +refs:${p.missingRefNorms.length}`,
+      );
     } catch (err) {
       failures.push({ what: `update pattern ${p.id}`, error: err?.message || String(err) });
       console.error(`  [pattern ${i + 1}/${patternsToUpdate.length}] FAILED ${p.id}: ${err?.message || err}`);

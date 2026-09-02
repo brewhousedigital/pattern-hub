@@ -1,5 +1,6 @@
 import { useQuery, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
+import { slugifyTag } from '@/functions/utilities/slugify-tag';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 /**
@@ -528,6 +529,156 @@ export const useQueryGetAllTagTypes = () =>
     },
   });
 
+// ─── tags_v2 slug helpers ───────────────────────────────────────────────────────
+//
+// Moved here from space-command/tags.tsx (Tag Relational Refactor, Phase R1 -
+// see TAG_RELATIONAL_REFACTOR_NOTES.md) so resolveOrCreateTagRefs below can
+// reuse them instead of a third copy of this logic. tags.tsx now imports
+// these instead of defining its own.
+
+/**
+ * Checks both the live `slug` column AND every row's `previous_slugs`
+ * history - a candidate can't be handed out if it's already parked in
+ * another tag's redirect history, or two different URLs would end up
+ * claiming the same slug (getTagBySlugOptions's `slug = X || previous_slugs
+ * ~ X` lookup would then match two different rows for the same request).
+ */
+export async function isSlugTaken(slug: string, excludeId: string): Promise<boolean> {
+  const safe = escapeTagFilterValue(slug);
+  const match = await pocketbase
+    .collection('tags_v2')
+    .getFirstListItem(`(slug = "${safe}" || previous_slugs ~ '"${safe}"') && id != "${excludeId}"`)
+    .catch(() => null);
+  return !!match;
+}
+
+/**
+ * Disambiguates a slug collision the same way scripts/backfill-tags-v2.mjs
+ * and /api/sync-tag-catalog do - append -2, -3, ... until the candidate is
+ * free. `excludeId` keeps a record from colliding with its own current slug
+ * while it's mid-rename; pass '' when creating a brand-new row.
+ */
+export async function uniqueSlugFor(baseSlug: string, excludeId: string): Promise<string> {
+  let candidate = baseSlug;
+  let suffix = 2;
+  while (await isSlugTaken(candidate, excludeId)) {
+    candidate = `${baseSlug}-${suffix++}`;
+  }
+  return candidate;
+}
+
+// ─── Synchronous tag_refs resolution (Tag Relational Refactor, Phase R1) ──────
+//
+// See TAG_RELATIONAL_REFACTOR_NOTES.md. patterns.tag_refs is a relation to
+// tags_v2, so - unlike the old free-solo tags entry, which could rely on
+// /api/sync-tag-catalog to create a missing tags_v2 row later, on a schedule
+// - a tag typed here needs its tags_v2 row to exist *before* the pattern
+// save request that references it. resolveOrCreateTagRefs does that
+// resolution synchronously, reusing the find-or-create-with-a-unique-slug
+// shape /api/sync-tag-catalog and scripts/backfill-tags-v2.mjs already use.
+
+/**
+ * Finds the tags_v2 row for `tagName`, matching by name alone (any type).
+ * Moved here from space-command/tags.tsx (Tag Relational Refactor, Phase R1
+ * - see TAG_RELATIONAL_REFACTOR_NOTES.md) so resolveOrCreateTagV2Row below
+ * can share it - tags.tsx now imports this instead of defining its own
+ * copy; every existing call site there keeps working unchanged.
+ */
+export async function findTagV2Record(tagName: string): Promise<TypeTagV2Record | null> {
+  return await pocketbase
+    .collection('tags_v2')
+    .getFirstListItem<TypeTagV2Record>(`tag = "${escapeTagFilterValue(tagName)}"`)
+    .catch(() => null);
+}
+
+/**
+ * Resolves the tags_v2 row for `name`, creating a General-type one if no
+ * row exists at all. Matches by name alone (any type), not scoped to
+ * General specifically - a first version of this (and of the pattern
+ * save-path resolver below) scoped every lookup to type = "" (General)
+ * only, reasoning that tags_v2.tag stopped being globally unique in Phase
+ * R0 (see TAG_RELATIONAL_REFACTOR_NOTES.md) and a bare typed string should
+ * never accidentally latch onto an unrelated Author-typed row. That
+ * reasoning is sound for a name typed fresh into an entry field, but it
+ * was applied to every name already sitting in a pattern's existing tags
+ * too - including one added by the author-cascade mechanism
+ * (scripts/backfill-author-tags.mjs, /api/sync-author-tags), which is
+ * *already* correctly resolved to a specific Author-typed row before it
+ * ever reaches patterns.tags. Scoping resolution to General-only there
+ * created a redundant, disconnected General-type row for every such name
+ * instead of reusing the one the cascade already created and linked -
+ * caught via a live dry run of scripts/backfill-tag-refs.mjs, which
+ * reported ~136 such rows. Every other tags_v2 consumer in this codebase
+ * (groupTagsByType, getTagType, findTagV2Record's own other call sites)
+ * has always resolved a tag name this same type-blind way, back when
+ * tags_v2.tag was still globally unique and type-blind was the only kind
+ * of lookup that could exist - matching that existing, established
+ * semantic is safer than introducing a new, narrower one. The collision
+ * this was meant to guard against (a fresh "autumn" resolving to the
+ * artist's row instead of the season's) is not live today - the two
+ * currently have different tag strings - and is Phase R3's own concern
+ * once its uniqueness relaxation actually gets exercised by a rename.
+ */
+export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: TypeTagV2Record; created: boolean }> {
+  const existing = await findTagV2Record(name);
+  if (existing) return { row: existing, created: false };
+
+  const baseSlug = slugifyTag(name);
+  if (!baseSlug) {
+    // Every caller (both save-path resolvers and the admin dialogs this
+    // function was moved out of) wraps its own call in a try/catch that
+    // shows this message directly - AdminEditPatternModal.tsx and
+    // review.tsx via enqueueSnackbar(error.message), the dialogs via their
+    // own error banner. Throwing here, rather than falling back to a
+    // generic slug, surfaces the real problem instead of silently minting
+    // a "tag"/"tag-2"/"tag-3" row for whatever punctuation-only string
+    // triggered it.
+    throw new Error(`"${name}" has no letters or numbers, so it can't be given a URL-safe slug.`);
+  }
+  const slug = await uniqueSlugFor(baseSlug, '');
+  try {
+    const created = await pocketbase
+      .collection('tags_v2')
+      .create<TypeTagV2Record>({ tag: name, slug, previous_slugs: [] });
+    return { row: created, created: true };
+  } catch (createError) {
+    // A concurrent save could have created the same row between the lookup
+    // above and this create - the (tag, type) composite unique index
+    // (Phase R0) rejects the loser instead of allowing a silent duplicate.
+    // Re-fetch once rather than dropping the tag from this save's
+    // tag_refs.
+    const retried = await findTagV2Record(name);
+    if (retried) return { row: retried, created: false };
+    throw createError;
+  }
+}
+
+/**
+ * Resolves every tag name in `tagNames` to its tags_v2 row id, creating a
+ * General-type row for any name with no matching row at all (see
+ * resolveOrCreateTagV2Row above). Returns ids in the same relative order as
+ * the input, one per distinct name. Pass already-normalized names
+ * (normalizeTagName) - the same expectation callers already meet before
+ * building patterns.tags today.
+ *
+ * Call this at pattern-save time, alongside (not instead of) building the
+ * existing tags string array, and write the result into patterns.tag_refs.
+ * Phase R1 is additive dual-write, not a cutover - patterns.tags stays
+ * exactly as every other save-path and read-path already expects.
+ */
+export async function resolveOrCreateTagRefs(tagNames: string[]): Promise<string[]> {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of tagNames) {
+    const norm = raw.trim().toLowerCase();
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    const resolved = await resolveOrCreateTagV2Row(raw);
+    ids.push(resolved.row.id);
+  }
+  return ids;
+}
+
 // ─── Implied tags (Phase 2) ─────────────────────────────────────────────────────
 //
 // See TAG_REDESIGN_PROJECT_NOTES.md, Phase 2. `implied_tags` is the
@@ -544,6 +695,16 @@ export interface TypeImpliedTagRecord {
   id: string;
   tag: string;
   implies_tag: string;
+  /**
+   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+   * the tags_v2 row id for `tag`/`implies_tag` respectively. Optional -
+   * populated by every write path as of Phase R1, but an edge created
+   * before this phase shipped, or not yet covered by Phase R2's backfill,
+   * may still have these empty. Nothing reads them yet; Phase R3 is what
+   * switches matching over to these instead of the string fields.
+   */
+  tag_ref?: string;
+  implies_tag_ref?: string;
 }
 
 export const IMPLIED_TAGS_QUERY_KEY = ['GetAllImpliedTags'] as const;
@@ -630,6 +791,13 @@ export interface TypeTagAliasRecord {
   id: string;
   alias: string;
   target_tag: string;
+  /**
+   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+   * the tags_v2 row id for `target_tag`. `alias` itself never gets a ref
+   * field - the Phase R0 decision recorded in that file - since an alias
+   * like "orca" is allowed to have no tags_v2 row of its own.
+   */
+  target_tag_ref?: string;
 }
 
 export const TAG_ALIASES_QUERY_KEY = ['GetAllTagAliases'] as const;

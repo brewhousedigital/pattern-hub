@@ -983,11 +983,17 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
 
       // Cascade every non-conflicted identity's resolved tag onto every
       // pattern that credits it - "add, never remove," same rule the
-      // backfill script uses.
+      // backfill script uses. Tag Relational Refactor, Phase R1 (see
+      // TAG_RELATIONAL_REFACTOR_NOTES.md): tag_refs gets the identical
+      // cascade, dual-write alongside tags - every tagId here is already
+      // real by this point (toCreate's loop above already replaced
+      // tagIdByNorm's entries with real ids, in this same transaction),
+      // unlike the backfill script's separate dry-run preview pass.
       const patternById = {};
       for (let i = 0; i < patterns.length; i++) patternById[patterns[i].id] = patterns[i];
 
       const missingByPattern = {}; // patternId -> [] of tag strings to add
+      const missingRefsByPattern = {}; // patternId -> { tagId: true, ... } (de-duped set)
       for (let i = 0; i < norms.length; i++) {
         const norm = norms[i];
         if (conflicted[norm]) continue;
@@ -998,6 +1004,8 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
           const pid = identity.patternIds[j];
           if (!missingByPattern[pid]) missingByPattern[pid] = [];
           missingByPattern[pid].push(norm);
+          if (!missingRefsByPattern[pid]) missingRefsByPattern[pid] = {};
+          missingRefsByPattern[pid][tagId] = true;
         }
       }
 
@@ -1015,9 +1023,18 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
         const toAdd = missingByPattern[pid].filter(function (n) {
           return !currentTagSet[n];
         });
-        if (toAdd.length === 0) continue;
+
+        const currentRefs = record.getStringSlice('tag_refs') || [];
+        const currentRefSet = {};
+        for (let j = 0; j < currentRefs.length; j++) currentRefSet[currentRefs[j]] = true;
+        const refsToAdd = Object.keys(missingRefsByPattern[pid] || {}).filter(function (id) {
+          return !currentRefSet[id];
+        });
+
+        if (toAdd.length === 0 && refsToAdd.length === 0) continue;
         try {
-          record.set('tags', currentTags.concat(toAdd));
+          if (toAdd.length > 0) record.set('tags', currentTags.concat(toAdd));
+          if (refsToAdd.length > 0) record.set('tag_refs', currentRefs.concat(refsToAdd));
           txApp.save(record);
           patternsUpdated++;
         } catch (saveErr) {

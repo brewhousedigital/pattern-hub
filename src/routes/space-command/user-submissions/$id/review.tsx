@@ -17,7 +17,7 @@ import {
   type TypeUserSubmittedPatternResponse,
 } from '@/functions/database/user-submissions';
 import { useMutationEditPattern, type TypePatternLayersMapItem } from '@/functions/database/patterns';
-import { ADMIN_TAG_STATS_QUERY_KEY } from '@/functions/database/tags';
+import { ADMIN_TAG_STATS_QUERY_KEY, resolveOrCreateTagRefs } from '@/functions/database/tags';
 import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import {
@@ -238,20 +238,29 @@ function RouteComponent() {
       const blob = await fetch(fileUrl).then((r) => r.blob());
       const patternFile = new File([blob], `${values.name || submission.name}.svg`, { type: 'image/svg+xml' });
 
+      // normalizeTagName applies the canonical tag-casing rule (lowercase,
+      // trim, collapse internal whitespace) - see
+      // src/functions/utilities/normalize-tag.ts and
+      // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. This was the one tag save
+      // path with no normalization at all - AdminEditPatternModal.tsx and
+      // UserUploadForm.tsx both apply the same function at their own submit
+      // steps.
+      const normalizedTags = values.tags.map(normalizeTagName);
+
+      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+      // this is the point where a public submission's tags actually become a
+      // patterns row - resolve (or create) every tag's tags_v2 row here, same
+      // as AdminEditPatternModal.tsx's own save handler.
+      const tagRefs = await resolveOrCreateTagRefs(normalizedTags);
+
       const newPattern = await editPattern.mutateAsync({
         name: values.name,
         description: values.description,
         instructions: values.instructions,
         source_url: values.sourceUrl,
         design_date: values.designDate,
-        // normalizeTagName applies the canonical tag-casing rule (lowercase,
-        // trim, collapse internal whitespace) - see
-        // src/functions/utilities/normalize-tag.ts and
-        // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. This was the one tag
-        // save path with no normalization at all - AdminEditPatternModal.tsx
-        // and UserUploadForm.tsx both apply the same function at their own
-        // submit steps.
-        tags: values.tags.map(normalizeTagName),
+        tags: normalizedTags,
+        tag_refs: tagRefs,
         authors: values.authors,
         author_manual: values.authorManual,
         pieces: values.pieces,

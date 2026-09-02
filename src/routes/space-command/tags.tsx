@@ -21,6 +21,10 @@ import {
   useQueryGetAllTagAliases,
   getTagsImplying,
   escapeTagFilterValue,
+  findTagV2Record,
+  isSlugTaken,
+  uniqueSlugFor,
+  resolveOrCreateTagV2Row,
   TAGS_V2_QUERY_KEY,
   IMPLIED_TAGS_QUERY_KEY,
   TAG_ALIASES_QUERY_KEY,
@@ -153,38 +157,10 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
 // functions/database/tags.ts (the same type the metadata dialog below
 // reads/writes) rather than a narrower local shape.
 
-async function findTagV2Record(tagName: string): Promise<TypeTagV2Record | null> {
-  return await pocketbase
-    .collection('tags_v2')
-    .getFirstListItem<TypeTagV2Record>(`tag = "${escapeTagFilterValue(tagName)}"`)
-    .catch(() => null);
-}
-
-// Checks both the live `slug` column AND every row's `previous_slugs`
-// history - a candidate can't be handed out if it's already parked in
-// another tag's redirect history, or two different URLs would end up
-// claiming the same slug (getTagBySlugOptions's `slug = X || previous_slugs
-// ~ X` lookup would then match two different rows for the same request).
-async function isSlugTaken(slug: string, excludeId: string): Promise<boolean> {
-  const safe = escapeTagFilterValue(slug);
-  const match = await pocketbase
-    .collection('tags_v2')
-    .getFirstListItem(`(slug = "${safe}" || previous_slugs ~ '"${safe}"') && id != "${excludeId}"`)
-    .catch(() => null);
-  return !!match;
-}
-
-// Disambiguates a slug collision the same way scripts/backfill-tags-v2.mjs
-// does - append -2, -3, ... until the candidate is free. `excludeId` keeps
-// a record from colliding with its own current slug while it's mid-rename.
-async function uniqueSlugFor(baseSlug: string, excludeId: string): Promise<string> {
-  let candidate = baseSlug;
-  let suffix = 2;
-  while (await isSlugTaken(candidate, excludeId)) {
-    candidate = `${baseSlug}-${suffix++}`;
-  }
-  return candidate;
-}
+// findTagV2Record/isSlugTaken/uniqueSlugFor/resolveOrCreateTagV2Row now all
+// live in functions/database/tags.ts (Tag Relational Refactor, Phase R1 -
+// see TAG_RELATIONAL_REFACTOR_NOTES.md), so resolveOrCreateTagRefs there
+// can share them too - imported above instead of defined here.
 
 // ─── implied_tags / tag_aliases sync helpers (Phase 2) ─────────────────────────
 //
@@ -1069,26 +1045,27 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
     setSaving(true);
     setError(null);
     try {
-      const existingTagRow = await findTagV2Record(target);
-      if (!existingTagRow) {
-        const baseSlug = slugifyTag(target);
-        if (!baseSlug) {
-          setError(`"${target}" has no letters or numbers, so it can't be given a URL-safe slug.`);
-          setSaving(false);
-          return;
-        }
-        const slug = await uniqueSlugFor(baseSlug, '');
-        await pocketbase.collection('tags_v2').create({ tag: target, slug, previous_slugs: [] });
-      }
+      const targetResolved = await resolveOrCreateTagV2Row(target);
+      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+      // the source side (this dialog's own tag) needs its own tags_v2
+      // lookup too, for tag_ref - `tag` here is a row from the `tags`
+      // view, whose id is unstable and not a real foreign key (see this
+      // file's tags_v2 lookup helpers' own comments).
+      const sourceResolved = await resolveOrCreateTagV2Row(tag.tag);
 
-      await pocketbase.collection('implied_tags').create({ tag: tag.tag, implies_tag: target });
+      await pocketbase.collection('implied_tags').create({
+        tag: tag.tag,
+        implies_tag: target,
+        tag_ref: sourceResolved.row.id,
+        implies_tag_ref: targetResolved.row.id,
+      });
       log({
         action: 'Implied Tag Added',
         entity_type: 'Tag',
         entity_id: tag.tag,
         entity_name: tag.tag,
         changes: { implies: { from: null, to: target } },
-        metadata: existingTagRow ? {} : { created_new_tag: target },
+        metadata: targetResolved.created ? { created_new_tag: target } : {},
       });
       setInputValue('');
       onSaved();
@@ -1267,10 +1244,18 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
     setSaving(true);
     setError(null);
     try {
+      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+      // target_tag_ref dual-writes alongside target_tag. alias itself never
+      // gets a ref field - see the Phase R0 decision recorded in that file.
+      const targetResolved = await resolveOrCreateTagV2Row(target);
       if (ownAlias) {
-        await pocketbase.collection('tag_aliases').update(ownAlias.id, { target_tag: target });
+        await pocketbase
+          .collection('tag_aliases')
+          .update(ownAlias.id, { target_tag: target, target_tag_ref: targetResolved.row.id });
       } else {
-        await pocketbase.collection('tag_aliases').create({ alias: tag.tag, target_tag: target });
+        await pocketbase
+          .collection('tag_aliases')
+          .create({ alias: tag.tag, target_tag: target, target_tag_ref: targetResolved.row.id });
       }
       log({
         action: 'Tag Alias Set',
@@ -1356,7 +1341,13 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
         return;
       }
 
-      await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag });
+      // Tag Relational Refactor, Phase R1: target_tag_ref resolves this
+      // dialog's own tag (the alias's target) - alias itself stays
+      // ref-less, per the Phase R0 decision (an alias like "orca" is
+      // allowed to have no tags_v2 row of its own).
+      const targetResolved = await resolveOrCreateTagV2Row(tag.tag);
+
+      await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag, target_tag_ref: targetResolved.row.id });
       log({
         action: 'Tag Alias Added',
         entity_type: 'Tag',
