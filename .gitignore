@@ -33,6 +33,8 @@ dist-ssr
 # Pocketbase
 /src/functions/database/pb_schema.json
 CLAUDE.md
+pb_hooks/main.pb-backup.js
+pb_hooks/main.pb-old-backup.js
 
 # Documentation files
 TAG_REDESIGN_PROJECT.md
