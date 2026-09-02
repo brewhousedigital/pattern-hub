@@ -45,9 +45,11 @@ import { Route as SpaceCommandPatternKeyMgmtRouteImport } from './routes/space-c
 import { Route as SpaceCommandPatternsRouteImport } from './routes/space-command/patterns'
 import { Route as SpaceCommandSetsRouteImport } from './routes/space-command/sets'
 import { Route as SpaceCommandStoreLocatorRouteImport } from './routes/space-command/store-locator'
+import { Route as SpaceCommandTagTypesRouteImport } from './routes/space-command/tag-types'
 import { Route as SpaceCommandTagsRouteImport } from './routes/space-command/tags'
 import { Route as SpaceCommandUsersRouteImport } from './routes/space-command/users'
 import { Route as StoreLocatorIndexRouteImport } from './routes/store-locator/index'
+import { Route as TagsSlugRouteImport } from './routes/tags/$slug'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
 import { Route as ProfileCollectionsCollectionIdRouteImport } from './routes/profile/collections/$collectionId'
 import { Route as ProfileSubmissionsIndexRouteImport } from './routes/profile/submissions/index'
@@ -250,6 +252,11 @@ const SpaceCommandStoreLocatorRoute =
     path: '/store-locator',
     getParentRoute: () => SpaceCommandRouteRoute,
   } as any)
+const SpaceCommandTagTypesRoute = SpaceCommandTagTypesRouteImport.update({
+  id: '/tag-types',
+  path: '/tag-types',
+  getParentRoute: () => SpaceCommandRouteRoute,
+} as any)
 const SpaceCommandTagsRoute = SpaceCommandTagsRouteImport.update({
   id: '/tags',
   path: '/tags',
@@ -263,6 +270,11 @@ const SpaceCommandUsersRoute = SpaceCommandUsersRouteImport.update({
 const StoreLocatorIndexRoute = StoreLocatorIndexRouteImport.update({
   id: '/store-locator/',
   path: '/store-locator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TagsSlugRoute = TagsSlugRouteImport.update({
+  id: '/tags/$slug',
+  path: '/tags/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WikiIndexRoute = WikiIndexRouteImport.update({
@@ -388,8 +400,10 @@ export interface FileRoutesByFullPath {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/sets': typeof SpaceCommandSetsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
+  '/space-command/tag-types': typeof SpaceCommandTagTypesRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/tags/$slug': typeof TagsSlugRoute
   '/community/': typeof CommunityIndexRoute
   '/learning-resources/': typeof LearningResourcesIndexRoute
   '/news/': typeof NewsIndexRoute
@@ -444,8 +458,10 @@ export interface FileRoutesByTo {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/sets': typeof SpaceCommandSetsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
+  '/space-command/tag-types': typeof SpaceCommandTagTypesRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/tags/$slug': typeof TagsSlugRoute
   '/community': typeof CommunityIndexRoute
   '/learning-resources': typeof LearningResourcesIndexRoute
   '/news': typeof NewsIndexRoute
@@ -502,8 +518,10 @@ export interface FileRoutesById {
   '/space-command/patterns': typeof SpaceCommandPatternsRoute
   '/space-command/sets': typeof SpaceCommandSetsRoute
   '/space-command/store-locator': typeof SpaceCommandStoreLocatorRoute
+  '/space-command/tag-types': typeof SpaceCommandTagTypesRoute
   '/space-command/tags': typeof SpaceCommandTagsRoute
   '/space-command/users': typeof SpaceCommandUsersRoute
+  '/tags/$slug': typeof TagsSlugRoute
   '/community/': typeof CommunityIndexRoute
   '/learning-resources/': typeof LearningResourcesIndexRoute
   '/news/': typeof NewsIndexRoute
@@ -561,8 +579,10 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/sets'
     | '/space-command/store-locator'
+    | '/space-command/tag-types'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/tags/$slug'
     | '/community/'
     | '/learning-resources/'
     | '/news/'
@@ -617,8 +637,10 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/sets'
     | '/space-command/store-locator'
+    | '/space-command/tag-types'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/tags/$slug'
     | '/community'
     | '/learning-resources'
     | '/news'
@@ -674,8 +696,10 @@ export interface FileRouteTypes {
     | '/space-command/patterns'
     | '/space-command/sets'
     | '/space-command/store-locator'
+    | '/space-command/tag-types'
     | '/space-command/tags'
     | '/space-command/users'
+    | '/tags/$slug'
     | '/community/'
     | '/learning-resources/'
     | '/news/'
@@ -720,6 +744,7 @@ export interface RootRouteChildren {
   ProfileUserIdRoute: typeof ProfileUserIdRoute
   ProfileEditRoute: typeof ProfileEditRoute
   SetsSetIdRoute: typeof SetsSetIdRoute
+  TagsSlugRoute: typeof TagsSlugRoute
   CommunityIndexRoute: typeof CommunityIndexRoute
   LearningResourcesIndexRoute: typeof LearningResourcesIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
@@ -991,6 +1016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpaceCommandStoreLocatorRouteImport
       parentRoute: typeof SpaceCommandRouteRoute
     }
+    '/space-command/tag-types': {
+      id: '/space-command/tag-types'
+      path: '/tag-types'
+      fullPath: '/space-command/tag-types'
+      preLoaderRoute: typeof SpaceCommandTagTypesRouteImport
+      parentRoute: typeof SpaceCommandRouteRoute
+    }
     '/space-command/tags': {
       id: '/space-command/tags'
       path: '/tags'
@@ -1010,6 +1042,13 @@ declare module '@tanstack/react-router' {
       path: '/store-locator'
       fullPath: '/store-locator/'
       preLoaderRoute: typeof StoreLocatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tags/$slug': {
+      id: '/tags/$slug'
+      path: '/tags/$slug'
+      fullPath: '/tags/$slug'
+      preLoaderRoute: typeof TagsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wiki/': {
@@ -1140,6 +1179,7 @@ interface SpaceCommandRouteRouteChildren {
   SpaceCommandPatternsRoute: typeof SpaceCommandPatternsRoute
   SpaceCommandSetsRoute: typeof SpaceCommandSetsRoute
   SpaceCommandStoreLocatorRoute: typeof SpaceCommandStoreLocatorRoute
+  SpaceCommandTagTypesRoute: typeof SpaceCommandTagTypesRoute
   SpaceCommandTagsRoute: typeof SpaceCommandTagsRoute
   SpaceCommandUsersRoute: typeof SpaceCommandUsersRoute
   SpaceCommandIndexRoute: typeof SpaceCommandIndexRoute
@@ -1166,6 +1206,7 @@ const SpaceCommandRouteRouteChildren: SpaceCommandRouteRouteChildren = {
   SpaceCommandPatternsRoute: SpaceCommandPatternsRoute,
   SpaceCommandSetsRoute: SpaceCommandSetsRoute,
   SpaceCommandStoreLocatorRoute: SpaceCommandStoreLocatorRoute,
+  SpaceCommandTagTypesRoute: SpaceCommandTagTypesRoute,
   SpaceCommandTagsRoute: SpaceCommandTagsRoute,
   SpaceCommandUsersRoute: SpaceCommandUsersRoute,
   SpaceCommandIndexRoute: SpaceCommandIndexRoute,
@@ -1202,6 +1243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileUserIdRoute: ProfileUserIdRoute,
   ProfileEditRoute: ProfileEditRoute,
   SetsSetIdRoute: SetsSetIdRoute,
+  TagsSlugRoute: TagsSlugRoute,
   CommunityIndexRoute: CommunityIndexRoute,
   LearningResourcesIndexRoute: LearningResourcesIndexRoute,
   NewsIndexRoute: NewsIndexRoute,

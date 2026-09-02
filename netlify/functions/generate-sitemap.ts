@@ -79,9 +79,15 @@ type WikiPageRecord = { slug: string; updated: string; created: string; expand?:
 type SetRecord = { id: string; updated: string; created: string };
 type AuthorRecord = { slug: string; updated: string; created: string };
 type ArtistUserRecord = { id: string; updated: string };
+type TagV2Record = { slug: string; updated: string; created: string; tag: string; definition: string };
+// Every row in the `tags` view represents at least one (pattern, tag) pair
+// by construction (it's a live aggregate over patterns.tags) - so a tag
+// NAME appearing here at all already means "used on >=1 pattern," with no
+// need to also check a count field.
+type TagViewRecord = { tag: string };
 
 async function buildSitemaps(): Promise<Record<string, string>> {
-  const [patterns, wikiCategories, wikiPages, sets, authors, artistUsers] = await Promise.all([
+  const [patterns, wikiCategories, wikiPages, sets, authors, artistUsers, tagsV2, tagsInUse] = await Promise.all([
     fetchAllPages<PatternRecord>('/api/collections/patterns/records', {
       filter: 'isDeleted=false && is_draft=false',
       fields: 'id,updated,last_updated,created',
@@ -103,6 +109,8 @@ async function buildSitemaps(): Promise<Record<string, string>> {
     // table) - this hits the narrow public-artist-ids pb_hooks endpoint instead,
     // which only ever returns is_artist=true, non-banned ids.
     fetchAllPages<ArtistUserRecord>('/api/public-artist-ids', {}),
+    fetchAllPages<TagV2Record>('/api/collections/tags_v2/records', { fields: 'slug,updated,tag,definition' }),
+    fetchAllPages<TagViewRecord>('/api/collections/tags/records', { fields: 'tag' }),
   ]);
 
   const sitemapPatterns = buildUrlset(
@@ -138,9 +146,27 @@ async function buildSitemaps(): Promise<Record<string, string>> {
 
   const sitemapStatic = buildUrlset(STATIC_URLS);
 
+  // Only index a tag's Definition Page if it's worth a stranger's click:
+  // either an admin has written something for it, or it's actually in use
+  // on a published pattern right now. Skips empty, unused stubs (e.g. a
+  // tag every pattern that used it has since been unpublished or retagged).
+  const tagNamesInUse = new Set(tagsInUse.map((t) => t.tag));
+  const sitemapTags = buildUrlset(
+    tagsV2
+      .filter((t) => (t.definition && t.definition.trim()) || tagNamesInUse.has(t.tag))
+      .map((t) => ({ loc: `${SITE_URL}/tags/${t.slug}`, lastmod: t.updated, changefreq: 'monthly' })),
+  );
+
   const now = new Date().toISOString().slice(0, 10);
   const sitemapIndex = buildSitemapIndex(
-    ['sitemap-static.xml', 'sitemap-patterns.xml', 'sitemap-wiki.xml', 'sitemap-sets.xml', 'sitemap-authors.xml'],
+    [
+      'sitemap-static.xml',
+      'sitemap-patterns.xml',
+      'sitemap-wiki.xml',
+      'sitemap-sets.xml',
+      'sitemap-authors.xml',
+      'sitemap-tags.xml',
+    ],
     now,
   );
 
@@ -151,6 +177,7 @@ async function buildSitemaps(): Promise<Record<string, string>> {
     'sitemap-wiki.xml': sitemapWiki,
     'sitemap-sets.xml': sitemapSets,
     'sitemap-authors.xml': sitemapAuthors,
+    'sitemap-tags.xml': sitemapTags,
   };
 }
 

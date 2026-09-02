@@ -7,6 +7,7 @@ const SITEMAP_FILES = [
   'sitemap-wiki.xml',
   'sitemap-sets.xml',
   'sitemap-authors.xml',
+  'sitemap-tags.xml',
 ];
 
 // Minimal fallback so a request never 500s if the scheduled generator hasn't run yet
@@ -63,5 +64,6 @@ export const config = {
     '/sitemap-wiki.xml',
     '/sitemap-sets.xml',
     '/sitemap-authors.xml',
+    '/sitemap-tags.xml',
   ],
 };

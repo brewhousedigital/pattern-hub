@@ -29,6 +29,7 @@ const SITEMAP_PATHS = [
   '/sitemap-wiki.xml',
   '/sitemap-sets.xml',
   '/sitemap-authors.xml',
+  '/sitemap-tags.xml',
 ];
 
 const projectRoot = path.resolve(fileURLToPath(import.meta.url), '../..');

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
@@ -402,3 +402,99 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
     placeholderData: (prev) => prev,
   });
 };
+
+// ─── tags_v2 (canonical tag metadata) ──────────────────────────────────────────
+//
+// See TAG_REDESIGN_PROJECT_NOTES.md, Phase 1. Unlike the `tags` view above,
+// tags_v2 is a real base collection - its IDs are stable, and it holds
+// per-tag metadata (Type, Definition, disambiguation note) the view has no
+// room for.
+
+export interface TypeTagTypeRecord {
+  id: string;
+  name: string;
+  color: string;
+  group_label: string;
+  collapsible: boolean;
+  display_mode: string;
+  input_normalize: string;
+  sort_order: number;
+}
+
+export interface TypeTagV2Record {
+  id: string;
+  tag: string;
+  slug: string;
+  previous_slugs: string[];
+  type: string;
+  definition: string;
+  disambiguation_note: string;
+  expand?: { type?: TypeTagTypeRecord };
+}
+
+// Matches either the current slug, or a past one filed in `previous_slugs`
+// by syncSatelliteTablesForOp (space-command/tags.tsx) after a rename - the
+// caller compares the returned row's own `slug` against the requested one
+// to detect the previous_slugs case and redirect to the canonical URL.
+// Quote-wraps the previous_slugs match so it hits a JSON element boundary,
+// the same way tag matching does elsewhere (see buildPatternFilters in
+// pb_hooks/main.pb.js) - an unquoted match could over-match a slug that's
+// merely a substring of another.
+export const getTagBySlugOptions = (slug: string) => {
+  const safe = slug.replace(/'/g, "\\'");
+  return queryOptions({
+    queryKey: ['TagBySlug', slug],
+    queryFn: () =>
+      pocketbase
+        .collection('tags_v2')
+        .getFirstListItem<TypeTagV2Record>(`slug = '${safe}' || previous_slugs ~ '"${safe}"'`, { expand: 'type' }),
+    retry: false,
+  });
+};
+
+export const useQueryGetTagBySlug = (slug: string) =>
+  useQuery({
+    ...getTagBySlugOptions(slug),
+    enabled: !!slug,
+  });
+
+// Full-list reads, same convention as useQueryGetTagHierarchy above (a
+// per-row Map lookup client-side, not a paginated fetch) - reasonable at
+// this site's scale, and needed so the admin tag manager's DataGrid can
+// look up a row's Type without a query per row.
+
+export const TAGS_V2_QUERY_KEY = ['GetAllTagsV2'] as const;
+
+export const useQueryGetAllTagsV2 = () =>
+  useQuery({
+    queryKey: TAGS_V2_QUERY_KEY,
+    queryFn: async (): Promise<TypeTagV2Record[]> => {
+      return await pocketbase.collection('tags_v2').getFullList<TypeTagV2Record>({ sort: 'tag', expand: 'type' });
+    },
+  });
+
+export const TAG_TYPES_QUERY_KEY = ['GetAllTagTypes'] as const;
+
+export const useQueryGetAllTagTypes = () =>
+  useQuery({
+    queryKey: TAG_TYPES_QUERY_KEY,
+    queryFn: async (): Promise<TypeTagTypeRecord[]> => {
+      return await pocketbase.collection('tag_types').getFullList<TypeTagTypeRecord>({ sort: 'sort_order,name' });
+    },
+  });
+
+// Reads the `tag` view's precomputed count for one tag - reused on the
+// Definition Page to link out to "N patterns tagged X" without a second,
+// heavier query against `patterns` itself.
+export const useQueryGetTagUsageCount = (tag: string) =>
+  useQuery({
+    queryKey: ['TagUsageCount', tag],
+    queryFn: async (): Promise<number> => {
+      const safe = tag.replace(/"/g, '\\"');
+      const result = await pocketbase.collection('tags').getList<TypeReadOnlyDatabaseItem>(1, 1, {
+        filter: `tag = "${safe}"`,
+      });
+      return result.items[0]?.count ?? 0;
+    },
+    enabled: !!tag,
+  });

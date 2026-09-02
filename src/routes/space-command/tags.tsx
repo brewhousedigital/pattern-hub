@@ -15,14 +15,21 @@ import {
   clearTagParent,
   getAncestors,
   getDescendants,
+  useQueryGetAllTagsV2,
+  useQueryGetAllTagTypes,
+  TAGS_V2_QUERY_KEY,
   type TypeTagStat,
   type TypePatternRecord,
   type TypeTagHierarchyRecord,
+  type TypeTagV2Record,
+  type TypeTagTypeRecord,
 } from '@/functions/database/tags';
 import { processSequentially } from '@/functions/utilities/batch-write';
+import { slugifyTag } from '@/functions/utilities/slugify-tag';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
+import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -36,6 +43,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ListIcon from '@mui/icons-material/List';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import SyncIcon from '@mui/icons-material/Sync';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 
 import {
   Box,
@@ -122,28 +130,88 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
 // below use them directly for a standalone delay, outside of any
 // processSequentially batch.
 
-// ─── Hierarchy updater ────────────────────────────────────────────────────────
+// ─── tags_v2 lookup + slug helpers ─────────────────────────────────────────────
+//
+// tags_v2 is the canonical tag-metadata table added in Phase 1 of the tag
+// redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - a row here holds a tag's
+// Type, Definition, and disambiguation note. syncSatelliteTablesForOp below
+// keeps it in sync with tag_hierarchy whenever an admin renames, merges, or
+// deletes a tag, so those satellite fields never silently detach from the
+// live tag string. Uses the full TypeTagV2Record imported from
+// functions/database/tags.ts (the same type the metadata dialog below
+// reads/writes) rather than a narrower local shape.
+
+async function findTagV2Record(tagName: string): Promise<TypeTagV2Record | null> {
+  return await pocketbase
+    .collection('tags_v2')
+    .getFirstListItem<TypeTagV2Record>(`tag = "${tagName}"`)
+    .catch(() => null);
+}
+
+async function isSlugTaken(slug: string, excludeId: string): Promise<boolean> {
+  const match = await pocketbase
+    .collection('tags_v2')
+    .getFirstListItem(`slug = "${slug}" && id != "${excludeId}"`)
+    .catch(() => null);
+  return !!match;
+}
+
+// Disambiguates a slug collision the same way scripts/backfill-tags-v2.mjs
+// does - append -2, -3, ... until the candidate is free. `excludeId` keeps
+// a record from colliding with its own current slug while it's mid-rename.
+async function uniqueSlugFor(baseSlug: string, excludeId: string): Promise<string> {
+  let candidate = baseSlug;
+  let suffix = 2;
+  while (await isSlugTaken(candidate, excludeId)) {
+    candidate = `${baseSlug}-${suffix++}`;
+  }
+  return candidate;
+}
+
+// ─── Satellite-table sync ──────────────────────────────────────────────────────
 //
 // Always fetches fresh records from PocketBase so stale React Query cache
 // can never cause a missed update. Called after pattern processing for every
-// rename / merge / delete operation.
+// rename / merge / delete operation. Keeps two tables in sync with the tag
+// string itself:
 //
-//   rename  - updates the tag's own name in its parent record and updates
-//             every child's parent_tag reference to the new name.
-//   merge   - removes the source tag's own parent record (it no longer exists)
-//             and re-parents its children to the merge target.
-//   delete  - removes the tag's own parent record and removes the parent
-//             records of any children (they become root tags).
+//   tag_hierarchy (parent/child, being replaced by the implied-tags graph in
+//   Phase 2, but still the live mechanism through Phase 2):
+//     rename  - updates the tag's own name in its parent record and updates
+//               every child's parent_tag reference to the new name.
+//     merge   - removes the source tag's own parent record (it no longer
+//               exists) and re-parents its children to the merge target.
+//     delete  - removes the tag's own parent record and removes the parent
+//               records of any children (they become root tags).
+//
+//   tags_v2 (Type, Definition, disambiguation note - see the section above):
+//     rename  - updates the row's `tag` to the new name. If the new name
+//               slugifies to something different, assigns a fresh unique
+//               slug and files the old slug into `previous_slugs`, so a
+//               bookmarked or indexed Definition Page URL still redirects
+//               instead of 404ing.
+//     merge   - deletes the source tag's row (matching the tag_hierarchy
+//               behavior above). The merge target's own row, if it has one,
+//               is untouched - a merge does not transfer Type/Definition
+//               from the source, since the two tags may not actually mean
+//               the same thing in a way that makes that safe to assume.
+//     delete  - deletes the row.
+//
+// TODO(tags_v2 admin UI): once the Type-assignment/Definition admin screen
+// exists, invalidate its query key here too, alongside the hierarchy
+// invalidation at this function's call site, so an edit here shows up
+// immediately instead of waiting for that screen's own refetch.
 
-async function updateHierarchyForOp(type: OperationType, tag: string, newTag?: string) {
+async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag?: string) {
   const safe = tag.toLowerCase().trim();
 
-  const [ownRecord, childRecords] = await Promise.all([
+  const [ownRecord, childRecords, tagV2Record] = await Promise.all([
     pocketbase
       .collection('tag_hierarchy')
       .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safe}"`)
       .catch(() => null),
     pocketbase.collection('tag_hierarchy').getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safe}"` }),
+    findTagV2Record(safe),
   ]);
 
   if (type === 'rename' && newTag) {
@@ -154,6 +222,17 @@ async function updateHierarchyForOp(type: OperationType, tag: string, newTag?: s
     for (const child of childRecords) {
       await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
     }
+    if (tagV2Record) {
+      const candidateSlug = slugifyTag(safeNew);
+      const slugChanged = candidateSlug !== '' && candidateSlug !== tagV2Record.slug;
+      const newSlug = slugChanged ? await uniqueSlugFor(candidateSlug, tagV2Record.id) : tagV2Record.slug;
+      const previousSlugs = slugChanged
+        ? [...new Set([...tagV2Record.previous_slugs, tagV2Record.slug])]
+        : tagV2Record.previous_slugs;
+      await pocketbase
+        .collection('tags_v2')
+        .update(tagV2Record.id, { tag: safeNew, slug: newSlug, previous_slugs: previousSlugs });
+    }
   } else if (type === 'merge' && newTag) {
     const safeNew = newTag.toLowerCase().trim();
     if (ownRecord) {
@@ -162,12 +241,18 @@ async function updateHierarchyForOp(type: OperationType, tag: string, newTag?: s
     for (const child of childRecords) {
       await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
     }
+    if (tagV2Record) {
+      await pocketbase.collection('tags_v2').delete(tagV2Record.id);
+    }
   } else if (type === 'delete') {
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
     }
     for (const child of childRecords) {
       await pocketbase.collection('tag_hierarchy').delete(child.id);
+    }
+    if (tagV2Record) {
+      await pocketbase.collection('tags_v2').delete(tagV2Record.id);
     }
   }
 }
@@ -463,6 +548,141 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
             Clear Parent
           </Button>
         )}
+        <Button onClick={handleSave} variant="contained" loading={saving}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Tag Metadata Dialog ────────────────────────────────────────────────────────
+//
+// Edits a tag's tags_v2 row (Type, Definition, disambiguation note - Phase 1
+// of the tag redesign, see TAG_REDESIGN_PROJECT_NOTES.md). Most tags already
+// have a row by the time an admin opens this, via the backfill or the
+// /api/sync-tag-catalog cron - but a just-typed tag that hasn't synced yet
+// won't, so this creates one on first save rather than assuming it exists.
+
+interface TagMetadataDialogProps {
+  open: boolean;
+  /** The tag being edited (from the tags view). */
+  tag: TypeReadOnlyDatabaseItem | null;
+  /** This tag's existing tags_v2 row, if it has one yet. */
+  existingRecord: TypeTagV2Record | null;
+  tagTypes: TypeTagTypeRecord[];
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSaved }: TagMetadataDialogProps) {
+  const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  const [definition, setDefinition] = useState('');
+  const [disambiguationNote, setDisambiguationNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { log } = useAdminLogger();
+
+  // Pre-fill from the existing row (if any) whenever the dialog opens.
+  useEffect(() => {
+    if (open) {
+      setSelectedTypeId(existingRecord?.type ?? '');
+      setDefinition(existingRecord?.definition ?? '');
+      setDisambiguationNote(existingRecord?.disambiguation_note ?? '');
+      setError(null);
+    }
+  }, [open, existingRecord]);
+
+  const handleSave = async () => {
+    if (!tag) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = { type: selectedTypeId, definition, disambiguation_note: disambiguationNote };
+
+      if (existingRecord) {
+        await pocketbase.collection('tags_v2').update(existingRecord.id, payload);
+      } else {
+        const baseSlug = slugifyTag(tag.tag);
+        // '' as excludeId is safe here - no real record ever has an empty
+        // id, so `id != ""` (inside isSlugTaken) matches every existing row,
+        // exactly the "don't exclude anything" behavior a brand-new record
+        // needs. Falls back to the raw tag string in the near-impossible
+        // case a tag already in use on a pattern slugifies to nothing.
+        const slug = baseSlug ? await uniqueSlugFor(baseSlug, '') : tag.tag;
+        await pocketbase.collection('tags_v2').create({ tag: tag.tag, slug, previous_slugs: [], ...payload });
+      }
+
+      log({
+        action: existingRecord ? 'Tag Metadata Updated' : 'Tag Metadata Created',
+        entity_type: 'Tag',
+        entity_id: tag.tag,
+        entity_name: tag.tag,
+        changes: {
+          type: { from: existingRecord?.type || null, to: selectedTypeId || null },
+          definition: { from: existingRecord?.definition ?? '', to: definition },
+          disambiguation_note: { from: existingRecord?.disambiguation_note ?? '', to: disambiguationNote },
+        },
+        metadata: {},
+      });
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <EditNoteIcon color="primary" fontSize="small" />
+        Edit "{tag?.tag}"
+      </DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ py: 1 }}>
+          <Autocomplete
+            options={tagTypes}
+            value={tagTypes.find((t) => t.id === selectedTypeId) ?? null}
+            onChange={(_, v) => setSelectedTypeId(v?.id ?? '')}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField {...params} label="Type" size="small" placeholder="General (default - leave blank)" />
+            )}
+          />
+        </Box>
+
+        <Box sx={{ py: 1 }}>
+          <TextField
+            label="Disambiguation note"
+            placeholder={'e.g. "the center of a flower" for a tag like eye (flower)'}
+            value={disambiguationNote}
+            onChange={(e) => setDisambiguationNote(e.target.value)}
+            size="small"
+            fullWidth
+          />
+        </Box>
+
+        <Box sx={{ py: 1 }}>
+          <GenericMarkdownEditor
+            content={definition}
+            setContent={setDefinition}
+            label="Definition"
+            minRows={6}
+            maxRows={20}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave} variant="contained" loading={saving}>
           Save
         </Button>
@@ -847,6 +1067,22 @@ const TagManagementPage = () => {
     queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
   }, [refetchHierarchy, queryClient]);
 
+  // ── Tag metadata (Type + Definition) dialog ────────────────────────────────
+  //
+  // tags_v2 holds the canonical Type/Definition/disambiguation-note metadata
+  // added in Phase 1 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md).
+  // Full-list fetches, same convention as `hierarchy` above - a per-row Map
+  // lookup client-side rather than a query per DataGrid row.
+  const [metadataRow, setMetadataRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
+  const { data: tagsV2List = [], refetch: refetchTagsV2 } = useQueryGetAllTagsV2();
+  const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
+  const tagsV2ByTag = useMemo(() => new Map(tagsV2List.map((r) => [r.tag, r])), [tagsV2List]);
+
+  const handleMetadataSaved = useCallback(() => {
+    refetchTagsV2();
+    queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
+  }, [refetchTagsV2, queryClient]);
+
   // ── Operation state ────────────────────────────────────────────────────────
   const [pendingOp, setPendingOp] = useState<{
     type: OperationType;
@@ -919,7 +1155,7 @@ const TagManagementPage = () => {
         // Always update the hierarchy after pattern processing - runs even when
         // the tag has 0 patterns, and uses a fresh PocketBase fetch so the
         // React Query cache can never cause a missed update.
-        await updateHierarchyForOp(type, tag, newTag);
+        await syncSatelliteTablesForOp(type, tag, newTag);
         refetchHierarchy();
         queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
 
@@ -1150,6 +1386,33 @@ const TagManagementPage = () => {
         },
       },
       {
+        field: 'type',
+        headerName: 'Type',
+        width: 130,
+        sortable: false,
+        disableColumnMenu: true,
+        renderCell: (params) => {
+          const typeInfo = tagsV2ByTag.get(params.row.tag)?.expand?.type;
+          // "General" is the default every tag starts with - a badge for it
+          // on every row would just be noise, so only show one for a tag
+          // that's been given a real, differentiating Type.
+          if (!typeInfo || typeInfo.name.toLowerCase() === 'general') {
+            return (
+              <Typography variant="caption" color="text.disabled">
+                General
+              </Typography>
+            );
+          }
+          return (
+            <Chip
+              label={typeInfo.name}
+              size="small"
+              sx={typeInfo.color ? { bgcolor: typeInfo.color, color: '#fff' } : undefined}
+            />
+          );
+        },
+      },
+      {
         field: 'count',
         headerName: 'Patterns',
         width: 110,
@@ -1161,7 +1424,7 @@ const TagManagementPage = () => {
       {
         field: 'actions',
         headerName: 'Actions',
-        width: 110,
+        width: 150,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -1169,6 +1432,11 @@ const TagManagementPage = () => {
         headerAlign: 'right',
         renderCell: (params) => (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Edit type & definition">
+              <IconButton size="small" onClick={() => setMetadataRow(params.row)}>
+                <EditNoteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Set parent tag">
               <IconButton size="small" onClick={() => setSetParentRow(params.row)}>
                 <AccountTreeOutlinedIcon fontSize="small" />
@@ -1183,7 +1451,7 @@ const TagManagementPage = () => {
         ),
       },
     ],
-    [hierarchy, startOp],
+    [hierarchy, startOp, tagsV2ByTag],
   );
 
   return (
@@ -1331,6 +1599,16 @@ const TagManagementPage = () => {
         hierarchy={hierarchy}
         onClose={() => setSetParentRow(null)}
         onSaved={handleSetParentSaved}
+      />
+
+      {/* Tag Metadata Dialog */}
+      <TagMetadataDialog
+        open={!!metadataRow}
+        tag={metadataRow}
+        existingRecord={metadataRow ? (tagsV2ByTag.get(metadataRow.tag) ?? null) : null}
+        tagTypes={tagTypesList}
+        onClose={() => setMetadataRow(null)}
+        onSaved={handleMetadataSaved}
       />
 
       {/* Sync Ancestor Tags confirmation */}

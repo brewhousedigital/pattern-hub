@@ -38,6 +38,7 @@ const ENTITY_TYPES = [
   'Pattern Key',
   'Pattern Key Collection',
   'Tag',
+  'Tag Type',
   'Set',
   'Admin User',
   'User',

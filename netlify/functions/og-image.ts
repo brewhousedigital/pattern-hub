@@ -137,8 +137,9 @@ export default async (req: Request) => {
   const title = (searchParams.get('title') ?? 'Pattern Archive').slice(0, 100);
   const category = (searchParams.get('category') ?? '').slice(0, 60);
 
-  const subtitle = type === 'set' ? 'Sets' : type === 'author' ? 'Artist' : category ? `Wiki · ${category}` : 'Wiki';
-  const cta = type === 'set' ? 'View more →' : type === 'author' ? 'View patterns →' : 'Read more →';
+  const subtitle =
+    type === 'set' ? 'Sets' : type === 'author' ? 'Artist' : type === 'tag' ? 'Tag' : category ? `Wiki · ${category}` : 'Wiki';
+  const cta = type === 'set' || type === 'author' || type === 'tag' ? 'View patterns →' : 'Read more →';
   const fontSize = titleFontSize(title.length);
 
   try {

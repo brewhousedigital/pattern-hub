@@ -18,6 +18,7 @@ import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import MailRoundedIcon from '@mui/icons-material/MailRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
@@ -136,6 +137,14 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           label: 'Tags',
           href: '/space-command/tags',
           icon: <LocalOfferRoundedIcon fontSize="small" />,
+          view: EnumLevelsAdmin.TAG_AR,
+        },
+        {
+          label: 'Tag Types',
+          href: '/space-command/tag-types',
+          icon: <CategoryRoundedIcon fontSize="small" />,
+          // Reuses the Tag permission level rather than adding a new one -
+          // see TAG_REDESIGN_PROJECT_NOTES.md's "Open decisions" section.
           view: EnumLevelsAdmin.TAG_AR,
         },
         {

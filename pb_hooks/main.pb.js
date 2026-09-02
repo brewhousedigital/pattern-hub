@@ -565,6 +565,124 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
   }
 });
 
+// An external cron service sends a POST to /api/sync-tag-catalog with the
+// `X-Sync-Key` header, same mechanism as /api/sync-aggregates above (reuses
+// the same WEBHOOK_API_KEY - no separate secret to provision). Point
+// whatever cron service already calls /api/sync-aggregates at this endpoint
+// too, on a similar schedule (e.g. daily).
+//
+// Phase 1 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md):
+// scripts/backfill-tags-v2.mjs does the one-time initial population of the
+// tags_v2 collection from patterns.tags; this endpoint is what keeps it
+// caught up with every tag typed after that backfill ran. Finds any tag
+// string in use on a published pattern that's missing from tags_v2, and
+// inserts a default row for it (type left empty, meaning General). Safe to
+// call more than once - it only ever creates what's still missing, so a
+// missed or overlapping run can't create duplicates.
+routerAdd('POST', '/api/sync-tag-catalog', (c) => {
+  // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
+  // JSVM can't import a .ts file from src/ directly - keep this copy in
+  // sync if the canonical rule ever changes. (Duplicated for the same
+  // reason in scripts/backfill-tags-v2.mjs and scripts/audit-duplicate-
+  // author-names.mjs.)
+  function normalizeTagName(raw) {
+    return String(raw).trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  // Mirrors slugifyTag() in src/functions/utilities/slugify-tag.ts - same
+  // cross-runtime-boundary reasoning as normalizeTagName above.
+  function slugifyTag(tag) {
+    return tag
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  try {
+    const apiKey = c.request.header.get('X-Sync-Key');
+    if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
+      return c.json(401, { error: 'unauthorized' });
+    }
+
+    const startTime = Date.now();
+
+    const existingTagRows = $app.findRecordsByFilter('tags_v2', "id != ''", '', 0, 0);
+    const existingTagSet = {};
+    const usedSlugs = {};
+    for (let i = 0; i < existingTagRows.length; i++) {
+      existingTagSet[existingTagRows[i].getString('tag')] = true;
+      usedSlugs[existingTagRows[i].getString('slug')] = true;
+    }
+
+    const patterns = $app.findRecordsByFilter('patterns', 'isDeleted = false && is_draft = false', '', 0, 0);
+
+    // Walk every published pattern's tags once, normalizing as we go, and
+    // split into "already in tags_v2" vs "needs a new row" - same
+    // distinct-tag collection shape as scripts/backfill-tags-v2.mjs.
+    const distinctSeen = {};
+    const toCreate = [];
+    for (let i = 0; i < patterns.length; i++) {
+      let tags = [];
+      try {
+        tags = JSON.parse(patterns[i].getString('tags')) || [];
+      } catch (_) {
+        continue;
+      }
+      for (let j = 0; j < tags.length; j++) {
+        const raw = tags[j];
+        if (!raw || !String(raw).trim()) continue;
+        const norm = normalizeTagName(raw);
+        if (distinctSeen[norm]) continue;
+        distinctSeen[norm] = true;
+        if (!existingTagSet[norm]) toCreate.push(norm);
+      }
+    }
+    toCreate.sort();
+
+    const collection = $app.findCollectionByNameOrId('tags_v2');
+    const skippedEmptySlug = [];
+    let created = 0;
+
+    $app.runInTransaction((txApp) => {
+      for (let i = 0; i < toCreate.length; i++) {
+        const tag = toCreate[i];
+        const baseSlug = slugifyTag(tag);
+        if (!baseSlug) {
+          // Extremely rare (a tag made entirely of punctuation, say) - skip
+          // and report it rather than guessing at a slug. An admin can add
+          // it by hand via the tag manager afterward.
+          skippedEmptySlug.push(tag);
+          continue;
+        }
+        // Disambiguate a slug collision the same way the backfill script
+        // and syncSatelliteTablesForOp (tags.tsx) both do: append -2, -3...
+        let candidate = baseSlug;
+        let suffix = 2;
+        while (usedSlugs[candidate]) {
+          candidate = baseSlug + '-' + suffix++;
+        }
+        usedSlugs[candidate] = true;
+
+        const record = new Record(collection, { tag: tag, slug: candidate, previous_slugs: [] });
+        txApp.save(record);
+        created++;
+      }
+    });
+
+    return c.json(200, {
+      ok: true,
+      distinct_tags_scanned: Object.keys(distinctSeen).length,
+      created,
+      skipped_empty_slug: skippedEmptySlug,
+      elapsed_ms: Date.now() - startTime,
+    });
+  } catch (error) {
+    console.log('>>>Error', error.message);
+    return c.json(500, { error: 'something went wrong', message: error?.message });
+  }
+});
+
 // Consolidates all profile-page data fetches into a single HTTP call.
 // Each section is independently try/caught so one failure doesn't block others.
 routerAdd('GET', '/api/profile-data', (c) => {
