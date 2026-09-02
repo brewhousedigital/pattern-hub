@@ -32,6 +32,7 @@ import {
   type TypeImpliedTagRecord,
   type TypeTagAliasRecord,
 } from '@/functions/database/tags';
+import { useQueryAdminUsersPaginated, useQueryGetUserById } from '@/functions/database/users';
 import { processSequentially } from '@/functions/utilities/batch-write';
 import { slugifyTag } from '@/functions/utilities/slugify-tag';
 import { normalizeTagName } from '@/functions/utilities/normalize-tag';
@@ -780,12 +781,40 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
   const [error, setError] = useState<string | null>(null);
   const { log } = useAdminLogger();
 
+  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): account linking, shown only
+  // when this tag's Type is "Author" - the admin-only linking tool the plan
+  // calls for, instead of a self-service "claim my author credit" flow.
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [userSearchInput, setUserSearchInput] = useState('');
+  const debouncedUserSearch = useDebounce(userSearchInput, 400);
+  const { data: userSearchData, isFetching: userSearchFetching } = useQueryAdminUsersPaginated({
+    page: 0,
+    pageSize: 20,
+    search: debouncedUserSearch,
+    verifiedFilter: 'all',
+    bannedFilter: 'all',
+  });
+  // Resolves the currently-linked account's own name/email even when it
+  // isn't in the current search result page - e.g. right after the dialog
+  // opens, before the admin has typed a search. Mirrors the same
+  // fallback-to-a-dedicated-fetch shape FancyAutocompleteAuthors already
+  // uses for its own preselected values.
+  const { data: linkedUserDetail } = useQueryGetUserById(selectedUserId || undefined);
+
+  const selectedType = tagTypes.find((t) => t.id === selectedTypeId) ?? null;
+  const isAuthorType = selectedType?.name === 'Author';
+  const selectedUserOption =
+    (userSearchData?.items ?? []).find((u) => u.id === selectedUserId) ??
+    (linkedUserDetail && linkedUserDetail.id === selectedUserId ? linkedUserDetail : null);
+
   // Pre-fill from the existing row (if any) whenever the dialog opens.
   useEffect(() => {
     if (open) {
       setSelectedTypeId(existingRecord?.type ?? '');
       setDefinition(existingRecord?.definition ?? '');
       setDisambiguationNote(existingRecord?.disambiguation_note ?? '');
+      setSelectedUserId(existingRecord?.linked_user ?? '');
+      setUserSearchInput('');
       setError(null);
     }
   }, [open, existingRecord]);
@@ -795,7 +824,31 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
     setSaving(true);
     setError(null);
     try {
-      const payload = { type: selectedTypeId, definition, disambiguation_note: disambiguationNote };
+      // At most one tag may carry a given user's id - enforced here, not as
+      // a database constraint (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 4).
+      // A stale link left over from switching this tag's Type away from
+      // Author and back is cleared below by the isAuthorType ? ... : ''
+      // fallback, same as it always was for a brand-new pick.
+      if (isAuthorType && selectedUserId) {
+        const conflict = await pocketbase
+          .collection('tags_v2')
+          .getFirstListItem<TypeTagV2Record>(
+            `linked_user = "${escapeTagFilterValue(selectedUserId)}" && id != "${escapeTagFilterValue(existingRecord?.id ?? '')}"`,
+          )
+          .catch(() => null);
+        if (conflict) {
+          setError(`This account is already linked to the tag "${conflict.tag}". Unlink it there first.`);
+          setSaving(false);
+          return;
+        }
+      }
+
+      const payload = {
+        type: selectedTypeId,
+        definition,
+        disambiguation_note: disambiguationNote,
+        linked_user: isAuthorType ? selectedUserId : '',
+      };
 
       if (existingRecord) {
         await pocketbase.collection('tags_v2').update(existingRecord.id, payload);
@@ -832,6 +885,7 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
           type: { from: existingRecord?.type || null, to: selectedTypeId || null },
           definition: { from: existingRecord?.definition ?? '', to: definition },
           disambiguation_note: { from: existingRecord?.disambiguation_note ?? '', to: disambiguationNote },
+          linked_user: { from: existingRecord?.linked_user || null, to: payload.linked_user || null },
         },
         metadata: {},
       });
@@ -869,6 +923,32 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
             )}
           />
         </Box>
+
+        {isAuthorType && (
+          <Box sx={{ py: 1 }}>
+            <Autocomplete
+              options={userSearchData?.items ?? []}
+              value={selectedUserOption}
+              onChange={(_, v) => setSelectedUserId(v?.id ?? '')}
+              getOptionLabel={(option) => option.name || option.email || option.id}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              loading={userSearchFetching}
+              filterOptions={(x) => x}
+              inputValue={userSearchInput}
+              onInputChange={(_, v) => setUserSearchInput(v)}
+              noOptionsText={userSearchInput ? 'No accounts found' : 'Type to search accounts'}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Linked account"
+                  size="small"
+                  placeholder="Search by name or email"
+                  helperText="Sends this author's page to the account's real profile. Leave blank for an author with no account."
+                />
+              )}
+            />
+          </Box>
+        )}
 
         <Box sx={{ py: 1 }}>
           <TextField

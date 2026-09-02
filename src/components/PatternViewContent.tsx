@@ -14,7 +14,7 @@ import { type TypePatternResponse, useQueryPatternLayerSvg } from '@/functions/d
 import { useQueryGetPublishedManualAuthors, nameToSlug } from '@/functions/database/manual-authors';
 import { useQueryGetPatternDrawerData } from '@/functions/database/pattern-drawer-data';
 import { useQueryGetAllTagsV2, type TypeTagTypeRecord } from '@/functions/database/tags';
-import { groupTagsByType, isDefaultTagType } from '@/functions/utilities/group-tags-by-type';
+import { groupTagsByType, isDefaultTagType, isAuthorDisplayType } from '@/functions/utilities/group-tags-by-type';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -61,8 +61,17 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the standalone tags
   // block below by each tag's Type. Computed unconditionally (rules of
   // hooks) even though it's only rendered under showStandaloneTags.
+  //
+  // Author-type groups are filtered out here - Phase 4 cascades a pattern's
+  // resolved author name(s) into its own tags (for search), but this page
+  // already shows the author(s) via the Attribution panel below, reading
+  // patterns.authors/author_manual directly. Rendering the same name again
+  // as a tag chip here would just duplicate it.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
-  const tagGroups = React.useMemo(() => groupTagsByType(viewData?.tags ?? [], tagsV2), [viewData?.tags, tagsV2]);
+  const tagGroups = React.useMemo(
+    () => groupTagsByType(viewData?.tags ?? [], tagsV2).filter((group) => !isAuthorDisplayType(group.type)),
+    [viewData?.tags, tagsV2],
+  );
 
   const [detailsExpanded, setDetailsExpanded] = React.useState(false);
 
@@ -517,25 +526,9 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                     <TagGroupLabel type={group.type}>{groupLabel}</TagGroupLabel>
                   );
 
-                  // "author" mode: rendered as a plain text credit link, same
-                  // style as the Attribution panel's author names above -
-                  // not as a generic tag chip.
-                  if (group.type?.display_mode === 'author') {
-                    return (
-                      <Box key={groupKey}>
-                        {label}
-                        <Stack direction="row" sx={{ gap: 1.5, flexWrap: 'wrap' }}>
-                          {group.tags.map((tag) => (
-                            <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
-                              <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
-                                {tag}
-                              </Typography>
-                            </Link>
-                          ))}
-                        </Stack>
-                      </Box>
-                    );
-                  }
+                  // "author" mode is filtered out of tagGroups above (see
+                  // that useMemo) - a pattern's author(s) already render via
+                  // the Attribution panel, so no branch for it is needed here.
 
                   // "block" mode: pulled into its own filled, color-coded
                   // group instead of the plain outlined "standard" cloud -

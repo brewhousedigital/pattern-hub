@@ -1,5 +1,6 @@
 import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
+import { escapeTagFilterValue, type TypeTagV2Record } from '@/functions/database/tags';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 
 export const MANUAL_AUTHORS_QUERY_KEY = ['ManualAuthors'] as const;
@@ -16,6 +17,16 @@ export type TypeManualAuthor = {
   is_published: boolean;
   created: string;
   updated: string;
+  /**
+   * Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): the Author-type tags_v2 row
+   * this profile's flair (avatar, description, external link) belongs to.
+   * Empty until an admin links it, or until the Phase 4 backfill links it
+   * automatically for a profile whose name already matched an author found
+   * in use. A profile can exist unlinked - it just isn't reachable from a
+   * tag's Definition Page or from /authors/$slug until it is.
+   */
+  linked_tag: string;
+  expand?: { linked_tag?: TypeTagV2Record };
 };
 
 export function nameToSlug(name: string): string {
@@ -41,13 +52,17 @@ export const useQueryGetPublishedManualAuthors = () =>
       }),
   });
 
+// expand: 'linked_tag' - Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md). The
+// /authors/$slug loader reads author.expand?.linked_tag?.linked_user to
+// decide whether to redirect to the linked account's real profile, in one
+// request instead of two.
 export const useQueryGetManualAuthorBySlug = (slug: string) =>
   useQuery({
     queryKey: ['ManualAuthorBySlug', slug],
     queryFn: () =>
       pocketbase
         .collection('manual_authors')
-        .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`),
+        .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`, { expand: 'linked_tag' }),
     enabled: !!slug,
     retry: false,
   });
@@ -59,19 +74,28 @@ export const getManualAuthorBySlugOptions = (slug: string) =>
     queryFn: () =>
       pocketbase
         .collection('manual_authors')
-        .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`),
+        .getFirstListItem<TypeManualAuthor>(`slug = '${slug}' && is_published = true`, { expand: 'linked_tag' }),
     retry: false,
   });
 
-export const useQueryGetPatternsByManualAuthorName = (name: string, page: number) =>
+// Phase 4: replaces the old useQueryGetPatternsByManualAuthorName, which
+// matched author_manual with an unquoted substring filter - "Jo" matched
+// "Joanna". This matches tags with the same boundary-quoted, exact match
+// every other tag search in this codebase already uses, so that class of
+// bug cannot happen here either. Pass the author's linked tag name when one
+// exists, falling back to their plain (normalized) name otherwise - see
+// /authors/$slug.tsx, which does exactly that fallback. Works the same for
+// a registered or a manual author; nothing about this query is
+// manual-author-specific anymore.
+export const useQueryGetPatternsByAuthorTag = (tagName: string, page: number) =>
   useQuery({
-    queryKey: ['PatternsByManualAuthor', name, page],
+    queryKey: ['PatternsByAuthorTag', tagName, page],
     queryFn: () =>
       pocketbase.collection('patterns').getList<TypePatternResponse>(page, 12, {
-        filter: `author_manual ~ '${name.replace(/'/g, "\\'")}' && isDeleted = false && is_draft = false`,
+        filter: `tags ~ '"${escapeTagFilterValue(tagName)}"' && isDeleted = false && is_draft = false`,
         sort: '-created',
       }),
-    enabled: !!name,
+    enabled: !!tagName,
     placeholderData: keepPreviousData,
   });
 

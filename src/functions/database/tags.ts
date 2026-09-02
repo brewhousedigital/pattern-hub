@@ -464,6 +464,16 @@ export interface TypeTagV2Record {
   type: string;
   definition: string;
   disambiguation_note: string;
+  /**
+   * Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): the registered user this
+   * Author-type tag belongs to, if any. Empty for an author with no
+   * account, and for every non-Author tag. At most one tag should ever
+   * carry a given user's id - enforced in application logic (the admin
+   * linking tool, and the account-rename hook in main.pb.js), not a
+   * database constraint, matching how tags_v2.type's cardinality is
+   * enforced the same way.
+   */
+  linked_user: string;
   expand?: { type?: TypeTagTypeRecord };
 }
 

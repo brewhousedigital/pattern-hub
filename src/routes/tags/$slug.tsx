@@ -87,7 +87,27 @@ function RouteComponent() {
   // worth a badge on every single tag page, only shown once a tag has been
   // given a real, differentiating Type.
   const typeInfo = tagRecord.expand?.type;
-  const showTypeBadge = !!typeInfo?.name && typeInfo.name.toLowerCase() !== 'general';
+  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): an Author-type tag gets a
+  // "(artist)" suffix next to its name instead of the generic Type badge -
+  // a deliberate display-only choice. The stored tag itself stays exactly
+  // the author's plain name ("jane doe", not "jane doe (artist)") - nothing
+  // about search, aliases, or scripts/backfill-author-tags.mjs changes for
+  // this. Confirmed with the developer rather than baking the suffix into
+  // the tag data, specifically because a display-only label costs nothing
+  // to revise or remove later, while changing the stored string for every
+  // author would need a real, hard-to-undo migration (a new alias for every
+  // author, so plain-name search kept resolving, on top of the rename).
+  const isAuthorType = typeInfo?.name === 'Author';
+  const showTypeBadge = !!typeInfo?.name && typeInfo.name.toLowerCase() !== 'general' && !isAuthorType;
+  // A collision-driven override (AUTHOR_TAG_OVERRIDES in
+  // scripts/backfill-author-tags.mjs) can already end an author's stored
+  // tag with "(artist)" - e.g. "autumn (artist)", disambiguated from the
+  // unrelated season tag "autumn". Detect that so this page doesn't double
+  // the label ("autumn (artist) (artist)"). Every other author's stored tag
+  // is just their plain name, so this only ever matters for the rare
+  // override case.
+  const alreadyHasArtistLabel = /\(artist\)\s*$/i.test(tagRecord.tag);
+  const showArtistLabel = isAuthorType && !alreadyHasArtistLabel;
 
   return (
     <GeneralLayout>
@@ -103,6 +123,14 @@ function RouteComponent() {
             <LocalOfferRoundedIcon sx={{ color: 'text.disabled' }} />
             <Typography variant="h4" component="h1" sx={{ fontWeight: 700, letterSpacing: '-0.5px' }}>
               {tagRecord.tag}
+              {showArtistLabel && (
+                <Typography
+                  component="span"
+                  sx={{ fontSize: '0.6em', fontWeight: 500, color: 'text.secondary', ml: 1 }}
+                >
+                  (artist)
+                </Typography>
+              )}
             </Typography>
             {showTypeBadge && (
               <Chip

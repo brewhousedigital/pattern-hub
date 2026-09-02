@@ -58,6 +58,19 @@ export function groupTagsByType(tags: string[], tagsV2: TypeTagV2Record[]): Type
 }
 
 /**
+ * True when a group's Type uses the "author" display mode - every tag in
+ * it represents a person (see Phase 4 in TAG_REDESIGN_PROJECT_NOTES.md). A
+ * generic tag-display surface that already shows a pattern's author(s) some
+ * other way - the Attribution panel on PatternViewContent.tsx, for example,
+ * which reads patterns.authors/author_manual directly, not tags - should
+ * filter these groups out before rendering, rather than showing the same
+ * name a second time next to the tags that actually describe the pattern.
+ */
+export function isAuthorDisplayType(type: TypeTagTypeRecord | null): boolean {
+  return type?.display_mode === 'author';
+}
+
+/**
  * Looks up a single tag's Type row. The single-tag equivalent of
  * groupTagsByType, for a component that colors or labels each tag
  * individually instead of grouping tags into sections - e.g. Sidebar.tsx's

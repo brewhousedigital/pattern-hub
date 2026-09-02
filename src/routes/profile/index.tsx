@@ -19,7 +19,7 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
 import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
-import { groupTagsByType } from '@/functions/utilities/group-tags-by-type';
+import { groupTagsByType, isAuthorDisplayType } from '@/functions/utilities/group-tags-by-type';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import {
@@ -217,9 +217,15 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
   // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the featured
   // pattern's tags by Type, so same-type tags render clustered together and
   // color-coded below, instead of a plain uncolored chip row.
+  //
+  // Author-type groups are filtered out - Phase 4 cascades a pattern's
+  // resolved author name(s) into its own tags, but a featured pattern's
+  // author is normally this same profile's owner, and is already shown
+  // elsewhere on the page - no need to show their own name back to them
+  // again as a tag chip here.
   const { data: tagsV2ForFeatured = [] } = useQueryGetAllTagsV2();
   const featuredPatternTagGroups = useMemo(
-    () => groupTagsByType(featuredPattern?.tags ?? [], tagsV2ForFeatured),
+    () => groupTagsByType(featuredPattern?.tags ?? [], tagsV2ForFeatured).filter((group) => !isAuthorDisplayType(group.type)),
     [featuredPattern?.tags, tagsV2ForFeatured],
   );
 

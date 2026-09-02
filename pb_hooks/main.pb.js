@@ -179,34 +179,30 @@ routerAdd('GET', '/api/pattern-search', (c) => {
           sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
         }
       } else if (t.type === 'author') {
-        // Each author token is its own AND-ed clause (pushed straight into
-        // dslParts/sqlParts, same as tag/title/etc.) so "author:A author:B"
-        // means patterns crediting BOTH A and B (intersection) - matching how
-        // tag search already works. Within a single token, matching either
-        // the manual-author text OR any of that name's resolved linked-user
-        // ids is still an OR, since one artist may be recorded either way.
-        const ids = (authorIdMap && authorIdMap[t.value]) || [];
-        const nameBind = bind(t.value);
+        // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): author names are now
+        // baked into patterns.tags at save time (scripts/backfill-author-
+        // tags.mjs, and the live-forward equivalent that keeps this true
+        // for new patterns), the same as every other tag - so this matches
+        // exactly like the text/tag branch above, including alias
+        // resolution: a search for someone's old name, after an account
+        // rename, still finds their patterns (see the account-rename hook
+        // below, which adds the old name as an alias of the new one).
+        //
+        // This replaces the old author_manual/authors-relation matching,
+        // and with it the authorIdMap name-to-id lookup that matching
+        // needed - matching a name against `tags` needs no id resolution
+        // at all. authorIdMap is still accepted as a parameter (the client
+        // still sends it) but is no longer read here; retiring it fully is
+        // a later Contract-pass cleanup, same as /api/resolve-author-ids -
+        // see TAG_REDESIGN_PROJECT_NOTES.md.
+        const resolved = (aliasMap && aliasMap[String(t.value).toLowerCase()]) || t.value;
+        const b = bind(resolved);
         if (t.exclude) {
-          let dsl = `(author_manual !~ "${escDq(t.value)}"`;
-          let sql = `(author_manual NOT LIKE '%' || ${nameBind} || '%'`;
-          for (const id of ids) {
-            const idBind = bind(id);
-            dsl += ` && authors !~ "${escDq(id)}"`;
-            sql += ` AND authors NOT LIKE '%"' || ${idBind} || '"%'`;
-          }
-          dslParts.push(dsl + ')');
-          sqlParts.push(sql + ')');
+          dslParts.push(`(tags !~ '"${escDq(resolved)}"')`);
+          sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
         } else {
-          let dsl = `(author_manual ~ "${escDq(t.value)}"`;
-          let sql = `(author_manual LIKE '%' || ${nameBind} || '%'`;
-          for (const id of ids) {
-            const idBind = bind(id);
-            dsl += ` || authors ~ "${escDq(id)}"`;
-            sql += ` OR authors LIKE '%"' || ${idBind} || '"%'`;
-          }
-          dslParts.push(dsl + ')');
-          sqlParts.push(sql + ')');
+          dslParts.push(`(tags ~ '"${escDq(resolved)}"')`);
+          sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
         }
       } else if (t.type === 'id') {
         const b = bind(t.value);
@@ -718,6 +714,275 @@ routerAdd('POST', '/api/sync-tag-catalog', (c) => {
       distinct_tags_scanned: Object.keys(distinctSeen).length,
       created,
       skipped_empty_slug: skippedEmptySlug,
+      skipped_errors: skippedErrors,
+      elapsed_ms: Date.now() - startTime,
+    });
+  } catch (error) {
+    console.log('>>>Error', error.message);
+    return c.json(500, { error: 'something went wrong', message: error?.message });
+  }
+});
+
+// Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): keeps author tags current
+// for a pattern saved or edited after scripts/backfill-author-tags.mjs's
+// one-time run. Mirrors that script: find or create an Author-type tags_v2
+// row per distinct author name, cascade the resolved name into every
+// pattern that credits them. Runs as a periodic sync instead of a hook on
+// the pattern-save path, the same reasoning /api/sync-tag-catalog above
+// already documents for staying off that path.
+//
+// Unlike the one-time backfill, this endpoint never auto-resolves a name
+// that collides with an existing, differently-typed tag (a brand-new
+// author who happens to share a name with an existing plain tag, say) - no
+// human reviews a dry run here first, so a real collision is skipped and
+// reported instead of guessed at. This matches the "skip and let an admin
+// resolve it" rule the account-rename hook below also follows.
+routerAdd('POST', '/api/sync-author-tags', (c) => {
+  // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
+  // JSVM can't import a .ts file from src/ directly - keep this copy in
+  // sync if the canonical rule ever changes. (Duplicated for the same
+  // reason elsewhere in this file and in scripts/backfill-author-tags.mjs.)
+  function normalizeTagName(raw) {
+    return String(raw).trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  // Mirrors slugifyTag() in src/functions/utilities/slugify-tag.ts.
+  function slugifyTag(tag) {
+    return tag
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  try {
+    const apiKey = c.request.header.get('X-Sync-Key');
+    if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
+      return c.json(401, { error: 'unauthorized' });
+    }
+
+    const startTime = Date.now();
+
+    const authorTypeRows = $app.findRecordsByFilter('tag_types', "name = 'Author'", '', 1, 0);
+    let authorTypeId = authorTypeRows.length ? authorTypeRows[0].id : '';
+
+    const userRows = $app.findRecordsByFilter('users', "id != ''", '', 0, 0);
+    const userNameById = {};
+    for (let i = 0; i < userRows.length; i++) {
+      userNameById[userRows[i].id] = userRows[i].getString('name');
+    }
+
+    const patterns = $app.findRecordsByFilter('patterns', 'isDeleted = false && is_draft = false', '', 0, 0);
+
+    const existingTagRows = $app.findRecordsByFilter('tags_v2', "id != ''", '', 0, 0);
+    const tagRowByNorm = {};
+    const usedSlugs = {};
+    for (let i = 0; i < existingTagRows.length; i++) {
+      tagRowByNorm[existingTagRows[i].getString('tag')] = existingTagRows[i];
+      usedSlugs[existingTagRows[i].getString('slug')] = true;
+    }
+
+    const manualAuthorRows = $app.findRecordsByFilter('manual_authors', "id != ''", '', 0, 0);
+
+    // normalized -> { linkedUserId: string, patternIds: [] } - same shape as
+    // scripts/backfill-author-tags.mjs's identities map, rebuilt fresh every
+    // run rather than tracked incrementally, matching /api/sync-tag-catalog's
+    // own "just rescan everything, it's cheap enough" approach.
+    const identities = {};
+    for (let i = 0; i < patterns.length; i++) {
+      let authors = [];
+      let authorManual = [];
+      try {
+        authors = JSON.parse(patterns[i].getString('authors')) || [];
+      } catch (_) {}
+      try {
+        authorManual = JSON.parse(patterns[i].getString('author_manual')) || [];
+      } catch (_) {}
+
+      for (let j = 0; j < authors.length; j++) {
+        const name = userNameById[authors[j]];
+        if (!name) continue;
+        const norm = normalizeTagName(name);
+        if (!identities[norm]) identities[norm] = { linkedUserId: authors[j], patternIds: [] };
+        identities[norm].patternIds.push(patterns[i].id);
+      }
+      for (let j = 0; j < authorManual.length; j++) {
+        const raw = authorManual[j];
+        if (!raw || !String(raw).trim()) continue;
+        const norm = normalizeTagName(String(raw));
+        if (!identities[norm]) identities[norm] = { linkedUserId: '', patternIds: [] };
+        identities[norm].patternIds.push(patterns[i].id);
+      }
+    }
+
+    const conflicted = {}; // norm -> true - a real collision, skip cascading these this run
+    const toCreate = []; // { norm, slug, linkedUserId }
+    const toUpdateLink = []; // { row, linkedUserId } - already Author-typed, just missing linked_user
+    const tagIdByNorm = {}; // resolved id for every non-conflicted identity, new or existing
+
+    const norms = Object.keys(identities).sort();
+    for (let i = 0; i < norms.length; i++) {
+      const norm = norms[i];
+      const identity = identities[norm];
+      const existingRow = tagRowByNorm[norm];
+
+      if (existingRow) {
+        if (authorTypeId && existingRow.getString('type') !== authorTypeId) {
+          conflicted[norm] = true; // exists as some other type - a human needs to look at this one
+          continue;
+        }
+        tagIdByNorm[norm] = existingRow.id;
+        if (identity.linkedUserId && existingRow.getString('linked_user') !== identity.linkedUserId) {
+          toUpdateLink.push({ row: existingRow, linkedUserId: identity.linkedUserId });
+        }
+        continue;
+      }
+
+      const baseSlug = slugifyTag(norm);
+      if (!baseSlug) {
+        conflicted[norm] = true; // no safe slug - same "skip, let an admin handle it" rule
+        continue;
+      }
+      let candidate = baseSlug;
+      let suffix = 2;
+      while (usedSlugs[candidate]) candidate = baseSlug + '-' + suffix++;
+      usedSlugs[candidate] = true;
+      toCreate.push({ norm: norm, slug: candidate, linkedUserId: identity.linkedUserId });
+    }
+
+    // manual_authors profiles not yet linked, whose name matches a
+    // (non-conflicted) identity found above.
+    const profilesToLink = [];
+    for (let i = 0; i < manualAuthorRows.length; i++) {
+      const row = manualAuthorRows[i];
+      if (row.getString('linked_tag')) continue;
+      const norm = normalizeTagName(row.getString('name') || '');
+      if (!norm || conflicted[norm] || !identities[norm]) continue;
+      profilesToLink.push({ row: row, norm: norm });
+    }
+
+    const skippedErrors = [];
+    let tagsCreated = 0;
+    let tagsUpdated = 0;
+    let profilesLinked = 0;
+    let patternsUpdated = 0;
+
+    $app.runInTransaction((txApp) => {
+      if (!authorTypeId) {
+        try {
+          const typeCollection = $app.findCollectionByNameOrId('tag_types');
+          const typeRecord = new Record(typeCollection, { name: 'Author', display_mode: 'author' });
+          txApp.save(typeRecord);
+          authorTypeId = typeRecord.id;
+        } catch (saveErr) {
+          skippedErrors.push('create tag_types "Author": ' + saveErr.message);
+          console.log('>>>sync-author-tags: failed to create Author tag type', saveErr.message);
+        }
+      }
+
+      if (authorTypeId) {
+        const tagsCollection = $app.findCollectionByNameOrId('tags_v2');
+        for (let i = 0; i < toCreate.length; i++) {
+          const t = toCreate[i];
+          try {
+            const record = new Record(tagsCollection, {
+              tag: t.norm,
+              slug: t.slug,
+              previous_slugs: [],
+              type: authorTypeId,
+              linked_user: t.linkedUserId || '',
+            });
+            txApp.save(record);
+            tagIdByNorm[t.norm] = record.id;
+            tagsCreated++;
+          } catch (saveErr) {
+            conflicted[t.norm] = true; // couldn't create it - don't cascade it this run either
+            skippedErrors.push('create tag "' + t.norm + '": ' + saveErr.message);
+            console.log('>>>sync-author-tags: failed to create tag', t.norm, saveErr.message);
+          }
+        }
+
+        for (let i = 0; i < toUpdateLink.length; i++) {
+          const u = toUpdateLink[i];
+          try {
+            u.row.set('linked_user', u.linkedUserId);
+            txApp.save(u.row);
+            tagsUpdated++;
+          } catch (saveErr) {
+            skippedErrors.push('link user on tag "' + u.row.getString('tag') + '": ' + saveErr.message);
+            console.log('>>>sync-author-tags: failed to set linked_user', u.row.getString('tag'), saveErr.message);
+          }
+        }
+      }
+
+      for (let i = 0; i < profilesToLink.length; i++) {
+        const p = profilesToLink[i];
+        const tagId = tagIdByNorm[p.norm];
+        if (!tagId) continue;
+        try {
+          p.row.set('linked_tag', tagId);
+          txApp.save(p.row);
+          profilesLinked++;
+        } catch (saveErr) {
+          skippedErrors.push('link manual_authors "' + p.row.getString('name') + '": ' + saveErr.message);
+          console.log('>>>sync-author-tags: failed to link manual_authors', p.row.getString('name'), saveErr.message);
+        }
+      }
+
+      // Cascade every non-conflicted identity's resolved tag onto every
+      // pattern that credits it - "add, never remove," same rule the
+      // backfill script uses.
+      const patternById = {};
+      for (let i = 0; i < patterns.length; i++) patternById[patterns[i].id] = patterns[i];
+
+      const missingByPattern = {}; // patternId -> [] of tag strings to add
+      for (let i = 0; i < norms.length; i++) {
+        const norm = norms[i];
+        if (conflicted[norm]) continue;
+        const tagId = tagIdByNorm[norm];
+        if (!tagId) continue; // creation failed above, or never resolved
+        const identity = identities[norm];
+        for (let j = 0; j < identity.patternIds.length; j++) {
+          const pid = identity.patternIds[j];
+          if (!missingByPattern[pid]) missingByPattern[pid] = [];
+          missingByPattern[pid].push(norm);
+        }
+      }
+
+      const patternIds = Object.keys(missingByPattern);
+      for (let i = 0; i < patternIds.length; i++) {
+        const pid = patternIds[i];
+        const record = patternById[pid];
+        if (!record) continue;
+        let currentTags = [];
+        try {
+          currentTags = JSON.parse(record.getString('tags')) || [];
+        } catch (_) {}
+        const currentTagSet = {};
+        for (let j = 0; j < currentTags.length; j++) currentTagSet[currentTags[j]] = true;
+        const toAdd = missingByPattern[pid].filter(function (n) {
+          return !currentTagSet[n];
+        });
+        if (toAdd.length === 0) continue;
+        try {
+          record.set('tags', currentTags.concat(toAdd));
+          txApp.save(record);
+          patternsUpdated++;
+        } catch (saveErr) {
+          skippedErrors.push('update pattern ' + pid + ': ' + saveErr.message);
+          console.log('>>>sync-author-tags: failed to update pattern', pid, saveErr.message);
+        }
+      }
+    });
+
+    return c.json(200, {
+      ok: true,
+      distinct_authors_scanned: norms.length,
+      tags_created: tagsCreated,
+      tags_updated: tagsUpdated,
+      profiles_linked: profilesLinked,
+      patterns_updated: patternsUpdated,
+      skipped_type_conflicts: Object.keys(conflicted),
       skipped_errors: skippedErrors,
       elapsed_ms: Date.now() - startTime,
     });
