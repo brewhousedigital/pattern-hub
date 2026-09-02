@@ -1,6 +1,13 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
-import { getTagBySlugOptions, useQueryGetTagBySlug, useQueryGetTagUsageCount } from '@/functions/database/tags';
+import {
+  getTagBySlugOptions,
+  useQueryGetTagBySlug,
+  useQueryGetTagUsageCount,
+  useQueryGetDirectImpliedTags,
+  useQueryGetTagsImplyingDirect,
+  useQueryGetAliasesForTag,
+} from '@/functions/database/tags';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
@@ -14,8 +21,8 @@ import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, Typography
 // ─── Route ────────────────────────────────────────────────────────────────────
 //
 // The Definition Page for one tag (Phase 1 of the tag redesign - see
-// TAG_REDESIGN_PROJECT_NOTES.md). Phase 2 extends this same route to also
-// show implied tags/aliases; this phase only has Type + Definition to show.
+// TAG_REDESIGN_PROJECT_NOTES.md). Phase 2 extended this route with the
+// implied-tags/alias sections below.
 
 export const Route = createFileRoute('/tags/$slug')({
   component: RouteComponent,
@@ -54,6 +61,9 @@ function RouteComponent() {
 
   const { data: tagRecord, isPending, isError } = useQueryGetTagBySlug(slug);
   const { data: usageCount } = useQueryGetTagUsageCount(tagRecord?.tag ?? '');
+  const { data: implies = [] } = useQueryGetDirectImpliedTags(tagRecord?.tag ?? '');
+  const { data: impliedBy = [] } = useQueryGetTagsImplyingDirect(tagRecord?.tag ?? '');
+  const { data: alsoKnownAs = [] } = useQueryGetAliasesForTag(tagRecord?.tag ?? '');
 
   if (isPending) {
     return (
@@ -127,9 +137,40 @@ function RouteComponent() {
               No definition written yet.
             </Typography>
           )}
+
+          <RelatedTagChips label="Implies" tags={implies.map((e) => e.implies_tag)} />
+          <RelatedTagChips label="Implied by" tags={impliedBy.map((e) => e.tag)} />
+          <RelatedTagChips label="Also known as" tags={alsoKnownAs.map((a) => a.alias)} />
         </Paper>
       </Container>
     </GeneralLayout>
+  );
+}
+
+// onClick + useNavigate(), not component={Link} - the same fix the "Browse
+// N patterns" button above needed. MUI's polymorphic `component` prop
+// doesn't narrow TanStack Router's per-route `search` typing correctly (see
+// that button's own history in this file); onClick sidesteps it entirely.
+function RelatedTagChips({ label, tags }: { label: string; tags: string[] }) {
+  const navigate = useNavigate();
+  if (tags.length === 0) return null;
+  return (
+    <Box sx={{ mt: 3 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+        {tags.map((tag) => (
+          <Chip
+            key={tag}
+            label={tag}
+            size="small"
+            clickable
+            onClick={() => navigate({ to: '/pattern', search: { tags: [tag] } })}
+          />
+        ))}
+      </Stack>
+    </Box>
   );
 }
 

@@ -483,6 +483,170 @@ export const useQueryGetAllTagTypes = () =>
     },
   });
 
+// ─── Implied tags (Phase 2) ─────────────────────────────────────────────────────
+//
+// See TAG_REDESIGN_PROJECT_NOTES.md, Phase 2. `implied_tags` is the
+// multi-parent upgrade of `tag_hierarchy`: any number of rows can share the
+// same `tag`, unlike tag_hierarchy's one-parent-per-child limit. This
+// section is deliberately NOT wired into applyManualTagChange /
+// applyKeyTagChange below - those still read tag_hierarchy, and stay doing
+// so through Phase 2. Only Phase 3 repoints them at the functions here;
+// until then, this is used only by the new admin graph editor and the
+// Definition Page, exactly as the phased rollout intends ("data and admin
+// tools only, does not yet change how a pattern is tagged").
+
+export interface TypeImpliedTagRecord {
+  id: string;
+  tag: string;
+  implies_tag: string;
+}
+
+export const IMPLIED_TAGS_QUERY_KEY = ['GetAllImpliedTags'] as const;
+
+export const useQueryGetImpliedTags = () =>
+  useQuery({
+    queryKey: IMPLIED_TAGS_QUERY_KEY,
+    queryFn: async (): Promise<TypeImpliedTagRecord[]> => {
+      return await pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ sort: 'tag' });
+    },
+  });
+
+// A total-nodes-visited safety cap, not a chain-depth one - this is a
+// breadth-first walk across however many "implies" edges a tag has, not a
+// single linear parent chain like getAncestors() above, so it doesn't map
+// to that function's "20 hops" the same way. The `visited` set already
+// makes a cycle (A implies B implies A) terminate correctly on its own;
+// this cap only guards against an unreasonably large, densely-connected
+// graph making the walk expensive.
+const IMPLIED_TAGS_MAX_VISITS = 50;
+
+/**
+ * Every tag `tagName` transitively implies, walking as many "implies" edges
+ * deep as needed - the vertical-and-horizontal spreading the PM doc
+ * describes (Orca implies Toothed Whale implies Cetacean, *and* Orca
+ * implies Mammal directly - both directions come out of the same walk).
+ */
+export function getImpliedTags(tagName: string, impliedTags: TypeImpliedTagRecord[]): string[] {
+  const result: string[] = [];
+  const visited = new Set<string>([tagName.toLowerCase()]);
+  const queue = [tagName.toLowerCase()];
+  let visits = 0;
+
+  while (queue.length > 0 && visits < IMPLIED_TAGS_MAX_VISITS) {
+    const current = queue.shift()!;
+    visits++;
+    for (const edge of impliedTags) {
+      if (edge.tag !== current || visited.has(edge.implies_tag)) continue;
+      visited.add(edge.implies_tag);
+      result.push(edge.implies_tag);
+      queue.push(edge.implies_tag);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * The reverse of getImpliedTags(): every tag that transitively implies
+ * `tagName`. Used for the Definition Page's "implied by" list, and for a
+ * circular-reference guard when picking a new "implies" target in the admin
+ * graph editor (mirrors getDescendants()'s role for the old hierarchy's Set
+ * Parent dialog).
+ */
+export function getTagsImplying(tagName: string, impliedTags: TypeImpliedTagRecord[]): string[] {
+  const result: string[] = [];
+  const visited = new Set<string>([tagName.toLowerCase()]);
+  const queue = [tagName.toLowerCase()];
+  let visits = 0;
+
+  while (queue.length > 0 && visits < IMPLIED_TAGS_MAX_VISITS) {
+    const current = queue.shift()!;
+    visits++;
+    for (const edge of impliedTags) {
+      if (edge.implies_tag !== current || visited.has(edge.tag)) continue;
+      visited.add(edge.tag);
+      result.push(edge.tag);
+      queue.push(edge.tag);
+    }
+  }
+
+  return result;
+}
+
+// ─── Tag aliases (Phase 2) ──────────────────────────────────────────────────────
+//
+// tag_aliases already existed in the schema before this project - it was
+// simply never wired up anywhere. Many-to-one by convention (many aliases
+// can point to one root; nothing here stops one alias row pointing at two
+// different targets except the unique index on `alias` recommended in
+// TAG_REDESIGN_PROJECT_NOTES.md - add it if it isn't there yet).
+
+export interface TypeTagAliasRecord {
+  id: string;
+  alias: string;
+  target_tag: string;
+}
+
+export const TAG_ALIASES_QUERY_KEY = ['GetAllTagAliases'] as const;
+
+export const useQueryGetAllTagAliases = () =>
+  useQuery({
+    queryKey: TAG_ALIASES_QUERY_KEY,
+    queryFn: async (): Promise<TypeTagAliasRecord[]> => {
+      return await pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ sort: 'alias' });
+    },
+  });
+
+/**
+ * Resolves a typed or searched tag through the alias table, if it is one.
+ * Returns the input unchanged when it isn't a known alias - safe to call on
+ * every tag, not just ones you already suspect are aliased. Case-insensitive
+ * against the stored `alias` values, matching every other tag comparison in
+ * this codebase.
+ *
+ * Does not chase an alias-of-an-alias chain - the admin create/edit flow
+ * (Phase 2 admin panel) is expected to enforce that every alias points
+ * directly at a root, non-aliased tag, the same "duplicate add is ignored"
+ * simplicity the PM doc describes.
+ */
+export function resolveTagAlias(tagName: string, aliases: TypeTagAliasRecord[]): string {
+  const norm = tagName.toLowerCase();
+  const match = aliases.find((a) => a.alias.toLowerCase() === norm);
+  return match ? match.target_tag : tagName;
+}
+
+// Scoped single-tag reads for the public Definition Page - direct edges
+// only (not the full transitive closure `getImpliedTags`/`getTagsImplying`
+// compute for the admin graph editor), so a page view doesn't need to fetch
+// either whole table. A visitor can click through to a directly-implied
+// tag's own page to keep exploring the graph one hop at a time.
+
+export const useQueryGetDirectImpliedTags = (tag: string) =>
+  useQuery({
+    queryKey: ['DirectImpliedTags', tag],
+    queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
+      await pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${tag}"` }),
+    enabled: !!tag,
+  });
+
+export const useQueryGetTagsImplyingDirect = (tag: string) =>
+  useQuery({
+    queryKey: ['TagsImplyingDirect', tag],
+    queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
+      await pocketbase
+        .collection('implied_tags')
+        .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${tag}"` }),
+    enabled: !!tag,
+  });
+
+export const useQueryGetAliasesForTag = (tag: string) =>
+  useQuery({
+    queryKey: ['AliasesForTag', tag],
+    queryFn: async (): Promise<TypeTagAliasRecord[]> =>
+      await pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${tag}"` }),
+    enabled: !!tag,
+  });
+
 // Reads the `tag` view's precomputed count for one tag - reused on the
 // Definition Page to link out to "N patterns tagged X" without a second,
 // heavier query against `patterns` itself.
