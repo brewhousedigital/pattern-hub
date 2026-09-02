@@ -90,7 +90,10 @@ export type TypePatternSearchResponse = TypePaginationDatabaseResponse<TypePatte
   // Tag counts across the ENTIRE filtered result set (not just this page) -
   // computed server-side in pb_hooks/main.pb.js's /api/pattern-search so the
   // sidebar's "Flower (7)" reflects the full search, not one 20-item page.
-  tagFacets: { tag: string; count: number }[];
+  // tagId (Phase R3.1, see TAG_RELATIONAL_REFACTOR_NOTES.md) is the facet's
+  // tags_v2 row id, straight from the server's join - lets a consumer look
+  // up color/type by id instead of by name.
+  tagFacets: { tagId: string; tag: string; count: number }[];
 };
 
 function buildPatternSearchParams(

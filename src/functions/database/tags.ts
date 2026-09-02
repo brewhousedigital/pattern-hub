@@ -406,6 +406,21 @@ export interface TypeAdminTagStatsPaginatedParams {
   sortDir: 'asc' | 'desc';
 }
 
+// Phase R3.1 of the Tag Relational Refactor (see
+// TAG_RELATIONAL_REFACTOR_NOTES.md): reads the new `tag_usage` view instead
+// of `tags`. Same shape (id/tag/count), same semantics (published,
+// non-deleted patterns only) - the difference is what it's computed from:
+// `tag_usage` walks patterns.tag_refs joined to tags_v2, `tags` walks
+// patterns.tags directly. The two agree today (Phase R1/R2 keep tag_refs
+// fully in sync with tags for every existing pattern), but only
+// `tag_usage` keeps working once tag-entry (R3.3) and rename (R3.4) stop
+// writing patterns.tags - `tags` would stop catching up at that point, not
+// just lag behind it. `tags` itself is untouched and still exists - every
+// other consumer of it (useQueryGetAllTags, useQuerySearchTags,
+// useQueryGetTagUsageCount) stays on it until its own Phase R3/R4 piece
+// lands. This hook's own id is now a real, stable tags_v2 id (unlike
+// `tags`', which is random per-query and never safe as a foreign key) -
+// nothing here relies on that yet, but a future caller safely could.
 export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
   return useQuery({
     queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],
@@ -416,12 +431,12 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
 
       // requestKey: null - see useQueryAdminTagStats above. This hook has
       // multiple concurrent consumers on the tags admin page alone (the main
-      // grid and SetParentDialog's search both query 'tags' with different
+      // grid and SetParentDialog's search both query this view with different
       // params/react-query keys), so PocketBase's default same-collection
       // auto-cancellation would otherwise cancel one in favor of the other.
       // React Query's own per-key caching already keeps their results isolated.
       const result = await pocketbase
-        .collection('tags')
+        .collection('tag_usage')
         .getList<TypeReadOnlyDatabaseItem>(params.page + 1, params.pageSize, {
           sort,
           ...(filter ? { filter } : {}),

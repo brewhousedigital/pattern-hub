@@ -138,7 +138,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // `tags` is stored as a JSON array column (no join table) - SQLite's
   // json_each() expands it so COUNT(*) ... GROUP BY counts every matching
   // pattern in the filtered set, not just one page.
-  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap, authorNameMap) {
+  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap, authorNameMap, tagIdByName, authorTagIdByName) {
     const dslParts = [];
     const sqlParts = [];
     const sqlParams = {};
@@ -154,6 +154,36 @@ routerAdd('GET', '/api/pattern-search', (c) => {
       return String(s).replace(/"/g, '\\"');
     }
 
+    // Phase R3.1 of the Tag Relational Refactor (see
+    // TAG_RELATIONAL_REFACTOR_NOTES.md): emits a tag_refs relation match for
+    // an already-resolved tags_v2 id, the same `~`-on-a-multi-relation-
+    // column idiom already live and proven for patterns.authors
+    // (`authors ~ '${userId}'`, see src/functions/database/patterns.ts). A
+    // null tagId means no tags_v2 row matches this name at all - a
+    // pattern's tag_refs can only ever hold a real id, so an include token
+    // can never match anything (an always-false fragment), while an
+    // exclude token is a no-op (excluding a nonexistent tag constrains
+    // nothing) and gets no fragment at all. This preserves the pre-R3
+    // behavior, where a tag string nothing ever used already matched zero
+    // patterns.
+    function emitTagIdFilter(tagId, exclude) {
+      if (!tagId) {
+        if (!exclude) {
+          dslParts.push('(id = "")');
+          sqlParts.push('1=0');
+        }
+        return;
+      }
+      const b = bind(tagId);
+      if (exclude) {
+        dslParts.push(`(tag_refs !~ '${escDq(tagId)}')`);
+        sqlParts.push(`tag_refs NOT LIKE '%"' || ${b} || '"%'`);
+      } else {
+        dslParts.push(`(tag_refs ~ '${escDq(tagId)}')`);
+        sqlParts.push(`tag_refs LIKE '%"' || ${b} || '"%'`);
+      }
+    }
+
     const idDslParts = [];
     const idSqlParts = [];
 
@@ -165,70 +195,79 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         // when it isn't a known alias - safe for every text/tag token, not
         // just ones already suspected to be aliased (mirrors resolveTagAlias
         // in src/functions/database/tags.ts). text and tag tokens share this
-        // branch because they already match the same `tags` field the same
-        // way - both need the same resolution.
-        const resolved = (aliasMap && aliasMap[String(t.value).toLowerCase()]) || t.value;
-        // Wrap in literal quotes so the match hits a JSON element boundary -
-        // '"cat"' matches ["cat"] but not ["suncatcher"].
-        const b = bind(resolved);
-        if (t.exclude) {
-          dslParts.push(`(tags !~ '"${escDq(resolved)}"')`);
-          sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
-        } else {
-          dslParts.push(`(tags ~ '"${escDq(resolved)}"')`);
-          sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
-        }
+        // branch because they already match the same tag data the same way
+        // - both need the same resolution.
+        //
+        // Phase R3.1: the resolved name is then looked up in tagIdByName -
+        // a type-blind (any tags_v2 type) name -> id map, mirroring
+        // resolveOrCreateTagV2Row's own resolution rule (see the R1/R2
+        // correction in TAG_RELATIONAL_REFACTOR_NOTES.md). The match itself
+        // is now an id comparison against tag_refs, not a string comparison
+        // against tags.
+        const typedNorm = String(t.value).toLowerCase();
+        const resolvedName = (aliasMap && aliasMap[typedNorm]) || t.value;
+        const tagId = (tagIdByName && tagIdByName[String(resolvedName).toLowerCase()]) || null;
+        emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'author') {
-        // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): author names are now
-        // baked into patterns.tags at save time (scripts/backfill-author-
-        // tags.mjs, and the live-forward equivalent that keeps this true
-        // for new patterns), the same as every other tag - so this matches
-        // exactly like the text/tag branch above, including alias
-        // resolution: a search for someone's old name, after an account
-        // rename, still finds their patterns (see the account-rename hook
-        // below, which adds the old name as an alias of the new one).
+        // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md) established that
+        // author names are baked into a pattern's tag data at save time
+        // (scripts/backfill-author-tags.mjs, and the live-forward
+        // equivalent that keeps this true for new patterns) - the same as
+        // any other tag. Phase R3.1 changes only how the match itself
+        // works, not that principle: it now resolves the typed name to a
+        // specific tags_v2 id and matches tag_refs, instead of matching a
+        // string.
         //
         // This replaces the old author_manual/authors-relation matching,
         // and with it the authorIdMap name-to-id lookup that matching
-        // needed - matching a name against `tags` needs no id resolution
-        // at all. authorIdMap is still accepted as a parameter (the client
-        // still sends it) but is no longer read here; retiring it fully is
-        // a later Contract-pass cleanup, same as /api/resolve-author-ids -
-        // see TAG_REDESIGN_PROJECT_NOTES.md.
+        // needed - matching by tag data needs no id resolution against
+        // authors/manual_authors at all. authorIdMap is still accepted as
+        // a parameter (the client still sends it) but is no longer read
+        // here; retiring it fully is a later Contract-pass cleanup, same
+        // as /api/resolve-author-ids - see TAG_REDESIGN_PROJECT_NOTES.md.
         //
-        // authorNameMap is checked BEFORE aliasMap - it resolves by an
-        // author's current account/profile name, so a search still finds
-        // them even when their tag was disambiguated away from their plain
-        // name (e.g. "autumn" -> "autumn (artist)", disambiguated from the
-        // unrelated season tag "autumn" - see TAG_REDESIGN_PROJECT_NOTES.md,
-        // Phase 4). This is deliberately NOT a tag_aliases row: "autumn" the
-        // season is a real, unrelated tag, and a general alias would hijack
-        // every plain search for it too, exactly the shadowing the Alias
-        // dialog's own "already exists as its own tag" guard refuses to
-        // allow when an admin tries to create one by hand. Scoping the fix
-        // to this branch only, keyed off the account/profile name rather
-        // than the tag text, sidesteps that risk entirely - it can never
-        // affect a `text`/`tag` token, only `author`.
+        // Resolution order, closest to the old string-based order:
+        //   1. authorTagIdByName - a type-scoped (Author type only) name ->
+        //      id map. The precise, ID-based replacement for what
+        //      authorNameMap alone used to do - an author: token means
+        //      "the Author-typed tag with this name," specifically.
+        //   2. authorNameMap - an author's current account/profile name ->
+        //      their tag's current STRING, resolved through tagIdByName
+        //      (type-blind) afterward. Still needed, not made unnecessary
+        //      by ID-based matching (a correction to this project's own
+        //      original R3 plan - see TAG_RELATIONAL_REFACTOR_NOTES.md):
+        //      it is what lets a search still find someone even when their
+        //      tag's string is disambiguated away from their account name
+        //      (e.g. "autumn" -> "autumn (artist)"), for as long as that
+        //      gap exists. Deliberately not a tag_aliases row: "autumn" the
+        //      season is a real, unrelated tag, and a general alias would
+        //      hijack every plain search for it too - the same shadowing
+        //      the Alias dialog's own "already exists as its own tag" guard
+        //      refuses to allow. Scoping the fix to this branch only, keyed
+        //      off the account/profile name rather than the tag text,
+        //      sidesteps that risk entirely - it can never affect a
+        //      `text`/`tag` token, only `author`.
+        //   3. aliasMap - same fallback the old code already had.
         const typedNorm = String(t.value).toLowerCase();
-        const resolved =
-          (authorNameMap && authorNameMap[typedNorm]) || (aliasMap && aliasMap[typedNorm]) || t.value;
-        const b = bind(resolved);
-        if (t.exclude) {
-          dslParts.push(`(tags !~ '"${escDq(resolved)}"')`);
-          sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
-        } else {
-          dslParts.push(`(tags ~ '"${escDq(resolved)}"')`);
-          sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
+        let tagId = (authorTagIdByName && authorTagIdByName[typedNorm]) || null;
+        if (!tagId) {
+          const viaAccountName = authorNameMap && authorNameMap[typedNorm];
+          if (viaAccountName) tagId = (tagIdByName && tagIdByName[String(viaAccountName).toLowerCase()]) || null;
         }
+        if (!tagId) {
+          const viaAlias = aliasMap && aliasMap[typedNorm];
+          if (viaAlias) tagId = (tagIdByName && tagIdByName[String(viaAlias).toLowerCase()]) || null;
+        }
+        emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'id') {
         const b = bind(t.value);
-        // The facet query cross-joins json_each(patterns.tags), whose output
-        // table has its OWN column named `id` (json_each's internal node id,
-        // unrelated to the row's primary key). A bare `id` reference here is
-        // ambiguous between `patterns.id` and that json_each column - SQLite
-        // throws a parse error, which the facet query's try/catch swallows,
-        // silently leaving tagFacets (and totalItems, via countRows) empty.
-        // Qualifying with the table name resolves the ambiguity.
+        // The facet query cross-joins json_each(patterns.tag_refs) (Phase
+        // R3.1 - see TAG_RELATIONAL_REFACTOR_NOTES.md) and joins that to
+        // tags_v2, both of which have their own `id` column too - a bare
+        // `id` reference here is ambiguous between `patterns.id` and those.
+        // SQLite throws a parse error, which the facet query's try/catch
+        // swallows, silently leaving tagFacets (and totalItems, via
+        // countRows) empty. Qualifying with the table name resolves it.
         if (t.exclude) {
           idDslParts.push(`(id != "${escDq(t.value)}")`);
           idSqlParts.push(`(patterns.id != ${b})`);
@@ -293,11 +332,13 @@ routerAdd('GET', '/api/pattern-search', (c) => {
 
     // Silent, per-user tag exclusion - never surfaces as a visible token/chip,
     // just an invisible AND-ed constraint (mirrors the old buildBlockedTagsFilter).
+    // Phase R3.1: resolved type-blind, same as a plain text/tag token -
+    // a blocked tag string means "whichever tag has this name," the same
+    // resolution a bare typed word already gets.
     for (const tag of blockedTags || []) {
       if (!tag) continue;
-      const b = bind(tag);
-      dslParts.push(`(tags !~ '"${escDq(tag)}"')`);
-      sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
+      const tagId = (tagIdByName && tagIdByName[String(tag).toLowerCase()]) || null;
+      emitTagIdFilter(tagId, true);
     }
 
     return {
@@ -447,12 +488,52 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     } catch (_) {}
   }
 
+  // Phase R3.1 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): tagIdByName resolves a name to its
+  // tags_v2 id, type-blind (any type) - mirrors resolveOrCreateTagV2Row's
+  // own resolution rule, used for text/tag tokens and for resolving a
+  // string (from aliasMap or authorNameMap) the rest of the way to an id.
+  // authorTagIdByName resolves a name to its Author-typed tags_v2 id
+  // specifically - used only for an author: token's own primary lookup.
+  // Both keyed by the already-normalized (lowercase) tags_v2.tag value, so
+  // a lookup must lowercase its own key first (tags_v2.tag is written
+  // through normalizeTagName at every write path, but a typed search term
+  // is not guaranteed to already be lowercase).
+  //
+  // Built once per request, only when a token or a blocked tag actually
+  // needs it - one extra table scan, on an endpoint that runs on every
+  // browse, not occasionally like the sync endpoints (same reasoning
+  // authorNameMap's own conditional build already documents).
+  let tagIdByName = {};
+  let authorTagIdByName = {};
+  const needsTagIdResolution =
+    (blockedTags && blockedTags.length > 0) ||
+    tokens.some((t) => t && (t.type === 'text' || t.type === 'tag' || t.type === 'author'));
+  if (needsTagIdResolution) {
+    try {
+      const authorTypeRows = $app.findRecordsByFilter('tag_types', "name = 'Author'", '', 1, 0);
+      const authorTypeId = authorTypeRows.length ? authorTypeRows[0].id : '';
+      const allTagRows = $app.findRecordsByFilter('tags_v2', "id != ''", '', 0, 0);
+      for (let i = 0; i < allTagRows.length; i++) {
+        const row = allTagRows[i];
+        const name = row.getString('tag');
+        if (!name) continue;
+        if (!tagIdByName[name]) tagIdByName[name] = row.id;
+        if (authorTypeId && row.getString('type') === authorTypeId && !authorTagIdByName[name]) {
+          authorTagIdByName[name] = row.id;
+        }
+      }
+    } catch (_) {}
+  }
+
   const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(
     tokens,
     authorIdMap,
     blockedTags,
     aliasMap,
     authorNameMap,
+    tagIdByName,
+    authorTagIdByName,
   );
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
@@ -482,20 +563,26 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     logZeroResultSearch(tokens);
   }
 
+  // Phase R3.1 (see TAG_RELATIONAL_REFACTOR_NOTES.md): the json_each scan
+  // now walks patterns.tag_refs instead of patterns.tags, joined straight
+  // through to tags_v2 for the id and the current display string together
+  // - one query, no second lookup needed. tagFacets gains tagId; Sidebar.tsx
+  // can look up a facet's color/type by id instead of by name once it does.
   const tagFacets = [];
   try {
-    const rows = arrayOf(new DynamicModel({ tag: '', count: 0 }));
+    const rows = arrayOf(new DynamicModel({ tag_id: '', tag: '', count: 0 }));
     $app
       .db()
       .newQuery(
-        'SELECT je.value AS tag, COUNT(*) AS count FROM patterns, json_each(patterns.tags) je WHERE ' +
+        'SELECT tags_v2.id AS tag_id, tags_v2.tag AS tag, COUNT(*) AS count ' +
+          'FROM patterns, json_each(patterns.tag_refs) je JOIN tags_v2 ON tags_v2.id = je.value WHERE ' +
           baseSql +
-          ' GROUP BY je.value ORDER BY count DESC',
+          ' GROUP BY tags_v2.id ORDER BY count DESC',
       )
       .bind(sqlParams)
       .all(rows);
     for (let i = 0; i < rows.length; i++) {
-      tagFacets.push({ tag: rows[i].tag, count: parseInt(rows[i].count, 10) });
+      tagFacets.push({ tagId: rows[i].tag_id, tag: rows[i].tag, count: parseInt(rows[i].count, 10) });
     }
   } catch (_) {}
 
