@@ -577,8 +577,17 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
 // caught up with every tag typed after that backfill ran. Finds any tag
 // string in use on a published pattern that's missing from tags_v2, and
 // inserts a default row for it (type left empty, meaning General). Safe to
-// call more than once - it only ever creates what's still missing, so a
-// missed or overlapping run can't create duplicates.
+// call again after a missed run - it only ever creates what's still
+// missing. Two genuinely concurrent runs (e.g. a slow-response cron retry
+// overlapping the original) both compute from the same snapshot and could
+// both attempt to create a row for the same new tag - tags_v2's unique
+// index on `tag` stops a duplicate row from ever actually existing, and
+// each create below is individually try/caught so one such collision can't
+// roll back the rest of an otherwise-successful run. Corrected via code
+// review, see TAG_REDESIGN_PROJECT_NOTES.md - this used to claim
+// overlapping runs "can't create duplicates" at all, which the unique
+// index backstops but the snapshot-then-transact approach here doesn't
+// prevent on its own.
 routerAdd('POST', '/api/sync-tag-catalog', (c) => {
   // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
   // JSVM can't import a .ts file from src/ directly - keep this copy in
@@ -642,6 +651,7 @@ routerAdd('POST', '/api/sync-tag-catalog', (c) => {
 
     const collection = $app.findCollectionByNameOrId('tags_v2');
     const skippedEmptySlug = [];
+    const skippedErrors = [];
     let created = 0;
 
     $app.runInTransaction((txApp) => {
@@ -664,9 +674,18 @@ routerAdd('POST', '/api/sync-tag-catalog', (c) => {
         }
         usedSlugs[candidate] = true;
 
-        const record = new Record(collection, { tag: tag, slug: candidate, previous_slugs: [] });
-        txApp.save(record);
-        created++;
+        // Individually try/caught so one collision (e.g. a genuinely
+        // concurrent overlapping run hitting tags_v2's unique index on
+        // `tag` first) can't roll back the rest of this otherwise-valid
+        // batch - see this endpoint's own top comment.
+        try {
+          const record = new Record(collection, { tag: tag, slug: candidate, previous_slugs: [] });
+          txApp.save(record);
+          created++;
+        } catch (saveErr) {
+          skippedErrors.push(tag);
+          console.log('>>>sync-tag-catalog: failed to create row for tag', tag, saveErr.message);
+        }
       }
     });
 
@@ -675,6 +694,7 @@ routerAdd('POST', '/api/sync-tag-catalog', (c) => {
       distinct_tags_scanned: Object.keys(distinctSeen).length,
       created,
       skipped_empty_slug: skippedEmptySlug,
+      skipped_errors: skippedErrors,
       elapsed_ms: Date.now() - startTime,
     });
   } catch (error) {

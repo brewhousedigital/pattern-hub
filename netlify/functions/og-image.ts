@@ -139,7 +139,11 @@ export default async (req: Request) => {
 
   const subtitle =
     type === 'set' ? 'Sets' : type === 'author' ? 'Artist' : type === 'tag' ? 'Tag' : category ? `Wiki · ${category}` : 'Wiki';
-  const cta = type === 'set' || type === 'author' || type === 'tag' ? 'View patterns →' : 'Read more →';
+  // Sets kept their own distinct "View more →" (restored after an
+  // accidental collapse when the type==='tag' branch was added - found via
+  // code review, see TAG_REDESIGN_PROJECT_NOTES.md); Author and Tag share
+  // "View patterns →" since both link to a pattern listing.
+  const cta = type === 'set' ? 'View more →' : type === 'author' || type === 'tag' ? 'View patterns →' : 'Read more →';
   const fontSize = titleFontSize(title.length);
 
   try {

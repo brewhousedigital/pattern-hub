@@ -20,6 +20,7 @@ import {
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
   getTagsImplying,
+  escapeTagFilterValue,
   TAGS_V2_QUERY_KEY,
   IMPLIED_TAGS_QUERY_KEY,
   TAG_ALIASES_QUERY_KEY,
@@ -33,6 +34,7 @@ import {
 } from '@/functions/database/tags';
 import { processSequentially } from '@/functions/utilities/batch-write';
 import { slugifyTag } from '@/functions/utilities/slugify-tag';
+import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
@@ -153,14 +155,20 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
 async function findTagV2Record(tagName: string): Promise<TypeTagV2Record | null> {
   return await pocketbase
     .collection('tags_v2')
-    .getFirstListItem<TypeTagV2Record>(`tag = "${tagName}"`)
+    .getFirstListItem<TypeTagV2Record>(`tag = "${escapeTagFilterValue(tagName)}"`)
     .catch(() => null);
 }
 
+// Checks both the live `slug` column AND every row's `previous_slugs`
+// history - a candidate can't be handed out if it's already parked in
+// another tag's redirect history, or two different URLs would end up
+// claiming the same slug (getTagBySlugOptions's `slug = X || previous_slugs
+// ~ X` lookup would then match two different rows for the same request).
 async function isSlugTaken(slug: string, excludeId: string): Promise<boolean> {
+  const safe = escapeTagFilterValue(slug);
   const match = await pocketbase
     .collection('tags_v2')
-    .getFirstListItem(`slug = "${slug}" && id != "${excludeId}"`)
+    .getFirstListItem(`(slug = "${safe}" || previous_slugs ~ '"${safe}"') && id != "${excludeId}"`)
     .catch(() => null);
   return !!match;
 }
@@ -188,13 +196,41 @@ async function uniqueSlugFor(baseSlug: string, excludeId: string): Promise<strin
 // an edge newTag already has - both are meaningless once merged, and the
 // unique index on (tag, implies_tag) would reject the duplicate anyway.
 async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
-  const [outgoing, incoming, newTagEdges] = await Promise.all([
-    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${oldTag}"` }),
-    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldTag}"` }),
+  // A rename/merge where the tag didn't actually change (oldTag and newTag
+  // normalize to the same string - a case-only edit, say) has nothing to
+  // retarget. Without this guard, the query below for "every edge already
+  // touching newTag" is identical to "every edge touching oldTag", so every
+  // edge in outgoing/incoming would incorrectly look like a pre-existing
+  // duplicate of itself and get deleted - silently wiping the tag's whole
+  // implied-tags graph. Found and fixed via code review; see
+  // TAG_REDESIGN_PROJECT_NOTES.md.
+  if (oldTag === newTag) return;
+
+  const oldSafe = escapeTagFilterValue(oldTag);
+  const newSafe = escapeTagFilterValue(newTag);
+  const [outgoingRaw, incomingRaw, newTagEdges] = await Promise.all([
+    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${oldSafe}"` }),
     pocketbase
       .collection('implied_tags')
-      .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${newTag}" || implies_tag = "${newTag}"` }),
+      .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldSafe}"` }),
+    pocketbase
+      .collection('implied_tags')
+      .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${newSafe}" || implies_tag = "${newSafe}"` }),
   ]);
+
+  // A self-loop row (tag === implies_tag === oldTag) matches both queries
+  // above as two separate snapshots of the same record. Handle it once,
+  // here, by deleting it outright - a tag implying itself is never
+  // meaningful, rename or not - rather than letting the two loops below
+  // each independently update their own stale copy and resurrect it as a
+  // self-loop under the new name.
+  const selfLoopIds = new Set(outgoingRaw.filter((e) => e.implies_tag === oldTag).map((e) => e.id));
+  for (const id of selfLoopIds) {
+    await pocketbase.collection('implied_tags').delete(id);
+  }
+  const outgoing = outgoingRaw.filter((e) => !selfLoopIds.has(e.id));
+  const incoming = incomingRaw.filter((e) => !selfLoopIds.has(e.id));
+
   const existingEdgeKeys = new Set(newTagEdges.map((e) => `${e.tag} ${e.implies_tag}`));
 
   for (const edge of outgoing) {
@@ -218,9 +254,10 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
 }
 
 async function deleteImpliedTagEdgesFor(deletedTag: string) {
+  const safe = escapeTagFilterValue(deletedTag);
   const edges = await pocketbase
     .collection('implied_tags')
-    .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${deletedTag}" || implies_tag = "${deletedTag}"` });
+    .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${safe}" || implies_tag = "${safe}"` });
   for (const edge of edges) {
     await pocketbase.collection('implied_tags').delete(edge.id);
   }
@@ -235,12 +272,35 @@ async function deleteImpliedTagEdgesFor(deletedTag: string) {
 // to sort out by hand, the same "flag for review" principle Phase 4 uses
 // for an author-name collision.
 async function retargetTagAliases(oldTag: string, newTag: string) {
-  const [asAlias, asTarget] = await Promise.all([
-    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `alias = "${oldTag}"` }),
-    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${oldTag}"` }),
+  if (oldTag === newTag) return; // see retargetImpliedTagEdges - nothing changed, nothing to retarget
+
+  const oldSafe = escapeTagFilterValue(oldTag);
+  const [asAliasRaw, asTargetRaw] = await Promise.all([
+    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `alias = "${oldSafe}"` }),
+    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${oldSafe}"` }),
   ]);
 
+  // A row aliased to itself (alias === target_tag === oldTag) matches both
+  // queries above as two separate snapshots of the same record - same
+  // self-reference hazard as retargetImpliedTagEdges above. Handle it once,
+  // here, by deleting it outright, rather than letting both loops below
+  // process their own stale copy and resurrect it as a self-alias under
+  // the new name.
+  const selfAliasIds = new Set(asAliasRaw.filter((r) => r.target_tag === oldTag).map((r) => r.id));
+  for (const id of selfAliasIds) {
+    await pocketbase.collection('tag_aliases').delete(id);
+  }
+  const asAlias = asAliasRaw.filter((r) => !selfAliasIds.has(r.id));
+  const asTarget = asTargetRaw.filter((r) => !selfAliasIds.has(r.id));
+
   for (const row of asTarget) {
+    if (row.alias === newTag) {
+      // Would become a no-op self-reference (newTag aliased to itself) -
+      // same guard the asAlias loop below already had; this loop was
+      // missing it (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+      await pocketbase.collection('tag_aliases').delete(row.id);
+      continue;
+    }
     await pocketbase.collection('tag_aliases').update(row.id, { target_tag: newTag });
   }
   for (const row of asAlias) {
@@ -251,7 +311,7 @@ async function retargetTagAliases(oldTag: string, newTag: string) {
     }
     const conflict = await pocketbase
       .collection('tag_aliases')
-      .getFirstListItem(`alias = "${newTag}"`)
+      .getFirstListItem(`alias = "${escapeTagFilterValue(newTag)}"`)
       .catch(() => null);
     if (conflict) continue; // leave for manual review - see comment above
     await pocketbase.collection('tag_aliases').update(row.id, { alias: newTag });
@@ -259,9 +319,10 @@ async function retargetTagAliases(oldTag: string, newTag: string) {
 }
 
 async function deleteTagAliasesFor(deletedTag: string) {
+  const safe = escapeTagFilterValue(deletedTag);
   const rows = await pocketbase
     .collection('tag_aliases')
-    .getFullList<TypeTagAliasRecord>({ filter: `alias = "${deletedTag}" || target_tag = "${deletedTag}"` });
+    .getFullList<TypeTagAliasRecord>({ filter: `alias = "${safe}" || target_tag = "${safe}"` });
   for (const row of rows) {
     await pocketbase.collection('tag_aliases').delete(row.id);
   }
@@ -289,11 +350,13 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //               slug and files the old slug into `previous_slugs`, so a
 //               bookmarked or indexed Definition Page URL still redirects
 //               instead of 404ing.
-//     merge   - deletes the source tag's row (matching the tag_hierarchy
-//               behavior above). The merge target's own row, if it has one,
-//               is untouched - a merge does not transfer Type/Definition
-//               from the source, since the two tags may not actually mean
-//               the same thing in a way that makes that safe to assume.
+//     merge   - carries the source's slug (and its own previous_slugs) into
+//               the target's previous_slugs, creating a minimal target row
+//               first if one doesn't exist yet, then deletes the source
+//               row - preserving the same redirect-instead-of-404 guarantee
+//               rename gets, without transferring Type/Definition (the two
+//               tags may not actually mean the same thing, so only the URL
+//               history carries over, not the content).
 //     delete  - deletes the row.
 //
 //   implied_tags (Phase 2's multi-parent graph - see the helpers above):
@@ -308,25 +371,29 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //     merge   - same retarget as rename, same reasoning as implied_tags.
 //     delete  - removes every alias/target reference to the deleted tag.
 //
-// TODO(tags_v2 admin UI): once the Type-assignment/Definition admin screen
-// exists, invalidate its query key here too, alongside the hierarchy
-// invalidation at this function's call site, so an edit here shows up
-// immediately instead of waiting for that screen's own refetch.
-
 async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag?: string) {
-  const safe = tag.toLowerCase().trim();
+  // normalizeTagName (not a local .toLowerCase().trim()) so this always
+  // agrees with what every pattern-save path stores - collapsing internal
+  // whitespace too, not just casing. Found via code review: the old local
+  // normalization let a tag with doubled internal spaces fork into a clean
+  // form in patterns.tags and a stale, never-matching tags_v2 row. See
+  // TAG_REDESIGN_PROJECT_NOTES.md.
+  const safe = normalizeTagName(tag);
+  const safeFilter = escapeTagFilterValue(safe);
 
   const [ownRecord, childRecords, tagV2Record] = await Promise.all([
     pocketbase
       .collection('tag_hierarchy')
-      .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safe}"`)
+      .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safeFilter}"`)
       .catch(() => null),
-    pocketbase.collection('tag_hierarchy').getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safe}"` }),
+    pocketbase
+      .collection('tag_hierarchy')
+      .getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safeFilter}"` }),
     findTagV2Record(safe),
   ]);
 
   if (type === 'rename' && newTag) {
-    const safeNew = newTag.toLowerCase().trim();
+    const safeNew = normalizeTagName(newTag);
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').update(ownRecord.id, { tag: safeNew });
     }
@@ -347,7 +414,7 @@ async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag
     await retargetImpliedTagEdges(safe, safeNew);
     await retargetTagAliases(safe, safeNew);
   } else if (type === 'merge' && newTag) {
-    const safeNew = newTag.toLowerCase().trim();
+    const safeNew = normalizeTagName(newTag);
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
     }
@@ -355,6 +422,19 @@ async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag
       await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
     }
     if (tagV2Record) {
+      const carriedSlugs = [tagV2Record.slug, ...tagV2Record.previous_slugs];
+      const targetRecord = await findTagV2Record(safeNew);
+      if (targetRecord) {
+        await pocketbase.collection('tags_v2').update(targetRecord.id, {
+          previous_slugs: [...new Set([...targetRecord.previous_slugs, ...carriedSlugs])],
+        });
+      } else {
+        const baseSlug = slugifyTag(safeNew);
+        const targetSlug = baseSlug ? await uniqueSlugFor(baseSlug, '') : safeNew;
+        await pocketbase
+          .collection('tags_v2')
+          .create({ tag: safeNew, slug: targetSlug, previous_slugs: [...new Set(carriedSlugs)] });
+      }
       await pocketbase.collection('tags_v2').delete(tagV2Record.id);
     }
     await retargetImpliedTagEdges(safe, safeNew);
@@ -721,12 +801,25 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
         await pocketbase.collection('tags_v2').update(existingRecord.id, payload);
       } else {
         const baseSlug = slugifyTag(tag.tag);
+        if (!baseSlug) {
+          // Matches the "skip and flag for manual review" handling the
+          // backfill script and /api/sync-tag-catalog both use for this
+          // same edge case, instead of the un-checked raw-string fallback
+          // this used to have here (found via code review, see
+          // TAG_REDESIGN_PROJECT_NOTES.md) - a tag made entirely of
+          // punctuation has no safe, uniqueness-checked slug to give it, so
+          // this stops short of creating a row rather than guessing one.
+          setError(
+            `"${tag.tag}" has no letters or numbers, so it can't be given a URL-safe slug. This tag needs to be renamed before it can have a Type or Definition.`,
+          );
+          setSaving(false);
+          return;
+        }
         // '' as excludeId is safe here - no real record ever has an empty
         // id, so `id != ""` (inside isSlugTaken) matches every existing row,
         // exactly the "don't exclude anything" behavior a brand-new record
-        // needs. Falls back to the raw tag string in the near-impossible
-        // case a tag already in use on a pattern slugifies to nothing.
-        const slug = baseSlug ? await uniqueSlugFor(baseSlug, '') : tag.tag;
+        // needs.
+        const slug = await uniqueSlugFor(baseSlug, '');
         await pocketbase.collection('tags_v2').create({ tag: tag.tag, slug, previous_slugs: [], ...payload });
       }
 
@@ -829,6 +922,18 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { log } = useAdminLogger();
+
+  // Reprimes on open, matching SetParentDialog/TagMetadataDialog - without
+  // this, the dialog stays mounted between rows (only `open` toggles), so a
+  // leftover search term or error from a previous tag's session would
+  // otherwise still be showing the next time this opens for a different tag
+  // (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+  useEffect(() => {
+    if (open) {
+      setInputValue('');
+      setError(null);
+    }
+  }, [open, tag]);
 
   const { data: searchData, isFetching: searchFetching } = useQueryAdminTagStatsPaginated({
     page: 0,
@@ -985,6 +1090,15 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
   const [error, setError] = useState<string | null>(null);
   const { log } = useAdminLogger();
 
+  // Reprimes on open, matching SetParentDialog/TagMetadataDialog - see the
+  // identical note on ImpliedTagsDialog above.
+  useEffect(() => {
+    if (open) {
+      setInputValue('');
+      setError(null);
+    }
+  }, [open, tag]);
+
   const { data: searchData, isFetching: searchFetching } = useQueryAdminTagStatsPaginated({
     page: 0,
     pageSize: 50,
@@ -998,10 +1112,20 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
   // What other tags alias to this one as their root?
   const pointingHere = useMemo(() => (tag ? aliases.filter((a) => a.target_tag === tag.tag) : []), [tag, aliases]);
 
+  // Excludes self, and anything already registered as an alias of something
+  // else - resolveTagAlias only resolves one hop, so a target must always
+  // be a root, non-aliased tag (this dialog's own doc comment states that
+  // invariant; nothing was previously enforcing it). This also rules out a
+  // 2-node cycle (X aliased to Y, then Y aliased back to X): X would only
+  // be excluded here in the first place because X already has its own
+  // alias row (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
   const options = useMemo(() => {
     if (!tag) return [];
-    return (searchData?.items ?? []).map((item) => String(item.tag)).filter((name) => name !== tag.tag);
-  }, [tag, searchData]);
+    const alreadyAliased = new Set(aliases.map((a) => a.alias));
+    return (searchData?.items ?? [])
+      .map((item) => String(item.tag))
+      .filter((name) => name !== tag.tag && !alreadyAliased.has(name));
+  }, [tag, searchData, aliases]);
 
   const handleSetAlias = async (target: string) => {
     if (!tag) return;
@@ -1275,9 +1399,18 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
   const [mode, setMode] = useState<'rename' | 'merge'>('rename');
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
 
-  const fromExists = tagStats.some((t) => t.tag === fromTag.trim());
-  const toExists = tagStats.some((t) => t.tag === toTag.trim());
-  const canSubmit = fromTag.trim() && toTag.trim() && fromTag.trim() !== toTag.trim() && fromExists;
+  // Compared via normalizeTagName, not raw .trim(), on both counts: tagStats
+  // entries are already canonically-cased (the tags view lowercases them),
+  // so a case-different typed value would otherwise never match an existing
+  // tag; and a "rename" that's only a casing/whitespace difference from the
+  // original must be blocked here, not just detected downstream - it's the
+  // exact input that corrupts patterns/tags_v2 consistency and wipes the
+  // implied-tags graph if allowed through (found via code review, see
+  // TAG_REDESIGN_PROJECT_NOTES.md).
+  const fromExists = tagStats.some((t) => t.tag === normalizeTagName(fromTag));
+  const toExists = tagStats.some((t) => t.tag === normalizeTagName(toTag));
+  const canSubmit =
+    fromTag.trim() && toTag.trim() && normalizeTagName(fromTag) !== normalizeTagName(toTag) && fromExists;
 
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>
@@ -1553,7 +1686,15 @@ const TagManagementPage = () => {
 
   const executeOperation = useCallback(
     async (op: { type: OperationType; tag: string; newTag?: string }) => {
-      const { type, tag, newTag } = op;
+      const { type, tag } = op;
+      // Normalized once, here, so every downstream use - the patterns.tags
+      // rewrite below, and syncSatelliteTablesForOp - agrees on the exact
+      // same canonical value. Previously the raw, un-normalized newTag was
+      // written straight into patterns.tags while syncSatelliteTablesForOp
+      // normalized separately, so a case-different rename left patterns
+      // holding a different string than tags_v2/tag_hierarchy (found via
+      // code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+      const newTag = op.newTag ? normalizeTagName(op.newTag) : op.newTag;
 
       setProgress({
         open: true,
@@ -1600,12 +1741,22 @@ const TagManagementPage = () => {
           );
         }
 
-        // Always update the hierarchy after pattern processing - runs even when
-        // the tag has 0 patterns, and uses a fresh PocketBase fetch so the
-        // React Query cache can never cause a missed update.
+        // Always update the satellite tables after pattern processing - runs
+        // even when the tag has 0 patterns, and uses a fresh PocketBase
+        // fetch so the React Query cache can never cause a missed update.
+        // Refetches/invalidates all four tables this can touch, not just
+        // tag_hierarchy - the other three were silently left stale here
+        // after each was added to syncSatelliteTablesForOp this session
+        // (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
         await syncSatelliteTablesForOp(type, tag, newTag);
         refetchHierarchy();
+        refetchTagsV2();
+        refetchImpliedTags();
+        refetchTagAliases();
         queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
 
         setProgress((p) => ({ ...p, done: true, total: records.length, completed: records.length }));
 
@@ -1632,7 +1783,7 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, refetchHierarchy, log, setIsFetchingPatterns],
+    [queryClient, refetchHierarchy, refetchTagsV2, refetchImpliedTags, refetchTagAliases, log, setIsFetchingPatterns],
   );
 
   const startOp = useCallback(

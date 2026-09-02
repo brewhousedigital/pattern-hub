@@ -2,6 +2,21 @@ import { useQuery, queryOptions } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
+/**
+ * Escapes a value for safe interpolation into a double-quoted PocketBase
+ * filter string - e.g. `tag = "${escapeTagFilterValue(tag)}"`. Every filter
+ * built from a free-typed tag/slug value in this file and in
+ * space-command/tags.tsx should go through this first; an unescaped tag
+ * containing a `"` (a plausible size tag like `6" hoop` on this site)
+ * otherwise breaks the filter's quoting - either erroring the request or
+ * letting the tag's own text reshape the query. Matches the escaping
+ * convention already used elsewhere in this codebase (authors.ts, sets.ts,
+ * admin-logs.ts) and by useQueryGetTagUsageCount below.
+ */
+export function escapeTagFilterValue(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
 // ─── Tags view (read-only) ────────────────────────────────────────────────────
 //
 // The `tags` collection is a PocketBase View Collection generated from a SQL
@@ -625,7 +640,9 @@ export const useQueryGetDirectImpliedTags = (tag: string) =>
   useQuery({
     queryKey: ['DirectImpliedTags', tag],
     queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
-      await pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${tag}"` }),
+      await pocketbase
+        .collection('implied_tags')
+        .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${escapeTagFilterValue(tag)}"` }),
     enabled: !!tag,
   });
 
@@ -635,7 +652,7 @@ export const useQueryGetTagsImplyingDirect = (tag: string) =>
     queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
       await pocketbase
         .collection('implied_tags')
-        .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${tag}"` }),
+        .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${escapeTagFilterValue(tag)}"` }),
     enabled: !!tag,
   });
 
@@ -643,7 +660,9 @@ export const useQueryGetAliasesForTag = (tag: string) =>
   useQuery({
     queryKey: ['AliasesForTag', tag],
     queryFn: async (): Promise<TypeTagAliasRecord[]> =>
-      await pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${tag}"` }),
+      await pocketbase
+        .collection('tag_aliases')
+        .getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${escapeTagFilterValue(tag)}"` }),
     enabled: !!tag,
   });
 
@@ -654,7 +673,7 @@ export const useQueryGetTagUsageCount = (tag: string) =>
   useQuery({
     queryKey: ['TagUsageCount', tag],
     queryFn: async (): Promise<number> => {
-      const safe = tag.replace(/"/g, '\\"');
+      const safe = escapeTagFilterValue(tag);
       const result = await pocketbase.collection('tags').getList<TypeReadOnlyDatabaseItem>(1, 1, {
         filter: `tag = "${safe}"`,
       });

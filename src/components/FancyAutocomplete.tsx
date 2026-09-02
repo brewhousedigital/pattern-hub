@@ -25,7 +25,17 @@ type FancyAutocompleteProps = {
   disabled?: boolean;
 };
 
-const normalizeTag = (tag: string) => tag.trim().toLowerCase();
+// Collapses internal whitespace too, not just casing - matches the
+// canonical tag-normalization rule (normalizeTagName in
+// src/functions/utilities/normalize-tag.ts) so this duplicate check catches
+// "Sea Creature" vs "Sea  Creature" (doubled space) as the same value, not
+// two distinct ones that both end up identical once saved (found via code
+// review, see TAG_REDESIGN_PROJECT_NOTES.md). Kept as its own local copy
+// rather than importing normalizeTagName directly - this is a generic
+// Autocomplete component, not tag-specific, and shouldn't depend on a
+// tag-domain database utility for what is, for this component, just a
+// duplicate-detection rule.
+const normalizeTag = (tag: string) => tag.trim().toLowerCase().replace(/\s+/g, ' ');
 
 export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
   // Set (not cleared) when the user tries to commit a freeSolo tag that
