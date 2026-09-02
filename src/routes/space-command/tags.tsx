@@ -211,9 +211,7 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
   const newSafe = escapeTagFilterValue(newTag);
   const [outgoingRaw, incomingRaw, newTagEdges] = await Promise.all([
     pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${oldSafe}"` }),
-    pocketbase
-      .collection('implied_tags')
-      .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldSafe}"` }),
+    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldSafe}"` }),
     pocketbase
       .collection('implied_tags')
       .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${newSafe}" || implies_tag = "${newSafe}"` }),
@@ -1038,11 +1036,51 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
       .filter((name) => name !== tag.tag && !alreadyImplied.has(name) && !wouldCycle.has(name));
   }, [tag, outgoing, impliedTags, searchData]);
 
-  const handleAdd = async (target: string) => {
+  // target may be a freely-typed string with no tags_v2 row yet - e.g. "bug"
+  // has never been used on a published pattern, so it can't appear in
+  // `options` (drawn from the tags view, which only lists tags already in
+  // use). freeSolo on the Autocomplete below lets an admin commit it anyway;
+  // this creates its tags_v2 row (General type, the same default every tag
+  // starts with) in the same action, so it isn't left dangling with no
+  // catalog identity until some pattern eventually carries it and
+  // /api/sync-tag-catalog catches up.
+  //
+  // A freeSolo commit also bypasses the exclusions `options` normally
+  // enforces by simply not listing them (self, already-implied, cycle-
+  // causing) - re-checked explicitly here so typing one directly can't slip
+  // past them the way selecting one from the dropdown never could.
+  const handleAdd = async (rawTarget: string) => {
     if (!tag) return;
+    const target = normalizeTagName(rawTarget);
+    if (!target) return;
+    if (target === tag.tag) {
+      setError("A tag can't imply itself.");
+      return;
+    }
+    if (outgoing.some((e) => e.implies_tag === target)) {
+      setError(`"${tag.tag}" already implies "${target}".`);
+      return;
+    }
+    if (getTagsImplying(tag.tag, impliedTags).includes(target)) {
+      setError(`"${target}" already (directly or indirectly) implies "${tag.tag}" - adding it here would create a cycle.`);
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
+      const existingTagRow = await findTagV2Record(target);
+      if (!existingTagRow) {
+        const baseSlug = slugifyTag(target);
+        if (!baseSlug) {
+          setError(`"${target}" has no letters or numbers, so it can't be given a URL-safe slug.`);
+          setSaving(false);
+          return;
+        }
+        const slug = await uniqueSlugFor(baseSlug, '');
+        await pocketbase.collection('tags_v2').create({ tag: target, slug, previous_slugs: [] });
+      }
+
       await pocketbase.collection('implied_tags').create({ tag: tag.tag, implies_tag: target });
       log({
         action: 'Implied Tag Added',
@@ -1050,7 +1088,7 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
         entity_id: tag.tag,
         entity_name: tag.tag,
         changes: { implies: { from: null, to: target } },
-        metadata: {},
+        metadata: existingTagRow ? {} : { created_new_tag: target },
       });
       setInputValue('');
       onSaved();
@@ -1105,11 +1143,18 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
             </Typography>
           )}
           {outgoing.map((edge) => (
-            <Chip key={edge.id} label={edge.implies_tag} size="small" onDelete={() => handleRemove(edge)} disabled={saving} />
+            <Chip
+              key={edge.id}
+              label={edge.implies_tag}
+              size="small"
+              onDelete={() => handleRemove(edge)}
+              disabled={saving}
+            />
           ))}
         </Box>
 
         <Autocomplete
+          freeSolo
           options={options}
           value={null}
           onChange={(_, v) => v && handleAdd(v)}
@@ -1119,10 +1164,12 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
           filterOptions={(x) => x}
           loading={searchFetching}
           loadingText="Searching…"
-          noOptionsText={debouncedSearch ? 'No tags found' : 'Type to add an implied tag'}
+          noOptionsText={
+            debouncedSearch ? `No existing tag matches - press Enter to add "${debouncedSearch}" as a new one` : 'Type to add an implied tag'
+          }
           disabled={saving}
           renderInput={(params) => (
-            <TextField {...params} label="Add an implied tag" size="small" placeholder="Search tags…" />
+            <TextField {...params} label="Add an implied tag" size="small" placeholder="Search tags, or type a new one…" />
           )}
         />
 
@@ -1166,6 +1213,13 @@ interface AliasDialogProps {
 function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps) {
   const [inputValue, setInputValue] = useState('');
   const debouncedSearch = useDebounce(inputValue, 400);
+  // A second, separate field: a brand-new alias string that should resolve
+  // TO this tag - "orca" pointing at "killer whale", say, where "orca" is
+  // never expected to be tagged on a pattern directly, only searched for.
+  // Deliberately a plain string, not a search-backed Autocomplete like the
+  // one above - the normal case here is typing something that does NOT
+  // already exist, so suggesting existing tags would be the wrong prompt.
+  const [newAliasInput, setNewAliasInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { log } = useAdminLogger();
@@ -1175,6 +1229,7 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
   useEffect(() => {
     if (open) {
       setInputValue('');
+      setNewAliasInput('');
       setError(null);
     }
   }, [open, tag]);
@@ -1258,6 +1313,93 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
     }
   };
 
+  // Adds a brand-new alias pointing at this tag - see the newAliasInput
+  // comment above for why this is a separate field from the search box.
+  // "orca" never needs its own tags_v2 row or its own place in the main
+  // admin grid; it exists purely as a redirect, the same way a tag_aliases
+  // row already works for a spelling variant.
+  const handleAddIncomingAlias = async () => {
+    if (!tag) return;
+    const alias = normalizeTagName(newAliasInput);
+    if (!alias) return;
+    if (alias === tag.tag) {
+      setError("A tag can't be an alias of itself.");
+      return;
+    }
+    const asAlias = aliases.find((a) => a.alias === alias);
+    if (asAlias) {
+      setError(`"${alias}" is already an alias of "${asAlias.target_tag}". Remove that first if you want to repoint it here.`);
+      return;
+    }
+    if (aliases.some((a) => a.target_tag === alias)) {
+      // Alias resolution is single-hop by design (see resolveTagAlias in
+      // src/functions/database/tags.ts) - chaining through "alias" here
+      // would silently break resolution for whatever already points at it.
+      setError(`"${alias}" already has aliases of its own pointing at it - aliasing it to "${tag.tag}" would chain two hops, which this system doesn't resolve.`);
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      // An alias must never shadow a tag with its own real identity - if
+      // "orca" already exists as its own tags_v2 row, aliasing it away
+      // here would silently hide that, and any pattern already tagged
+      // "orca" directly would drift out of sync with search (which would
+      // now resolve "orca" to this tag instead). Merging is the right tool
+      // for folding one real, in-use tag into another - point the admin
+      // there instead of guessing.
+      const existingTagRow = await findTagV2Record(alias);
+      if (existingTagRow) {
+        setError(`"${alias}" already exists as its own tag. Use Rename/Merge instead if you want to fold it into "${tag.tag}".`);
+        setSaving(false);
+        return;
+      }
+
+      await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag });
+      log({
+        action: 'Tag Alias Added',
+        entity_type: 'Tag',
+        entity_id: tag.tag,
+        entity_name: tag.tag,
+        changes: { new_alias: { from: null, to: alias } },
+        metadata: {},
+      });
+      setNewAliasInput('');
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Removes one alias that points at this tag. This is the only place an
+  // alias like "orca" can be removed from at all, since it may have no
+  // tags_v2 row and so no row of its own in the main admin grid to open a
+  // dialog from.
+  const handleRemoveIncomingAlias = async (edge: TypeTagAliasRecord) => {
+    if (!tag) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await pocketbase.collection('tag_aliases').delete(edge.id);
+      log({
+        action: 'Tag Alias Removed',
+        entity_type: 'Tag',
+        entity_id: tag.tag,
+        entity_name: tag.tag,
+        changes: { removed_alias: { from: edge.alias, to: null } },
+        metadata: {},
+      });
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1278,40 +1420,70 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
           </Alert>
         )}
 
-        <Autocomplete
-          options={options}
-          value={null}
-          onChange={(_, v) => v && handleSetAlias(v)}
-          inputValue={inputValue}
-          onInputChange={(_, v) => setInputValue(v)}
-          getOptionLabel={(option) => String(option)}
-          filterOptions={(x) => x}
-          loading={searchFetching}
-          loadingText="Searching…"
-          noOptionsText={debouncedSearch ? 'No tags found' : 'Type to search for a root tag'}
-          disabled={saving}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={ownAlias ? 'Change the root tag' : 'Make this tag an alias of…'}
-              size="small"
-              placeholder="Search tags…"
-            />
-          )}
-        />
+        <Box sx={{ py: 2 }}>
+          <Autocomplete
+            options={options}
+            value={null}
+            onChange={(_, v) => v && handleSetAlias(v)}
+            inputValue={inputValue}
+            onInputChange={(_, v) => setInputValue(v)}
+            getOptionLabel={(option) => String(option)}
+            filterOptions={(x) => x}
+            loading={searchFetching}
+            loadingText="Searching…"
+            noOptionsText={debouncedSearch ? 'No tags found' : 'Type to search for a root tag'}
+            disabled={saving}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={ownAlias ? 'Change the root tag' : 'Make this tag an alias of…'}
+                size="small"
+                placeholder="Search tags…"
+              />
+            )}
+          />
+        </Box>
 
-        {pointingHere.length > 0 && (
-          <>
-            <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-              Tags aliased to "{tag?.tag}":
+        <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
+          Aliases that resolve to "{tag?.tag}":
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5, minHeight: 32 }}>
+          {pointingHere.length === 0 && (
+            <Typography variant="caption" color="text.disabled">
+              None yet.
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {pointingHere.map((a) => (
-                <Chip key={a.id} label={a.alias} size="small" variant="outlined" />
-              ))}
-            </Box>
-          </>
-        )}
+          )}
+          {pointingHere.map((a) => (
+            <Chip
+              key={a.id}
+              label={a.alias}
+              size="small"
+              variant="outlined"
+              onDelete={() => handleRemoveIncomingAlias(a)}
+              disabled={saving}
+            />
+          ))}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+          <TextField
+            label="Add an alias that resolves here"
+            placeholder='e.g. "orca" - does not need to exist as its own tag'
+            size="small"
+            fullWidth
+            value={newAliasInput}
+            disabled={saving}
+            onChange={(e) => setNewAliasInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddIncomingAlias();
+              }
+            }}
+          />
+          <Button onClick={handleAddIncomingAlias} disabled={saving || !newAliasInput.trim()} sx={{ flexShrink: 0 }}>
+            Add
+          </Button>
+        </Box>
       </DialogContent>
       <DialogActions>
         {ownAlias && (
@@ -1881,21 +2053,24 @@ const TagManagementPage = () => {
     [hierarchy, setIsFetchingPatterns],
   );
 
-  const startDeleteMany = useCallback(async (tags: string[]) => {
-    // For bulk cleanup, sum affected records - fetched one at a time
-    let total = 0;
-    setIsFetchingPatterns(true);
+  const startDeleteMany = useCallback(
+    async (tags: string[]) => {
+      // For bulk cleanup, sum affected records - fetched one at a time
+      let total = 0;
+      setIsFetchingPatterns(true);
 
-    for (const t of tags) {
-      const records = await fetchPatternsWithTag(t);
-      total += records.length;
-      await sleep(BATCH_DELAY_MS);
-    }
+      for (const t of tags) {
+        const records = await fetchPatternsWithTag(t);
+        total += records.length;
+        await sleep(BATCH_DELAY_MS);
+      }
 
-    setPendingOp({ type: 'delete', tag: `${tags.length} tags`, affectedCount: total });
-    (window as any).__pendingDeleteTags = tags;
-    setIsFetchingPatterns(false);
-  }, [setIsFetchingPatterns]);
+      setPendingOp({ type: 'delete', tag: `${tags.length} tags`, affectedCount: total });
+      (window as any).__pendingDeleteTags = tags;
+      setIsFetchingPatterns(false);
+    },
+    [setIsFetchingPatterns],
+  );
 
   const confirmOp = useCallback(async () => {
     if (!pendingOp) return;

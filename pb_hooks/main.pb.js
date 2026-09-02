@@ -138,7 +138,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // `tags` is stored as a JSON array column (no join table) - SQLite's
   // json_each() expands it so COUNT(*) ... GROUP BY counts every matching
   // pattern in the filtered set, not just one page.
-  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap) {
+  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap, authorNameMap) {
     const dslParts = [];
     const sqlParts = [];
     const sqlParams = {};
@@ -195,7 +195,23 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         // still sends it) but is no longer read here; retiring it fully is
         // a later Contract-pass cleanup, same as /api/resolve-author-ids -
         // see TAG_REDESIGN_PROJECT_NOTES.md.
-        const resolved = (aliasMap && aliasMap[String(t.value).toLowerCase()]) || t.value;
+        //
+        // authorNameMap is checked BEFORE aliasMap - it resolves by an
+        // author's current account/profile name, so a search still finds
+        // them even when their tag was disambiguated away from their plain
+        // name (e.g. "autumn" -> "autumn (artist)", disambiguated from the
+        // unrelated season tag "autumn" - see TAG_REDESIGN_PROJECT_NOTES.md,
+        // Phase 4). This is deliberately NOT a tag_aliases row: "autumn" the
+        // season is a real, unrelated tag, and a general alias would hijack
+        // every plain search for it too, exactly the shadowing the Alias
+        // dialog's own "already exists as its own tag" guard refuses to
+        // allow when an admin tries to create one by hand. Scoping the fix
+        // to this branch only, keyed off the account/profile name rather
+        // than the tag text, sidesteps that risk entirely - it can never
+        // affect a `text`/`tag` token, only `author`.
+        const typedNorm = String(t.value).toLowerCase();
+        const resolved =
+          (authorNameMap && authorNameMap[typedNorm]) || (aliasMap && aliasMap[typedNorm]) || t.value;
         const b = bind(resolved);
         if (t.exclude) {
           dslParts.push(`(tags !~ '"${escDq(resolved)}"')`);
@@ -401,7 +417,43 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     }
   } catch (_) {}
 
-  const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap);
+  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): maps an author's current
+  // account/profile name to their current canonical tag - see
+  // buildPatternFilters' own comment on the `author` branch for why this
+  // exists alongside aliasMap instead of just using it. Only built when the
+  // request actually has an author token: two extra table scans, and this
+  // endpoint runs on every browse, not occasionally like the sync endpoints.
+  let authorNameMap = {};
+  if (tokens.some((t) => t && t.type === 'author')) {
+    try {
+      const linkedTagRows = $app.findRecordsByFilter('tags_v2', "linked_user != ''", '', 0, 0);
+      for (let i = 0; i < linkedTagRows.length; i++) {
+        const row = linkedTagRows[i];
+        try {
+          const user = $app.findRecordById('users', row.getString('linked_user'));
+          const name = (user.getString('name') || '').toLowerCase();
+          if (name) authorNameMap[name] = row.getString('tag');
+        } catch (_) {}
+      }
+      const linkedProfileRows = $app.findRecordsByFilter('manual_authors', "linked_tag != ''", '', 0, 0);
+      for (let i = 0; i < linkedProfileRows.length; i++) {
+        const profile = linkedProfileRows[i];
+        try {
+          const tagRow = $app.findRecordById('tags_v2', profile.getString('linked_tag'));
+          const name = (profile.getString('name') || '').toLowerCase();
+          if (name) authorNameMap[name] = tagRow.getString('tag');
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(
+    tokens,
+    authorIdMap,
+    blockedTags,
+    aliasMap,
+    authorNameMap,
+  );
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
     'isDeleted = false && is_draft = false' +
@@ -2482,13 +2534,7 @@ onRecordAfterUpdateSuccess((e) => {
     // own the new name? Never merge automatically - skip, log it, and leave
     // it for an admin. The account rename itself has already succeeded and
     // is not undone here either way.
-    const collisionRows = $app.findRecordsByFilter(
-      'tags_v2',
-      "tag = '" + escSq(normalizedNewName) + "'",
-      '',
-      1,
-      0,
-    );
+    const collisionRows = $app.findRecordsByFilter('tags_v2', "tag = '" + escSq(normalizedNewName) + "'", '', 1, 0);
     if (collisionRows.length && collisionRows[0].id !== authorTag.id) {
       try {
         const logsCollection = $app.findCollectionByNameOrId('admin_logs');
@@ -2545,7 +2591,7 @@ onRecordAfterUpdateSuccess((e) => {
       // relation gave for free.
       const affectedPatterns = $app.findRecordsByFilter(
         'patterns',
-        "tags ~ '\"" + escDq(normalizedOldName) + "\"'",
+        'tags ~ \'"' + escDq(normalizedOldName) + '"\'',
         '',
         0,
         0,
