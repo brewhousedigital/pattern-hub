@@ -8,7 +8,8 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useQuerySearchManualAuthors } from '@/functions/database/authors';
 import {
   useQuerySearchTags,
-  useQueryGetTagHierarchy,
+  useQueryGetImpliedTags,
+  useQueryGetAllTagAliases,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
@@ -148,9 +149,13 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
   const { data: tagSearchData, isFetching: tagSearchFetching } = useQuerySearchTags(debouncedTagSearch);
-  const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
+  // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
+  // replace tag_hierarchy as the source for auto-added tags and alias
+  // resolution on this entry surface.
+  const { data: impliedTagsData = [] } = useQueryGetImpliedTags();
+  const { data: aliasesData = [] } = useQueryGetAllTagAliases();
 
-  /** Tags present only because they're an ancestor of another tag currently present. */
+  /** Tags present only because they're implied by another tag currently present. */
   const [hierarchyInherited, setHierarchyInherited] = React.useState<Set<string>>(new Set());
   /** Tags present only because a currently-assigned pattern key carries them. */
   const [keyInherited, setKeyInherited] = React.useState<Set<string>>(new Set());
@@ -160,19 +165,24 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   // empty since key provenance can't be honestly re-derived from the flat tag
   // list alone.
   React.useEffect(() => {
-    setHierarchyInherited(deriveHierarchyInherited(editSubmission?.tags ?? [], hierarchyData));
+    setHierarchyInherited(deriveHierarchyInherited(editSubmission?.tags ?? [], impliedTagsData));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hierarchyData.length]);
+  }, [impliedTagsData.length]);
 
   // The tags Autocomplete's onChange - the user typed a new tag or removed a chip.
   const handleTagChange = React.useCallback(
     (newValue: string[]) => {
-      const next = applyManualTagChange({ tags: tagValue, hierarchyInherited, keyInherited }, newValue, hierarchyData);
+      const next = applyManualTagChange(
+        { tags: tagValue, hierarchyInherited, keyInherited },
+        newValue,
+        impliedTagsData,
+        aliasesData,
+      );
       setTagValue(next.tags);
       setHierarchyInherited(next.hierarchyInherited);
       setKeyInherited(next.keyInherited);
     },
-    [tagValue, hierarchyInherited, keyInherited, hierarchyData],
+    [tagValue, hierarchyInherited, keyInherited, impliedTagsData, aliasesData],
   );
 
   const [selectedKeys, setSelectedKeys] = React.useState<TypePatternKeyReferenceObject[]>(
@@ -185,7 +195,12 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   // added, removed, or quick-applied). Guarded against a keyTags array
   // that's new-by-reference but unchanged in content.
   React.useEffect(() => {
-    const next = applyKeyTagChange({ tags: tagValue, hierarchyInherited, keyInherited }, keyTags, hierarchyData);
+    const next = applyKeyTagChange(
+      { tags: tagValue, hierarchyInherited, keyInherited },
+      keyTags,
+      impliedTagsData,
+      aliasesData,
+    );
     const unchanged =
       next.tags.length === tagValue.length &&
       next.tags.every((t, i) => t === tagValue[i]) &&
@@ -196,7 +211,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
     setHierarchyInherited(next.hierarchyInherited);
     setKeyInherited(next.keyInherited);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyTags, hierarchyData]);
+  }, [keyTags, impliedTagsData, aliasesData]);
 
   const inheritedTagValues = React.useMemo(
     () => new Set([...hierarchyInherited, ...keyInherited]),

@@ -3,9 +3,14 @@ import type { TypeTagObject } from '@/functions/types/types';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
+import { getTagType, isDefaultTagType } from '@/functions/utilities/group-tags-by-type';
 import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
-type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number };
+// color is set only for kind: 'tag' items with a real (non-default) Type
+// that has a color configured - see Phase 3c in TAG_REDESIGN_PROJECT_NOTES.md.
+// Author items never carry one; authors have no Type concept until Phase 4.
+type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number; color?: string | null };
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
@@ -21,6 +26,17 @@ export const SidebarList = (props: SidebarListProps) => {
   const { isPending, isError, data } = useQueryGetAllPatternsByPagination();
 
   const { isTagActive, tokens } = usePatternSearch();
+
+  // Phase 3c: per-tag color accent, resolved from each tag's Type. The
+  // developer chose to keep this list's existing flat, count-sorted layout
+  // rather than grouping it into per-Type sections (see
+  // TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c) - so this only colors each row,
+  // it does not reorder or cluster them.
+  const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
+  const tagAccentColor = (tag: string): string | null => {
+    const type = getTagType(tag, tagsV2);
+    return isDefaultTagType(type) ? null : (type?.color ?? null);
+  };
 
   // ── Pass-through tags (drawer mode) ──────────────────────────────────────
   const passThroughDataTagCounts = (props?.tagList ?? [])
@@ -52,7 +68,7 @@ export const SidebarList = (props: SidebarListProps) => {
           // This will hide the currently searched tag
           // Enable this if we ever need it in the future
           //.filter((f) => !isTagActive(f.tag))
-          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count })),
+          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count, color: tagAccentColor(f.tag) })),
         ...(data?.items ?? [])
           .flatMap((item) => [
             ...(item.expand?.authors?.map((a) => a.name).filter((n): n is string => Boolean(n)) ?? []),
@@ -89,7 +105,12 @@ export const SidebarList = (props: SidebarListProps) => {
 
       {props?.tagList &&
         passThroughDataTagCounts.map((thisTag) => (
-          <TagListItem data={thisTag} key={`sidebar-link-${thisTag.tag}`} handleClose={props.handleClose} />
+          <TagListItem
+            data={thisTag}
+            color={tagAccentColor(thisTag.tag)}
+            key={`sidebar-link-${thisTag.tag}`}
+            handleClose={props.handleClose}
+          />
         ))}
     </Box>
   );
@@ -97,6 +118,8 @@ export const SidebarList = (props: SidebarListProps) => {
 
 type TagListItemProps = {
   data: TypeTagObject;
+  /** Phase 3c: this tag's Type color, or null/undefined for the default type - see tagAccentColor above. */
+  color?: string | null;
   handleClose?: () => void;
 };
 
@@ -161,6 +184,13 @@ const TagListItem = (props: TagListItemProps) => {
           gap: 0.75,
         }}
       >
+        {props.color && (
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: props.color, flexShrink: 0, alignSelf: 'center' }}
+          />
+        )}
         <Typography
           variant="body2"
           noWrap
@@ -253,6 +283,13 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
           gap: 0.75,
         }}
       >
+        {item.color && (
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0, alignSelf: 'center' }}
+          />
+        )}
         <Typography
           variant="body2"
           noWrap

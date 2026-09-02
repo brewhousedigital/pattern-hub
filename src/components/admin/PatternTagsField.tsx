@@ -2,7 +2,8 @@ import React from 'react';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import {
   useQueryAdminTagStatsPaginated,
-  useQueryGetTagHierarchy,
+  useQueryGetImpliedTags,
+  useQueryGetAllTagAliases,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
@@ -22,13 +23,13 @@ type PatternTagsFieldProps = {
    * Live union of tags carried by the pattern's currently-assigned pattern
    * keys (see useResolveKeyTags in functions/database/patterns.ts). Tags no
    * longer covered by any assigned key are dropped automatically, mirroring
-   * this field's own hierarchy-ancestor cleanup below.
+   * this field's own implied-tag cleanup below.
    */
   keyTags?: string[];
 };
 
 // Shared by AdminEditPatternModal and the user-submission review page so tag
-// search + hierarchy behavior can't drift between the two editing surfaces.
+// search + implied-tag behavior can't drift between the two editing surfaces.
 export const PatternTagsField = (props: PatternTagsFieldProps) => {
   const { value, onChange } = props;
   const keyTags = props.keyTags ?? [];
@@ -43,10 +44,14 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     sortDir: 'desc',
   });
 
-  const { data: hierarchyData = [] } = useQueryGetTagHierarchy();
+  // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
+  // replace tag_hierarchy as the source for auto-added tags and alias
+  // resolution on this entry surface.
+  const { data: impliedTagsData = [] } = useQueryGetImpliedTags();
+  const { data: aliasesData = [] } = useQueryGetAllTagAliases();
 
   /**
-   * Tags present only because they're an ancestor of another tag currently
+   * Tags present only because they're implied by another tag currently
    * present. Rendered as inherited chips and cleaned up when their primary
    * tag is removed.
    */
@@ -54,26 +59,32 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   /** Tags present only because a currently-assigned pattern key carries them. */
   const [keyInherited, setKeyInherited] = React.useState<Set<string>>(new Set());
 
-  // Once the hierarchy loads (or the underlying record changes), mark which
-  // existing tags are ancestors of other tags already in the set so they
-  // render as inherited chips. keyInherited always resets to empty here -
-  // key provenance can't be honestly re-derived from the flat tag list
-  // alone, so only tags this component itself adds via keyTags get tracked.
+  // Once the implied-tags graph loads (or the underlying record changes),
+  // mark which existing tags are implied by other tags already in the set
+  // so they render as inherited chips. keyInherited always resets to empty
+  // here - key provenance can't be honestly re-derived from the flat tag
+  // list alone, so only tags this component itself adds via keyTags get
+  // tracked.
   React.useEffect(() => {
-    setHierarchyInherited(value.length === 0 ? new Set() : deriveHierarchyInherited(value, hierarchyData));
+    setHierarchyInherited(value.length === 0 ? new Set() : deriveHierarchyInherited(value, impliedTagsData));
     setKeyInherited(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hierarchyData.length, props.resetKey]);
+  }, [impliedTagsData.length, props.resetKey]);
 
   // The tags Autocomplete's onChange - the user typed a new tag or removed a chip.
   const handleChange = React.useCallback(
     (newValue: string[]) => {
-      const next = applyManualTagChange({ tags: value, hierarchyInherited, keyInherited }, newValue, hierarchyData);
+      const next = applyManualTagChange(
+        { tags: value, hierarchyInherited, keyInherited },
+        newValue,
+        impliedTagsData,
+        aliasesData,
+      );
       onChange(next.tags);
       setHierarchyInherited(next.hierarchyInherited);
       setKeyInherited(next.keyInherited);
     },
-    [value, hierarchyInherited, keyInherited, hierarchyData, onChange],
+    [value, hierarchyInherited, keyInherited, impliedTagsData, aliasesData, onChange],
   );
 
   // Reconciles whenever the live key-tags union changes (a pattern key was
@@ -81,7 +92,12 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   // keyTags array that's new-by-reference but unchanged in content (e.g.
   // after the pattern-key catalog query refetches) doesn't churn state.
   React.useEffect(() => {
-    const next = applyKeyTagChange({ tags: value, hierarchyInherited, keyInherited }, keyTags, hierarchyData);
+    const next = applyKeyTagChange(
+      { tags: value, hierarchyInherited, keyInherited },
+      keyTags,
+      impliedTagsData,
+      aliasesData,
+    );
     const unchanged =
       next.tags.length === value.length &&
       next.tags.every((t, i) => t === value[i]) &&
@@ -92,7 +108,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     setHierarchyInherited(next.hierarchyInherited);
     setKeyInherited(next.keyInherited);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyTags, hierarchyData]);
+  }, [keyTags, impliedTagsData, aliasesData]);
 
   const inheritedValues = React.useMemo(
     () => new Set([...hierarchyInherited, ...keyInherited]),

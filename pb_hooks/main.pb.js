@@ -138,7 +138,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // `tags` is stored as a JSON array column (no join table) - SQLite's
   // json_each() expands it so COUNT(*) ... GROUP BY counts every matching
   // pattern in the filtered set, not just one page.
-  function buildPatternFilters(tokens, authorIdMap, blockedTags) {
+  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap) {
     const dslParts = [];
     const sqlParts = [];
     const sqlParams = {};
@@ -159,14 +159,23 @@ routerAdd('GET', '/api/pattern-search', (c) => {
 
     for (const t of tokens || []) {
       if (t.type === 'text' || t.type === 'tag') {
+        // Phase 3b (see TAG_REDESIGN_PROJECT_NOTES.md): resolve alias -> root
+        // before matching, so a search for an alias finds patterns stored
+        // under the root tag it points to. Falls back to the original value
+        // when it isn't a known alias - safe for every text/tag token, not
+        // just ones already suspected to be aliased (mirrors resolveTagAlias
+        // in src/functions/database/tags.ts). text and tag tokens share this
+        // branch because they already match the same `tags` field the same
+        // way - both need the same resolution.
+        const resolved = (aliasMap && aliasMap[String(t.value).toLowerCase()]) || t.value;
         // Wrap in literal quotes so the match hits a JSON element boundary -
         // '"cat"' matches ["cat"] but not ["suncatcher"].
-        const b = bind(t.value);
+        const b = bind(resolved);
         if (t.exclude) {
-          dslParts.push(`(tags !~ '"${escDq(t.value)}"')`);
+          dslParts.push(`(tags !~ '"${escDq(resolved)}"')`);
           sqlParts.push(`tags NOT LIKE '%"' || ${b} || '"%'`);
         } else {
-          dslParts.push(`(tags ~ '"${escDq(t.value)}"')`);
+          dslParts.push(`(tags ~ '"${escDq(resolved)}"')`);
           sqlParts.push(`tags LIKE '%"' || ${b} || '"%'`);
         }
       } else if (t.type === 'author') {
@@ -381,7 +390,22 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     } catch (_) {}
   }
 
-  const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags);
+  // Phase 3b (see TAG_REDESIGN_PROJECT_NOTES.md): look up tag_aliases once
+  // per request, server-side (never client-supplied), and hand the map into
+  // buildPatternFilters. implied tags need no equivalent lookup here - they
+  // are already baked into patterns.tags at save time (see
+  // applyManualTagChange in src/functions/database/tags.ts), so search
+  // never needs to know about the implied_tags graph, only aliases.
+  let aliasMap = {};
+  try {
+    const aliasRecords = $app.findRecordsByFilter('tag_aliases', "id != ''", '', 0, 0);
+    for (let i = 0; i < aliasRecords.length; i++) {
+      const a = aliasRecords[i];
+      aliasMap[a.getString('alias').toLowerCase()] = a.getString('target_tag');
+    }
+  } catch (_) {}
+
+  const { dslFilter, sqlWhere, sqlParams } = buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap);
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
     'isDeleted = false && is_draft = false' +

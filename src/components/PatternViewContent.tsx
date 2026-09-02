@@ -13,6 +13,8 @@ import { LayerSelectionHint } from '@/components/PatternUtilities/LayerSelection
 import { type TypePatternResponse, useQueryPatternLayerSvg } from '@/functions/database/patterns.ts';
 import { useQueryGetPublishedManualAuthors, nameToSlug } from '@/functions/database/manual-authors';
 import { useQueryGetPatternDrawerData } from '@/functions/database/pattern-drawer-data';
+import { useQueryGetAllTagsV2, type TypeTagTypeRecord } from '@/functions/database/tags';
+import { groupTagsByType, isDefaultTagType } from '@/functions/utilities/group-tags-by-type';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
 import type { TypeViewData } from '@/functions/types/types';
@@ -55,6 +57,12 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const { authData } = useGlobalAuthData();
   const { data: drawerData } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
   const patternSets = drawerData?.sets ?? [];
+
+  // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the standalone tags
+  // block below by each tag's Type. Computed unconditionally (rules of
+  // hooks) even though it's only rendered under showStandaloneTags.
+  const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
+  const tagGroups = React.useMemo(() => groupTagsByType(viewData?.tags ?? [], tagsV2), [viewData?.tags, tagsV2]);
 
   const [detailsExpanded, setDetailsExpanded] = React.useState(false);
 
@@ -501,13 +509,89 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               >
                 Tags
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                {viewData!.tags!.map((tag) => (
-                  <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
-                    <Chip label={tag} size="small" variant="outlined" clickable />
-                  </Link>
-                ))}
-              </Box>
+              <Stack spacing={1.5}>
+                {tagGroups.map((group) => {
+                  const groupKey = group.type?.id ?? 'untyped';
+                  const groupLabel = group.type?.group_label || group.type?.name;
+                  const label = !isDefaultTagType(group.type) && groupLabel && (
+                    <TagGroupLabel type={group.type}>{groupLabel}</TagGroupLabel>
+                  );
+
+                  // "author" mode: rendered as a plain text credit link, same
+                  // style as the Attribution panel's author names above -
+                  // not as a generic tag chip.
+                  if (group.type?.display_mode === 'author') {
+                    return (
+                      <Box key={groupKey}>
+                        {label}
+                        <Stack direction="row" sx={{ gap: 1.5, flexWrap: 'wrap' }}>
+                          {group.tags.map((tag) => (
+                            <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
+                              <Typography sx={{ fontSize: '0.8rem', color: 'primary.main', fontWeight: 500 }}>
+                                {tag}
+                              </Typography>
+                            </Link>
+                          ))}
+                        </Stack>
+                      </Box>
+                    );
+                  }
+
+                  // "block" mode: pulled into its own filled, color-coded
+                  // group instead of the plain outlined "standard" cloud -
+                  // e.g. an ISBN tag shown apart from general descriptive tags.
+                  if (group.type?.display_mode === 'block') {
+                    return (
+                      <Box key={groupKey}>
+                        {label}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                          {group.tags.map((tag) => (
+                            <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
+                              <Chip
+                                label={tag}
+                                size="small"
+                                variant="filled"
+                                clickable
+                                sx={
+                                  group.type?.color
+                                    ? {
+                                        backgroundColor: group.type.color,
+                                        color: (theme) => theme.palette.getContrastText(group.type!.color),
+                                      }
+                                    : undefined
+                                }
+                              />
+                            </Link>
+                          ))}
+                        </Box>
+                      </Box>
+                    );
+                  }
+
+                  // "standard" mode (and the untyped/General fallback) - looks
+                  // exactly like the flat chip cloud this block always
+                  // rendered, before Phase 3c, for a pattern with no Types
+                  // assigned yet.
+                  return (
+                    <Box key={groupKey}>
+                      {label}
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                        {group.tags.map((tag) => (
+                          <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
+                            <Chip
+                              label={tag}
+                              size="small"
+                              variant="outlined"
+                              clickable
+                              sx={group.type?.color ? { borderColor: group.type.color, color: group.type.color } : undefined}
+                            />
+                          </Link>
+                        ))}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Stack>
             </Box>
           )}
 
@@ -534,6 +618,24 @@ const PanelSectionTitle = ({ children }: { children: React.ReactNode }) => (
       px: 1,
       pt: 2,
       pb: 0.5,
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+// Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): a small colored sub-label for
+// one Type's group of tags, nested under the "Tags" section title above.
+// Never rendered for the untyped/General fallback group - see
+// isDefaultTagType in group-tags-by-type.ts.
+const TagGroupLabel = ({ type, children }: { type: TypeTagTypeRecord | null; children: React.ReactNode }) => (
+  <Typography
+    variant="caption"
+    sx={{
+      display: 'block',
+      fontWeight: 600,
+      pb: 0.5,
+      color: type?.color || 'text.disabled',
     }}
   >
     {children}

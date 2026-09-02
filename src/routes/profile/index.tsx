@@ -18,6 +18,8 @@ import { DifficultyChip } from '@/components/PatternUtilities/DifficultyChip';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
 import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
+import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
+import { groupTagsByType } from '@/functions/utilities/group-tags-by-type';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import {
@@ -211,6 +213,15 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
     ...getPatternByIdOptions(featuredPatternId),
     enabled: !!featuredPatternId,
   });
+
+  // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the featured
+  // pattern's tags by Type, so same-type tags render clustered together and
+  // color-coded below, instead of a plain uncolored chip row.
+  const { data: tagsV2ForFeatured = [] } = useQueryGetAllTagsV2();
+  const featuredPatternTagGroups = useMemo(
+    () => groupTagsByType(featuredPattern?.tags ?? [], tagsV2ForFeatured),
+    [featuredPattern?.tags, tagsV2ForFeatured],
+  );
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<TypeGalleryResponse | null>(null);
@@ -844,20 +855,25 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
 
                   {featuredPattern.tags && featuredPattern.tags.length > 0 && (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2.5 }}>
-                      {featuredPattern.tags.map((tag) => (
-                        <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
-                          <Chip
-                            label={tag}
-                            size="small"
-                            variant="outlined"
-                            clickable
-                            sx={{
-                              borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'divider',
-                              color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
-                            }}
-                          />
-                        </Link>
-                      ))}
+                      {/* Phase 3c: grouped by Type so same-type tags cluster
+                          together; a tag with no Type (or no color set on its
+                          Type) falls back to the original neutral styling. */}
+                      {featuredPatternTagGroups.flatMap((group) =>
+                        group.tags.map((tag) => (
+                          <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
+                            <Chip
+                              label={tag}
+                              size="small"
+                              variant="outlined"
+                              clickable
+                              sx={{
+                                borderColor: group.type?.color || (isDark ? 'rgba(255,255,255,0.15)' : 'divider'),
+                                color: group.type?.color || (isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary'),
+                              }}
+                            />
+                          </Link>
+                        )),
+                      )}
                     </Box>
                   )}
 
