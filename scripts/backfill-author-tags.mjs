@@ -1,6 +1,5 @@
-// Phase 4 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - the
-// one-time backfill that turns every author, registered or manual, into an
-// Author-type tags_v2 row, and cascades each pattern's resolved author
+// The one-time backfill that turns every author, registered or manual, into
+// an Author-type tags_v2 row, and cascades each pattern's resolved author
 // name(s) into its own `patterns.tags` list.
 //
 // Run scripts/audit-duplicate-author-names.mjs first and resolve any real
@@ -29,8 +28,6 @@
 //
 // This does NOT touch patterns.authors or patterns.author_manual - those
 // stay exactly as they are and stay the fields the admin editor writes.
-// See TAG_REDESIGN_PROJECT_NOTES.md, Phase 4, "this freeze instruction was
-// wrong" for why.
 //
 // This makes writes. By default it's a DRY RUN - it prints exactly what it
 // would do, without writing anything. Pass --apply to actually write.
@@ -116,7 +113,7 @@ function sleep(ms) {
 const AUTHOR_TAG_OVERRIDES = {
   // Confirmed 2026-09-02: all 3 patterns already using the plain tag
   // "autumn" (Pumpkins, Fall Harvest, Issue_11) are seasonal, not credits
-  // to this author - see TAG_REDESIGN_PROJECT_NOTES.md, Phase 4.
+  // to this author.
   autumn: 'autumn (artist)',
 };
 
@@ -238,9 +235,8 @@ async function main() {
   }
 
   // ─── Step 4: cascade resolved author tags into each pattern's own tags ──
-  // (and, Tag Relational Refactor Phase R1 - see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md - into tag_refs too, dual-write
-  // alongside the existing string cascade below.)
+  // (and into tag_refs too, dual-write alongside the existing string
+  // cascade below.)
   const patternsToUpdate = [];
   for (const p of patterns) {
     // Resolves through each identity's tagValue, not the raw normalized
@@ -289,7 +285,7 @@ async function main() {
   }
 
   // ─── Report ───────────────────────────────────────────────────────────
-  console.log('=== Author tags backfill (Phase 4, tag redesign) ===');
+  console.log('=== Author tags backfill ===');
   console.log(
     APPLY
       ? 'Mode: APPLY - this will create and update records.'

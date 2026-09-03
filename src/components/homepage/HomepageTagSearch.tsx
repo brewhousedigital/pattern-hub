@@ -13,14 +13,12 @@ type HomepageTagSearchProps = {
   onChange: (value: string) => void;
   onSubmit: () => void;
   /**
-   * Tag Relational Refactor, R3.5 follow-up (see
-   * TAG_RELATIONAL_REFACTOR_NOTES.md): `kind` tells the caller which /pattern
-   * search param to navigate with - 'author' for a tag that was labelled
-   * "(artist)" in the dropdown (an Author-typed tags_v2 row), 'tag'
-   * otherwise. Mirrors HomepageSearchV3.tsx's author: token commit - the
-   * same underlying ambiguity (a bare name defaults to the General row),
-   * the same fix, adapted to this component's plain-string callback instead
-   * of a token.
+   * `kind` tells the caller which /pattern search param to navigate with -
+   * 'author' for a tag that was labelled "(artist)" in the dropdown (an
+   * Author-typed tags_v2 row), 'tag' otherwise. Mirrors HomepageSearchV3.tsx's
+   * author: token commit - the same underlying ambiguity (a bare name
+   * defaults to the General row), the same fix, adapted to this component's
+   * plain-string callback instead of a token.
    */
   onSelectTag: (tag: string, kind: 'tag' | 'author') => void;
   placeholder?: string;
@@ -49,8 +47,7 @@ export const HomepageTagSearch = ({ value, onChange, onSubmit, onSelectTag, plac
     debouncedValue,
     isDropdownOpen && value.length === 0,
   );
-  // Tag Relational Refactor, R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-  // same hybrid HomepageSearchV3.tsx's tag dropdown uses, for the same reason
+  // Same hybrid HomepageSearchV3.tsx's tag dropdown uses, for the same reason
   // - `tags` (the view above) groups by string, so it can only ever show one
   // collapsed row for two tags_v2 rows sharing a name (e.g. the General
   // "autumn" season tag and the Author-type "autumn"). Once there's an

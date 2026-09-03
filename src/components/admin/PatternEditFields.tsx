@@ -66,11 +66,10 @@ type PatternEditFieldsProps = {
 
   tags: string[];
   /**
-   * `preferredTagRefs` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md)
-   * is PatternTagsField's own norm(tag) -> tags_v2 id map protecting tags
-   * this pattern is already linked to - pure pass-through, forward
-   * unmodified to resolveOrCreateTagRefs at save time. See PatternTagsField's
-   * own onChange doc comment.
+   * `preferredTagRefs` is PatternTagsField's own norm(tag) -> tags_v2 id map
+   * protecting tags this pattern is already linked to - pure pass-through,
+   * forward unmodified to resolveOrCreateTagRefs at save time. See
+   * PatternTagsField's own onChange doc comment.
    */
   onTagsChange: (v: string[], preferredTagRefs: Map<string, string>) => void;
   authors: string[] | undefined;

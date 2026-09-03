@@ -15,9 +15,8 @@ import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 type PatternTagsFieldProps = {
   value: string[];
   /**
-   * `preferredTagRefs` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md)
-   * is a norm(tag) -> tags_v2 id map, protecting a tag this pattern is
-   * already linked to (passed in via the caller's own `initialValues`, see
+   * `preferredTagRefs` is a norm(tag) -> tags_v2 id map, protecting a tag
+   * this pattern is already linked to (passed in via the caller's own `initialValues`, see
    * AdminEditPatternModal.tsx) from being silently re-resolved to a
    * different row of the same name on an unrelated save. Pass straight
    * through to resolveOrCreateTagRefs's own `preferredIds` parameter at
@@ -49,10 +48,9 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
 
-  // Phase R3.3 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): an empty search still shows the
-  // most-used tags first, from tag_usage (unchanged) - useful, and tags_v2
-  // has no usage-count column to reproduce that with. Once there's
+  // An empty search still shows the most-used tags first, from tag_usage
+  // (unchanged) - useful, and tags_v2 has no usage-count column to
+  // reproduce that with. Once there's
   // something typed, tags_v2 takes over: it surfaces every real tag,
   // including one with no published-pattern usage yet (created directly
   // through ImpliedTagsDialog/AliasDialog, or only present on a draft),
@@ -70,12 +68,12 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     isSearching,
   );
 
-  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): an Author-typed
-  // tag is meant to be entirely derived from patterns.authors/author_manual
-  // via the account-name cascade, never picked directly here - filtered out
+  // An Author-typed tag is meant to be entirely derived from
+  // patterns.authors/author_manual via the account-name cascade, never
+  // picked directly here - filtered out
   // of both option sources below rather than shown disambiguated (a
-  // dropdown label was this project's first attempt, superseded once it was
-  // clear the dedicated author autocomplete already covers this and
+  // dropdown label showing "(artist)" was tried first, then dropped once it
+  // was clear the dedicated author autocomplete already covers this and
   // filtering removes the ambiguity outright instead of labelling around
   // it). tagUsageData has no Type column of its own to filter by directly,
   // hence the separate id lookup.
@@ -89,9 +87,8 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     [tagUsageData, authorTagIds],
   );
 
-  // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
-  // replace tag_hierarchy as the source for auto-added tags and alias
-  // resolution on this entry surface.
+  // implied_tags + tag_aliases replace tag_hierarchy as the source for
+  // auto-added tags and alias resolution on this entry surface.
   const { data: impliedTagsData = [] } = useQueryGetImpliedTags();
   const { data: aliasesData = [] } = useQueryGetAllTagAliases();
 
@@ -131,9 +128,8 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   }, []);
 
   // Merges applyManualTagChange/applyKeyTagChange's own aliasPreferredRefs
-  // (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) into the
-  // existing map before pruning - an alias resolved this same call must
-  // survive its own prune step below, not be dropped for having "just
+  // into the existing map before pruning - an alias resolved this same
+  // call must survive its own prune step below, not be dropped for having "just
   // appeared" rather than already being present.
   const mergePreferred = React.useCallback((base: Map<string, string>, incoming: Map<string, string>) => {
     return incoming.size > 0 ? new Map([...base, ...incoming]) : base;

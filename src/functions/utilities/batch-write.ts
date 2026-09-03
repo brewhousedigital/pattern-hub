@@ -5,16 +5,15 @@
  *
  * Extracted from the admin tag manager's rename/merge/delete flow
  * (RenameOrMergePanel in src/routes/space-command/tags.tsx), which proved
- * this shape out first. Reused by browser-side admin code that changes
- * later in the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md).
+ * this shape out first. Reused by other browser-side admin code that needs
+ * the same throttled-batch behavior.
  *
- * The standalone Node scripts under scripts/ (the Phase 1 and Phase 2
- * backfills, for example) cannot import this file - a plain .mjs script
- * can't import a .ts file from src/ directly - so each of those keeps its
- * own small inline copy of this same loop shape instead. This comment
- * previously claimed those scripts reused this function; they don't, and
- * a future change here won't reach them. Corrected via code review, see
- * TAG_REDESIGN_PROJECT_NOTES.md.
+ * The standalone Node scripts under scripts/ (the backfill scripts, for
+ * example) cannot import this file - a plain .mjs script can't import a
+ * .ts file from src/ directly - so each of those keeps its own small inline
+ * copy of this same loop shape instead. This comment previously claimed
+ * those scripts reused this function; they don't, and a future change here
+ * won't reach them.
  */
 export async function processSequentially<T>(
   items: T[],

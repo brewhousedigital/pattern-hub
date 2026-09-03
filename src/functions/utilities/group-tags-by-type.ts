@@ -12,19 +12,15 @@ export interface TypeTagGroup {
 }
 
 /**
- * Groups a pattern's tag_refs by each tag's Type, for display. See
- * TAG_RELATIONAL_REFACTOR_NOTES.md, Phase R3.2. Before this phase, this
- * function grouped a flat `tags` string[] through a lowercased-name-keyed
- * lookup; it now groups a `tag_refs` id[] through an id-keyed one, which
- * needs no case normalization at all - an id either matches or it doesn't.
+ * Groups a pattern's tag_refs by each tag's Type, for display. Groups by a
+ * `tag_refs` id[] through an id-keyed lookup, which needs no case
+ * normalization at all - an id either matches or it doesn't.
  *
  * An id with no matching row in `tagsV2` is skipped, not rendered in an
- * untyped fallback group the way a not-yet-synced tag string used to be:
- * a relation can only ever hold a real id, so this can now only happen if
- * the tags_v2 row it pointed at was deleted after the fact (the pre-R3.4
- * merge-delete gap documented in TAG_RELATIONAL_REFACTOR_NOTES.md) - rare,
- * and showing a raw id in place of a name would be worse than not
- * rendering it at all.
+ * untyped fallback group: a relation can only ever hold a real id, so this
+ * can only happen if the tags_v2 row it pointed at was deleted after the
+ * fact (a narrow merge/delete-ordering gap, rare) - and showing a raw id in
+ * place of a name would be worse than not rendering it at all.
  *
  * Groups sort by tag_types.sort_order (ties break on Type name); the
  * untyped group (a real tag with no Type assigned) always sorts last. Tags
@@ -66,9 +62,9 @@ export function groupTagsByType(tagRefs: string[], tagsV2: TypeTagV2Record[]): T
 
 /**
  * True when a group's Type uses the "author" display mode - every tag in
- * it represents a person (see Phase 4 in TAG_REDESIGN_PROJECT_NOTES.md). A
- * generic tag-display surface that already shows a pattern's author(s) some
- * other way - the Attribution panel on PatternViewContent.tsx, for example,
+ * it represents a person. A generic tag-display surface that already shows
+ * a pattern's author(s) some other way - the Attribution panel on
+ * PatternViewContent.tsx, for example,
  * which reads patterns.authors/author_manual directly, not tags - should
  * filter these groups out before rendering, rather than showing the same
  * name a second time next to the tags that actually describe the pattern.
@@ -82,10 +78,9 @@ export function isAuthorDisplayType(type: TypeTagTypeRecord | null): boolean {
  * of groupTagsByType, for a component that colors or labels each tag
  * individually instead of grouping tags into sections - e.g. Sidebar.tsx's
  * facet list, which keeps its own count-based sort instead of clustering by
- * Type (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c). Takes a tags_v2 id as
- * of Phase R3.2 (TAG_RELATIONAL_REFACTOR_NOTES.md) - previously took a tag
- * name. Returns null under the same conditions groupTagsByType's untyped
- * case does: no matching row, or a matching row with no Type assigned.
+ * Type. Takes a tags_v2 id, not a tag name. Returns null under the same
+ * conditions groupTagsByType's untyped case does: no matching row, or a
+ * matching row with no Type assigned.
  */
 export function getTagType(tagId: string, tagsV2: TypeTagV2Record[]): TypeTagTypeRecord | null {
   const row = tagsV2.find((r) => r.id === tagId);
@@ -95,7 +90,7 @@ export function getTagType(tagId: string, tagsV2: TypeTagV2Record[]): TypeTagTyp
 /**
  * True when a group's Type should render with no label or badge: either no
  * synced tags_v2 row (type: null) or the default "General" Type every tag
- * starts with (see Phase 1). Matches the rule already used by the per-tag
+ * starts with. Matches the rule already used by the per-tag
  * Definition Page (src/routes/tags/$slug.tsx's showTypeBadge) - kept as one
  * function so the two places cannot drift on what counts as "the default
  * type".

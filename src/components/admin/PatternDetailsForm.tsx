@@ -42,13 +42,12 @@ export type TypePatternDetailsFormValues = {
   lineWidthUnit: string;
   tags: string[];
   /**
-   * norm(tag) -> tags_v2 id for a tag this pattern is already linked to
-   * (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) - forward
-   * unmodified to resolveOrCreateTagRefs's own `preferredIds` parameter at
-   * save time. See PatternTagsField.tsx's onChange doc comment. Optional on
-   * `initialValues` (a fresh editing session starts with no pins - nothing
-   * needs to supply an explicit empty Map); always present on getPayload()'s
-   * own return.
+   * norm(tag) -> tags_v2 id for a tag this pattern is already linked to -
+   * forward unmodified to resolveOrCreateTagRefs's own `preferredIds`
+   * parameter at save time. See PatternTagsField.tsx's onChange doc
+   * comment. Optional on `initialValues` (a fresh editing session starts
+   * with no pins - nothing needs to supply an explicit empty Map); always
+   * present on getPayload()'s own return.
    */
   preferredTagRefs?: Map<string, string>;
   authors: string[];

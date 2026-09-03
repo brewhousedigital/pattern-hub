@@ -41,11 +41,11 @@ export const Route = createFileRoute('/authors/$slug')({
     const author = await context.queryClient
       .ensureQueryData(getManualAuthorBySlugOptions(params.slug))
       .catch(() => undefined);
-    // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): this profile's slug is
-    // untouched - every existing /authors/$slug bookmark keeps resolving
-    // here first, exactly as before. Only what happens next is new: if the
-    // linked Author tag belongs to a registered account, send visitors to
-    // that account's real profile instead of rendering this simpler page.
+    // This profile's slug is untouched - every existing /authors/$slug
+    // bookmark keeps resolving here first, exactly as before. Only what
+    // happens next is new: if the linked Author tag belongs to a registered
+    // account, send visitors to that account's real profile instead of
+    // rendering this simpler page.
     const linkedUserId = author?.expand?.linked_tag?.linked_user;
     if (linkedUserId) {
       throw redirect({ to: '/profile/$userId', params: { userId: linkedUserId }, search: { tab: 0 } });
@@ -77,7 +77,7 @@ function RouteComponent() {
   // Prefer the linked Author tag's own canonical name - it's already
   // normalized, and stays correct even if this profile's own `name` field
   // drifts from it. Falls back to this profile's name, normalized the same
-  // way, for a profile the Phase 4 backfill hasn't linked yet (see
+  // way, for a profile the backfill script hasn't linked yet (see
   // scripts/backfill-author-tags.mjs) - still an exact tag match either way,
   // never the old substring search.
   const effectiveAuthorTag = author?.expand?.linked_tag?.tag ?? (author ? normalizeTagName(author.name) : '');

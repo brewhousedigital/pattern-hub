@@ -1,11 +1,10 @@
-// Phase 2 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - the
-// one-time migration that copies every existing `tag_hierarchy` row into
-// the new `implied_tags` collection, as one directional edge each: the
-// child tag becomes `tag`, the parent tag becomes `implies_tag`.
+// The one-time migration that copies every existing `tag_hierarchy` row into
+// the `implied_tags` collection, as one directional edge each: the child tag
+// becomes `tag`, the parent tag becomes `implies_tag`.
 //
 // `tag_hierarchy` is left completely untouched - it's still what the live
-// save-time hierarchy-baking logic reads through Phase 2. This script only
-// adds to `implied_tags`, it never reads from or writes to `tag_hierarchy`.
+// save-time hierarchy-baking logic reads. This script only adds to
+// `implied_tags`, it never reads from or writes to `tag_hierarchy`.
 //
 // This makes writes. By default it's a DRY RUN - it prints exactly what it
 // would create, without writing anything. Pass --apply to actually create
@@ -80,7 +79,7 @@ async function main() {
   }
   toCreate.sort((a, b) => a.tag.localeCompare(b.tag) || a.implies_tag.localeCompare(b.implies_tag));
 
-  console.log('=== tag_hierarchy -> implied_tags migration (Phase 2, tag redesign) ===');
+  console.log('=== tag_hierarchy -> implied_tags migration ===');
   console.log(
     APPLY
       ? 'Mode: APPLY - this will create records.'

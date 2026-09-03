@@ -18,10 +18,10 @@ export type TypeManualAuthor = {
   created: string;
   updated: string;
   /**
-   * Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): the Author-type tags_v2 row
-   * this profile's flair (avatar, description, external link) belongs to.
-   * Empty until an admin links it, or until the Phase 4 backfill links it
-   * automatically for a profile whose name already matched an author found
+   * The Author-type tags_v2 row this profile's flair (avatar, description,
+   * external link) belongs to. Empty until an admin links it, or until the
+   * one-time backfill links it automatically for a profile whose name
+   * already matched an author found
    * in use. A profile can exist unlinked - it just isn't reachable from a
    * tag's Definition Page or from /authors/$slug until it is.
    */
@@ -52,8 +52,8 @@ export const useQueryGetPublishedManualAuthors = () =>
       }),
   });
 
-// expand: 'linked_tag' - Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md). The
-// /authors/$slug loader reads author.expand?.linked_tag?.linked_user to
+// expand: 'linked_tag' - the /authors/$slug loader reads
+// author.expand?.linked_tag?.linked_user to
 // decide whether to redirect to the linked account's real profile, in one
 // request instead of two.
 export const useQueryGetManualAuthorBySlug = (slug: string) =>
@@ -78,7 +78,7 @@ export const getManualAuthorBySlugOptions = (slug: string) =>
     retry: false,
   });
 
-// Phase 4: replaces the old useQueryGetPatternsByManualAuthorName, which
+// Replaces the old useQueryGetPatternsByManualAuthorName, which
 // matched author_manual with an unquoted substring filter - "Jo" matched
 // "Joanna". This matches tags with the same boundary-quoted, exact match
 // every other tag search in this codebase already uses, so that class of

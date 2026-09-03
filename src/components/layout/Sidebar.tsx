@@ -8,8 +8,8 @@ import { getTagType, isDefaultTagType } from '@/functions/utilities/group-tags-b
 import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
 // color is set only for kind: 'tag' items with a real (non-default) Type
-// that has a color configured - see Phase 3c in TAG_REDESIGN_PROJECT_NOTES.md.
-// Author items never carry one; authors have no Type concept until Phase 4.
+// that has a color configured. Author items never carry one; authors have
+// no Type concept of their own.
 type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number; color?: string | null };
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -27,18 +27,15 @@ export const SidebarList = (props: SidebarListProps) => {
 
   const { isTagActive, tokens } = usePatternSearch();
 
-  // Phase 3c: per-tag color accent, resolved from each tag's Type. The
-  // developer chose to keep this list's existing flat, count-sorted layout
-  // rather than grouping it into per-Type sections (see
-  // TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c) - so this only colors each row,
+  // Per-tag color accent, resolved from each tag's Type. The developer
+  // chose to keep this list's existing flat, count-sorted layout rather
+  // than grouping it into per-Type sections - so this only colors each row,
   // it does not reorder or cluster them.
   //
-  // Phase R3.2 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): getTagType itself is now id-only,
-  // matching the rest of this display cutover. Two variants stay here
-  // because this component genuinely has two different kinds of tag data -
-  // a tagFacets entry (below) now carries a real tags_v2 id straight from
-  // the server (Phase R3.1), so it resolves by id; passThroughDataTagCounts
+  // getTagType itself is id-only. Two variants stay here because this
+  // component genuinely has two different kinds of tag data - a tagFacets
+  // entry (below) carries a real tags_v2 id straight from the server, so it
+  // resolves by id; passThroughDataTagCounts
   // (drawer mode) is built from a plain tagList string prop with no id
   // anywhere in it, so it still needs a name-based lookup. Kept local here,
   // rather than growing the shared utility back out with a second,
@@ -134,7 +131,7 @@ export const SidebarList = (props: SidebarListProps) => {
 
 type TagListItemProps = {
   data: TypeTagObject;
-  /** Phase 3c: this tag's Type color, or null/undefined for the default type - see tagAccentColor above. */
+  /** This tag's Type color, or null/undefined for the default type - see tagAccentColor above. */
   color?: string | null;
   handleClose?: () => void;
 };

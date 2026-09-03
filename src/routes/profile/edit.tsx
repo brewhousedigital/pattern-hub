@@ -202,10 +202,10 @@ function RouteComponent() {
       tab_show_collections: authData.tab_show_collections !== false,
       header_gradient: authData.header_gradient ?? true,
       blocked_tags: authData.blocked_tags ?? [],
-      // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): BlockedTagsSection.tsx
-      // itself re-aligns this against blocked_tags defensively (pads/truncates
-      // to the same length) - loaded as-is here, a shorter or missing array
-      // from before this field existed is expected, not an error.
+      // BlockedTagsSection.tsx itself re-aligns this against blocked_tags
+      // defensively (pads/truncates to the same length) - loaded as-is here,
+      // a shorter or missing array from before this field existed is
+      // expected, not an error.
       blocked_tag_refs: authData.blocked_tag_refs ?? [],
       preferred_measurement_unit: authData.preferred_measurement_unit ?? 'original',
       featured_pattern_id: authData.featured_pattern_id ?? '',

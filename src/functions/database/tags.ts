@@ -184,8 +184,8 @@ export function getDescendants(tagName: string, hierarchy: TypeTagHierarchyRecor
 // marker is "primary". The user typed it directly. The system never removes
 // a primary tag automatically.
 //
-// As of Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md), this reducer reads the
-// implied_tags graph, not tag_hierarchy. The field name `hierarchyInherited`
+// This reducer reads the implied_tags graph, not tag_hierarchy. The field
+// name `hierarchyInherited`
 // stays the same to limit the size of this change - treat it as a label for
 // "auto-added through the implied-tags graph", not a reference to the
 // tag_hierarchy table. Every incoming tag is also resolved through the
@@ -271,8 +271,8 @@ export function deriveHierarchyInherited(tags: string[], impliedTags: TypeImplie
  * any inherited markers it carried - direct user action wins over an
  * automatic reason.
  *
- * `aliasPreferredRefs` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md):
- * norm(resolved tag) -> tags_v2 id, populated whenever an incoming entry was
+ * `aliasPreferredRefs` is a norm(resolved tag) -> tags_v2 id map, populated
+ * whenever an incoming entry was
  * itself a known alias with a `target_tag_ref` - the caller (PatternTagsField.tsx)
  * merges this into its own preferredTagRefs the same way it already protects
  * a tag the pattern is already linked to, so resolveOrCreateTagRefs reaches
@@ -342,8 +342,8 @@ export function applyKeyTagChange(
   const hierarchyInherited = new Set(state.hierarchyInherited);
   const keyInherited = new Set(state.keyInherited);
 
-  // aliasPreferredRefs - see applyManualTagChange's own doc comment (R3.5
-  // follow-up, TAG_RELATIONAL_REFACTOR_NOTES.md) for why this exists.
+  // aliasPreferredRefs - see applyManualTagChange's own doc comment for why
+  // this exists.
   const aliasPreferredRefs = new Map<string, string>();
   const resolvedKeyTags = [
     ...new Set(
@@ -388,8 +388,7 @@ export interface TypePatternRecord {
   tags: string[];
   name: string;
   /**
-   * Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-   * optional so a fetch that didn't request this field (e.g. one still
+   * Optional so a fetch that didn't request this field (e.g. one still
    * scoped to `tags` alone) still type-checks.
    */
   tag_refs?: string[];
@@ -442,21 +441,17 @@ export interface TypeAdminTagStatsPaginatedParams {
   sortDir: 'asc' | 'desc';
 }
 
-// Phase R3.1 of the Tag Relational Refactor (see
-// TAG_RELATIONAL_REFACTOR_NOTES.md): reads the new `tag_usage` view instead
-// of `tags`. Same shape (id/tag/count), same semantics (published,
-// non-deleted patterns only) - the difference is what it's computed from:
-// `tag_usage` walks patterns.tag_refs joined to tags_v2, `tags` walks
-// patterns.tags directly. The two agree today (Phase R1/R2 keep tag_refs
-// fully in sync with tags for every existing pattern), but only
-// `tag_usage` keeps working once tag-entry (R3.3) and rename (R3.4) stop
-// writing patterns.tags - `tags` would stop catching up at that point, not
-// just lag behind it. `tags` itself is untouched and still exists - every
-// other consumer of it (useQueryGetAllTags, useQuerySearchTags,
-// useQueryGetTagUsageCount) stays on it until its own Phase R3/R4 piece
-// lands. This hook's own id is now a real, stable tags_v2 id (unlike
-// `tags`', which is random per-query and never safe as a foreign key) -
-// nothing here relies on that yet, but a future caller safely could.
+// Reads the `tag_usage` view instead of `tags`. Same shape (id/tag/count),
+// same semantics (published, non-deleted patterns only) - the difference is
+// what it's computed from: `tag_usage` walks patterns.tag_refs joined to
+// tags_v2, `tags` walks patterns.tags directly. Tag-entry and rename both
+// stopped writing patterns.tags, so `tag_usage` is the only one of the two
+// that stays accurate going forward. `tags` itself is untouched and still
+// exists, kept around for its other, not-yet-migrated readers
+// (useQueryGetAllTags, useQuerySearchTags, useQueryGetTagUsageCount). This
+// hook's own id is now a real, stable tags_v2 id (unlike `tags`', which is
+// random per-query and never safe as a foreign key) - nothing here relies
+// on that yet, but a future caller safely could.
 export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
   return useQuery({
     queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],
@@ -492,8 +487,8 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
 
 // ─── tags_v2 (canonical tag metadata) ──────────────────────────────────────────
 //
-// See TAG_REDESIGN_PROJECT_NOTES.md, Phase 1. Unlike the `tags` view above,
-// tags_v2 is a real base collection - its IDs are stable, and it holds
+// Unlike the `tags` view above, tags_v2 is a real base collection - its IDs
+// are stable, and it holds
 // per-tag metadata (Type, Definition, disambiguation note) the view has no
 // room for.
 
@@ -517,8 +512,8 @@ export interface TypeTagV2Record {
   definition: string;
   disambiguation_note: string;
   /**
-   * Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): the registered user this
-   * Author-type tag belongs to, if any. Empty for an author with no
+   * The registered user this Author-type tag belongs to, if any. Empty for
+   * an author with no
    * account, and for every non-Author tag. At most one tag should ever
    * carry a given user's id - enforced in application logic (the admin
    * linking tool, and the account-rename hook in main.pb.js), not a
@@ -571,20 +566,19 @@ export const useQueryGetAllTagsV2 = () =>
   });
 
 /**
- * Searches tags_v2 directly by name - Phase R3.3 of the Tag Relational
- * Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md). Unlike the `tags`/
- * `tag_usage` views, which only ever list a tag actually carried by a
- * published, non-deleted pattern, this surfaces every tags_v2 row that
- * exists at all - including one just created via ImpliedTagsDialog/
- * AliasDialog, or only present on a draft pattern so far. tags_v2 has no
- * usage-count column of its own to sort by (unlike the views this
- * supplements for entry), so this sorts alphabetically - callers that want
- * a "most used first" default keep using tags/tag_usage for an empty
- * search term, and switch to this once there's something to search for.
- * See PatternTagsField.tsx/UserUploadForm.tsx for that split.
+ * Searches tags_v2 directly by name. Unlike the `tags`/`tag_usage` views,
+ * which only ever list a tag actually carried by a published, non-deleted
+ * pattern, this surfaces every tags_v2 row that exists at all - including
+ * one just created via ImpliedTagsDialog/AliasDialog, or only present on a
+ * draft pattern so far. tags_v2 has no usage-count column of its own to
+ * sort by (unlike the views this supplements for entry), so this sorts
+ * alphabetically - callers that want a "most used first" default keep
+ * using tags/tag_usage for an empty search term, and switch to this once
+ * there's something to search for. See PatternTagsField.tsx/
+ * UserUploadForm.tsx for that split.
  *
- * Expands `type` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) so a
- * caller can tell an Author-type row apart from a same-named General one -
+ * Expands `type` so a caller can tell an Author-type row apart from a
+ * same-named General one -
  * e.g. tagNeedsArtistSuffix, used by HomepageSearchV3.tsx's tag dropdown to
  * show both a General and an Author "autumn" as distinct, labelled options
  * instead of one collapsed row a name-keyed view could never tell apart.
@@ -620,10 +614,10 @@ export const AUTHOR_TAG_IDS_QUERY_KEY = ['AuthorTagIds'] as const;
 
 /**
  * Every tags_v2 id whose Type is "Author" - a small, targeted set (one row
- * per author actually linked to a tag), not the whole table. R3.5 follow-up
- * (see TAG_RELATIONAL_REFACTOR_NOTES.md): used to filter Author-typed tags
- * out of the admin pattern-tag entry dropdown (PatternTagsField.tsx). An
- * author's tag is meant to be entirely derived from patterns.authors/
+ * per author actually linked to a tag), not the whole table. Used to filter
+ * Author-typed tags out of the admin pattern-tag entry dropdown
+ * (PatternTagsField.tsx). An author's tag is meant to be entirely derived
+ * from patterns.authors/
  * author_manual via the account-name cascade
  * (scripts/backfill-author-tags.mjs, /api/sync-author-tags), never picked
  * directly there - filtering it out removes the "which autumn did you mean"
@@ -648,8 +642,7 @@ export const useQueryAuthorTagIds = () => {
 
 // ─── tags_v2 slug helpers ───────────────────────────────────────────────────────
 //
-// Moved here from space-command/tags.tsx (Tag Relational Refactor, Phase R1 -
-// see TAG_RELATIONAL_REFACTOR_NOTES.md) so resolveOrCreateTagRefs below can
+// Moved here from space-command/tags.tsx so resolveOrCreateTagRefs below can
 // reuse them instead of a third copy of this logic. tags.tsx now imports
 // these instead of defining its own.
 
@@ -684,10 +677,10 @@ export async function uniqueSlugFor(baseSlug: string, excludeId: string): Promis
   return candidate;
 }
 
-// ─── Synchronous tag_refs resolution (Tag Relational Refactor, Phase R1) ──────
+// ─── Synchronous tag_refs resolution ─────────────────────────────────────────
 //
-// See TAG_RELATIONAL_REFACTOR_NOTES.md. patterns.tag_refs is a relation to
-// tags_v2, so - unlike the old free-solo tags entry, which could rely on
+// patterns.tag_refs is a relation to tags_v2, so - unlike the old free-solo
+// tags entry, which could rely on
 // /api/sync-tag-catalog to create a missing tags_v2 row later, on a schedule
 // - a tag typed here needs its tags_v2 row to exist *before* the pattern
 // save request that references it. resolveOrCreateTagRefs does that
@@ -696,8 +689,7 @@ export async function uniqueSlugFor(baseSlug: string, excludeId: string): Promis
 
 /**
  * Finds the tags_v2 row for `tagName`, matching by name alone (any type).
- * Moved here from space-command/tags.tsx (Tag Relational Refactor, Phase R1
- * - see TAG_RELATIONAL_REFACTOR_NOTES.md) so resolveOrCreateTagV2Row below
+ * Moved here from space-command/tags.tsx so resolveOrCreateTagV2Row below
  * can share it - tags.tsx now imports this instead of defining its own
  * copy; every existing call site there keeps working unchanged.
  */
@@ -711,17 +703,16 @@ export async function findTagV2Record(tagName: string): Promise<TypeTagV2Record 
 /**
  * Resolves the tags_v2 row for `name`, creating a General-type one if no
  * row exists at all. Prefers an existing General-type row when one exists;
- * otherwise falls back to findTagV2Record's type-blind "first match" -
- * this is the Phase R3.5 fix (see TAG_RELATIONAL_REFACTOR_NOTES.md) to a
- * gap this function's own history already predicted:
+ * otherwise falls back to findTagV2Record's type-blind "first match" - this
+ * is the fix to a gap this function's own history already predicted:
  *
  * A first version of this (and of the pattern save-path resolver below)
  * scoped every lookup to type = "" (General) only, reasoning that
- * tags_v2.tag stopped being globally unique in Phase R0 and a bare typed
- * string should never accidentally latch onto an unrelated Author-typed
- * row. That reasoning was sound for a name typed fresh into an entry
- * field, but it was applied to every name already sitting in a pattern's
- * existing tags too - including one added by the author-cascade mechanism
+ * tags_v2.tag is not globally unique and a bare typed string should never
+ * accidentally latch onto an unrelated Author-typed row. That reasoning was
+ * sound for a name typed fresh into an entry field, but it was applied to
+ * every name already sitting in a pattern's existing tags too - including
+ * one added by the author-cascade mechanism
  * (scripts/backfill-author-tags.mjs, /api/sync-author-tags), which is
  * *already* correctly resolved to a specific Author-typed row before it
  * ever reaches patterns.tags. Scoping resolution to General-only there
@@ -731,19 +722,19 @@ export async function findTagV2Record(tagName: string): Promise<TypeTagV2Record 
  * reported ~136 such rows. That led to a second version, purely
  * type-blind, matching how every other tags_v2 consumer in this codebase
  * had always resolved a name, back when tags_v2.tag was still globally
- * unique and type-blind was the only kind of lookup that could exist -
- * but that version's own comment named the exact gap it was accepting:
- * "a fresh 'autumn' resolving to the artist's row instead of the season's
- * ... is Phase R3's own concern once its uniqueness relaxation actually
- * gets exercised by a rename." Phase R3.5 is that rename. Pure type-blind
- * would have meant re-saving any of the three existing seasonal patterns
- * after the rename could non-deterministically resolve "autumn" to the
- * artist's row instead, silently swapping what the pattern is tagged
- * with. Preferring General first closes that gap without reopening the
- * first version's own bug: a name resolves General-first only when a
- * General row already exists; if none does, the type-blind fallback still
- * finds and reuses whatever row does exist, exactly as the second version
- * already did.
+ * unique and type-blind was the only kind of lookup that could exist - but
+ * that version's own comment named the exact gap it was accepting: a fresh
+ * "autumn" resolving to the artist's row instead of the season's stays
+ * safe only until a real rename actually exercises the relaxed uniqueness.
+ * That rename happened - renaming the artist's own disambiguated tag back
+ * to plain "autumn." Pure type-blind would have meant re-saving any of the
+ * three existing seasonal patterns after the rename could
+ * non-deterministically resolve "autumn" to the artist's row instead,
+ * silently swapping what the pattern is tagged with. Preferring General
+ * first closes that gap without reopening the first version's own bug: a
+ * name resolves General-first only when a General row already exists; if
+ * none does, the type-blind fallback still finds and reuses whatever row
+ * does exist, exactly as the second version already did.
  */
 export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: TypeTagV2Record; created: boolean }> {
   const generalOnly = await pocketbase
@@ -774,7 +765,7 @@ export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: Type
   } catch (createError) {
     // A concurrent save could have created the same row between the lookup
     // above and this create - the (tag, type) composite unique index
-    // (Phase R0) rejects the loser instead of allowing a silent duplicate.
+    // rejects the loser instead of allowing a silent duplicate.
     // Re-fetch once rather than dropping the tag from this save's
     // tag_refs.
     const retried = await findTagV2Record(name);
@@ -791,13 +782,13 @@ export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: Type
  * (normalizeTagName) - the same expectation callers already meet before
  * building patterns.tags today.
  *
- * Call this at pattern-save time, alongside (not instead of) building the
- * existing tags string array, and write the result into patterns.tag_refs.
- * Phase R1 is additive dual-write, not a cutover - patterns.tags stays
- * exactly as every other save-path and read-path already expects.
+ * Call this at pattern-save time and write the result into
+ * patterns.tag_refs - the field every read path (search, display, the
+ * admin tags table) actually reads. `tagNames` is still computed by every
+ * caller as an ordinary string array, needed as input here even though
+ * patterns.tags itself is no longer written.
  *
- * `preferredIds` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) is
- * an optional norm(tag) -> tags_v2 id override, consulted before the normal
+ * `preferredIds` is an optional norm(tag) -> tags_v2 id override, consulted before the normal
  * resolve-by-name step below. PatternTagsField.tsx populates it two ways: (1)
  * seeded from the pattern's own existing tag_refs (see AdminEditPatternModal.tsx's
  * initialValues) - protects a tag the pattern is already linked to from
@@ -830,29 +821,28 @@ export async function resolveOrCreateTagRefs(
   return ids;
 }
 
-// ─── Implied tags (Phase 2) ─────────────────────────────────────────────────────
+// ─── Implied tags ─────────────────────────────────────────────────────────────
 //
-// See TAG_REDESIGN_PROJECT_NOTES.md, Phase 2. `implied_tags` is the
-// multi-parent upgrade of `tag_hierarchy`: any number of rows can share the
-// same `tag`, unlike tag_hierarchy's one-parent-per-child limit.
+// `implied_tags` is the multi-parent upgrade of `tag_hierarchy`: any number
+// of rows can share the same `tag`, unlike tag_hierarchy's
+// one-parent-per-child limit.
 //
-// As of Phase 3, applyManualTagChange and applyKeyTagChange above call
-// getImpliedTags (through addAncestors/pruneOrphanedAncestors), not
-// getAncestors. tag_hierarchy stays in place and still backs the admin
-// hierarchy editor and getAncestors/getDescendants above, until a later
-// Contract pass retires it. See TAG_REDESIGN_PROJECT_NOTES.md, Phase 3.
+// applyManualTagChange and applyKeyTagChange above call getImpliedTags
+// (through addAncestors/pruneOrphanedAncestors), not getAncestors.
+// tag_hierarchy stays in place and still backs the admin hierarchy editor
+// and getAncestors/getDescendants above - retiring it is a later cleanup,
+// not done yet.
 
 export interface TypeImpliedTagRecord {
   id: string;
   tag: string;
   implies_tag: string;
   /**
-   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-   * the tags_v2 row id for `tag`/`implies_tag` respectively. Optional -
-   * populated by every write path as of Phase R1, but an edge created
-   * before this phase shipped, or not yet covered by Phase R2's backfill,
-   * may still have these empty. Nothing reads them yet; Phase R3 is what
-   * switches matching over to these instead of the string fields.
+   * The tags_v2 row id for `tag`/`implies_tag` respectively. Optional -
+   * populated by every write path, but an edge created before these
+   * existed may still have these empty. getImpliedTags/getTagsImplying
+   * below still match by the string fields; TagGraphView.tsx is the one
+   * consumer that reads these ref fields directly.
    */
   tag_ref?: string;
   implies_tag_ref?: string;
@@ -930,23 +920,21 @@ export function getTagsImplying(tagName: string, impliedTags: TypeImpliedTagReco
   return result;
 }
 
-// ─── Tag aliases (Phase 2) ──────────────────────────────────────────────────────
+// ─── Tag aliases ──────────────────────────────────────────────────────────────
 //
 // tag_aliases already existed in the schema before this project - it was
 // simply never wired up anywhere. Many-to-one by convention (many aliases
 // can point to one root; nothing here stops one alias row pointing at two
-// different targets except the unique index on `alias` recommended in
-// TAG_REDESIGN_PROJECT_NOTES.md - add it if it isn't there yet).
+// different targets except a unique index on `alias`, if one is added).
 
 export interface TypeTagAliasRecord {
   id: string;
   alias: string;
   target_tag: string;
   /**
-   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-   * the tags_v2 row id for `target_tag`. `alias` itself never gets a ref
-   * field - the Phase R0 decision recorded in that file - since an alias
-   * like "orca" is allowed to have no tags_v2 row of its own.
+   * The tags_v2 row id for `target_tag`. `alias` itself never gets a ref
+   * field, deliberately - since an alias like "orca" is allowed to have no
+   * tags_v2 row of its own.
    */
   target_tag_ref?: string;
 }
@@ -968,10 +956,9 @@ export const useQueryGetAllTagAliases = () =>
  * against the stored `alias` values, matching every other tag comparison in
  * this codebase.
  *
- * Does not chase an alias-of-an-alias chain - the admin create/edit flow
- * (Phase 2 admin panel) is expected to enforce that every alias points
- * directly at a root, non-aliased tag, the same "duplicate add is ignored"
- * simplicity the PM doc describes.
+ * Does not chase an alias-of-an-alias chain - the admin create/edit flow is
+ * expected to enforce that every alias points directly at a root,
+ * non-aliased tag; adding a duplicate is simply ignored.
  */
 export function resolveTagAlias(tagName: string, aliases: TypeTagAliasRecord[]): string {
   const norm = tagName.toLowerCase();
@@ -981,17 +968,15 @@ export function resolveTagAlias(tagName: string, aliases: TypeTagAliasRecord[]):
 
 /**
  * The alias's target tags_v2 id, if `tagName` is a known alias with a
- * populated `target_tag_ref`. R3.5 follow-up (see
- * TAG_RELATIONAL_REFACTOR_NOTES.md): lets applyManualTagChange/
- * applyKeyTagChange capture which specific row an alias meant, alongside
- * resolveTagAlias's own resolved name - closes the gap flagged earlier in
- * that phase, where typing an alias (e.g. one pointing at a non-General tag
- * sharing a name with a General one) lost that specificity the instant it
- * resolved to a plain string, before resolveOrCreateTagRefs's own "prefer
- * General once a name is ambiguous" default ever got a chance to guess
- * wrong. A pre-R1 alias with no target_tag_ref yet returns undefined, same
- * as if it weren't a known alias at all - falls through to normal
- * resolution, unchanged from before this existed.
+ * populated `target_tag_ref`. Lets applyManualTagChange/applyKeyTagChange
+ * capture which specific row an alias meant, alongside resolveTagAlias's
+ * own resolved name - closes a real gap: typing an alias (e.g. one pointing
+ * at a non-General tag sharing a name with a General one) loses that
+ * specificity the instant it resolves to a plain string, before
+ * resolveOrCreateTagRefs's own "prefer General once a name is ambiguous"
+ * default ever gets a chance to guess wrong. An alias with no
+ * target_tag_ref yet returns undefined, same as if it weren't a known
+ * alias at all - falls through to normal resolution.
  */
 function findAliasTargetRef(tagName: string, aliases: TypeTagAliasRecord[]): string | undefined {
   const norm = tagName.toLowerCase();
@@ -1000,10 +985,9 @@ function findAliasTargetRef(tagName: string, aliases: TypeTagAliasRecord[]): str
 
 /**
  * Whether a tag needs the display-only "(artist)" suffix wherever it's shown
- * as a pickable option - originally the Definition Page only (Phase 4 of the
- * original tag redesign), now shared with the tag search dropdown too (Tag
- * Relational Refactor, R3.5 follow-up - see TAG_RELATIONAL_REFACTOR_NOTES.md).
- * True only for an Author-type tag whose stored name doesn't already carry
+ * as a pickable option - originally the Definition Page only, now shared
+ * with the tag search dropdown too. True only for an Author-type tag whose
+ * stored name doesn't already carry
  * the suffix on its own (a collision-driven override baked directly into the
  * name by AUTHOR_TAG_OVERRIDES in scripts/backfill-author-tags.mjs, e.g. a
  * still-unrenamed "autumn (artist)") - never double it.

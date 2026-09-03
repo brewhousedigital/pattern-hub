@@ -143,8 +143,7 @@ export const AdminLayout = (props: TypeComponentWithChildrenProps) => {
           label: 'Tag Types',
           href: '/space-command/tag-types',
           icon: <CategoryRoundedIcon fontSize="small" />,
-          // Reuses the Tag permission level rather than adding a new one -
-          // see TAG_REDESIGN_PROJECT_NOTES.md's "Open decisions" section.
+          // Reuses the Tag permission level rather than adding a new one.
           view: EnumLevelsAdmin.TAG_AR,
         },
         {

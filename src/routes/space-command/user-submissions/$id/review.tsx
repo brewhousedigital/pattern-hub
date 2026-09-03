@@ -240,15 +240,13 @@ function RouteComponent() {
 
       // normalizeTagName applies the canonical tag-casing rule (lowercase,
       // trim, collapse internal whitespace) - see
-      // src/functions/utilities/normalize-tag.ts and
-      // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. This was the one tag save
+      // src/functions/utilities/normalize-tag.ts. This was the one tag save
       // path with no normalization at all - AdminEditPatternModal.tsx and
       // UserUploadForm.tsx both apply the same function at their own submit
       // steps.
       const normalizedTags = values.tags.map(normalizeTagName);
 
-      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-      // this is the point where a public submission's tags actually become a
+      // This is the point where a public submission's tags actually become a
       // patterns row - resolve (or create) every tag's tags_v2 row here, same
       // as AdminEditPatternModal.tsx's own save handler.
       const tagRefs = await resolveOrCreateTagRefs(normalizedTags, values.preferredTagRefs);

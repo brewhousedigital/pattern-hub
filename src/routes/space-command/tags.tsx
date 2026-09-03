@@ -143,18 +143,17 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
 
 /**
  * Fetch ALL patterns whose tag_refs contains a specific tags_v2 id - the
- * id-based equivalent of fetchPatternsWithTag above, added for Phase R3.4
- * of the Tag Relational Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md).
- * Uses the same `~`-on-a-multi-relation-column idiom already proven live
- * for patterns.authors (`authors ~ id`), not a quote-wrapped match - ids
- * are opaque, fixed-length strings, not human text a substring match could
+ * id-based equivalent of fetchPatternsWithTag above. Uses the same
+ * `~`-on-a-multi-relation-column idiom already proven live for
+ * patterns.authors (`authors ~ id`), not a quote-wrapped match - ids are
+ * opaque, fixed-length strings, not human text a substring match could
  * accidentally over-match the way a tag name could.
  *
- * This is not just a faster version of fetchPatternsWithTag - as of Phase
- * R3.3, patterns.tags is frozen, so a string search can no longer find
- * every pattern that actually carries a given tag. A tag added through a
- * normal edit since R3.3 shipped reaches tag_refs only, never
- * patterns.tags, so fetchPatternsWithTag would silently miss it.
+ * This is not just a faster version of fetchPatternsWithTag - patterns.tags
+ * is frozen, so a string search can no longer find every pattern that
+ * actually carries a given tag. A tag added through a normal edit reaches
+ * tag_refs only, never patterns.tags, so fetchPatternsWithTag would
+ * silently miss it.
  */
 async function fetchPatternsWithTagRef(tagId: string): Promise<TypePatternRecord[]> {
   const records: TypePatternRecord[] = [];
@@ -175,8 +174,7 @@ async function fetchPatternsWithTagRef(tagId: string): Promise<TypePatternRecord
 
 /**
  * Repoints (merge) or removes (delete) a tags_v2 id across every pattern's
- * tag_refs - Phase R3.4 of the Tag Relational Refactor (see
- * TAG_RELATIONAL_REFACTOR_NOTES.md). Pass a real `toId` to swap `fromId`
+ * tag_refs. Pass a real `toId` to swap `fromId`
  * for it (deduping if a pattern already carried both - merge's case); pass
  * `null` to just remove `fromId` (delete's case, no replacement).
  *
@@ -222,8 +220,7 @@ async function repointPatternTagRefs(
 
 // ─── tags_v2 lookup + slug helpers ─────────────────────────────────────────────
 //
-// tags_v2 is the canonical tag-metadata table added in Phase 1 of the tag
-// redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - a row here holds a tag's
+// tags_v2 is the canonical tag-metadata table - a row here holds a tag's
 // Type, Definition, and disambiguation note. syncSatelliteTablesForOp below
 // keeps it in sync with tag_hierarchy whenever an admin renames, merges, or
 // deletes a tag, so those satellite fields never silently detach from the
@@ -232,11 +229,10 @@ async function repointPatternTagRefs(
 // reads/writes) rather than a narrower local shape.
 
 // findTagV2Record/isSlugTaken/uniqueSlugFor/resolveOrCreateTagV2Row now all
-// live in functions/database/tags.ts (Tag Relational Refactor, Phase R1 -
-// see TAG_RELATIONAL_REFACTOR_NOTES.md), so resolveOrCreateTagRefs there
-// can share them too - imported above instead of defined here.
+// live in functions/database/tags.ts, so resolveOrCreateTagRefs there can
+// share them too - imported above instead of defined here.
 
-// ─── implied_tags / tag_aliases sync helpers (Phase 2) ─────────────────────────
+// ─── implied_tags / tag_aliases sync helpers ───────────────────────────────────
 //
 // Re-points every implied_tags edge mentioning `oldTag` (on either side) to
 // mention `newTag` instead. Used for both rename and merge - from this
@@ -247,8 +243,7 @@ async function repointPatternTagRefs(
 // an edge newTag already has - both are meaningless once merged, and the
 // unique index on (tag, implies_tag) would reject the duplicate anyway.
 //
-// newTagId (Tag Relational Refactor, Phase R3.4 - see
-// TAG_RELATIONAL_REFACTOR_NOTES.md): optional, merge-only. A rename never
+// newTagId is optional, merge-only. A rename never
 // needs it - the underlying tags_v2 row keeps its own id, so tag_ref/
 // implies_tag_ref already point at the right row and don't need touching.
 // A merge does change which row an edge should point at (the source row
@@ -264,8 +259,7 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string, newTagId?
   // touching newTag" is identical to "every edge touching oldTag", so every
   // edge in outgoing/incoming would incorrectly look like a pre-existing
   // duplicate of itself and get deleted - silently wiping the tag's whole
-  // implied-tags graph. Found and fixed via code review; see
-  // TAG_REDESIGN_PROJECT_NOTES.md.
+  // implied-tags graph. Found and fixed via code review.
   if (oldTag === newTag) return;
 
   const oldSafe = escapeTagFilterValue(oldTag);
@@ -330,17 +324,15 @@ async function deleteImpliedTagEdgesFor(deletedTag: string) {
 // Same substitution principle as retargetImpliedTagEdges, for tag_aliases.
 // `target_tag` has no unique constraint (many aliases can share a root), so
 // re-pointing every alias that pointed at oldTag is unconditional. `alias`
-// does have a unique constraint (Phase 2's schema note) - if newTag is
-// already registered as some other alias, that's a real conflict, not
-// something to silently resolve, so the old row is left as-is for an admin
-// to sort out by hand, the same "flag for review" principle Phase 4 uses
-// for an author-name collision.
-// newTagId (Tag Relational Refactor, Phase R3.4 - see
-// TAG_RELATIONAL_REFACTOR_NOTES.md): optional, merge-only, same reasoning as
+// does have a unique constraint - if newTag is already registered as some
+// other alias, that's a real conflict, not something to silently resolve,
+// so the old row is left as-is for an admin to sort out by hand, the same
+// "flag for review" principle used elsewhere for an author-name collision.
+// newTagId is optional, merge-only, same reasoning as
 // retargetImpliedTagEdges's own newTagId parameter. Only ever applied to the
 // asTarget loop below - target_tag_ref exists because a target is always a
-// real tag, but alias itself never gets a ref field (the Phase R0 decision:
-// an alias like "orca" is allowed to have no tags_v2 row of its own), so the
+// real tag, but alias itself never gets a ref field (deliberately: an alias
+// like "orca" is allowed to have no tags_v2 row of its own), so the
 // asAlias loop has nothing to repoint regardless of rename or merge.
 async function retargetTagAliases(oldTag: string, newTag: string, newTagId?: string) {
   if (oldTag === newTag) return; // see retargetImpliedTagEdges - nothing changed, nothing to retarget
@@ -368,7 +360,7 @@ async function retargetTagAliases(oldTag: string, newTag: string, newTagId?: str
     if (row.alias === newTag) {
       // Would become a no-op self-reference (newTag aliased to itself) -
       // same guard the asAlias loop below already had; this loop was
-      // missing it (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+      // missing it (found via code review).
       await pocketbase.collection('tag_aliases').delete(row.id);
       continue;
     }
@@ -406,13 +398,12 @@ async function deleteTagAliasesFor(deletedTag: string) {
 // Always fetches fresh records from PocketBase so stale React Query cache
 // can never cause a missed update. Called for every rename / merge / delete
 // operation. Keeps five things in sync with the tag string itself - four
-// satellite tables, plus (Tag Relational Refactor, Phase R3.4 - see
-// TAG_RELATIONAL_REFACTOR_NOTES.md) patterns.tag_refs directly, since a
-// merge or delete can change or remove which tags_v2 row a pattern's own
-// tag_refs should point at:
+// satellite tables, plus patterns.tag_refs directly, since a merge or
+// delete can change or remove which tags_v2 row a pattern's own tag_refs
+// should point at:
 //
-//   tag_hierarchy (parent/child, being replaced by the implied-tags graph in
-//   Phase 2, but still the live mechanism through Phase 2):
+//   tag_hierarchy (parent/child, superseded by the implied-tags graph below
+//   but still kept in sync, since the admin hierarchy editor still reads it):
 //     rename  - updates the tag's own name in its parent record and updates
 //               every child's parent_tag reference to the new name.
 //     merge   - removes the source tag's own parent record (it no longer
@@ -442,7 +433,7 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //               row first, same ordering reasoning as merge, then deletes
 //               the row.
 //
-//   patterns.tag_refs (Phase R3.4):
+//   patterns.tag_refs:
 //     rename  - untouched. The tags_v2 row keeps its own id when renamed,
 //               so every pattern already pointing at it is still correct.
 //     merge   - every pattern found via tag_refs ~ sourceId gets the source
@@ -451,7 +442,7 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //     delete  - every pattern found via tag_refs ~ deletedId gets that id
 //               removed, no replacement.
 //
-//   implied_tags (Phase 2's multi-parent graph - see the helpers above):
+//   implied_tags (the multi-parent graph - see the helpers above):
 //     rename  - retargets every edge's tag/implies_tag string mentioning the
 //               old name to the new one. Never touches tag_ref/
 //               implies_tag_ref - see retargetImpliedTagEdges' own comment
@@ -464,7 +455,7 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //               string and id fields go with the row - nothing is left to
 //               go stale).
 //
-//   tag_aliases (Phase 2 - see the helpers above):
+//   tag_aliases (see the helpers above):
 //     rename  - retargets every alias/target_tag string reference to the new
 //               name. Same as implied_tags: never touches target_tag_ref -
 //               a rename never needs to.
@@ -487,8 +478,7 @@ async function syncSatelliteTablesForOp(
   // agrees with what every pattern-save path stores - collapsing internal
   // whitespace too, not just casing. Found via code review: the old local
   // normalization let a tag with doubled internal spaces fork into a clean
-  // form in patterns.tags and a stale, never-matching tags_v2 row. See
-  // TAG_REDESIGN_PROJECT_NOTES.md.
+  // form in patterns.tags and a stale, never-matching tags_v2 row.
   const safe = normalizeTagName(tag);
   const safeFilter = escapeTagFilterValue(safe);
 
@@ -532,15 +522,14 @@ async function syncSatelliteTablesForOp(
     // retargetTagAliases already apply. Without it, the tags_v2 branch
     // below would find its own row as `targetRecord`, update it, then
     // immediately delete that same row (tagV2Record.id === targetRecord.id)
-    // as its own "source" cleanup - already true before Phase R3.4 too, and
-    // meaningfully worse as of this phase: every pattern's tag_refs would
-    // get "repointed" to the id of the row that just got deleted out from
-    // under it, going dangling. RenameOrMergePanel's own canSubmit (see
-    // below) already disables the button for this input, so this specific
-    // trigger isn't reachable through the live admin UI today - this guard
-    // is defense in depth, not a fix for a reachable path, and stays
-    // regardless in case a future caller of this function doesn't carry
-    // the same UI-level guard. See TAG_RELATIONAL_REFACTOR_NOTES.md.
+    // as its own "source" cleanup - meaningfully worse now that patterns
+    // reference tags by id: every pattern's tag_refs would get "repointed"
+    // to the id of the row that just got deleted out from under it, going
+    // dangling. RenameOrMergePanel's own canSubmit (see below) already
+    // disables the button for this input, so this specific trigger isn't
+    // reachable through the live admin UI today - this guard is defense in
+    // depth, not a fix for a reachable path, and stays regardless in case a
+    // future caller of this function doesn't carry the same UI-level guard.
     if (safe === safeNew) return { patternsAffected: [] };
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
@@ -615,9 +604,8 @@ interface ProgressDialogProps {
   error?: string;
   onClose: () => void;
   /**
-   * Overrides the default "{completed} record(s) updated" success text.
-   * Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-   * a rename no longer touches any pattern record at all, so "0 records
+   * Overrides the default "{completed} record(s) updated" success text. A
+   * rename no longer touches any pattern record at all, so "0 records
    * updated" would read as if nothing happened rather than as the
    * (correct, and now much faster) outcome it actually is.
    */
@@ -913,11 +901,11 @@ function SetParentDialog({ open, tag, hierarchy, onClose, onSaved }: SetParentDi
 
 // ─── Tag Metadata Dialog ────────────────────────────────────────────────────────
 //
-// Edits a tag's tags_v2 row (Type, Definition, disambiguation note - Phase 1
-// of the tag redesign, see TAG_REDESIGN_PROJECT_NOTES.md). Most tags already
-// have a row by the time an admin opens this, via the backfill or the
-// /api/sync-tag-catalog cron - but a just-typed tag that hasn't synced yet
-// won't, so this creates one on first save rather than assuming it exists.
+// Edits a tag's tags_v2 row (Type, Definition, disambiguation note). Most
+// tags already have a row by the time an admin opens this, via the
+// backfill or the /api/sync-tag-catalog cron - but a just-typed tag that
+// hasn't synced yet won't, so this creates one on first save rather than
+// assuming it exists.
 
 interface TagMetadataDialogProps {
   open: boolean;
@@ -938,9 +926,9 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
   const [error, setError] = useState<string | null>(null);
   const { log } = useAdminLogger();
 
-  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): account linking, shown only
-  // when this tag's Type is "Author" - the admin-only linking tool the plan
-  // calls for, instead of a self-service "claim my author credit" flow.
+  // Account linking, shown only when this tag's Type is "Author" - an
+  // admin-only linking tool, instead of a self-service "claim my author
+  // credit" flow.
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [userSearchInput, setUserSearchInput] = useState('');
   const debouncedUserSearch = useDebounce(userSearchInput, 400);
@@ -982,10 +970,10 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
     setError(null);
     try {
       // At most one tag may carry a given user's id - enforced here, not as
-      // a database constraint (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 4).
-      // A stale link left over from switching this tag's Type away from
-      // Author and back is cleared below by the isAuthorType ? ... : ''
-      // fallback, same as it always was for a brand-new pick.
+      // a database constraint. A stale link left over from switching this
+      // tag's Type away from Author and back is cleared below by the
+      // isAuthorType ? ... : '' fallback, same as it always was for a
+      // brand-new pick.
       if (isAuthorType && selectedUserId) {
         const conflict = await pocketbase
           .collection('tags_v2')
@@ -1015,9 +1003,9 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
           // Matches the "skip and flag for manual review" handling the
           // backfill script and /api/sync-tag-catalog both use for this
           // same edge case, instead of the un-checked raw-string fallback
-          // this used to have here (found via code review, see
-          // TAG_REDESIGN_PROJECT_NOTES.md) - a tag made entirely of
-          // punctuation has no safe, uniqueness-checked slug to give it, so
+          // this used to have here (found via code review) - a tag made
+          // entirely of punctuation has no safe, uniqueness-checked slug to
+          // give it, so
           // this stops short of creating a row rather than guessing one.
           setError(
             `"${tag.tag}" has no letters or numbers, so it can't be given a URL-safe slug. This tag needs to be renamed before it can have a Type or Definition.`,
@@ -1140,10 +1128,9 @@ function TagMetadataDialog({ open, tag, existingRecord, tagTypes, onClose, onSav
 
 // ─── Implied Tags Dialog ─────────────────────────────────────────────────────────
 //
-// Manages implied_tags edges for one tag (Phase 2 of the tag redesign, see
-// TAG_REDESIGN_PROJECT_NOTES.md). Unlike SetParentDialog above, a tag can
-// have any number of "implies" targets here, so this is an add/remove chip
-// list rather than a single Autocomplete value.
+// Manages implied_tags edges for one tag. Unlike SetParentDialog above, a
+// tag can have any number of "implies" targets here, so this is an
+// add/remove chip list rather than a single Autocomplete value.
 
 interface ImpliedTagsDialogProps {
   open: boolean;
@@ -1164,7 +1151,7 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
   // this, the dialog stays mounted between rows (only `open` toggles), so a
   // leftover search term or error from a previous tag's session would
   // otherwise still be showing the next time this opens for a different tag
-  // (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+  // (found via code review).
   useEffect(() => {
     if (open) {
       setInputValue('');
@@ -1229,21 +1216,17 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
     setError(null);
     try {
       const targetResolved = await resolveOrCreateTagV2Row(target);
-      // Tag Relational Refactor, Phase R3.5 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-      // the source side (this dialog's own tag) uses tag.id directly now,
-      // not a re-resolve-by-name. `tag` comes from the admin grid, backed
-      // by tag_usage (Phase R3.1) - its id IS the real, stable tags_v2 id
-      // for this specific row, unlike the old `tags` view this originally
-      // read from when Phase R1 wrote the line this replaced. Re-resolving
-      // by name instead - resolveOrCreateTagV2Row(tag.tag) - would risk
-      // landing on a DIFFERENT row than the one this dialog is actually
-      // open for, now that two rows can share a name (e.g. "autumn" the
-      // season and "autumn" the artist, once Phase R3.5's rename exercises
-      // that for real): resolveOrCreateTagV2Row prefers a General-type row
-      // when one exists, which is exactly wrong if this dialog is open for
-      // a non-General one. A correctness fix, not a performance one -
-      // caught while preparing to actually run that rename, not from a
-      // live report.
+      // The source side (this dialog's own tag) uses tag.id directly, not a
+      // re-resolve-by-name. `tag` comes from the admin grid, backed by
+      // tag_usage - its id IS the real, stable tags_v2 id for this specific
+      // row. Re-resolving by name instead - resolveOrCreateTagV2Row(tag.tag)
+      // - would risk landing on a DIFFERENT row than the one this dialog is
+      // actually open for, whenever two rows share a name (e.g. "autumn"
+      // the season and "autumn" the artist): resolveOrCreateTagV2Row
+      // prefers a General-type row when one exists, which is exactly wrong
+      // if this dialog is open for a non-General one. A correctness fix,
+      // not a performance one - caught while preparing to actually rename
+      // a tag whose name collided with another, not from a live report.
       const sourceId = tag.id;
 
       await pocketbase.collection('implied_tags').create({
@@ -1368,8 +1351,8 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
 
 // ─── Alias Dialog ─────────────────────────────────────────────────────────────
 //
-// Manages this tag's own alias status (Phase 2, see TAG_REDESIGN_PROJECT_NOTES.md):
-// whether it's itself an alias of some other, root tag, and which other
+// Manages this tag's own alias status: whether it's itself an alias of
+// some other, root tag, and which other
 // tags (if any) are aliased to it.
 
 interface AliasDialogProps {
@@ -1423,7 +1406,7 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
   // invariant; nothing was previously enforcing it). This also rules out a
   // 2-node cycle (X aliased to Y, then Y aliased back to X): X would only
   // be excluded here in the first place because X already has its own
-  // alias row (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+  // alias row (found via code review).
   const options = useMemo(() => {
     if (!tag) return [];
     const alreadyAliased = new Set(aliases.map((a) => a.alias));
@@ -1437,9 +1420,8 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
     setSaving(true);
     setError(null);
     try {
-      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-      // target_tag_ref dual-writes alongside target_tag. alias itself never
-      // gets a ref field - see the Phase R0 decision recorded in that file.
+      // target_tag_ref is written alongside target_tag. alias itself never
+      // gets a ref field, deliberately.
       const targetResolved = await resolveOrCreateTagV2Row(target);
       if (ownAlias) {
         await pocketbase
@@ -1535,14 +1517,13 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
       }
 
       // target_tag_ref is this dialog's own tag (the alias's target) -
-      // alias itself stays ref-less, per the Phase R0 decision (an alias
-      // like "orca" is allowed to have no tags_v2 row of its own). Uses
-      // tag.id directly, not a re-resolve-by-name - Phase R3.5 (see
-      // TAG_RELATIONAL_REFACTOR_NOTES.md) fix, same reasoning as
+      // alias itself stays ref-less, deliberately (an alias like "orca" is
+      // allowed to have no tags_v2 row of its own). Uses tag.id directly,
+      // not a re-resolve-by-name - same reasoning as
       // ImpliedTagsDialog.handleAdd's own sourceId: `tag` comes from the
-      // admin grid (tag_usage-backed, Phase R3.1), whose id is already the
-      // real, specific tags_v2 id for this row - re-resolving by name
-      // could land on a different row once two rows can share a name.
+      // admin grid (tag_usage-backed), whose id is already the real,
+      // specific tags_v2 id for this row - re-resolving by name could land
+      // on a different row once two rows can share a name.
       const targetId = tag.id;
 
       await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag, target_tag_ref: targetId });
@@ -1846,12 +1827,10 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
   // tag; and a "rename" that's only a casing/whitespace difference from the
   // original must be blocked here, not just detected downstream - it's the
   // exact input that corrupts patterns/tags_v2 consistency and wipes the
-  // implied-tags graph if allowed through (found via code review, see
-  // TAG_REDESIGN_PROJECT_NOTES.md).
+  // implied-tags graph if allowed through (found via code review).
   const fromExists = tagStats.some((t) => t.tag === normalizeTagName(fromTag));
   const toExists = tagStats.some((t) => t.tag === normalizeTagName(toTag));
-  // Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-  // named separately from canSubmit below so the same-tag case can get its
+  // Named separately from canSubmit below so the same-tag case can get its
   // own helper text instead of silently disabling the button with no
   // explanation - the gap this UI fix closes. syncSatelliteTablesForOp also
   // guards this same case server-side, as defense in depth, not because
@@ -2086,28 +2065,25 @@ const TagManagementPage = () => {
 
   // ── Tag metadata (Type + Definition) dialog ────────────────────────────────
   //
-  // tags_v2 holds the canonical Type/Definition/disambiguation-note metadata
-  // added in Phase 1 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md).
-  // Full-list fetches, same convention as `hierarchy` above - a per-row Map
-  // lookup client-side rather than a query per DataGrid row.
+  // tags_v2 holds the canonical Type/Definition/disambiguation-note
+  // metadata. Full-list fetches, same convention as `hierarchy` above - a
+  // per-row Map lookup client-side rather than a query per DataGrid row.
   const [metadataRow, setMetadataRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: tagsV2List = [], refetch: refetchTagsV2 } = useQueryGetAllTagsV2();
   const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
-  // Tag Relational Refactor, R3.5 follow-up (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): keyed by id, not by `tag` (the
-  // display name). Once two tags_v2 rows can share a name (Phase R0's
-  // uniqueness relaxation, exercised for real by the "autumn (artist)" ->
-  // "autumn" rename this refactor was built around), a name-keyed Map can
-  // only ever hold one of them - the other silently vanishes from lookups
-  // that share this map. That's cosmetic for the Type column's badge below,
-  // but a real correctness bug for TagMetadataDialog's existingRecord: two
-  // grid rows both named "autumn" would resolve to the same tags_v2 row
-  // (whichever `tagsV2List` happened to place last for that key), so
-  // editing either one's Type/Definition/linked account could silently
-  // read and save over the OTHER row's data instead. tagPageData's own
-  // rows (from the tag_usage view, Phase R3.1) already carry the real,
-  // stable tags_v2 id for this exact reason - see useQueryAdminTagStatsPaginated's
-  // own doc comment - so every caller below looks up by id, not by tag.
+  // Keyed by id, not by `tag` (the display name). Since two tags_v2 rows
+  // can share a name (e.g. the "autumn (artist)" -> "autumn" rename that
+  // exercised this for real), a name-keyed Map can only ever hold one of
+  // them - the other silently vanishes from lookups that share this map.
+  // That's cosmetic for the Type column's badge below, but a real
+  // correctness bug for TagMetadataDialog's existingRecord: two grid rows
+  // both named "autumn" would resolve to the same tags_v2 row (whichever
+  // `tagsV2List` happened to place last for that key), so editing either
+  // one's Type/Definition/linked account could silently read and save over
+  // the OTHER row's data instead. tagPageData's own rows (from the
+  // tag_usage view) already carry the real, stable tags_v2 id for this
+  // exact reason - see useQueryAdminTagStatsPaginated's own doc comment -
+  // so every caller below looks up by id, not by tag.
   const tagsV2ById = useMemo(() => new Map(tagsV2List.map((r) => [r.id, r])), [tagsV2List]);
 
   const handleMetadataSaved = useCallback(() => {
@@ -2163,7 +2139,7 @@ const TagManagementPage = () => {
       // written straight into patterns.tags while syncSatelliteTablesForOp
       // normalized separately, so a case-different rename left patterns
       // holding a different string than tags_v2/tag_hierarchy (found via
-      // code review, see TAG_REDESIGN_PROJECT_NOTES.md).
+      // code review).
       const newTag = op.newTag ? normalizeTagName(op.newTag) : op.newTag;
 
       setProgress({
@@ -2182,13 +2158,11 @@ const TagManagementPage = () => {
       try {
         setIsFetchingPatterns(true);
 
-        // Tag Relational Refactor, Phase R3.4 (see
-        // TAG_RELATIONAL_REFACTOR_NOTES.md): all pattern-level work now
-        // happens inside syncSatelliteTablesForOp itself, id-based
-        // (tag_refs ~ id, via repointPatternTagRefs - not
+        // All pattern-level work happens inside syncSatelliteTablesForOp
+        // itself, id-based (tag_refs ~ id, via repointPatternTagRefs - not
         // fetchPatternsWithTag's string match, since patterns.tags is
-        // frozen as of Phase R3.3 and can no longer be trusted to find
-        // every pattern that actually carries a given tag). A rename
+        // frozen and can no longer be trusted to find every pattern that
+        // actually carries a given tag). A rename
         // touches no patterns at all - a renamed tags_v2 row keeps its own
         // id, so every pattern already pointing at it is still correct.
         // The progress callback drives the same live "Processing N of M"
@@ -2681,10 +2655,8 @@ const TagManagementPage = () => {
         </Paper>
       )}
 
-      {/* Graph view - the tag graph visualization scoped alongside Phase R3,
-          built once the developer asked for it (see
-          TAG_RELATIONAL_REFACTOR_NOTES.md). Read-only; clicking a tag node
-          reuses the existing Implied Tags dialog rather than a new one. */}
+      {/* Graph view - read-only, but not inert: clicking a tag node reuses
+          the existing Implied Tags dialog rather than a new one. */}
       {tagViewMode === 'graph' && (
         <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
           <TagGraphView

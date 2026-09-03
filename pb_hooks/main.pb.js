@@ -164,18 +164,15 @@ routerAdd('GET', '/api/pattern-search', (c) => {
       return String(s).replace(/"/g, '\\"');
     }
 
-    // Phase R3.1 of the Tag Relational Refactor (see
-    // TAG_RELATIONAL_REFACTOR_NOTES.md): emits a tag_refs relation match for
-    // an already-resolved tags_v2 id, the same `~`-on-a-multi-relation-
-    // column idiom already live and proven for patterns.authors
-    // (`authors ~ '${userId}'`, see src/functions/database/patterns.ts). A
-    // null tagId means no tags_v2 row matches this name at all - a
-    // pattern's tag_refs can only ever hold a real id, so an include token
-    // can never match anything (an always-false fragment), while an
-    // exclude token is a no-op (excluding a nonexistent tag constrains
-    // nothing) and gets no fragment at all. This preserves the pre-R3
-    // behavior, where a tag string nothing ever used already matched zero
-    // patterns.
+    // Emits a tag_refs relation match for an already-resolved tags_v2 id,
+    // the same `~`-on-a-multi-relation-column idiom already live and proven
+    // for patterns.authors (`authors ~ '${userId}'`, see
+    // src/functions/database/patterns.ts). A null tagId means no tags_v2
+    // row matches this name at all - a pattern's tag_refs can only ever
+    // hold a real id, so an include token can never match anything (an
+    // always-false fragment), while an exclude token is a no-op (excluding
+    // a nonexistent tag constrains nothing) and gets no fragment at all -
+    // a tag string nothing ever used matches zero patterns either way.
     function emitTagIdFilter(tagId, exclude) {
       if (!tagId) {
         if (!exclude) {
@@ -199,41 +196,35 @@ routerAdd('GET', '/api/pattern-search', (c) => {
 
     for (const t of tokens || []) {
       if (t.type === 'text' || t.type === 'tag') {
-        // Phase 3b (see TAG_REDESIGN_PROJECT_NOTES.md): resolve alias -> root
-        // before matching, so a search for an alias finds patterns stored
-        // under the root tag it points to. Falls back to the original value
-        // when it isn't a known alias - safe for every text/tag token, not
-        // just ones already suspected to be aliased (mirrors resolveTagAlias
-        // in src/functions/database/tags.ts). text and tag tokens share this
-        // branch because they already match the same tag data the same way
-        // - both need the same resolution.
+        // Resolve alias -> root before matching, so a search for an alias
+        // finds patterns stored under the root tag it points to. Falls back
+        // to the original value when it isn't a known alias - safe for
+        // every text/tag token, not just ones already suspected to be
+        // aliased (mirrors resolveTagAlias in src/functions/database/tags.ts).
+        // text and tag tokens share this branch because they already match
+        // the same tag data the same way - both need the same resolution.
         //
-        // Phase R3.1 (refined in R3.5, see TAG_RELATIONAL_REFACTOR_NOTES.md):
-        // the resolved name is then looked up in tagIdByName - a name -> id
+        // The resolved name is then looked up in tagIdByName - a name -> id
         // map that prefers a General-type row when one exists for this
         // name, falling back to whichever type does exist otherwise (built
         // that way below, at map-construction time). Mirrors
         // resolveOrCreateTagV2Row's own resolution rule exactly - a plain
-        // typed word defaults to the General meaning once a name can
-        // belong to more than one row (Phase R0's uniqueness relaxation,
-        // exercised for real in Phase R3.5). The match itself is an id
-        // comparison against tag_refs, not a string comparison against
-        // tags.
+        // typed word defaults to the General meaning once a name can belong
+        // to more than one row. The match itself is an id comparison
+        // against tag_refs, not a string comparison against tags.
         //
-        // R3.5 follow-up (found live-testing the "autumn (artist)" ->
-        // "autumn" rename this whole exercise was built around): an alias
-        // is tried via aliasIdMap FIRST, ahead of the aliasMap + tagIdByName
-        // path above. aliasIdMap resolves straight to the tags_v2 id the
-        // alias's target_tag_ref names - the specific row an admin picked
-        // when they set up the alias, via AliasDialog, which sets it from
-        // tag.id, not a name lookup. Falling through aliasMap -> tagIdByName
-        // instead would re-resolve the target's plain name a second time,
-        // and tagIdByName's own General-preference (just above) would then
-        // silently steer an alias like "autumn (artist)" to the General
-        // "autumn" (the season) instead of the Author-typed row the alias
-        // was actually set up to mean - wrong results, not an error. A
-        // pre-R1 alias with no target_tag_ref yet still falls back to the
-        // name-based path, same as before.
+        // An alias is tried via aliasIdMap first, ahead of the aliasMap +
+        // tagIdByName path above. aliasIdMap resolves straight to the
+        // tags_v2 id the alias's target_tag_ref names - the specific row an
+        // admin picked when they set up the alias, via AliasDialog, which
+        // sets it from tag.id, not a name lookup. Falling through aliasMap
+        // -> tagIdByName instead would re-resolve the target's plain name a
+        // second time, and tagIdByName's own General-preference (just
+        // above) would then silently steer an alias like "autumn (artist)"
+        // to the General "autumn" (the season) instead of the Author-typed
+        // row the alias was actually set up to mean - wrong results, not an
+        // error. An alias with no target_tag_ref yet still falls back to
+        // the name-based path.
         const typedNorm = String(t.value).toLowerCase();
         let tagId = (aliasIdMap && aliasIdMap[typedNorm]) || null;
         if (!tagId) {
@@ -242,22 +233,19 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         }
         emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'author') {
-        // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md) established that
-        // author names are baked into a pattern's tag data at save time
-        // (scripts/backfill-author-tags.mjs, and the live-forward
-        // equivalent that keeps this true for new patterns) - the same as
-        // any other tag. Phase R3.1 changes only how the match itself
-        // works, not that principle: it now resolves the typed name to a
-        // specific tags_v2 id and matches tag_refs, instead of matching a
-        // string.
+        // Author names are baked into a pattern's tag data at save time
+        // (scripts/backfill-author-tags.mjs, and the equivalent live-forward
+        // sync that keeps this true for new patterns) - the same as any
+        // other tag. The match itself resolves the typed name to a specific
+        // tags_v2 id and matches tag_refs, instead of matching a string.
         //
-        // This replaces the old author_manual/authors-relation matching,
+        // This bypasses author_manual/authors-relation matching entirely,
         // and with it the authorIdMap name-to-id lookup that matching
         // needed - matching by tag data needs no id resolution against
-        // authors/manual_authors at all. authorIdMap is still accepted as
-        // a parameter (the client still sends it) but is no longer read
-        // here; retiring it fully is a later Contract-pass cleanup, same
-        // as /api/resolve-author-ids - see TAG_REDESIGN_PROJECT_NOTES.md.
+        // authors/manual_authors at all. authorIdMap is still accepted as a
+        // parameter (the client still sends it) but is no longer read here;
+        // retiring it fully, along with /api/resolve-author-ids, is left
+        // for later.
         //
         // Resolution order, closest to the old string-based order:
         //   1. authorTagIdByName - a type-scoped (Author type only) name ->
@@ -267,22 +255,20 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         //   2. authorNameMap - an author's current account/profile name ->
         //      their tag's current STRING, resolved through tagIdByName
         //      (type-blind) afterward. Still needed, not made unnecessary
-        //      by ID-based matching (a correction to this project's own
-        //      original R3 plan - see TAG_RELATIONAL_REFACTOR_NOTES.md):
-        //      it is what lets a search still find someone even when their
-        //      tag's string is disambiguated away from their account name
-        //      (e.g. "autumn" -> "autumn (artist)"), for as long as that
-        //      gap exists. Deliberately not a tag_aliases row: "autumn" the
-        //      season is a real, unrelated tag, and a general alias would
-        //      hijack every plain search for it too - the same shadowing
-        //      the Alias dialog's own "already exists as its own tag" guard
-        //      refuses to allow. Scoping the fix to this branch only, keyed
-        //      off the account/profile name rather than the tag text,
-        //      sidesteps that risk entirely - it can never affect a
-        //      `text`/`tag` token, only `author`.
+        //      by ID-based matching: it is what lets a search still find
+        //      someone even when their tag's string is disambiguated away
+        //      from their account name (e.g. "autumn" -> "autumn
+        //      (artist)"), for as long as that gap exists. Deliberately not
+        //      a tag_aliases row: "autumn" the season is a real, unrelated
+        //      tag, and a general alias would hijack every plain search for
+        //      it too - the same shadowing the Alias dialog's own "already
+        //      exists as its own tag" guard refuses to allow. Scoping the
+        //      fix to this branch only, keyed off the account/profile name
+        //      rather than the tag text, sidesteps that risk entirely - it
+        //      can never affect a `text`/`tag` token, only `author`.
         //   3. aliasIdMap / aliasMap - same fallback the old code already
         //      had, now id-first for the same reason the text/tag branch
-        //      above is (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md).
+        //      above is.
         const typedNorm = String(t.value).toLowerCase();
         let tagId = (authorTagIdByName && authorTagIdByName[typedNorm]) || null;
         if (!tagId) {
@@ -299,9 +285,9 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'id') {
         const b = bind(t.value);
-        // The facet query cross-joins json_each(patterns.tag_refs) (Phase
-        // R3.1 - see TAG_RELATIONAL_REFACTOR_NOTES.md) and joins that to
-        // tags_v2, both of which have their own `id` column too - a bare
+        // The facet query cross-joins json_each(patterns.tag_refs) and
+        // joins that to tags_v2, both of which have their own `id` column
+        // too - a bare
         // `id` reference here is ambiguous between `patterns.id` and those.
         // SQLite throws a parse error, which the facet query's try/catch
         // swallows, silently leaving tagFacets (and totalItems, via
@@ -370,12 +356,12 @@ routerAdd('GET', '/api/pattern-search', (c) => {
 
     // Silent, per-user tag exclusion - never surfaces as a visible token/chip,
     // just an invisible AND-ed constraint (mirrors the old buildBlockedTagsFilter).
-    // Phase R3.1: resolved type-blind, same as a plain text/tag token -
-    // a blocked tag string means "whichever tag has this name," the same
-    // resolution a bare typed word already gets.
+    // Resolved type-blind, same as a plain text/tag token - a blocked tag
+    // string means "whichever tag has this name," the same resolution a
+    // bare typed word already gets.
     //
-    // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blockedTagRefs
-    // is parallel to blockedTags, same length/index - '' for an entry with
+    // blockedTagRefs is parallel to blockedTags, same length/index - '' for
+    // an entry with
     // no specific id resolved client-side (a free-solo block, or one from
     // before this field existed). Index i's ref is tried first, reaching
     // the exact row BlockedTagsSection.tsx's picker showed (e.g. the
@@ -496,18 +482,17 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     } catch (_) {}
   }
 
-  // Phase 3b (see TAG_REDESIGN_PROJECT_NOTES.md): look up tag_aliases once
-  // per request, server-side (never client-supplied), and hand the map into
-  // buildPatternFilters. implied tags need no equivalent lookup here - they
-  // are already baked into patterns.tags at save time (see
-  // applyManualTagChange in src/functions/database/tags.ts), so search
-  // never needs to know about the implied_tags graph, only aliases.
+  // Look up tag_aliases once per request, server-side (never
+  // client-supplied), and hand the map into buildPatternFilters. implied
+  // tags need no equivalent lookup here - they are already baked into
+  // patterns.tags at save time (see applyManualTagChange in
+  // src/functions/database/tags.ts), so search never needs to know about
+  // the implied_tags graph, only aliases.
   let aliasMap = {};
-  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): aliasIdMap holds
-  // target_tag_ref directly, alias(lower) -> tags_v2 id, for the alias's
-  // target row specifically - not just "whichever row this name resolves
-  // to today." aliasMap (the name) stays alongside it as the fallback for
-  // an alias created before target_tag_ref existed (Phase R0/R1).
+  // aliasIdMap holds target_tag_ref directly, alias(lower) -> tags_v2 id,
+  // for the alias's target row specifically - not just "whichever row this
+  // name resolves to today." aliasMap (the name) stays alongside it as the
+  // fallback for an alias created before target_tag_ref existed.
   let aliasIdMap = {};
   try {
     const aliasRecords = $app.findRecordsByFilter('tag_aliases', "id != ''", '', 0, 0);
@@ -520,8 +505,8 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     }
   } catch (_) {}
 
-  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): maps an author's current
-  // account/profile name to their current canonical tag - see
+  // Maps an author's current account/profile name to their current
+  // canonical tag - see
   // buildPatternFilters' own comment on the `author` branch for why this
   // exists alongside aliasMap instead of just using it. Only built when the
   // request actually has an author token: two extra table scans, and this
@@ -550,9 +535,8 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     } catch (_) {}
   }
 
-  // Phase R3.1 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): tagIdByName resolves a name to its
-  // tags_v2 id, type-blind (any type) - mirrors resolveOrCreateTagV2Row's
+  // tagIdByName resolves a name to its tags_v2 id, type-blind (any type) -
+  // mirrors resolveOrCreateTagV2Row's
   // own resolution rule, used for text/tag tokens and for resolving a
   // string (from aliasMap or authorNameMap) the rest of the way to an id.
   // authorTagIdByName resolves a name to its Author-typed tags_v2 id
@@ -580,13 +564,11 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         const row = allTagRows[i];
         const name = row.getString('tag');
         if (!name) continue;
-        // Tag Relational Refactor, Phase R3.5 (see
-        // TAG_RELATIONAL_REFACTOR_NOTES.md): prefer a General-type row for
-        // this name over any other type, regardless of which one this
-        // unsorted loop happens to reach first - mirrors the identical fix
-        // in resolveOrCreateTagV2Row (src/functions/database/tags.ts). A
-        // plain text/tag token means "whichever tag has this name"; once
-        // two rows can share a name (Phase R0's uniqueness relaxation),
+        // Prefer a General-type row for this name over any other type,
+        // regardless of which one this unsorted loop happens to reach first
+        // - mirrors the identical fix in resolveOrCreateTagV2Row
+        // (src/functions/database/tags.ts). A plain text/tag token means
+        // "whichever tag has this name"; once two rows can share a name,
         // that must default to the General one deterministically, not to
         // whichever findRecordsByFilter happened to return first with no
         // sort applied.
@@ -640,9 +622,8 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     logZeroResultSearch(tokens);
   }
 
-  // Phase R3.1 (see TAG_RELATIONAL_REFACTOR_NOTES.md): the json_each scan
-  // now walks patterns.tag_refs instead of patterns.tags, joined straight
-  // through to tags_v2 for the id and the current display string together
+  // The json_each scan walks patterns.tag_refs, joined straight through to
+  // tags_v2 for the id and the current display string together
   // - one query, no second lookup needed. tagFacets gains tagId; Sidebar.tsx
   // can look up a facet's color/type by id instead of by name once it does.
   const tagFacets = [];
@@ -807,7 +788,6 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
 // whatever cron service already calls /api/sync-aggregates at this endpoint
 // too, on a similar schedule (e.g. daily).
 //
-// Phase 1 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md):
 // scripts/backfill-tags-v2.mjs does the one-time initial population of the
 // tags_v2 collection from patterns.tags; this endpoint is what keeps it
 // caught up with every tag typed after that backfill ran. Finds any tag
@@ -820,8 +800,8 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
 // index on `tag` stops a duplicate row from ever actually existing, and
 // each create below is individually try/caught so one such collision can't
 // roll back the rest of an otherwise-successful run. Corrected via code
-// review, see TAG_REDESIGN_PROJECT_NOTES.md - this used to claim
-// overlapping runs "can't create duplicates" at all, which the unique
+// review - this used to claim overlapping runs "can't create duplicates" at
+// all, which the unique
 // index backstops but the snapshot-then-transact approach here doesn't
 // prevent on its own.
 routerAdd('POST', '/api/sync-tag-catalog', (c) => {
@@ -939,9 +919,9 @@ routerAdd('POST', '/api/sync-tag-catalog', (c) => {
   }
 });
 
-// Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): keeps author tags current
-// for a pattern saved or edited after scripts/backfill-author-tags.mjs's
-// one-time run. Mirrors that script: find or create an Author-type tags_v2
+// Keeps author tags current for a pattern saved or edited after
+// scripts/backfill-author-tags.mjs's one-time run. Mirrors that script:
+// find or create an Author-type tags_v2
 // row per distinct author name, cascade the resolved name into every
 // pattern that credits them. Runs as a periodic sync instead of a hook on
 // the pattern-save path, the same reasoning /api/sync-tag-catalog above
@@ -1147,9 +1127,8 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
 
       // Cascade every non-conflicted identity's resolved tag onto every
       // pattern that credits it - "add, never remove," same rule the
-      // backfill script uses. Tag Relational Refactor, Phase R1 (see
-      // TAG_RELATIONAL_REFACTOR_NOTES.md): tag_refs gets the identical
-      // cascade, dual-write alongside tags - every tagId here is already
+      // backfill script uses. tag_refs gets the identical cascade,
+      // dual-write alongside tags - every tagId here is already
       // real by this point (toCreate's loop above already replaced
       // tagIdByNorm's entries with real ids, in this same transaction),
       // unlike the backfill script's separate dry-run preview pass.
@@ -2650,8 +2629,8 @@ routerAdd(
   $apis.requireAuth('admins'),
 );
 
-// Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): keeps an author's tag
-// identity in sync with their account name. Without this, renaming an
+// Keeps an author's tag identity in sync with their account name. Without
+// this, renaming an
 // account would stop automatically updating that person's credit on every
 // pattern - today it is instant, because patterns.authors is a live
 // relation; once an author is a tag string baked into patterns.tags,
@@ -2669,7 +2648,6 @@ routerAdd(
 // onRecordAfterUpdateSuccess and record.original() verified against
 // PocketBase's own JSVM reference before writing this, rather than
 // guessed at - see https://pocketbase.io/jsvm/interfaces/core.Record.html
-// and TAG_REDESIGN_PROJECT_NOTES.md, Phase 4.
 onRecordAfterUpdateSuccess((e) => {
   // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
   // JSVM can't import a .ts file from src/ directly - keep this copy in

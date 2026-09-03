@@ -176,8 +176,7 @@ export const HomepageSearchV3 = ({
     debouncedSearchTerm,
     isDropdownOpen && mode === 'tag' && searchTerm.length === 0,
   );
-  // Tag Relational Refactor, R3.5 follow-up (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): `tags` (the view above) groups by
+  // `tags` (the view above) groups by
   // string, so two tags_v2 rows sharing a name - e.g. the General "autumn"
   // season tag and the Author-type "autumn" - can only ever appear as one
   // collapsed row there, with no way to tell which one it was. Once there
@@ -252,8 +251,7 @@ export const HomepageSearchV3 = ({
   const commitDropdownItem = useCallback(
     (item: TypeReadOnlyDatabaseItem) => {
       const excludePrefix = negated ? '-' : '';
-      // Tag Relational Refactor, R3.5 follow-up (see
-      // TAG_RELATIONAL_REFACTOR_NOTES.md): an Author-typed "autumn"
+      // An Author-typed "autumn"
       // committed as a plain tag token would resolve ambiguously
       // server-side (buildPatternFilters' tagIdByName defaults a bare name
       // to the General row when one exists). Committing it as an author:

@@ -1,8 +1,7 @@
 /**
- * Turns a normalized tag name into a URL-safe slug for its Definition Page
- * (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 1) - e.g. "eye (flower)" ->
- * "eye-flower". Any run of characters that isn't a-z/0-9 becomes a single
- * hyphen, and leading/trailing hyphens are trimmed.
+ * Turns a normalized tag name into a URL-safe slug for its Definition Page -
+ * e.g. "eye (flower)" -> "eye-flower". Any run of characters that isn't
+ * a-z/0-9 becomes a single hyphen, and leading/trailing hyphens are trimmed.
  *
  * Run normalizeTagName() (normalize-tag.ts) on the tag first - this
  * function doesn't normalize casing/whitespace itself.

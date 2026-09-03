@@ -21,9 +21,8 @@ import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, Typography
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 //
-// The Definition Page for one tag (Phase 1 of the tag redesign - see
-// TAG_REDESIGN_PROJECT_NOTES.md). Phase 2 extended this route with the
-// implied-tags/alias sections below.
+// The Definition Page for one tag. Also carries implied-tags/alias sections
+// below.
 
 export const Route = createFileRoute('/tags/$slug')({
   component: RouteComponent,
@@ -84,12 +83,12 @@ function RouteComponent() {
     );
   }
 
-  // "General" is the default Type every tag starts with (see Phase 1) - not
-  // worth a badge on every single tag page, only shown once a tag has been
-  // given a real, differentiating Type.
+  // "General" is the default Type every tag starts with - not worth a
+  // badge on every single tag page, only shown once a tag has been given a
+  // real, differentiating Type.
   const typeInfo = tagRecord.expand?.type;
-  // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md): an Author-type tag gets a
-  // "(artist)" suffix next to its name instead of the generic Type badge -
+  // An Author-type tag gets a "(artist)" suffix next to its name instead of
+  // the generic Type badge -
   // a deliberate display-only choice. The stored tag itself stays exactly
   // the author's plain name ("jane doe", not "jane doe (artist)") - nothing
   // about search, aliases, or scripts/backfill-author-tags.mjs changes for
@@ -100,8 +99,7 @@ function RouteComponent() {
   // author, so plain-name search kept resolving, on top of the rename).
   const isAuthorType = typeInfo?.name === 'Author';
   const showTypeBadge = !!typeInfo?.name && typeInfo.name.toLowerCase() !== 'general' && !isAuthorType;
-  // Tag Relational Refactor, R3.5 follow-up (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): this "(artist)" suffix logic is now
+  // This "(artist)" suffix logic is
   // shared with the tag search dropdown (HomepageSearchV3.tsx) too, not just
   // this page - see tagNeedsArtistSuffix's own doc comment for the "don't
   // double an already-suffixed override" guard this replaces inline.

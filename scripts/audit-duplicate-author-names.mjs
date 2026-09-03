@@ -1,6 +1,6 @@
-// Phase 0 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - a
-// read-only check for author-name collisions, run once before Phase 4's
-// backfill turns author identity from a user-ID relation into a tag string.
+// A read-only check for author-name collisions, run before
+// scripts/backfill-author-tags.mjs turns author identity from a user-ID
+// relation into a tag string.
 //
 // Finds:
 //   1. Two different registered users who are both credited as an author on
@@ -13,12 +13,12 @@
 //      possibly two different people who happen to share a name.
 //   4. manual_authors profile records whose `name` field doesn't exactly
 //      match any author_manual string actually in use on a pattern - a
-//      known gap (see TAG_REDESIGN_PROJECT_NOTES.md, "What already exists")
-//      surfaced here with real data instead of left as a theoretical risk.
+//      known gap surfaced here with real data instead of left as a
+//      theoretical risk.
 //
 // This script makes no writes. Run it, read the report, and fix any real
 // collision by hand - using the site's existing "(context)" disambiguation
-// convention - before Phase 4's backfill runs.
+// convention - before running scripts/backfill-author-tags.mjs.
 //
 // Usage:
 //   PB_ADMIN_EMAIL=you@example.com PB_ADMIN_PASSWORD=your-password \
@@ -160,7 +160,7 @@ function report(findings) {
   const line = (s = '') => console.log(s);
   let blockingTotal = 0;
 
-  line('=== Duplicate author-name audit (Phase 0, tag redesign) ===');
+  line('=== Duplicate author-name audit ===');
   line();
 
   line(`1. Registered users sharing a name (${findings.registeredCollisions.length})`);
@@ -196,11 +196,14 @@ function report(findings) {
   line();
 
   if (blockingTotal === 0) {
-    line('No name collisions found across sections 1-3. Section 4 items are worth a look but do not block Phase 4.');
+    line(
+      'No name collisions found across sections 1-3. Section 4 items are worth a look but do not block the ' +
+        'author-tags backfill.',
+    );
   } else {
     line(
       `${blockingTotal} potential collision(s) found across sections 1-3. Resolve any real collision by hand, using ` +
-        'the site\'s existing "(context)" disambiguation convention, before Phase 4\'s backfill runs.',
+        'the site\'s existing "(context)" disambiguation convention, before running the author-tags backfill.',
     );
   }
 }

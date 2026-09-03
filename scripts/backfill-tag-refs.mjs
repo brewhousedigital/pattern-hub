@@ -1,7 +1,7 @@
-// Phase R2 of the Tag Relational Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md)
-// - backfills every relation field Phase R1 added, for every row Phase R1's
-// own live dual-write never touched, and re-derives every row it did touch
-// too (see "Always re-derive" below).
+// Backfills every tags_v2 relation field (tag_refs, tag_ref,
+// implies_tag_ref, target_tag_ref) for every row the live save paths'
+// dual-write never touched, and re-derives every row it did touch too (see
+// "Always re-derive" below).
 //
 // Populates, for every row in each collection:
 //   patterns.tag_refs                  <- resolved from patterns.tags
@@ -25,10 +25,9 @@
 // before it ever reached patterns.tags. General-only resolution there
 // created a redundant, disconnected General-type row for every such name
 // instead of reusing the one already linked to that author - caught via
-// this script's own first live dry run, which reported ~136 such rows
-// (see TAG_RELATIONAL_REFACTOR_NOTES.md for the full account). Matching
-// resolveOrCreateTagV2Row's type-blind rule everywhere fixes it, and
-// matches how every other tags_v2 consumer in this codebase has always
+// this script's own first live dry run, which reported ~136 such rows.
+// Matching resolveOrCreateTagV2Row's type-blind rule everywhere fixes it,
+// and matches how every other tags_v2 consumer in this codebase has always
 // resolved a tag name, from back when tags_v2.tag was still globally
 // unique and type-blind was the only kind of lookup that could exist.
 //
@@ -37,23 +36,18 @@
 // every run, and OVERWRITES whatever the ref field currently holds, rather
 // than only filling empty ones in. This is deliberate, not an
 // inefficiency - patterns.tags/implied_tags.tag/implies_tag/
-// tag_aliases.target_tag are the fields every other mechanism (search,
-// display, rename, merge) still treats as canonical through Phase R1 and
-// R2, so they stay correct. A ref field, on the other hand, can drift out
-// of sync with them - most concretely, a merge that repoints a string but
-// (until Phase R3 teaches it to) doesn't yet know to repoint the matching
-// ref field too. Re-deriving from the canonical string every time is what
-// makes this backfill safe to re-run at any point before Phase R3 ships,
-// and correct even for a row Phase R1's own live dual-write already
+// tag_aliases.target_tag are the fields this backfill trusts as canonical
+// when deriving a ref field. Computing fresh every time, rather than only
+// filling in a blank ref field, is what keeps this script a reliable
+// reconciliation pass - safe to re-run at any point, and correct even for
+// a row an earlier run (or the live save path's own dual-write) already
 // touched. A row whose derived value already matches what is stored is
 // skipped - that only costs an extra read, never a wasted write.
 //
 // This does NOT touch patterns.tags, implied_tags.tag/implies_tag, or
-// tag_aliases.alias/target_tag - those stay exactly as they are, and stay
-// canonical until Phase R3's cutover. alias itself never gets a ref field
-// at all, on any pass - the Phase R0 decision recorded in
-// TAG_RELATIONAL_REFACTOR_NOTES.md - since an alias like "orca" is allowed
-// to have no tags_v2 row of its own.
+// tag_aliases.alias/target_tag - those stay exactly as they are. alias
+// itself never gets a ref field at all, on any pass, since an alias like
+// "orca" is allowed to have no tags_v2 row of its own.
 //
 // This makes writes. By default it's a DRY RUN - it prints exactly what it
 // would do, without writing anything. Pass --apply to actually write.
@@ -219,7 +213,7 @@ async function main() {
   }
 
   // ─── Report ───────────────────────────────────────────────────────────
-  console.log('=== tag_refs backfill (Tag Relational Refactor, Phase R2) ===');
+  console.log('=== tag_refs backfill ===');
   console.log(
     APPLY
       ? 'Mode: APPLY - this will create and update records.'

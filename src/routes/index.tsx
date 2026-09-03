@@ -73,8 +73,7 @@ function RouteComponent() {
       search: {
         q: search.q ?? '',
         tags: search.tags ?? [],
-        // Tag Relational Refactor, R3.5 follow-up (see
-        // TAG_RELATIONAL_REFACTOR_NOTES.md): a separate param from `tags`,
+        // A separate param from `tags`,
         // used for an Author-typed tag HomepageTagSearch's dropdown labelled
         // "(artist)" - see handleSelectTag below. /pattern's own loader maps
         // authors= straight to an author token (search-v2.ts), the same
@@ -109,8 +108,7 @@ function RouteComponent() {
     }
     const random = topTags[Math.floor(Math.random() * topTags.length)];
     const name = String(random.tag);
-    // Tag Relational Refactor, R3.5 follow-up polish (see
-    // TAG_RELATIONAL_REFACTOR_NOTES.md): topTags comes from the `tags` view,
+    // topTags comes from the `tags` view,
     // which can't carry type info (it groups by string, so a General and an
     // Author-typed row sharing a name collapse into one row there) - a
     // single, targeted tags_v2 lookup for just this one picked name, not the

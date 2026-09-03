@@ -1,5 +1,4 @@
-// Phase 1 of the tag redesign (see TAG_REDESIGN_PROJECT_NOTES.md) - the
-// one-time backfill that populates the new `tags_v2` collection from every
+// The one-time backfill that populates the `tags_v2` collection from every
 // distinct tag string currently in use on a published pattern.
 //
 // For each distinct, normalized tag found in patterns.tags, this creates one
@@ -129,7 +128,7 @@ async function main() {
     toCreate.push({ tag: norm, slug: candidate, rawExample });
   }
 
-  console.log('=== tags_v2 backfill (Phase 1, tag redesign) ===');
+  console.log('=== tags_v2 backfill ===');
   console.log(
     APPLY
       ? 'Mode: APPLY - this will create records.'

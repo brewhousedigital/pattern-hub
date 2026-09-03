@@ -210,9 +210,9 @@ export type TypeAuthData = {
   // Tags to silently exclude from homepage/search results (logged-in users only)
   blocked_tags?: string[];
   /**
-   * R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): a tags_v2 id per
-   * entry in blocked_tags, same length/index - see CustomizationForm's own
-   * doc comment (components/profile/_shared.tsx) for the full picture.
+   * A tags_v2 id per entry in blocked_tags, same length/index - see
+   * CustomizationForm's own doc comment (components/profile/_shared.tsx)
+   * for the full picture.
    */
   blocked_tag_refs?: string[];
   // Preferred unit for displaying pattern sizes; 'original' shows each pattern's authored unit

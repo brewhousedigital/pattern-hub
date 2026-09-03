@@ -29,10 +29,8 @@ export type TypePatternResponse = {
   tags: string[];
   /**
    * The tags_v2 row id for each of this pattern's tags - the field every
-   * read path actually uses (search, facets, display, entry) as of the
-   * Tag Relational Refactor's Phase R3 cutover (see
-   * TAG_RELATIONAL_REFACTOR_NOTES.md). `tags` (above) is frozen as of
-   * Phase R3.3 - present, but no longer written or read by anything.
+   * read path actually uses (search, facets, display, entry). `tags`
+   * (above) is frozen - present, but no longer written or read by anything.
    * Optional so a record fetched before this field existed, or via a
    * `fields` projection that excludes it, still type-checks.
    */
@@ -72,9 +70,7 @@ export type TypePatternResponse = {
   expand?: {
     authors: TypeAuthData[];
     /**
-     * Phase R3.3 of the Tag Relational Refactor (see
-     * TAG_RELATIONAL_REFACTOR_NOTES.md) - present only on a fetch that
-     * requested `expand: 'tag_refs'`, e.g.
+     * Present only on a fetch that requested `expand: 'tag_refs'`, e.g.
      * useQueryGetAllPatternsByPaginationAdmin.
      */
     tag_refs?: TypeTagV2Record[];
@@ -108,9 +104,8 @@ export type TypePatternSearchResponse = TypePaginationDatabaseResponse<TypePatte
   // Tag counts across the ENTIRE filtered result set (not just this page) -
   // computed server-side in pb_hooks/main.pb.js's /api/pattern-search so the
   // sidebar's "Flower (7)" reflects the full search, not one 20-item page.
-  // tagId (Phase R3.1, see TAG_RELATIONAL_REFACTOR_NOTES.md) is the facet's
-  // tags_v2 row id, straight from the server's join - lets a consumer look
-  // up color/type by id instead of by name.
+  // tagId is the facet's tags_v2 row id, straight from the server's join -
+  // lets a consumer look up color/type by id instead of by name.
   tagFacets: { tagId: string; tag: string; count: number }[];
 };
 
@@ -126,9 +121,8 @@ function buildPatternSearchParams(
     tokens: JSON.stringify(tokens),
     authorIdMap: JSON.stringify(authorIdMap ?? {}),
     blockedTags: JSON.stringify(blockedTags),
-    // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): parallel to
-    // blockedTags, same length/index - '' for an entry with no specific
-    // tags_v2 id resolved (a free-solo block, or one predating this field).
+    // Parallel to blockedTags, same length/index - '' for an entry with no
+    // specific tags_v2 id resolved (a free-solo block, or one predating this field).
     // buildPatternFilters' blockedTags branch (main.pb.js) matches by id
     // first when one is present at that index, falling back to the name.
     blockedTagRefs: JSON.stringify(blockedTagRefs),
@@ -167,8 +161,8 @@ export const useQueryGetAllPatternsByPagination = () => {
   // list, so toggling one refetches automatically).
   const { unblockedTags } = useSessionUnblockedTags();
   const sessionUnblocked = new Set(unblockedTags.map((t) => t.toLowerCase()));
-  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blocked_tag_refs
-  // is a parallel array to blocked_tags (same length/index) - zipped into
+  // blocked_tag_refs is a parallel array to blocked_tags (same
+  // length/index) - zipped into
   // entries first so both stay in lockstep through the same filter, rather
   // than filtering two separately-derived arrays and risking them drifting
   // out of alignment.
@@ -262,8 +256,7 @@ export const useQueryGetAllPatternsByPaginationAdmin = (
       // perPage must match the DataGrid's pageSize (25) or the grid's page
       // ranges drift from the server's
       //
-      // expand: 'tag_refs' (Phase R3.3, see TAG_RELATIONAL_REFACTOR_NOTES.md)
-      // - AdminEditPatternModal.tsx needs each row's expanded tags_v2 data
+      // expand: 'tag_refs' - AdminEditPatternModal.tsx needs each row's expanded tags_v2 data
       // synchronously, on first mount, to seed its tag-entry field; a
       // separate query fetched inside the modal could still be pending at
       // that exact moment (see that file's own comment on this). This row
@@ -324,9 +317,8 @@ export type TypePatternCreatePayload = {
   tags: string[];
   /**
    * The tags_v2 row id for every entry in `tags`, resolved (or created) via
-   * resolveOrCreateTagRefs before this payload is built. As of Phase R3.3
-   * of the Tag Relational Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md),
-   * this is the field every read path actually uses - `tags` itself is
+   * resolveOrCreateTagRefs before this payload is built. This is the field
+   * every read path actually uses - `tags` itself is
    * still computed and included in this payload by every caller
    * (resolveOrCreateTagRefs needs it as input, right below), but
    * useMutationEditPattern no longer forwards it to PocketBase, so the
@@ -376,28 +368,22 @@ export const useMutationEditPattern = () => {
       formData.append('description', payload?.description || '');
       formData.append('instructions', payload?.instructions || '');
       formData.append('source_url', payload?.source_url || '');
-      // Phase R3.3 of the Tag Relational Refactor (see
-      // TAG_RELATIONAL_REFACTOR_NOTES.md): tags is no longer sent - this is
-      // the cutover itself, the point patterns.tags actually freezes.
-      // PocketBase leaves an omitted field's stored value untouched on
-      // update(), so an existing pattern's tags simply stops changing from
-      // here; a brand-new pattern's tags stays empty/unset, which is fine
-      // since nothing reads it anymore (R3.1/R3.2 already moved every read
-      // path to tag_refs). payload.tags itself is untouched - every caller
-      // still computes it, since resolveOrCreateTagRefs still needs it as
-      // input to derive tag_refs below.
+      // `tags` is deliberately not sent - this is the point patterns.tags
+      // actually stays frozen. PocketBase leaves an omitted field's stored
+      // value untouched on update(), so an existing pattern's tags simply
+      // stops changing from here; a brand-new pattern's tags stays
+      // empty/unset, which is fine since nothing reads it anymore (every
+      // read path now uses tag_refs). payload.tags itself is untouched -
+      // every caller still computes it, since resolveOrCreateTagRefs still
+      // needs it as input to derive tag_refs below.
       //
-      // tag_refs itself is now sent unconditionally, `?? []` rather than
-      // Phase R1's original `if (payload?.tag_refs)` guard - that guard
-      // protected against a caller that hadn't been migrated to compute
-      // tag_refs yet accidentally wiping out a value some other process
-      // had already set. Both real callers (AdminEditPatternModal.tsx,
-      // review.tsx) have unconditionally computed and sent tag_refs since
-      // Phase R1 shipped, so that scenario no longer exists - and since
-      // tag_refs is what every read path now actually uses, a save that
-      // silently omitted it entirely would leave a pattern's tags
-      // invisible to search/display, which is worse than an explicit,
-      // predictable empty array.
+      // tag_refs itself is sent unconditionally, `?? []` - both real
+      // callers (AdminEditPatternModal.tsx, review.tsx) always compute and
+      // send it, so there's no scenario where omitting it would protect a
+      // value some other process set. Since tag_refs is what every read
+      // path now actually uses, a save that silently omitted it entirely
+      // would leave a pattern's tags invisible to search/display, which is
+      // worse than an explicit, predictable empty array.
       formData.append('tag_refs', JSON.stringify(payload?.tag_refs ?? []));
       formData.append('authors', JSON.stringify(payload?.authors));
       formData.append('author_manual', JSON.stringify(payload?.author_manual));

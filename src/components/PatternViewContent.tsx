@@ -58,19 +58,19 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const { data: drawerData } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
   const patternSets = drawerData?.sets ?? [];
 
-  // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the standalone tags
-  // block below by each tag's Type. Computed unconditionally (rules of
-  // hooks) even though it's only rendered under showStandaloneTags.
+  // Groups the standalone tags block below by each tag's Type. Computed
+  // unconditionally (rules of hooks) even though it's only rendered under
+  // showStandaloneTags.
   //
-  // Author-type groups are filtered out here - Phase 4 cascades a pattern's
-  // resolved author name(s) into its own tags (for search), but this page
+  // Author-type groups are filtered out here - the author-cascade mechanism
+  // bakes a pattern's resolved author name(s) into its own tags (for
+  // search), but this page
   // already shows the author(s) via the Attribution panel below, reading
   // patterns.authors/author_manual directly. Rendering the same name again
   // as a tag chip here would just duplicate it.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
-  // Phase R3.2 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): reads tag_refs instead of tags -
-  // groupTagsByType itself is what changed, not this call site's shape.
+  // Reads tag_refs instead of tags - groupTagsByType itself is what does
+  // the work, not this call site's shape.
   const tagGroups = React.useMemo(
     () => groupTagsByType(viewData?.tag_refs ?? [], tagsV2).filter((group) => !isAuthorDisplayType(group.type)),
     [viewData?.tag_refs, tagsV2],
@@ -565,9 +565,8 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   }
 
                   // "standard" mode (and the untyped/General fallback) - looks
-                  // exactly like the flat chip cloud this block always
-                  // rendered, before Phase 3c, for a pattern with no Types
-                  // assigned yet.
+                  // exactly like the flat chip cloud this block would render
+                  // for a pattern with no Types assigned at all.
                   return (
                     <Box key={groupKey}>
                       {label}
@@ -620,8 +619,8 @@ const PanelSectionTitle = ({ children }: { children: React.ReactNode }) => (
   </Typography>
 );
 
-// Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): a small colored sub-label for
-// one Type's group of tags, nested under the "Tags" section title above.
+// A small colored sub-label for one Type's group of tags, nested under the
+// "Tags" section title above.
 // Never rendered for the untyped/General fallback group - see
 // isDefaultTagType in group-tags-by-type.ts.
 const TagGroupLabel = ({ type, children }: { type: TypeTagTypeRecord | null; children: React.ReactNode }) => (

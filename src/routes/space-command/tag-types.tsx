@@ -34,8 +34,7 @@ import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 //
-// Tag Types (Phase 1 of the tag redesign - see TAG_REDESIGN_PROJECT_NOTES.md).
-// Every tag belongs to a Type; "General" (the default) is seeded once and
+// Tag Types. Every tag belongs to a Type; "General" (the default) is seeded once and
 // never shown as a badge on the public Definition Page or in the tag
 // manager's grid - this screen manages every type OTHER than that default.
 

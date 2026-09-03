@@ -214,18 +214,18 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
     enabled: !!featuredPatternId,
   });
 
-  // Phase 3c (see TAG_REDESIGN_PROJECT_NOTES.md): groups the featured
-  // pattern's tags by Type, so same-type tags render clustered together and
-  // color-coded below, instead of a plain uncolored chip row.
+  // Groups the featured pattern's tags by Type, so same-type tags render
+  // clustered together and color-coded below, instead of a plain uncolored
+  // chip row.
   //
-  // Author-type groups are filtered out - Phase 4 cascades a pattern's
-  // resolved author name(s) into its own tags, but a featured pattern's
-  // author is normally this same profile's owner, and is already shown
-  // elsewhere on the page - no need to show their own name back to them
-  // again as a tag chip here.
-  // Phase R3.2 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): reads tag_refs instead of tags -
-  // groupTagsByType itself is what changed, not this call site's shape.
+  // Author-type groups are filtered out - the author-cascade mechanism
+  // bakes a pattern's resolved author name(s) into its own tags, but a
+  // featured pattern's author is normally this same profile's owner, and is
+  // already shown elsewhere on the page - no need to show their own name
+  // back to them again as a tag chip here.
+  //
+  // Reads tag_refs instead of tags - groupTagsByType itself is what does
+  // the work, not this call site's shape.
   const { data: tagsV2ForFeatured = [] } = useQueryGetAllTagsV2();
   const featuredPatternTagGroups = useMemo(
     () =>
@@ -867,7 +867,7 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
 
                   {featuredPattern.tags && featuredPattern.tags.length > 0 && (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2.5 }}>
-                      {/* Phase 3c: grouped by Type so same-type tags cluster
+                      {/* Grouped by Type so same-type tags cluster
                           together; a tag with no Type (or no color set on its
                           Type) falls back to the original neutral styling. */}
                       {featuredPatternTagGroups.flatMap((group) =>

@@ -111,9 +111,8 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const formRef = React.useRef<PatternDetailsFormHandle>(null);
 
-  // Phase R3.3 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): the initial tag list for an existing
-  // pattern now derives from tag_refs, via the parent DataGrid's own
+  // The initial tag list for an existing pattern derives from tag_refs,
+  // via the parent DataGrid's own
   // `expand: 'tag_refs'` (useQueryGetAllPatternsByPaginationAdmin) rather
   // than a separate useQueryGetAllTagsV2() call here - PatternDetailsForm
   // reads initialValues.tags into a useState initializer, a one-time read
@@ -124,11 +123,10 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // hypothetical. The parent row's own data, expand included, is already
   // fully loaded by the time an admin can even click "edit" on it, so
   // reading it here has no such race. An id with no matching tags_v2 row
-  // (the pre-R3.4 merge-delete gap - see TAG_RELATIONAL_REFACTOR_NOTES.md)
-  // is dropped rather than shown as a blank/broken chip.
+  // (a narrow merge/delete-ordering gap) is dropped rather than shown as a
+  // blank/broken chip.
   const initialTags = (props?.expand?.tag_refs ?? []).map((row) => row.tag);
-  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): pins every tag
-  // this pattern is already linked to, by the exact tags_v2 id it already
+  // Pins every tag this pattern is already linked to, by the exact tags_v2 id it already
   // carries. Without this, resolveOrCreateTagRefs would re-resolve every
   // tag by name on every save regardless of whether the admin touched the
   // tag field at all - a pattern already linked to a non-General "autumn"
@@ -236,7 +234,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       // normalizeTagName applies the canonical tag-casing rule (lowercase,
       // trim, collapse internal whitespace) - see
       // src/functions/utilities/normalize-tag.ts and
-      // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. UserUploadForm.tsx's
+      // UserUploadForm.tsx's
       // public submission path applies the same function at its own submit
       // step, so a tag ends up with the same stored casing regardless of
       // which form it was typed into.
@@ -248,7 +246,6 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
         values.authorManual?.filter((item) => item !== 'undefined')?.map((item) => item?.toString()?.toLowerCase()) ||
         [];
 
-      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
       // patterns.tag_refs is a relation, so every tag in filteredTags needs a
       // real tags_v2 row before this save can point at it - resolved (or
       // created, for a brand-new tag) synchronously here rather than relying

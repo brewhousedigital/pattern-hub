@@ -27,10 +27,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 // ─── Tag graph visualization ────────────────────────────────────────────────
 //
 // Read-only visualization of the implied-tag graph, plus the aliases hanging
-// off it - scoped alongside Phase R3 of the Tag Relational Refactor, built
-// once the developer asked for it (see TAG_RELATIONAL_REFACTOR_NOTES.md,
-// "Related, separate work: tag graph visualization" for the original scope,
-// and the phase entry recording this file). A third `tagViewMode` option on
+// off it. A third `tagViewMode` option on
 // the admin tags page, alongside the existing 'list'/'tree' - not a
 // replacement for either. All data (tags_v2/implied_tags/tag_aliases) is
 // already fetched by that page for its existing dialogs, so this component
@@ -182,12 +179,11 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
     const tagsById = new Map(tagsV2.map((t) => [t.id, t]));
 
     // Fallback for an edge/alias somehow missing its ref field - shouldn't
-    // happen (Phase R2 backfilled every existing row, and every write path
-    // since Phase R1 populates it going forward), but resolving by name
-    // rather than silently dropping the edge keeps this graph honest if
-    // that's ever wrong. Prefers a General-type row when a name is
-    // ambiguous, matching every other name-resolution path this refactor
-    // settled on (see TAG_RELATIONAL_REFACTOR_NOTES.md, R3.5).
+    // happen (every existing row was backfilled, and every write path
+    // populates it going forward), but resolving by name rather than
+    // silently dropping the edge keeps this graph honest if that's ever
+    // wrong. Prefers a General-type row when a name is ambiguous, matching
+    // every other name-resolution path in this codebase.
     const idByName = new Map<string, string>();
     for (const t of tagsV2) {
       const norm = t.tag.toLowerCase();

@@ -32,9 +32,9 @@ type TagSearchItem = { id: string; tag: string };
 // Reuses the same tag-search query + debounce timing as the homepage search bar
 // (HomepageSearchV3) so results here match what's actually searchable.
 //
-// R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blocked_tags alone
-// - a plain string list - can't distinguish two tags_v2 rows sharing a name
-// (e.g. the General "autumn" season tag and the Author-type "autumn"),
+// blocked_tags alone - a plain string list - can't distinguish two tags_v2
+// rows sharing a name (e.g. the General "autumn" season tag and the
+// Author-type "autumn"),
 // exactly the same limitation the search bars and admin tag-entry field had.
 // Unlike admin tag-entry (which filters Author-typed tags out entirely -
 // they're meant to be derived, never picked there), blocking someone's work

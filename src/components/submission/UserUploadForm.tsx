@@ -150,8 +150,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const [tagValue, setTagValue] = React.useState<string[]>(() => editSubmission?.tags ?? []);
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
-  // Phase R3.3 of the Tag Relational Refactor (see
-  // TAG_RELATIONAL_REFACTOR_NOTES.md): an empty search still shows the
+  // An empty search still shows the
   // most-used tags first, from the `tags` view (unchanged, and already
   // known to be publicly readable, unlike the admin-scoped tag_usage view
   // this form's own admin equivalent, PatternTagsField.tsx, uses instead).
@@ -165,7 +164,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
     debouncedTagSearch,
     isSearchingTags,
   );
-  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): same treatment
+  // Same treatment
   // PatternTagsField.tsx (the admin equivalent of this field) already got -
   // an Author-typed tag is meant to be entirely derived from a pattern's
   // credited author(s), never picked directly here either. tags_v2/
@@ -180,7 +179,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
     () => (tagViewData ?? []).filter((item) => !authorTagIds.has(item.id)),
     [tagViewData, authorTagIds],
   );
-  // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
+  // implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
   // resolution on this entry surface.
   const { data: impliedTagsData = [] } = useQueryGetImpliedTags();
@@ -389,7 +388,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
     // normalizeTagName applies the canonical tag-casing rule (lowercase,
     // trim, collapse internal whitespace) - see
     // src/functions/utilities/normalize-tag.ts and
-    // TAG_REDESIGN_PROJECT_NOTES.md's Phase 0/1. AdminEditPatternModal.tsx's
+    // AdminEditPatternModal.tsx's
     // admin-side edit path applies the same function at its own submit step,
     // so a tag ends up with the same stored casing regardless of which form
     // it was typed into.

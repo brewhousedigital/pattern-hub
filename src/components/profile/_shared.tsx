@@ -38,13 +38,12 @@ export interface CustomizationForm {
   header_gradient: boolean;
   blocked_tags: string[];
   /**
-   * R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): a tags_v2 id per
-   * entry in `blocked_tags`, same length, same index - '' for an entry with
-   * no specific row resolved (a free-solo typed block, never suggested by
-   * the picker, so never given an id to capture). Lets blocking distinguish
-   * two same-named tags_v2 rows (e.g. "autumn" the season vs. the
-   * Author-typed "autumn"), which blocked_tags alone - a plain string list -
-   * never could. See BlockedTagsSection.tsx.
+   * A tags_v2 id per entry in `blocked_tags`, same length, same index - ''
+   * for an entry with no specific row resolved (a free-solo typed block,
+   * never suggested by the picker, so never given an id to capture). Lets
+   * blocking distinguish two same-named tags_v2 rows (e.g. "autumn" the
+   * season vs. the Author-typed "autumn"), which blocked_tags alone - a
+   * plain string list - never could. See BlockedTagsSection.tsx.
    */
   blocked_tag_refs: string[];
   preferred_measurement_unit: 'original' | 'in' | 'in-fraction' | 'cm' | 'mm';
