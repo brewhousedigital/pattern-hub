@@ -44,6 +44,7 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
+import { TagGraphView } from '@/components/admin/TagGraphView';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -2055,7 +2056,7 @@ const TagManagementPage = () => {
   const debouncedSearch = useDebounce(tagSearch, 400);
   const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
-  const [tagViewMode, setTagViewMode] = useState<'list' | 'tree'>('list');
+  const [tagViewMode, setTagViewMode] = useState<'list' | 'tree' | 'graph'>('list');
 
   useEffect(() => {
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
@@ -2609,6 +2610,11 @@ const TagManagementPage = () => {
               <AccountTreeIcon fontSize="small" />
             </Tooltip>
           </ToggleButton>
+          <ToggleButton value="graph">
+            <Tooltip title="Graph view (implied tags)">
+              <DeviceHubIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
         </ToggleButtonGroup>
 
         {tagViewMode === 'list' && (
@@ -2671,6 +2677,22 @@ const TagManagementPage = () => {
               const row = tagPageData?.items.find((r) => r.tag === name) ?? { id: name, tag: name, count: 0 };
               setSetParentRow(row as TypeReadOnlyDatabaseItem);
             }}
+          />
+        </Paper>
+      )}
+
+      {/* Graph view - the tag graph visualization scoped alongside Phase R3,
+          built once the developer asked for it (see
+          TAG_RELATIONAL_REFACTOR_NOTES.md). Read-only; clicking a tag node
+          reuses the existing Implied Tags dialog rather than a new one. */}
+      {tagViewMode === 'graph' && (
+        <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+          <TagGraphView
+            tagsV2={tagsV2List}
+            impliedTags={impliedTagsList}
+            aliases={tagAliasesList}
+            tagTypes={tagTypesList}
+            onNodeClick={(tag) => setImpliedTagsRow(tag)}
           />
         </Paper>
       )}
