@@ -143,7 +143,6 @@ const TagListItem = (props: TagListItemProps) => {
   // tag (product decision) - the separate +/- icon buttons stay
   // additive/subtractive via handleAddTag/handleRemoveTag below.
   const handleSetOnlyTag = (tag: string) => {
-    console.log('>>>Setting only tag', tag);
     setOnlyTag(tag);
     if (props?.handleClose) {
       setPatternId(undefined);
