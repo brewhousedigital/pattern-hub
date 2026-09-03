@@ -251,7 +251,7 @@ function RouteComponent() {
       // this is the point where a public submission's tags actually become a
       // patterns row - resolve (or create) every tag's tags_v2 row here, same
       // as AdminEditPatternModal.tsx's own save handler.
-      const tagRefs = await resolveOrCreateTagRefs(normalizedTags);
+      const tagRefs = await resolveOrCreateTagRefs(normalizedTags, values.preferredTagRefs);
 
       const newPattern = await editPattern.mutateAsync({
         name: values.name,

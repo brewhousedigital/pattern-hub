@@ -127,6 +127,22 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
   // (the pre-R3.4 merge-delete gap - see TAG_RELATIONAL_REFACTOR_NOTES.md)
   // is dropped rather than shown as a blank/broken chip.
   const initialTags = (props?.expand?.tag_refs ?? []).map((row) => row.tag);
+  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): pins every tag
+  // this pattern is already linked to, by the exact tags_v2 id it already
+  // carries. Without this, resolveOrCreateTagRefs would re-resolve every
+  // tag by name on every save regardless of whether the admin touched the
+  // tag field at all - a pattern already linked to a non-General "autumn"
+  // (the Author-typed row - reachable only via the account-name cascade,
+  // never picked directly in the tag dropdown, which filters Author-typed
+  // tags out entirely) would silently flip to the General one on its very
+  // next save for any unrelated reason (fixing a typo in the description,
+  // say), since plain name resolution always prefers General once a name is
+  // ambiguous. Removing a tag prunes its pin (PatternTagsField.tsx); typing
+  // the same name back in fresh resolves normally, exactly as intended -
+  // only an untouched tag stays pinned to what it already pointed at.
+  const initialPreferredTagRefs = new Map(
+    (props?.expand?.tag_refs ?? []).map((row): [string, string] => [row.tag.trim().toLowerCase(), row.id]),
+  );
 
   const initialValues: TypePatternDetailsFormValues = {
     name: props?.name || '',
@@ -145,6 +161,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     // ~1mm line into a 1-inch one on export, blowing out every stroke.
     lineWidthUnit: String(props?.line_width_unit) || 'mm',
     tags: initialTags,
+    preferredTagRefs: initialPreferredTagRefs,
     authors: props?.authors || [],
     authorManual: props?.author_manual || [],
     hasLayers: props?.has_layers ?? false,
@@ -236,7 +253,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
       // real tags_v2 row before this save can point at it - resolved (or
       // created, for a brand-new tag) synchronously here rather than relying
       // on /api/sync-tag-catalog to catch up later, on a schedule.
-      const tagRefs = await resolveOrCreateTagRefs(filteredTags);
+      const tagRefs = await resolveOrCreateTagRefs(filteredTags, values.preferredTagRefs);
 
       const payload: TypePatternCreatePayload = {
         name: values.name,

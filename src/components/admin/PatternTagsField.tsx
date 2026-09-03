@@ -5,6 +5,7 @@ import {
   useQuerySearchTagsV2,
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
+  useQueryAuthorTagIds,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
@@ -13,7 +14,17 @@ import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 
 type PatternTagsFieldProps = {
   value: string[];
-  onChange: (newValue: string[]) => void;
+  /**
+   * `preferredTagRefs` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md)
+   * is a norm(tag) -> tags_v2 id map, protecting a tag this pattern is
+   * already linked to (passed in via the caller's own `initialValues`, see
+   * AdminEditPatternModal.tsx) from being silently re-resolved to a
+   * different row of the same name on an unrelated save. Pass straight
+   * through to resolveOrCreateTagRefs's own `preferredIds` parameter at
+   * save time, unmodified. Always the complete, current map for `newValue`
+   * as a whole, not a delta - safe to just store and forward.
+   */
+  onChange: (newValue: string[], preferredTagRefs: Map<string, string>) => void;
   /**
    * Identifies the record currently being edited (e.g. a pattern or
    * submission id). When this changes, the inherited-tag set is recomputed
@@ -59,6 +70,25 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     isSearching,
   );
 
+  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): an Author-typed
+  // tag is meant to be entirely derived from patterns.authors/author_manual
+  // via the account-name cascade, never picked directly here - filtered out
+  // of both option sources below rather than shown disambiguated (a
+  // dropdown label was this project's first attempt, superseded once it was
+  // clear the dedicated author autocomplete already covers this and
+  // filtering removes the ambiguity outright instead of labelling around
+  // it). tagUsageData has no Type column of its own to filter by directly,
+  // hence the separate id lookup.
+  const { data: authorTagIds = new Set<string>() } = useQueryAuthorTagIds();
+  const searchOptions = React.useMemo(
+    () => tagsV2SearchData.filter((row) => !authorTagIds.has(row.id)),
+    [tagsV2SearchData, authorTagIds],
+  );
+  const tagUsageOptions = React.useMemo(
+    () => (tagUsageData?.items ?? []).filter((item) => !authorTagIds.has(item.id)),
+    [tagUsageData, authorTagIds],
+  );
+
   // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
   // resolution on this entry surface.
@@ -73,6 +103,25 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   const [hierarchyInherited, setHierarchyInherited] = React.useState<Set<string>>(new Set());
   /** Tags present only because a currently-assigned pattern key carries them. */
   const [keyInherited, setKeyInherited] = React.useState<Set<string>>(new Set());
+  /**
+   * norm(tag) -> tags_v2 id for a tag this pattern is already linked to,
+   * seeded from the caller's own initial value (see the onChange prop's own
+   * doc comment) - not populated by anything picked this session, since the
+   * dropdown no longer offers an ambiguous option to pick in the first
+   * place. Pruned whenever its tag is no longer in `value`, so removing a
+   * protected tag and typing the same name back in fresh resolves normally
+   * again, rather than keeping a stale pin.
+   */
+  const [preferredTagRefs, setPreferredTagRefs] = React.useState<Map<string, string>>(new Map());
+
+  const prunePreferred = React.useCallback((refs: Map<string, string>, tags: string[]) => {
+    const present = new Set(tags.map((t) => t.trim().toLowerCase()));
+    const next = new Map(refs);
+    for (const norm of next.keys()) {
+      if (!present.has(norm)) next.delete(norm);
+    }
+    return next;
+  }, []);
 
   // Once the implied-tags graph loads (or the underlying record changes),
   // mark which existing tags are implied by other tags already in the set
@@ -95,11 +144,13 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
         impliedTagsData,
         aliasesData,
       );
-      onChange(next.tags);
+      const prunedPreferred = prunePreferred(preferredTagRefs, next.tags);
+      onChange(next.tags, prunedPreferred);
+      setPreferredTagRefs(prunedPreferred);
       setHierarchyInherited(next.hierarchyInherited);
       setKeyInherited(next.keyInherited);
     },
-    [value, hierarchyInherited, keyInherited, impliedTagsData, aliasesData, onChange],
+    [value, hierarchyInherited, keyInherited, impliedTagsData, aliasesData, onChange, preferredTagRefs, prunePreferred],
   );
 
   // Reconciles whenever the live key-tags union changes (a pattern key was
@@ -119,7 +170,9 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       next.hierarchyInherited.size === hierarchyInherited.size &&
       next.keyInherited.size === keyInherited.size;
     if (unchanged) return;
-    onChange(next.tags);
+    const prunedPreferred = prunePreferred(preferredTagRefs, next.tags);
+    onChange(next.tags, prunedPreferred);
+    setPreferredTagRefs(prunedPreferred);
     setHierarchyInherited(next.hierarchyInherited);
     setKeyInherited(next.keyInherited);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,7 +188,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       label="Tags"
       freeSolo
       serverSide
-      data={isSearching ? tagsV2SearchData : (tagUsageData?.items ?? [])}
+      data={isSearching ? searchOptions : tagUsageOptions}
       value={value}
       onChange={handleChange}
       inputValue={tagInput}

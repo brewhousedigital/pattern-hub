@@ -41,6 +41,16 @@ export type TypePatternDetailsFormValues = {
   lineWidth: string;
   lineWidthUnit: string;
   tags: string[];
+  /**
+   * norm(tag) -> tags_v2 id for a tag this pattern is already linked to
+   * (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) - forward
+   * unmodified to resolveOrCreateTagRefs's own `preferredIds` parameter at
+   * save time. See PatternTagsField.tsx's onChange doc comment. Optional on
+   * `initialValues` (a fresh editing session starts with no pins - nothing
+   * needs to supply an explicit empty Map); always present on getPayload()'s
+   * own return.
+   */
+  preferredTagRefs?: Map<string, string>;
   authors: string[];
   authorManual: string[];
   hasLayers: boolean;
@@ -115,6 +125,9 @@ export const PatternDetailsForm = React.forwardRef<PatternDetailsFormHandle, Pat
   const [designDate, setDesignDate] = React.useState<Dayjs | null>(props.initialValues.designDate);
   const [instructions, setInstructions] = React.useState(props.initialValues.instructions);
   const [tags, setTags] = React.useState<string[]>(props.initialValues.tags);
+  const [preferredTagRefs, setPreferredTagRefs] = React.useState<Map<string, string>>(
+    props.initialValues.preferredTagRefs ?? new Map(),
+  );
   const [authors, setAuthors] = React.useState<string[]>(props.initialValues.authors);
   const [authorManual, setAuthorManual] = React.useState<string[]>(props.initialValues.authorManual);
   const [hasLayers, setHasLayers] = React.useState(props.initialValues.hasLayers);
@@ -146,6 +159,7 @@ export const PatternDetailsForm = React.forwardRef<PatternDetailsFormHandle, Pat
       lineWidth,
       lineWidthUnit,
       tags,
+      preferredTagRefs,
       authors,
       authorManual,
       hasLayers,
@@ -176,6 +190,7 @@ export const PatternDetailsForm = React.forwardRef<PatternDetailsFormHandle, Pat
       setDesignHeightUnit('in');
       setInstructions('');
       setTags([]);
+      setPreferredTagRefs(new Map());
       setAuthors([]);
       setAuthorManual([]);
       setPatternKeys([]);
@@ -310,7 +325,10 @@ export const PatternDetailsForm = React.forwardRef<PatternDetailsFormHandle, Pat
             instructions={instructions}
             onInstructionsChange={setInstructions}
             tags={tags}
-            onTagsChange={setTags}
+            onTagsChange={(newTags, newPreferredTagRefs) => {
+              setTags(newTags);
+              setPreferredTagRefs(newPreferredTagRefs);
+            }}
             authors={authors}
             onAuthorsChange={setAuthors}
             authorManual={authorManual}

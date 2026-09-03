@@ -586,6 +586,36 @@ export const useQueryGetAllTagTypes = () =>
     },
   });
 
+export const AUTHOR_TAG_IDS_QUERY_KEY = ['AuthorTagIds'] as const;
+
+/**
+ * Every tags_v2 id whose Type is "Author" - a small, targeted set (one row
+ * per author actually linked to a tag), not the whole table. R3.5 follow-up
+ * (see TAG_RELATIONAL_REFACTOR_NOTES.md): used to filter Author-typed tags
+ * out of the admin pattern-tag entry dropdown (PatternTagsField.tsx). An
+ * author's tag is meant to be entirely derived from patterns.authors/
+ * author_manual via the account-name cascade
+ * (scripts/backfill-author-tags.mjs, /api/sync-author-tags), never picked
+ * directly there - filtering it out removes the "which autumn did you mean"
+ * ambiguity at its source instead of disambiguating it after the fact, the
+ * way the search-bar dropdowns (which have no equivalent dedicated author
+ * picker to defer to) still have to.
+ */
+export const useQueryAuthorTagIds = () => {
+  const { data: tagTypes = [] } = useQueryGetAllTagTypes();
+  const authorTypeId = tagTypes.find((t) => t.name === 'Author')?.id;
+  return useQuery({
+    queryKey: [...AUTHOR_TAG_IDS_QUERY_KEY, authorTypeId],
+    queryFn: async (): Promise<Set<string>> => {
+      const rows = await pocketbase
+        .collection('tags_v2')
+        .getFullList<TypeTagV2Record>({ filter: `type = "${authorTypeId}"` });
+      return new Set(rows.map((r) => r.id));
+    },
+    enabled: !!authorTypeId,
+  });
+};
+
 // ─── tags_v2 slug helpers ───────────────────────────────────────────────────────
 //
 // Moved here from space-command/tags.tsx (Tag Relational Refactor, Phase R1 -
@@ -735,14 +765,35 @@ export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: Type
  * existing tags string array, and write the result into patterns.tag_refs.
  * Phase R1 is additive dual-write, not a cutover - patterns.tags stays
  * exactly as every other save-path and read-path already expects.
+ *
+ * `preferredIds` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) is
+ * an optional norm(tag) -> tags_v2 id override, consulted before the normal
+ * resolve-by-name step below. Protects a tag a pattern is already linked to
+ * from being silently re-resolved to a different row sharing its name on an
+ * unrelated save - PatternTagsField.tsx seeds it from the pattern's own
+ * existing tag_refs (see AdminEditPatternModal.tsx's initialValues), not
+ * from anything picked fresh: an Author-typed tag can no longer be picked
+ * directly from that dropdown at all (filtered out - see
+ * useQueryAuthorTagIds), so the only way a name stays ambiguous by the time
+ * it reaches here is if it was already that way before this edit started.
+ * Every other caller omits this parameter and gets exactly the prior
+ * behavior.
  */
-export async function resolveOrCreateTagRefs(tagNames: string[]): Promise<string[]> {
+export async function resolveOrCreateTagRefs(
+  tagNames: string[],
+  preferredIds?: Map<string, string>,
+): Promise<string[]> {
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const raw of tagNames) {
     const norm = raw.trim().toLowerCase();
     if (!norm || seen.has(norm)) continue;
     seen.add(norm);
+    const preferredId = preferredIds?.get(norm);
+    if (preferredId) {
+      ids.push(preferredId);
+      continue;
+    }
     const resolved = await resolveOrCreateTagV2Row(raw);
     ids.push(resolved.row.id);
   }
