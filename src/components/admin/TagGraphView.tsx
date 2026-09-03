@@ -38,6 +38,10 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 const LAYER_WIDTH = 240;
 const ROW_HEIGHT = 64;
+// A graph layer (implication depth - see computeLayers) with more ids than
+// this splits into multiple side-by-side columns instead of one column
+// stacking all of them - see the Position step below.
+const MAX_TAGS_PER_COLUMN = 50;
 
 // ─── Node types ─────────────────────────────────────────────────────────────
 
@@ -243,35 +247,67 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
       aliasEdges.push({ ghostId, targetId });
     }
 
-    // 5. Position: layer -> x, index within layer (centered around y=0) -> y.
+    // 5. Position. Each graph layer (implication depth) can need more than
+    // one visual column - a layer with more than MAX_TAGS_PER_COLUMN ids
+    // would otherwise stack every one of them into a single, impractically
+    // tall column. Split into consecutive chunks of at most
+    // MAX_TAGS_PER_COLUMN instead, one column per chunk, side by side within
+    // the layer's own horizontal span.
+    //
+    // A layer's x-offset is cumulative, not a fixed multiple of LAYER_WIDTH,
+    // so a layer that needed extra columns pushes every later layer further
+    // right to make room, rather than a later layer's single column
+    // overlapping an earlier layer's second or third one. Layers are still
+    // visited in depth order (sortedLayerKeys), so this preserves the same
+    // "arrows mostly point forward" property the original single-column
+    // layout had.
+    const sortedLayerKeys = [...byLayer.keys()].sort((a, b) => a - b);
+    const layerStartX = new Map<number, number>();
+    let cumulativeX = 0;
+    for (const l of sortedLayerKeys) {
+      layerStartX.set(l, cumulativeX);
+      const columnsNeeded = Math.max(1, Math.ceil(byLayer.get(l)!.length / MAX_TAGS_PER_COLUMN));
+      cumulativeX += columnsNeeded * LAYER_WIDTH;
+    }
+
     const nodes: GraphNode[] = [];
     const usedTypeIds = new Set<string>();
-    for (const [l, ids] of byLayer) {
-      const startY = -((ids.length - 1) * ROW_HEIGHT) / 2;
-      ids.forEach((id, index) => {
-        const position = { x: l * LAYER_WIDTH, y: startY + index * ROW_HEIGHT };
-        const aliasLabel = aliasLabelById.get(id);
-        if (aliasLabel !== undefined) {
-          nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel }, draggable: true });
-          return;
-        }
-        const row = tagsById.get(id);
-        if (!row) return;
-        const type = row.expand?.type ?? null;
-        const isGeneral = !type || type.name.toLowerCase() === 'general';
-        if (type && !isGeneral) usedTypeIds.add(type.id);
-        nodes.push({
-          id,
-          type: 'tagNode',
-          position,
-          data: {
-            label: row.tag,
-            color: type && !isGeneral ? type.color || null : null,
-            onOpen: () => onNodeClick({ id: row.id, tag: row.tag, count: 0 }),
-          },
-          draggable: true,
+    for (const l of sortedLayerKeys) {
+      const ids = byLayer.get(l)!;
+      const baseX = layerStartX.get(l)!;
+      for (let chunkStart = 0; chunkStart < ids.length; chunkStart += MAX_TAGS_PER_COLUMN) {
+        const chunk = ids.slice(chunkStart, chunkStart + MAX_TAGS_PER_COLUMN);
+        // Each column of up to 100 is centered around the same y=0 midline
+        // as every other column in this layer - a 30-tag leftover column
+        // sits centered against a full 100-tag one next to it, rather than
+        // computing its own, likely different, center.
+        const x = baseX + (chunkStart / MAX_TAGS_PER_COLUMN) * LAYER_WIDTH;
+        const startY = -((chunk.length - 1) * ROW_HEIGHT) / 2;
+        chunk.forEach((id, index) => {
+          const position = { x, y: startY + index * ROW_HEIGHT };
+          const aliasLabel = aliasLabelById.get(id);
+          if (aliasLabel !== undefined) {
+            nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel }, draggable: true });
+            return;
+          }
+          const row = tagsById.get(id);
+          if (!row) return;
+          const type = row.expand?.type ?? null;
+          const isGeneral = !type || type.name.toLowerCase() === 'general';
+          if (type && !isGeneral) usedTypeIds.add(type.id);
+          nodes.push({
+            id,
+            type: 'tagNode',
+            position,
+            data: {
+              label: row.tag,
+              color: type && !isGeneral ? type.color || null : null,
+              onOpen: () => onNodeClick({ id: row.id, tag: row.tag, count: 0 }),
+            },
+            draggable: true,
+          });
         });
-      });
+      }
     }
 
     const edges: Edge[] = [
@@ -337,14 +373,31 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
         <Background />
         <Controls showInteractive={false} />
         <Panel position="top-right">
-          <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.25, boxShadow: 1 }}>
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              p: 1.25,
+              boxShadow: 1,
+            }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
               Type
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {usedTypes.map((t) => (
                 <Box key={t.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: t.color || 'text.disabled', flexShrink: 0 }} />
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: t.color || 'text.disabled',
+                      flexShrink: 0,
+                    }}
+                  />
                   <Typography variant="caption">{t.name}</Typography>
                 </Box>
               ))}
