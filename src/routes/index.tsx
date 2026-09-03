@@ -4,7 +4,13 @@ import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { HomepageDoodle } from '@/components/homepage/HomepageDoodle';
 import { HomepageTagSearch } from '@/components/homepage/HomepageTagSearch';
 import { HomepageBackgroundPattern } from '@/components/homepage/HomepageBackgroundPattern';
-import { useQuerySearchTags } from '@/functions/database/tags';
+import {
+  useQuerySearchTags,
+  escapeTagFilterValue,
+  tagNeedsArtistSuffix,
+  type TypeTagV2Record,
+} from '@/functions/database/tags';
+import { pocketbase } from '@/functions/database/authentication-setup';
 import { generateSEO } from '@/functions/utilities/seo';
 import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
 
@@ -96,13 +102,27 @@ function RouteComponent() {
     goToPatterns(kind === 'author' ? { authors: [tag] } : { tags: [tag] });
   };
 
-  const handleRandomTag = () => {
+  const handleRandomTag = async () => {
     if (topTags.length === 0) {
       goToPatterns({});
       return;
     }
     const random = topTags[Math.floor(Math.random() * topTags.length)];
-    goToPatterns({ tags: [String(random.tag)] });
+    const name = String(random.tag);
+    // Tag Relational Refactor, R3.5 follow-up polish (see
+    // TAG_RELATIONAL_REFACTOR_NOTES.md): topTags comes from the `tags` view,
+    // which can't carry type info (it groups by string, so a General and an
+    // Author-typed row sharing a name collapse into one row there) - a
+    // single, targeted tags_v2 lookup for just this one picked name, not the
+    // whole table, checks whether it needs to route as an author instead.
+    // Mirrors HomepageSearchV3.tsx/HomepageTagSearch.tsx's own fix for the
+    // same ambiguity, adapted for a one-off pick instead of a live dropdown.
+    const matches = await pocketbase.collection('tags_v2').getList<TypeTagV2Record>(1, 5, {
+      filter: `tag = "${escapeTagFilterValue(name)}"`,
+      expand: 'type',
+    });
+    const isArtistTag = matches.items.some(tagNeedsArtistSuffix);
+    goToPatterns(isArtistTag ? { authors: [name] } : { tags: [name] });
   };
 
   return (
@@ -157,7 +177,7 @@ function RouteComponent() {
             label="Random Tag"
             clickable
             variant="outlined"
-            onClick={handleRandomTag}
+            onClick={() => void handleRandomTag()}
             sx={{ px: 0.5 }}
           />
 
