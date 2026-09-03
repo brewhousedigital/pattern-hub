@@ -270,14 +270,32 @@ export function deriveHierarchyInherited(tags: string[], impliedTags: TypeImplie
  * touched here is always promoted to (or kept as) fully primary, overriding
  * any inherited markers it carried - direct user action wins over an
  * automatic reason.
+ *
+ * `aliasPreferredRefs` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md):
+ * norm(resolved tag) -> tags_v2 id, populated whenever an incoming entry was
+ * itself a known alias with a `target_tag_ref` - the caller (PatternTagsField.tsx)
+ * merges this into its own preferredTagRefs the same way it already protects
+ * a tag the pattern is already linked to, so resolveOrCreateTagRefs reaches
+ * the alias's actual target row at save time instead of re-resolving its
+ * name and risking the General default.
  */
 export function applyManualTagChange(
   state: TypePatternTagState,
   newTags: string[],
   impliedTags: TypeImpliedTagRecord[],
   aliases: TypeTagAliasRecord[],
-): TypePatternTagState {
-  const resolvedTags = [...new Set(newTags.map((t) => resolveTagAlias(t, aliases)))];
+): TypePatternTagState & { aliasPreferredRefs: Map<string, string> } {
+  const aliasPreferredRefs = new Map<string, string>();
+  const resolvedTags = [
+    ...new Set(
+      newTags.map((t) => {
+        const resolved = resolveTagAlias(t, aliases);
+        const refId = findAliasTargetRef(t, aliases);
+        if (refId) aliasPreferredRefs.set(resolved.trim().toLowerCase(), refId);
+        return resolved;
+      }),
+    ),
+  ];
   const added = resolvedTags.filter((t) => !state.tags.includes(t));
   const removed = state.tags.filter((t) => !resolvedTags.includes(t));
 
@@ -297,7 +315,7 @@ export function applyManualTagChange(
     pruneOrphanedAncestors(tag, tags, hierarchyInherited, keyInherited, impliedTags);
   }
 
-  return { tags, hierarchyInherited, keyInherited };
+  return { tags, hierarchyInherited, keyInherited, aliasPreferredRefs };
 }
 
 /**
@@ -319,12 +337,24 @@ export function applyKeyTagChange(
   currentKeyTags: string[],
   impliedTags: TypeImpliedTagRecord[],
   aliases: TypeTagAliasRecord[],
-): TypePatternTagState {
+): TypePatternTagState & { aliasPreferredRefs: Map<string, string> } {
   const tags = [...state.tags];
   const hierarchyInherited = new Set(state.hierarchyInherited);
   const keyInherited = new Set(state.keyInherited);
 
-  const resolvedKeyTags = [...new Set(currentKeyTags.map((t) => resolveTagAlias(t, aliases)))];
+  // aliasPreferredRefs - see applyManualTagChange's own doc comment (R3.5
+  // follow-up, TAG_RELATIONAL_REFACTOR_NOTES.md) for why this exists.
+  const aliasPreferredRefs = new Map<string, string>();
+  const resolvedKeyTags = [
+    ...new Set(
+      currentKeyTags.map((t) => {
+        const resolved = resolveTagAlias(t, aliases);
+        const refId = findAliasTargetRef(t, aliases);
+        if (refId) aliasPreferredRefs.set(resolved.trim().toLowerCase(), refId);
+        return resolved;
+      }),
+    ),
+  ];
 
   const normalize = (t: string) => t.trim().toLowerCase();
   const currentKeyTagSet = new Set(resolvedKeyTags.map(normalize));
@@ -348,7 +378,7 @@ export function applyKeyTagChange(
     pruneOrphanedAncestors(tag, tags, hierarchyInherited, keyInherited, impliedTags);
   }
 
-  return { tags, hierarchyInherited, keyInherited };
+  return { tags, hierarchyInherited, keyInherited, aliasPreferredRefs };
 }
 
 // ─── Pattern tag helpers ──────────────────────────────────────────────────────
@@ -768,16 +798,16 @@ export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: Type
  *
  * `preferredIds` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) is
  * an optional norm(tag) -> tags_v2 id override, consulted before the normal
- * resolve-by-name step below. Protects a tag a pattern is already linked to
- * from being silently re-resolved to a different row sharing its name on an
- * unrelated save - PatternTagsField.tsx seeds it from the pattern's own
- * existing tag_refs (see AdminEditPatternModal.tsx's initialValues), not
- * from anything picked fresh: an Author-typed tag can no longer be picked
- * directly from that dropdown at all (filtered out - see
- * useQueryAuthorTagIds), so the only way a name stays ambiguous by the time
- * it reaches here is if it was already that way before this edit started.
- * Every other caller omits this parameter and gets exactly the prior
- * behavior.
+ * resolve-by-name step below. PatternTagsField.tsx populates it two ways: (1)
+ * seeded from the pattern's own existing tag_refs (see AdminEditPatternModal.tsx's
+ * initialValues) - protects a tag the pattern is already linked to from
+ * being silently re-resolved to a different row sharing its name on an
+ * unrelated save; (2) from applyManualTagChange/applyKeyTagChange's own
+ * aliasPreferredRefs - a typed alias whose target_tag_ref names a specific
+ * row (an Author-typed tag can no longer be *picked* from that dropdown at
+ * all, filtered out - see useQueryAuthorTagIds - but its alias can still be
+ * typed free-solo, and now resolves correctly too). Every other caller
+ * omits this parameter and gets exactly the prior behavior.
  */
 export async function resolveOrCreateTagRefs(
   tagNames: string[],
@@ -947,6 +977,25 @@ export function resolveTagAlias(tagName: string, aliases: TypeTagAliasRecord[]):
   const norm = tagName.toLowerCase();
   const match = aliases.find((a) => a.alias.toLowerCase() === norm);
   return match ? match.target_tag : tagName;
+}
+
+/**
+ * The alias's target tags_v2 id, if `tagName` is a known alias with a
+ * populated `target_tag_ref`. R3.5 follow-up (see
+ * TAG_RELATIONAL_REFACTOR_NOTES.md): lets applyManualTagChange/
+ * applyKeyTagChange capture which specific row an alias meant, alongside
+ * resolveTagAlias's own resolved name - closes the gap flagged earlier in
+ * that phase, where typing an alias (e.g. one pointing at a non-General tag
+ * sharing a name with a General one) lost that specificity the instant it
+ * resolved to a plain string, before resolveOrCreateTagRefs's own "prefer
+ * General once a name is ambiguous" default ever got a chance to guess
+ * wrong. A pre-R1 alias with no target_tag_ref yet returns undefined, same
+ * as if it weren't a known alias at all - falls through to normal
+ * resolution, unchanged from before this existed.
+ */
+function findAliasTargetRef(tagName: string, aliases: TypeTagAliasRecord[]): string | undefined {
+  const norm = tagName.toLowerCase();
+  return aliases.find((a) => a.alias.toLowerCase() === norm)?.target_tag_ref;
 }
 
 /**

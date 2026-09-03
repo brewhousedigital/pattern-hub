@@ -33,6 +33,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationForm = {
   tab_show_collections: true,
   header_gradient: true,
   blocked_tags: [],
+  blocked_tag_refs: [],
   preferred_measurement_unit: 'original',
   featured_pattern_id: '',
   featured_pattern_note: '',

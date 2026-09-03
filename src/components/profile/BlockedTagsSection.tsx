@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import React, { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Box,
   Chip,
@@ -14,12 +14,32 @@ import {
 } from '@mui/material';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useQuerySearchTags } from '@/functions/database/tags';
+import { useQuery } from '@tanstack/react-query';
+import {
+  useQuerySearchTags,
+  useQuerySearchTagsV2,
+  tagNeedsArtistSuffix,
+  escapeTagFilterValue,
+  type TypeTagV2Record,
+} from '@/functions/database/tags';
+import { pocketbase } from '@/functions/database/authentication-setup';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { SectionCard, SectionHeader, type SectionCustProps } from './_shared';
 
+type BlockedEntry = { tag: string; refId: string };
+type TagSearchItem = { id: string; tag: string };
+
 // Reuses the same tag-search query + debounce timing as the homepage search bar
 // (HomepageSearchV3) so results here match what's actually searchable.
+//
+// R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blocked_tags alone
+// - a plain string list - can't distinguish two tags_v2 rows sharing a name
+// (e.g. the General "autumn" season tag and the Author-type "autumn"),
+// exactly the same limitation the search bars and admin tag-entry field had.
+// Unlike admin tag-entry (which filters Author-typed tags out entirely -
+// they're meant to be derived, never picked there), blocking someone's work
+// by their author tag is a legitimate, direct thing a user might want, so
+// this labels the distinction instead of hiding either option.
 export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionCustProps) => {
   const [inputValue, setInputValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -29,27 +49,92 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // blocked_tag_refs is a parallel array to blocked_tags, same length/index
+  // by design - padded/truncated defensively here rather than trusted as-is,
+  // since a user who blocked tags before this field existed (or any other
+  // drift) would otherwise have a shorter refs array. A padded '' entry just
+  // means that one falls back to name-based resolution server-side, same as
+  // every blocked tag did before this feature existed.
+  const entries: BlockedEntry[] = useMemo(
+    () => customization.blocked_tags.map((tag, i) => ({ tag, refId: customization.blocked_tag_refs[i] ?? '' })),
+    [customization.blocked_tags, customization.blocked_tag_refs],
+  );
+
+  // Which currently-blocked refIds are Author-typed - independent of the
+  // search state below, so an already-blocked chip still shows "(artist)"
+  // correctly even when the user isn't actively searching for it right now.
+  // Small and targeted - only ever queries the handful of ids actually
+  // blocked, not the whole tags_v2 table.
+  const nonEmptyRefIds = useMemo(() => [...new Set(entries.map((e) => e.refId).filter(Boolean))], [entries]);
+  const { data: blockedArtistRefIds = new Set<string>() } = useQuery({
+    queryKey: ['BlockedTagRefTypes', nonEmptyRefIds],
+    queryFn: async (): Promise<Set<string>> => {
+      const filter = nonEmptyRefIds.map((id) => `id = "${escapeTagFilterValue(id)}"`).join(' || ');
+      const rows = await pocketbase.collection('tags_v2').getFullList<TypeTagV2Record>({ filter, expand: 'type' });
+      return new Set(rows.filter(tagNeedsArtistSuffix).map((r) => r.id));
+    },
+    enabled: nonEmptyRefIds.length > 0,
+    placeholderData: (prev) => prev,
+  });
+
   // No debounce delay when the field is empty, matching HomepageSearchV3.
   const debouncedSearchTerm = useDebounce(inputValue, inputValue ? 600 : 0);
-  const { data: tagResults = [], isFetching } = useQuerySearchTags(debouncedSearchTerm, isDropdownOpen);
+  const isSearching = debouncedSearchTerm.trim() !== '';
+  const { data: tagViewResults = [], isFetching: tagViewFetching } = useQuerySearchTags(
+    debouncedSearchTerm,
+    isDropdownOpen && !isSearching,
+  );
+  // Same hybrid HomepageSearchV3.tsx's tag dropdown uses, for the same
+  // reason - the view above groups by string, so it can never show two
+  // tags_v2 rows sharing a name as distinct results. Once there's an actual
+  // term to search for, tagsV2Results - queried straight off tags_v2, not
+  // an aggregate view - takes over, so both can show up labelled distinctly.
+  const { data: tagsV2Results = [], isFetching: tagsV2Fetching } = useQuerySearchTagsV2(
+    debouncedSearchTerm,
+    isDropdownOpen && isSearching,
+  );
 
-  const blockedLower = new Set(customization.blocked_tags.map((t) => t.toLowerCase()));
-  const dropdownItems = tagResults.filter((item) => !blockedLower.has(item.tag.toLowerCase()));
+  const searchArtistSuffixIds = useMemo(
+    () => new Set(tagsV2Results.filter(tagNeedsArtistSuffix).map((t) => t.id)),
+    [tagsV2Results],
+  );
+  const itemLabel = (item: TagSearchItem) => (searchArtistSuffixIds.has(item.id) ? `${item.tag} (artist)` : item.tag);
+
+  const isFetching = isSearching ? tagsV2Fetching : tagViewFetching;
+  const searchItems: TagSearchItem[] = isSearching ? tagsV2Results : tagViewResults;
+
+  // An option is already blocked if its specific id matches a blocked
+  // entry's refId, OR (for an entry with no refId - a pre-refs or free-solo
+  // block) its name matches a blocked entry with no refId. This is what
+  // lets "autumn" (season) and "autumn" (artist) be blocked independently -
+  // a name-only comparison would have conflated them the same way the
+  // admin tag field's old dropdown did.
+  const blockedByRef = new Set(entries.filter((e) => e.refId).map((e) => e.refId));
+  const blockedNameOnly = new Set(entries.filter((e) => !e.refId).map((e) => e.tag.toLowerCase()));
+  const dropdownItems = searchItems.filter(
+    (item) => !blockedByRef.has(item.id) && !blockedNameOnly.has(item.tag.toLowerCase()),
+  );
   const showDropdown = isDropdownOpen && dropdownItems.length > 0;
 
-  function addBlockedTag(tag: string) {
+  function addBlockedTag(tag: string, refId: string) {
     const trimmed = tag.trim();
-    if (!trimmed || blockedLower.has(trimmed.toLowerCase())) return;
+    if (!trimmed) return;
+    if (refId ? blockedByRef.has(refId) : blockedNameOnly.has(trimmed.toLowerCase())) return;
     setCust('blocked_tags', [...customization.blocked_tags, trimmed]);
+    setCust('blocked_tag_refs', [...entries.map((e) => e.refId), refId]);
     setInputValue('');
     setIsDropdownOpen(false);
     setHighlightedIndex(-1);
   }
 
-  function removeBlockedTag(tag: string) {
+  function removeBlockedTag(index: number) {
     setCust(
       'blocked_tags',
-      customization.blocked_tags.filter((t) => t !== tag),
+      customization.blocked_tags.filter((_, i) => i !== index),
+    );
+    setCust(
+      'blocked_tag_refs',
+      entries.filter((_, i) => i !== index).map((e) => e.refId),
     );
   }
 
@@ -79,9 +164,13 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
     if (e.key === 'Enter') {
       e.preventDefault();
       if (showDropdown && highlightedIndex >= 0) {
-        addBlockedTag(dropdownItems[highlightedIndex].tag);
+        const item = dropdownItems[highlightedIndex];
+        addBlockedTag(item.tag, item.id);
       } else if (inputValue.trim()) {
-        addBlockedTag(inputValue);
+        // Free-solo: no specific tags_v2 row was ever shown/picked, so no id
+        // to capture - falls back to name-based resolution server-side,
+        // same as every blocked tag did before this feature existed.
+        addBlockedTag(inputValue, '');
       }
     }
   }
@@ -93,16 +182,16 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
         Patterns tagged with any of these are silently excluded from your homepage browsing and search results.
       </Typography>
 
-      {customization.blocked_tags.length > 0 && (
+      {entries.length > 0 && (
         <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
-          {customization.blocked_tags.map((tag) => (
+          {entries.map((entry, index) => (
             <Chip
-              key={tag}
-              label={tag}
+              key={`${entry.tag}-${entry.refId || index}`}
+              label={entry.refId && blockedArtistRefIds.has(entry.refId) ? `${entry.tag} (artist)` : entry.tag}
               size="small"
               color="error"
               variant="outlined"
-              onDelete={() => removeBlockedTag(tag)}
+              onDelete={() => removeBlockedTag(index)}
               sx={{ borderRadius: 2 }}
             />
           ))}
@@ -181,7 +270,7 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
                   onMouseDown={(e) => {
                     // Prevent input blur from firing before click.
                     e.preventDefault();
-                    addBlockedTag(item.tag);
+                    addBlockedTag(item.tag, item.id);
                   }}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   sx={{
@@ -192,7 +281,7 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
                     },
                   }}
                 >
-                  <ListItemText primary={item.tag} slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }} />
+                  <ListItemText primary={itemLabel(item)} slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }} />
                 </ListItemButton>
               ))}
             </List>

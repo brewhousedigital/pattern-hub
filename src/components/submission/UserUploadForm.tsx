@@ -11,6 +11,7 @@ import {
   useQuerySearchTagsV2,
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
+  useQueryAuthorTagIds,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
@@ -163,6 +164,21 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const { data: tagsV2SearchData = [], isFetching: tagsV2SearchFetching } = useQuerySearchTagsV2(
     debouncedTagSearch,
     isSearchingTags,
+  );
+  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): same treatment
+  // PatternTagsField.tsx (the admin equivalent of this field) already got -
+  // an Author-typed tag is meant to be entirely derived from a pattern's
+  // credited author(s), never picked directly here either. tags_v2/
+  // tag_types (which useQueryAuthorTagIds itself reads) are both already
+  // public, same as the rest of this form's own tag data.
+  const { data: authorTagIds = new Set<string>() } = useQueryAuthorTagIds();
+  const tagSearchOptions = React.useMemo(
+    () => tagsV2SearchData.filter((row) => !authorTagIds.has(row.id)),
+    [tagsV2SearchData, authorTagIds],
+  );
+  const tagViewOptions = React.useMemo(
+    () => (tagViewData ?? []).filter((item) => !authorTagIds.has(item.id)),
+    [tagViewData, authorTagIds],
   );
   // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
@@ -775,7 +791,7 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             label="Tags"
             freeSolo
             serverSide
-            data={isSearchingTags ? tagsV2SearchData : (tagViewData ?? [])}
+            data={isSearchingTags ? tagSearchOptions : tagViewOptions}
             value={tagValue}
             onChange={handleTagChange}
             inputValue={tagInput}

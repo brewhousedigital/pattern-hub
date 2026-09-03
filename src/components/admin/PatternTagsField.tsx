@@ -106,11 +106,18 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   /**
    * norm(tag) -> tags_v2 id for a tag this pattern is already linked to,
    * seeded from the caller's own initial value (see the onChange prop's own
-   * doc comment) - not populated by anything picked this session, since the
-   * dropdown no longer offers an ambiguous option to pick in the first
-   * place. Pruned whenever its tag is no longer in `value`, so removing a
-   * protected tag and typing the same name back in fresh resolves normally
-   * again, rather than keeping a stale pin.
+   * doc comment) - seeded from the pattern's own existing tag_refs (an
+   * untouched tag can't be picked wrong), and gains a new entry whenever
+   * applyManualTagChange/applyKeyTagChange resolve an incoming tag through
+   * a known alias with a populated target_tag_ref (typing the alias itself
+   * still can't be picked from the dropdown - Author-typed rows are
+   * filtered out entirely - but free-solo typing the alias text directly
+   * remains possible, and now resolves correctly too). Never populated by
+   * anything else picked this session, since the dropdown no longer offers
+   * an ambiguous option to pick in the first place. Pruned whenever its tag
+   * is no longer in `value`, so removing a protected tag and typing the
+   * same name back in fresh resolves normally again, rather than keeping a
+   * stale pin.
    */
   const [preferredTagRefs, setPreferredTagRefs] = React.useState<Map<string, string>>(new Map());
 
@@ -121,6 +128,15 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       if (!present.has(norm)) next.delete(norm);
     }
     return next;
+  }, []);
+
+  // Merges applyManualTagChange/applyKeyTagChange's own aliasPreferredRefs
+  // (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) into the
+  // existing map before pruning - an alias resolved this same call must
+  // survive its own prune step below, not be dropped for having "just
+  // appeared" rather than already being present.
+  const mergePreferred = React.useCallback((base: Map<string, string>, incoming: Map<string, string>) => {
+    return incoming.size > 0 ? new Map([...base, ...incoming]) : base;
   }, []);
 
   // Once the implied-tags graph loads (or the underlying record changes),
@@ -144,13 +160,23 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
         impliedTagsData,
         aliasesData,
       );
-      const prunedPreferred = prunePreferred(preferredTagRefs, next.tags);
+      const prunedPreferred = prunePreferred(mergePreferred(preferredTagRefs, next.aliasPreferredRefs), next.tags);
       onChange(next.tags, prunedPreferred);
       setPreferredTagRefs(prunedPreferred);
       setHierarchyInherited(next.hierarchyInherited);
       setKeyInherited(next.keyInherited);
     },
-    [value, hierarchyInherited, keyInherited, impliedTagsData, aliasesData, onChange, preferredTagRefs, prunePreferred],
+    [
+      value,
+      hierarchyInherited,
+      keyInherited,
+      impliedTagsData,
+      aliasesData,
+      onChange,
+      preferredTagRefs,
+      prunePreferred,
+      mergePreferred,
+    ],
   );
 
   // Reconciles whenever the live key-tags union changes (a pattern key was
@@ -170,7 +196,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       next.hierarchyInherited.size === hierarchyInherited.size &&
       next.keyInherited.size === keyInherited.size;
     if (unchanged) return;
-    const prunedPreferred = prunePreferred(preferredTagRefs, next.tags);
+    const prunedPreferred = prunePreferred(mergePreferred(preferredTagRefs, next.aliasPreferredRefs), next.tags);
     onChange(next.tags, prunedPreferred);
     setPreferredTagRefs(prunedPreferred);
     setHierarchyInherited(next.hierarchyInherited);

@@ -118,6 +118,7 @@ function buildPatternSearchParams(
   tokens: Token[],
   authorIdMap: Record<string, string[]> | undefined,
   blockedTags: string[],
+  blockedTagRefs: string[],
   sort: string,
   pageNumber: number,
 ): URLSearchParams {
@@ -125,6 +126,12 @@ function buildPatternSearchParams(
     tokens: JSON.stringify(tokens),
     authorIdMap: JSON.stringify(authorIdMap ?? {}),
     blockedTags: JSON.stringify(blockedTags),
+    // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): parallel to
+    // blockedTags, same length/index - '' for an entry with no specific
+    // tags_v2 id resolved (a free-solo block, or one predating this field).
+    // buildPatternFilters' blockedTags branch (main.pb.js) matches by id
+    // first when one is present at that index, falling back to the name.
+    blockedTagRefs: JSON.stringify(blockedTagRefs),
     sort,
     pageNumber: String(pageNumber),
   });
@@ -160,9 +167,20 @@ export const useQueryGetAllPatternsByPagination = () => {
   // list, so toggling one refetches automatically).
   const { unblockedTags } = useSessionUnblockedTags();
   const sessionUnblocked = new Set(unblockedTags.map((t) => t.toLowerCase()));
-  const effectiveBlockedTags = (authData?.blocked_tags ?? []).filter(
-    (tag) => !activeTagValues.has(tag.toLowerCase()) && !sessionUnblocked.has(tag.toLowerCase()),
+  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blocked_tag_refs
+  // is a parallel array to blocked_tags (same length/index) - zipped into
+  // entries first so both stay in lockstep through the same filter, rather
+  // than filtering two separately-derived arrays and risking them drifting
+  // out of alignment.
+  const blockedEntries = (authData?.blocked_tags ?? []).map((tag, i) => ({
+    tag,
+    refId: authData?.blocked_tag_refs?.[i] ?? '',
+  }));
+  const effectiveBlockedEntries = blockedEntries.filter(
+    (e) => !activeTagValues.has(e.tag.toLowerCase()) && !sessionUnblocked.has(e.tag.toLowerCase()),
   );
+  const effectiveBlockedTags = effectiveBlockedEntries.map((e) => e.tag);
+  const effectiveBlockedTagRefs = effectiveBlockedEntries.map((e) => e.refId);
 
   return useQuery({
     queryKey: [
@@ -171,10 +189,18 @@ export const useQueryGetAllPatternsByPagination = () => {
       pageNumber,
       sort,
       effectiveBlockedTags.join(','),
+      effectiveBlockedTagRefs.join(','),
       JSON.stringify(authorIdMap ?? {}),
     ],
     queryFn: async (): Promise<TypePatternSearchResponse> => {
-      const params = buildPatternSearchParams(tokens, authorIdMap, effectiveBlockedTags, sort, pageNumber);
+      const params = buildPatternSearchParams(
+        tokens,
+        authorIdMap,
+        effectiveBlockedTags,
+        effectiveBlockedTagRefs,
+        sort,
+        pageNumber,
+      );
       const res = await fetch(`${pocketbaseDomain}/api/pattern-search?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to search patterns');
       return res.json();
@@ -192,10 +218,10 @@ export const getHomepageDefaultPatternsOptions = () =>
   queryOptions({
     // Key must stay in sync with useQueryGetAllPatternsByPagination's key for
     // the anonymous/default view: no tokens, page 1, default sort, no blocked
-    // tags, empty author-id map.
-    queryKey: ['GetAllPatternsByPagination', '[]', 1, '-created', '', '{}'],
+    // tags/refs, empty author-id map.
+    queryKey: ['GetAllPatternsByPagination', '[]', 1, '-created', '', '', '{}'],
     queryFn: async (): Promise<TypePatternSearchResponse> => {
-      const params = buildPatternSearchParams([], {}, [], '-created', 1);
+      const params = buildPatternSearchParams([], {}, [], [], '-created', 1);
       const res = await fetch(`${pocketbaseDomain}/api/pattern-search?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to search patterns');
       return res.json();

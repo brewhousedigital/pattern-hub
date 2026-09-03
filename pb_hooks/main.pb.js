@@ -142,6 +142,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     tokens,
     authorIdMap,
     blockedTags,
+    blockedTagRefs,
     aliasMap,
     aliasIdMap,
     authorNameMap,
@@ -372,9 +373,20 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     // Phase R3.1: resolved type-blind, same as a plain text/tag token -
     // a blocked tag string means "whichever tag has this name," the same
     // resolution a bare typed word already gets.
-    for (const tag of blockedTags || []) {
+    //
+    // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): blockedTagRefs
+    // is parallel to blockedTags, same length/index - '' for an entry with
+    // no specific id resolved client-side (a free-solo block, or one from
+    // before this field existed). Index i's ref is tried first, reaching
+    // the exact row BlockedTagsSection.tsx's picker showed (e.g. the
+    // Author-typed "autumn", not the General one tagIdByName would default
+    // to for the bare name) - only falling back to name-based resolution
+    // when that index has no ref at all, unchanged from before this existed.
+    for (let i = 0; i < (blockedTags || []).length; i++) {
+      const tag = blockedTags[i];
       if (!tag) continue;
-      const tagId = (tagIdByName && tagIdByName[String(tag).toLowerCase()]) || null;
+      const refId = blockedTagRefs && blockedTagRefs[i];
+      const tagId = refId || (tagIdByName && tagIdByName[String(tag).toLowerCase()]) || null;
       emitTagIdFilter(tagId, true);
     }
 
@@ -390,6 +402,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   let tokens = [];
   let authorIdMap = {};
   let blockedTags = [];
+  let blockedTagRefs = [];
   try {
     tokens = JSON.parse(q.get('tokens') || '[]');
   } catch (_) {}
@@ -398,6 +411,9 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   } catch (_) {}
   try {
     blockedTags = JSON.parse(q.get('blockedTags') || '[]');
+  } catch (_) {}
+  try {
+    blockedTagRefs = JSON.parse(q.get('blockedTagRefs') || '[]');
   } catch (_) {}
 
   const sort = q.get('sort') || '-created';
@@ -589,6 +605,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     tokens,
     authorIdMap,
     blockedTags,
+    blockedTagRefs,
     aliasMap,
     aliasIdMap,
     authorNameMap,
