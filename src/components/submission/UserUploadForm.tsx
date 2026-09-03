@@ -8,6 +8,7 @@ import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useQuerySearchManualAuthors } from '@/functions/database/authors';
 import {
   useQuerySearchTags,
+  useQuerySearchTagsV2,
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
   deriveHierarchyInherited,
@@ -148,7 +149,21 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const [tagValue, setTagValue] = React.useState<string[]>(() => editSubmission?.tags ?? []);
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
-  const { data: tagSearchData, isFetching: tagSearchFetching } = useQuerySearchTags(debouncedTagSearch);
+  // Phase R3.3 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): an empty search still shows the
+  // most-used tags first, from the `tags` view (unchanged, and already
+  // known to be publicly readable, unlike the admin-scoped tag_usage view
+  // this form's own admin equivalent, PatternTagsField.tsx, uses instead).
+  // Once there's something typed, tags_v2 (also already publicly readable -
+  // the per-tag Definition Page depends on it) takes over: it surfaces
+  // every real tag, including one with no published-pattern usage yet,
+  // which the `tags` view never would.
+  const isSearchingTags = debouncedTagSearch.trim() !== '';
+  const { data: tagViewData, isFetching: tagViewFetching } = useQuerySearchTags('');
+  const { data: tagsV2SearchData = [], isFetching: tagsV2SearchFetching } = useQuerySearchTagsV2(
+    debouncedTagSearch,
+    isSearchingTags,
+  );
   // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
   // resolution on this entry surface.
@@ -760,13 +775,13 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
             label="Tags"
             freeSolo
             serverSide
-            data={tagSearchData ?? []}
+            data={isSearchingTags ? tagsV2SearchData : (tagViewData ?? [])}
             value={tagValue}
             onChange={handleTagChange}
             inputValue={tagInput}
             onInputChange={setTagInput}
             inheritedValues={inheritedTagValues}
-            loading={tagSearchFetching}
+            loading={isSearchingTags ? tagsV2SearchFetching : tagViewFetching}
           />
 
           <FormSection label="Pattern Keys" />

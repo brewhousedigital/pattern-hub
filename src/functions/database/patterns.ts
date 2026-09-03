@@ -6,6 +6,7 @@ import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import type { AuthorToken, TagToken, Token } from '@/functions/utilities/search-v2';
 import { useQueryResolveAuthorUserIds } from '@/functions/database/authors';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import type { TypeTagV2Record } from '@/functions/database/tags';
 import { useGlobalAuthData } from '@/data/auth-data';
 import { useSessionUnblockedTags } from '@/data/blocked-tags-session';
 import { sanitizeSvg } from '@/functions/utilities/sanitize-svg';
@@ -26,6 +27,16 @@ export type TypePatternResponse = {
   uploaded_by: string;
   design_date: Date | Dayjs | null;
   tags: string[];
+  /**
+   * The tags_v2 row id for each of this pattern's tags - the field every
+   * read path actually uses (search, facets, display, entry) as of the
+   * Tag Relational Refactor's Phase R3 cutover (see
+   * TAG_RELATIONAL_REFACTOR_NOTES.md). `tags` (above) is frozen as of
+   * Phase R3.3 - present, but no longer written or read by anything.
+   * Optional so a record fetched before this field existed, or via a
+   * `fields` projection that excludes it, still type-checks.
+   */
+  tag_refs?: string[];
   pattern_file: string;
   pattern_file_external: string;
   pattern_file_size?: number;
@@ -60,6 +71,13 @@ export type TypePatternResponse = {
   pattern_key_reference_list: TypePatternKeyReferenceObject[];
   expand?: {
     authors: TypeAuthData[];
+    /**
+     * Phase R3.3 of the Tag Relational Refactor (see
+     * TAG_RELATIONAL_REFACTOR_NOTES.md) - present only on a fetch that
+     * requested `expand: 'tag_refs'`, e.g.
+     * useQueryGetAllPatternsByPaginationAdmin.
+     */
+    tag_refs?: TypeTagV2Record[];
   };
 };
 
@@ -217,9 +235,17 @@ export const useQueryGetAllPatternsByPaginationAdmin = (
     queryFn: async (): Promise<TypePaginationDatabaseResponse<TypePatternResponse>> => {
       // perPage must match the DataGrid's pageSize (25) or the grid's page
       // ranges drift from the server's
+      //
+      // expand: 'tag_refs' (Phase R3.3, see TAG_RELATIONAL_REFACTOR_NOTES.md)
+      // - AdminEditPatternModal.tsx needs each row's expanded tags_v2 data
+      // synchronously, on first mount, to seed its tag-entry field; a
+      // separate query fetched inside the modal could still be pending at
+      // that exact moment (see that file's own comment on this). This row
+      // data is already fully loaded before an admin can click "edit" on
+      // it at all, so expanding it here costs one join, not a race.
       return await pocketbase.collection('patterns').getList(page, 25, {
         filter: includeIsDeletedFilter,
-        expand: 'authors',
+        expand: 'authors,tag_refs',
         sort,
       });
     },
@@ -271,13 +297,18 @@ export type TypePatternCreatePayload = {
   uploaded_by?: string;
   tags: string[];
   /**
-   * Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-   * the tags_v2 row id for every entry in `tags`, resolved (or created) via
-   * resolveOrCreateTagRefs before this payload is built. Optional so a
-   * caller that hasn't been updated yet still compiles - PocketBase leaves
-   * the relation empty when the field is omitted, exactly like every other
-   * optional field here. Dual-write only: `tags` stays the field every
-   * read path actually uses until Phase R3's cutover.
+   * The tags_v2 row id for every entry in `tags`, resolved (or created) via
+   * resolveOrCreateTagRefs before this payload is built. As of Phase R3.3
+   * of the Tag Relational Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md),
+   * this is the field every read path actually uses - `tags` itself is
+   * still computed and included in this payload by every caller
+   * (resolveOrCreateTagRefs needs it as input, right below), but
+   * useMutationEditPattern no longer forwards it to PocketBase, so the
+   * stored pattern record's own `tags` field stops changing from here.
+   * Optional purely so a
+   * caller not yet updated still compiles, not as a dual-write allowance
+   * anymore - see useMutationEditPattern for why this is now sent
+   * unconditionally regardless.
    */
   tag_refs?: string[];
   pattern_file?: File;
@@ -319,15 +350,29 @@ export const useMutationEditPattern = () => {
       formData.append('description', payload?.description || '');
       formData.append('instructions', payload?.instructions || '');
       formData.append('source_url', payload?.source_url || '');
-      formData.append('tags', JSON.stringify(payload?.tags));
-      // Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md) - dual-write only;
-      // omitted entirely when a caller hasn't resolved refs yet rather than
-      // sending an empty array, so an un-migrated call site can't
-      // accidentally wipe out tag_refs that /api/sync-author-tags or a
-      // later save already populated for this pattern.
-      if (payload?.tag_refs) {
-        formData.append('tag_refs', JSON.stringify(payload.tag_refs));
-      }
+      // Phase R3.3 of the Tag Relational Refactor (see
+      // TAG_RELATIONAL_REFACTOR_NOTES.md): tags is no longer sent - this is
+      // the cutover itself, the point patterns.tags actually freezes.
+      // PocketBase leaves an omitted field's stored value untouched on
+      // update(), so an existing pattern's tags simply stops changing from
+      // here; a brand-new pattern's tags stays empty/unset, which is fine
+      // since nothing reads it anymore (R3.1/R3.2 already moved every read
+      // path to tag_refs). payload.tags itself is untouched - every caller
+      // still computes it, since resolveOrCreateTagRefs still needs it as
+      // input to derive tag_refs below.
+      //
+      // tag_refs itself is now sent unconditionally, `?? []` rather than
+      // Phase R1's original `if (payload?.tag_refs)` guard - that guard
+      // protected against a caller that hadn't been migrated to compute
+      // tag_refs yet accidentally wiping out a value some other process
+      // had already set. Both real callers (AdminEditPatternModal.tsx,
+      // review.tsx) have unconditionally computed and sent tag_refs since
+      // Phase R1 shipped, so that scenario no longer exists - and since
+      // tag_refs is what every read path now actually uses, a save that
+      // silently omitted it entirely would leave a pattern's tags
+      // invisible to search/display, which is worse than an explicit,
+      // predictable empty array.
+      formData.append('tag_refs', JSON.stringify(payload?.tag_refs ?? []));
       formData.append('authors', JSON.stringify(payload?.authors));
       formData.append('author_manual', JSON.stringify(payload?.author_manual));
       //formData.append('difficulty', "test");

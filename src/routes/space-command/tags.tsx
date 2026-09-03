@@ -140,6 +140,79 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
   return records;
 }
 
+/**
+ * Fetch ALL patterns whose tag_refs contains a specific tags_v2 id - the
+ * id-based equivalent of fetchPatternsWithTag above, added for Phase R3.4
+ * of the Tag Relational Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md).
+ * Uses the same `~`-on-a-multi-relation-column idiom already proven live
+ * for patterns.authors (`authors ~ id`), not a quote-wrapped match - ids
+ * are opaque, fixed-length strings, not human text a substring match could
+ * accidentally over-match the way a tag name could.
+ *
+ * This is not just a faster version of fetchPatternsWithTag - as of Phase
+ * R3.3, patterns.tags is frozen, so a string search can no longer find
+ * every pattern that actually carries a given tag. A tag added through a
+ * normal edit since R3.3 shipped reaches tag_refs only, never
+ * patterns.tags, so fetchPatternsWithTag would silently miss it.
+ */
+async function fetchPatternsWithTagRef(tagId: string): Promise<TypePatternRecord[]> {
+  const records: TypePatternRecord[] = [];
+  let page = 1;
+  const perPage = 500;
+
+  while (true) {
+    const result = await pocketbase
+      .collection('patterns')
+      .getList<TypePatternRecord>(page, perPage, { filter: `tag_refs ~ '${tagId}'`, fields: 'id,tag_refs,name' });
+    records.push(...result.items);
+    if (records.length >= result.totalItems) break;
+    page++;
+  }
+
+  return records;
+}
+
+/**
+ * Repoints (merge) or removes (delete) a tags_v2 id across every pattern's
+ * tag_refs - Phase R3.4 of the Tag Relational Refactor (see
+ * TAG_RELATIONAL_REFACTOR_NOTES.md). Pass a real `toId` to swap `fromId`
+ * for it (deduping if a pattern already carried both - merge's case); pass
+ * `null` to just remove `fromId` (delete's case, no replacement).
+ *
+ * Only relies on processSequentially's own built-in delay between items,
+ * not an additional sleep inside the per-item callback the way the old
+ * string-based pattern-rewrite loop did (found via code review while
+ * building this: that loop called `await sleep(BATCH_DELAY_MS)` inside a
+ * processSequentially callback that already sleeps `delayMs` - 3000ms by
+ * default, the same value BATCH_DELAY_MS holds - between every item on its
+ * own, so every merge/delete has been waiting twice as long as intended,
+ * per pattern, since this loop was first written. Not reproduced here.
+ *
+ * Returns the affected patterns (id + name) so the caller can still build
+ * an accurate admin-log entry without a second fetch.
+ */
+async function repointPatternTagRefs(
+  fromId: string,
+  toId: string | null,
+  onProgress?: (completed: number, total: number) => void,
+): Promise<{ id: string; name: string }[]> {
+  const records = await fetchPatternsWithTagRef(fromId);
+  const affected: { id: string; name: string }[] = [];
+
+  await processSequentially(
+    records,
+    async (record) => {
+      affected.push({ id: record.id, name: record.name || '' });
+      const without = (record.tag_refs ?? []).filter((id) => id !== fromId);
+      const updated = toId && !without.includes(toId) ? [...without, toId] : without;
+      await pocketbase.collection('patterns').update(record.id, { tag_refs: updated });
+    },
+    onProgress,
+  );
+
+  return affected;
+}
+
 // processSequentially (batch-with-delay writes) now lives in
 // src/functions/utilities/batch-write.ts, imported above - see that file's
 // doc comment. `sleep`/`BATCH_DELAY_MS` above stay local: a few call sites
@@ -172,7 +245,18 @@ async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
 // that would become a self-loop (newTag implies newTag) or a duplicate of
 // an edge newTag already has - both are meaningless once merged, and the
 // unique index on (tag, implies_tag) would reject the duplicate anyway.
-async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
+//
+// newTagId (Tag Relational Refactor, Phase R3.4 - see
+// TAG_RELATIONAL_REFACTOR_NOTES.md): optional, merge-only. A rename never
+// needs it - the underlying tags_v2 row keeps its own id, so tag_ref/
+// implies_tag_ref already point at the right row and don't need touching.
+// A merge does change which row an edge should point at (the source row
+// gets deleted), so the caller passes the target's real id there, and this
+// sets it in the SAME update call as the string retarget - not a second,
+// separate pass over these rows, which could race against this function's
+// own delete-on-self-loop/duplicate branches below (a second pass trying
+// to update a row this pass just deleted would fail outright).
+async function retargetImpliedTagEdges(oldTag: string, newTag: string, newTagId?: string) {
   // A rename/merge where the tag didn't actually change (oldTag and newTag
   // normalize to the same string - a case-only edit, say) has nothing to
   // retarget. Without this guard, the query below for "every edge already
@@ -213,7 +297,9 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
     if (edge.implies_tag === newTag || existingEdgeKeys.has(key)) {
       await pocketbase.collection('implied_tags').delete(edge.id);
     } else {
-      await pocketbase.collection('implied_tags').update(edge.id, { tag: newTag });
+      await pocketbase
+        .collection('implied_tags')
+        .update(edge.id, newTagId ? { tag: newTag, tag_ref: newTagId } : { tag: newTag });
       existingEdgeKeys.add(key);
     }
   }
@@ -222,7 +308,9 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string) {
     if (edge.tag === newTag || existingEdgeKeys.has(key)) {
       await pocketbase.collection('implied_tags').delete(edge.id);
     } else {
-      await pocketbase.collection('implied_tags').update(edge.id, { implies_tag: newTag });
+      await pocketbase
+        .collection('implied_tags')
+        .update(edge.id, newTagId ? { implies_tag: newTag, implies_tag_ref: newTagId } : { implies_tag: newTag });
       existingEdgeKeys.add(key);
     }
   }
@@ -246,7 +334,14 @@ async function deleteImpliedTagEdgesFor(deletedTag: string) {
 // something to silently resolve, so the old row is left as-is for an admin
 // to sort out by hand, the same "flag for review" principle Phase 4 uses
 // for an author-name collision.
-async function retargetTagAliases(oldTag: string, newTag: string) {
+// newTagId (Tag Relational Refactor, Phase R3.4 - see
+// TAG_RELATIONAL_REFACTOR_NOTES.md): optional, merge-only, same reasoning as
+// retargetImpliedTagEdges's own newTagId parameter. Only ever applied to the
+// asTarget loop below - target_tag_ref exists because a target is always a
+// real tag, but alias itself never gets a ref field (the Phase R0 decision:
+// an alias like "orca" is allowed to have no tags_v2 row of its own), so the
+// asAlias loop has nothing to repoint regardless of rename or merge.
+async function retargetTagAliases(oldTag: string, newTag: string, newTagId?: string) {
   if (oldTag === newTag) return; // see retargetImpliedTagEdges - nothing changed, nothing to retarget
 
   const oldSafe = escapeTagFilterValue(oldTag);
@@ -276,7 +371,9 @@ async function retargetTagAliases(oldTag: string, newTag: string) {
       await pocketbase.collection('tag_aliases').delete(row.id);
       continue;
     }
-    await pocketbase.collection('tag_aliases').update(row.id, { target_tag: newTag });
+    await pocketbase
+      .collection('tag_aliases')
+      .update(row.id, newTagId ? { target_tag: newTag, target_tag_ref: newTagId } : { target_tag: newTag });
   }
   for (const row of asAlias) {
     if (row.target_tag === newTag) {
@@ -306,9 +403,12 @@ async function deleteTagAliasesFor(deletedTag: string) {
 // ─── Satellite-table sync ──────────────────────────────────────────────────────
 //
 // Always fetches fresh records from PocketBase so stale React Query cache
-// can never cause a missed update. Called after pattern processing for every
-// rename / merge / delete operation. Keeps four tables in sync with the tag
-// string itself:
+// can never cause a missed update. Called for every rename / merge / delete
+// operation. Keeps five things in sync with the tag string itself - four
+// satellite tables, plus (Tag Relational Refactor, Phase R3.4 - see
+// TAG_RELATIONAL_REFACTOR_NOTES.md) patterns.tag_refs directly, since a
+// merge or delete can change or remove which tags_v2 row a pattern's own
+// tag_refs should point at:
 //
 //   tag_hierarchy (parent/child, being replaced by the implied-tags graph in
 //   Phase 2, but still the live mechanism through Phase 2):
@@ -331,22 +431,57 @@ async function deleteTagAliasesFor(deletedTag: string) {
 //               row - preserving the same redirect-instead-of-404 guarantee
 //               rename gets, without transferring Type/Definition (the two
 //               tags may not actually mean the same thing, so only the URL
-//               history carries over, not the content).
-//     delete  - deletes the row.
+//               history carries over, not the content). Every id reference
+//               to the source row - patterns.tag_refs, and implied_tags/
+//               tag_aliases' ref fields - is repointed to the target BEFORE
+//               this delete runs, never after or concurrently with it; a
+//               dangling reference to an id that no longer exists is a real
+//               hazard this order exists specifically to avoid.
+//     delete  - repoints (see above) removes the id from every referencing
+//               row first, same ordering reasoning as merge, then deletes
+//               the row.
+//
+//   patterns.tag_refs (Phase R3.4):
+//     rename  - untouched. The tags_v2 row keeps its own id when renamed,
+//               so every pattern already pointing at it is still correct.
+//     merge   - every pattern found via tag_refs ~ sourceId gets the source
+//               id swapped for the target's (deduped, in case a pattern
+//               already carried both).
+//     delete  - every pattern found via tag_refs ~ deletedId gets that id
+//               removed, no replacement.
 //
 //   implied_tags (Phase 2's multi-parent graph - see the helpers above):
-//     rename  - retargets every edge mentioning the old name to the new one.
-//     merge   - same retarget as rename - the two have the same effect on
-//               this table, since either way the old tag string stops
-//               existing and its edges should transfer, not vanish.
-//     delete  - removes every edge mentioning the deleted tag.
+//     rename  - retargets every edge's tag/implies_tag string mentioning the
+//               old name to the new one. Never touches tag_ref/
+//               implies_tag_ref - see retargetImpliedTagEdges' own comment
+//               on why a rename never needs to.
+//     merge   - same string retarget as rename, plus (unlike rename)
+//               repoints tag_ref/implies_tag_ref from the source id to the
+//               target's, in the same update call - see
+//               retargetImpliedTagEdges' own comment.
+//     delete  - removes every edge mentioning the deleted tag outright (both
+//               string and id fields go with the row - nothing is left to
+//               go stale).
 //
 //   tag_aliases (Phase 2 - see the helpers above):
-//     rename  - retargets every alias/target reference to the new name.
-//     merge   - same retarget as rename, same reasoning as implied_tags.
-//     delete  - removes every alias/target reference to the deleted tag.
+//     rename  - retargets every alias/target_tag string reference to the new
+//               name. Same as implied_tags: never touches target_tag_ref -
+//               a rename never needs to.
+//     merge   - same string retarget as rename, plus repoints
+//               target_tag_ref from the source id to the target's.
+//     delete  - removes every alias/target reference to the deleted tag
+//               outright, same reasoning as implied_tags' delete case.
 //
-async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag?: string) {
+// Returns the patterns a merge or delete's tag_refs repoint actually
+// touched (id + name), so the caller can build an accurate admin-log entry
+// without a second fetch. Always empty for rename, which touches no
+// patterns at all.
+async function syncSatelliteTablesForOp(
+  type: OperationType,
+  tag: string,
+  newTag?: string,
+  onProgress?: (completed: number, total: number) => void,
+): Promise<{ patternsAffected: { id: string; name: string }[] }> {
   // normalizeTagName (not a local .toLowerCase().trim()) so this always
   // agrees with what every pattern-save path stores - collapsing internal
   // whitespace too, not just casing. Found via code review: the old local
@@ -388,32 +523,63 @@ async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag
     }
     await retargetImpliedTagEdges(safe, safeNew);
     await retargetTagAliases(safe, safeNew);
+    return { patternsAffected: [] };
   } else if (type === 'merge' && newTag) {
     const safeNew = normalizeTagName(newTag);
+    // Merging a tag into itself (the same normalized name - a case-only
+    // "merge," say) is meaningless, the same guard retargetImpliedTagEdges/
+    // retargetTagAliases already apply. Without it, the tags_v2 branch
+    // below would find its own row as `targetRecord`, update it, then
+    // immediately delete that same row (tagV2Record.id === targetRecord.id)
+    // as its own "source" cleanup - already true before Phase R3.4 too, and
+    // meaningfully worse as of this phase: every pattern's tag_refs would
+    // get "repointed" to the id of the row that just got deleted out from
+    // under it, going dangling. RenameOrMergePanel's own canSubmit (see
+    // below) already disables the button for this input, so this specific
+    // trigger isn't reachable through the live admin UI today - this guard
+    // is defense in depth, not a fix for a reachable path, and stays
+    // regardless in case a future caller of this function doesn't carry
+    // the same UI-level guard. See TAG_RELATIONAL_REFACTOR_NOTES.md.
+    if (safe === safeNew) return { patternsAffected: [] };
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
     }
     for (const child of childRecords) {
       await pocketbase.collection('tag_hierarchy').update(child.id, { parent_tag: safeNew });
     }
+
+    let patternsAffected: { id: string; name: string }[] = [];
     if (tagV2Record) {
       const carriedSlugs = [tagV2Record.slug, ...tagV2Record.previous_slugs];
       const targetRecord = await findTagV2Record(safeNew);
+      let targetId: string;
       if (targetRecord) {
         await pocketbase.collection('tags_v2').update(targetRecord.id, {
           previous_slugs: [...new Set([...targetRecord.previous_slugs, ...carriedSlugs])],
         });
+        targetId = targetRecord.id;
       } else {
         const baseSlug = slugifyTag(safeNew);
         const targetSlug = baseSlug ? await uniqueSlugFor(baseSlug, '') : safeNew;
-        await pocketbase
+        const created = await pocketbase
           .collection('tags_v2')
-          .create({ tag: safeNew, slug: targetSlug, previous_slugs: [...new Set(carriedSlugs)] });
+          .create<TypeTagV2Record>({ tag: safeNew, slug: targetSlug, previous_slugs: [...new Set(carriedSlugs)] });
+        targetId = created.id;
       }
+
+      // Every id reference to the source row must be repointed to targetId
+      // before the source row is deleted below - see this function's own
+      // doc comment.
+      patternsAffected = await repointPatternTagRefs(tagV2Record.id, targetId, onProgress);
+      await retargetImpliedTagEdges(safe, safeNew, targetId);
+      await retargetTagAliases(safe, safeNew, targetId);
+
       await pocketbase.collection('tags_v2').delete(tagV2Record.id);
+    } else {
+      await retargetImpliedTagEdges(safe, safeNew);
+      await retargetTagAliases(safe, safeNew);
     }
-    await retargetImpliedTagEdges(safe, safeNew);
-    await retargetTagAliases(safe, safeNew);
+    return { patternsAffected };
   } else if (type === 'delete') {
     if (ownRecord) {
       await pocketbase.collection('tag_hierarchy').delete(ownRecord.id);
@@ -421,12 +587,20 @@ async function syncSatelliteTablesForOp(type: OperationType, tag: string, newTag
     for (const child of childRecords) {
       await pocketbase.collection('tag_hierarchy').delete(child.id);
     }
+
+    let patternsAffected: { id: string; name: string }[] = [];
     if (tagV2Record) {
+      // Same ordering discipline as merge: every pattern's tag_refs loses
+      // this id before the tags_v2 row itself is deleted.
+      patternsAffected = await repointPatternTagRefs(tagV2Record.id, null, onProgress);
       await pocketbase.collection('tags_v2').delete(tagV2Record.id);
     }
     await deleteImpliedTagEdgesFor(safe);
     await deleteTagAliasesFor(safe);
+    return { patternsAffected };
   }
+
+  return { patternsAffected: [] };
 }
 
 // ─── Progress Dialog ──────────────────────────────────────────────────────────
@@ -439,9 +613,17 @@ interface ProgressDialogProps {
   done: boolean;
   error?: string;
   onClose: () => void;
+  /**
+   * Overrides the default "{completed} record(s) updated" success text.
+   * Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+   * a rename no longer touches any pattern record at all, so "0 records
+   * updated" would read as if nothing happened rather than as the
+   * (correct, and now much faster) outcome it actually is.
+   */
+  successMessage?: string;
 }
 
-function ProgressDialog({ open, title, completed, total, done, error, onClose }: ProgressDialogProps) {
+function ProgressDialog({ open, title, completed, total, done, error, onClose, successMessage }: ProgressDialogProps) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
@@ -454,7 +636,7 @@ function ProgressDialog({ open, title, completed, total, done, error, onClose }:
           </Alert>
         ) : done ? (
           <Alert severity="success" icon={<CheckCircleOutlineIcon />} sx={{ mb: 2 }}>
-            Operation complete - {completed} record{completed !== 1 ? 's' : ''} updated.
+            {successMessage ?? `Operation complete - ${completed} record${completed !== 1 ? 's' : ''} updated.`}
           </Alert>
         ) : (
           <>
@@ -508,8 +690,8 @@ function ConfirmDialog({ open, type, tag, newTag, affectedCount, childTags, onCo
     ),
     rename: (
       <>
-        Rename <strong>"{tag}"</strong> → <strong>"{newTag}"</strong> across {affectedCount} pattern
-        {affectedCount !== 1 ? 's' : ''}.
+        Rename <strong>"{tag}"</strong> → <strong>"{newTag}"</strong>. {affectedCount} pattern
+        {affectedCount !== 1 ? 's currently use' : ' currently uses'} this tag.
       </>
     ),
     merge: (
@@ -1046,17 +1228,27 @@ function ImpliedTagsDialog({ open, tag, impliedTags, onClose, onSaved }: Implied
     setError(null);
     try {
       const targetResolved = await resolveOrCreateTagV2Row(target);
-      // Tag Relational Refactor, Phase R1 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
-      // the source side (this dialog's own tag) needs its own tags_v2
-      // lookup too, for tag_ref - `tag` here is a row from the `tags`
-      // view, whose id is unstable and not a real foreign key (see this
-      // file's tags_v2 lookup helpers' own comments).
-      const sourceResolved = await resolveOrCreateTagV2Row(tag.tag);
+      // Tag Relational Refactor, Phase R3.5 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+      // the source side (this dialog's own tag) uses tag.id directly now,
+      // not a re-resolve-by-name. `tag` comes from the admin grid, backed
+      // by tag_usage (Phase R3.1) - its id IS the real, stable tags_v2 id
+      // for this specific row, unlike the old `tags` view this originally
+      // read from when Phase R1 wrote the line this replaced. Re-resolving
+      // by name instead - resolveOrCreateTagV2Row(tag.tag) - would risk
+      // landing on a DIFFERENT row than the one this dialog is actually
+      // open for, now that two rows can share a name (e.g. "autumn" the
+      // season and "autumn" the artist, once Phase R3.5's rename exercises
+      // that for real): resolveOrCreateTagV2Row prefers a General-type row
+      // when one exists, which is exactly wrong if this dialog is open for
+      // a non-General one. A correctness fix, not a performance one -
+      // caught while preparing to actually run that rename, not from a
+      // live report.
+      const sourceId = tag.id;
 
       await pocketbase.collection('implied_tags').create({
         tag: tag.tag,
         implies_tag: target,
-        tag_ref: sourceResolved.row.id,
+        tag_ref: sourceId,
         implies_tag_ref: targetResolved.row.id,
       });
       log({
@@ -1341,13 +1533,18 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
         return;
       }
 
-      // Tag Relational Refactor, Phase R1: target_tag_ref resolves this
-      // dialog's own tag (the alias's target) - alias itself stays
-      // ref-less, per the Phase R0 decision (an alias like "orca" is
-      // allowed to have no tags_v2 row of its own).
-      const targetResolved = await resolveOrCreateTagV2Row(tag.tag);
+      // target_tag_ref is this dialog's own tag (the alias's target) -
+      // alias itself stays ref-less, per the Phase R0 decision (an alias
+      // like "orca" is allowed to have no tags_v2 row of its own). Uses
+      // tag.id directly, not a re-resolve-by-name - Phase R3.5 (see
+      // TAG_RELATIONAL_REFACTOR_NOTES.md) fix, same reasoning as
+      // ImpliedTagsDialog.handleAdd's own sourceId: `tag` comes from the
+      // admin grid (tag_usage-backed, Phase R3.1), whose id is already the
+      // real, specific tags_v2 id for this row - re-resolving by name
+      // could land on a different row once two rows can share a name.
+      const targetId = tag.id;
 
-      await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag, target_tag_ref: targetResolved.row.id });
+      await pocketbase.collection('tag_aliases').create({ alias, target_tag: tag.tag, target_tag_ref: targetId });
       log({
         action: 'Tag Alias Added',
         entity_type: 'Tag',
@@ -1652,8 +1849,14 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
   // TAG_REDESIGN_PROJECT_NOTES.md).
   const fromExists = tagStats.some((t) => t.tag === normalizeTagName(fromTag));
   const toExists = tagStats.some((t) => t.tag === normalizeTagName(toTag));
-  const canSubmit =
-    fromTag.trim() && toTag.trim() && normalizeTagName(fromTag) !== normalizeTagName(toTag) && fromExists;
+  // Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+  // named separately from canSubmit below so the same-tag case can get its
+  // own helper text instead of silently disabling the button with no
+  // explanation - the gap this UI fix closes. syncSatelliteTablesForOp also
+  // guards this same case server-side, as defense in depth, not because
+  // this UI lets it through today.
+  const sameTag = fromTag.trim() !== '' && toTag.trim() !== '' && normalizeTagName(fromTag) === normalizeTagName(toTag);
+  const canSubmit = fromTag.trim() && toTag.trim() && !sameTag && fromExists;
 
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>
@@ -1681,7 +1884,14 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
           onChange={(e) => setToTag(e.target.value)}
           size="small"
           sx={{ flex: 1 }}
-          helperText={mode === 'merge' && toTag.trim() && !toExists ? 'This tag will be created' : ' '}
+          error={sameTag}
+          helperText={
+            sameTag
+              ? `Same as ${mode === 'rename' ? 'the current name' : 'the tag to absorb'}`
+              : mode === 'merge' && toTag.trim() && !toExists
+                ? 'This tag will be created'
+                : ' '
+          }
         />
 
         <Button
@@ -1882,7 +2092,22 @@ const TagManagementPage = () => {
   const [metadataRow, setMetadataRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: tagsV2List = [], refetch: refetchTagsV2 } = useQueryGetAllTagsV2();
   const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
-  const tagsV2ByTag = useMemo(() => new Map(tagsV2List.map((r) => [r.tag, r])), [tagsV2List]);
+  // Tag Relational Refactor, R3.5 follow-up (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): keyed by id, not by `tag` (the
+  // display name). Once two tags_v2 rows can share a name (Phase R0's
+  // uniqueness relaxation, exercised for real by the "autumn (artist)" ->
+  // "autumn" rename this refactor was built around), a name-keyed Map can
+  // only ever hold one of them - the other silently vanishes from lookups
+  // that share this map. That's cosmetic for the Type column's badge below,
+  // but a real correctness bug for TagMetadataDialog's existingRecord: two
+  // grid rows both named "autumn" would resolve to the same tags_v2 row
+  // (whichever `tagsV2List` happened to place last for that key), so
+  // editing either one's Type/Definition/linked account could silently
+  // read and save over the OTHER row's data instead. tagPageData's own
+  // rows (from the tag_usage view, Phase R3.1) already carry the real,
+  // stable tags_v2 id for this exact reason - see useQueryAdminTagStatsPaginated's
+  // own doc comment - so every caller below looks up by id, not by tag.
+  const tagsV2ById = useMemo(() => new Map(tagsV2List.map((r) => [r.id, r])), [tagsV2List]);
 
   const handleMetadataSaved = useCallback(() => {
     refetchTagsV2();
@@ -1923,6 +2148,7 @@ const TagManagementPage = () => {
     total: number;
     done: boolean;
     error?: string;
+    successMessage?: string;
   }>({ open: false, title: '', completed: 0, total: 0, done: false });
 
   const [toast, setToast] = useState<string | null>(null);
@@ -1955,43 +2181,20 @@ const TagManagementPage = () => {
       try {
         setIsFetchingPatterns(true);
 
-        const records = await fetchPatternsWithTag(tag);
-
-        const tagsAffected: string[] = [];
-        const patternsAffected: { id: string; name: string }[] = [];
-
-        if (records.length > 0) {
-          setProgress((p) => ({ ...p, total: records.length }));
-
-          await processSequentially(
-            records,
-            async (record) => {
-              let updatedTags: string[];
-              if (type === 'delete') {
-                tagsAffected.push(tag);
-                patternsAffected.push({ id: record.id, name: record.name || '' });
-                updatedTags = record.tags.filter((t) => t !== tag);
-              } else {
-                // rename or merge: replace the old tag with newTag
-                // for merge: also ensure no duplicates if record already had newTag
-                const without = record.tags.filter((t) => t !== tag);
-                updatedTags = newTag && !without.includes(newTag) ? [...without, newTag] : without;
-              }
-              await pocketbase.collection('patterns').update(record.id, { tags: updatedTags });
-              await sleep(BATCH_DELAY_MS);
-            },
-            (completed, total) => setProgress((p) => ({ ...p, completed, total })),
-          );
-        }
-
-        // Always update the satellite tables after pattern processing - runs
-        // even when the tag has 0 patterns, and uses a fresh PocketBase
-        // fetch so the React Query cache can never cause a missed update.
-        // Refetches/invalidates all four tables this can touch, not just
-        // tag_hierarchy - the other three were silently left stale here
-        // after each was added to syncSatelliteTablesForOp this session
-        // (found via code review, see TAG_REDESIGN_PROJECT_NOTES.md).
-        await syncSatelliteTablesForOp(type, tag, newTag);
+        // Tag Relational Refactor, Phase R3.4 (see
+        // TAG_RELATIONAL_REFACTOR_NOTES.md): all pattern-level work now
+        // happens inside syncSatelliteTablesForOp itself, id-based
+        // (tag_refs ~ id, via repointPatternTagRefs - not
+        // fetchPatternsWithTag's string match, since patterns.tags is
+        // frozen as of Phase R3.3 and can no longer be trusted to find
+        // every pattern that actually carries a given tag). A rename
+        // touches no patterns at all - a renamed tags_v2 row keeps its own
+        // id, so every pattern already pointing at it is still correct.
+        // The progress callback drives the same live "Processing N of M"
+        // bar the old loop did.
+        const { patternsAffected } = await syncSatelliteTablesForOp(type, tag, newTag, (completed, total) =>
+          setProgress((p) => ({ ...p, completed, total })),
+        );
         refetchHierarchy();
         refetchTagsV2();
         refetchImpliedTags();
@@ -2001,7 +2204,23 @@ const TagManagementPage = () => {
         queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
 
-        setProgress((p) => ({ ...p, done: true, total: records.length, completed: records.length }));
+        // A rename's own patternsAffected stays empty - on purpose, no
+        // pattern was touched. For the admin log's own record (an audit
+        // trail of how many patterns a tag reached, not a claim about what
+        // this specific operation touched), fall back to this tag's
+        // last-known usage count from the already-loaded tagStats grid data
+        // instead of fetching patterns again just to count them.
+        const loggedPatternCount =
+          type === 'rename' ? (tagStats.find((s) => s.tag === tag)?.count ?? 0) : patternsAffected.length;
+
+        setProgress((p) => ({
+          ...p,
+          done: true,
+          total: patternsAffected.length,
+          completed: patternsAffected.length,
+          successMessage:
+            type === 'rename' ? `"${tag}" renamed to "${newTag}" - no pattern records needed updating.` : undefined,
+        }));
 
         const actionLabel = type === 'delete' ? 'Tag Deleted' : type === 'rename' ? 'Tag Renamed' : 'Tag Merged';
         log({
@@ -2011,7 +2230,7 @@ const TagManagementPage = () => {
           entity_name: tag,
           changes: newTag ? { tag: { from: tag, to: newTag } } : {},
           metadata: {
-            number_of_affected_patterns: records.length,
+            number_of_affected_patterns: loggedPatternCount,
             type,
             patterns: patternsAffected,
           },
@@ -2026,7 +2245,16 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, refetchHierarchy, refetchTagsV2, refetchImpliedTags, refetchTagAliases, log, setIsFetchingPatterns],
+    [
+      queryClient,
+      refetchHierarchy,
+      refetchTagsV2,
+      refetchImpliedTags,
+      refetchTagAliases,
+      log,
+      setIsFetchingPatterns,
+      tagStats,
+    ],
   );
 
   const startOp = useCallback(
@@ -2237,7 +2465,7 @@ const TagManagementPage = () => {
         sortable: false,
         disableColumnMenu: true,
         renderCell: (params) => {
-          const typeInfo = tagsV2ByTag.get(params.row.tag)?.expand?.type;
+          const typeInfo = tagsV2ById.get(params.row.id)?.expand?.type;
           // "General" is the default every tag starts with - a badge for it
           // on every row would just be noise, so only show one for a tag
           // that's been given a real, differentiating Type.
@@ -2306,7 +2534,7 @@ const TagManagementPage = () => {
         ),
       },
     ],
-    [hierarchy, startOp, tagsV2ByTag],
+    [hierarchy, startOp, tagsV2ById],
   );
 
   return (
@@ -2460,7 +2688,7 @@ const TagManagementPage = () => {
       <TagMetadataDialog
         open={!!metadataRow}
         tag={metadataRow}
-        existingRecord={metadataRow ? (tagsV2ByTag.get(metadataRow.tag) ?? null) : null}
+        existingRecord={metadataRow ? (tagsV2ById.get(metadataRow.id) ?? null) : null}
         tagTypes={tagTypesList}
         onClose={() => setMetadataRow(null)}
         onSaved={handleMetadataSaved}
@@ -2524,6 +2752,7 @@ const TagManagementPage = () => {
         total={progress.total}
         done={progress.done}
         error={progress.error}
+        successMessage={progress.successMessage}
         onClose={() => setProgress({ open: false, title: '', completed: 0, total: 0, done: false })}
       />
 

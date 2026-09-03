@@ -2,6 +2,7 @@ import React from 'react';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import {
   useQueryAdminTagStatsPaginated,
+  useQuerySearchTagsV2,
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
   deriveHierarchyInherited,
@@ -36,13 +37,27 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
 
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
-  const { data: tagSearchData, isFetching: tagSearchFetching } = useQueryAdminTagStatsPaginated({
+
+  // Phase R3.3 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): an empty search still shows the
+  // most-used tags first, from tag_usage (unchanged) - useful, and tags_v2
+  // has no usage-count column to reproduce that with. Once there's
+  // something typed, tags_v2 takes over: it surfaces every real tag,
+  // including one with no published-pattern usage yet (created directly
+  // through ImpliedTagsDialog/AliasDialog, or only present on a draft),
+  // which tag_usage - like the `tags` view before it - never would.
+  const isSearching = debouncedTagSearch.trim() !== '';
+  const { data: tagUsageData, isFetching: tagUsageFetching } = useQueryAdminTagStatsPaginated({
     page: 0,
     pageSize: 50,
-    search: debouncedTagSearch,
+    search: '',
     sortField: 'count',
     sortDir: 'desc',
   });
+  const { data: tagsV2SearchData = [], isFetching: tagsV2SearchFetching } = useQuerySearchTagsV2(
+    debouncedTagSearch,
+    isSearching,
+  );
 
   // Phase 3 (see TAG_REDESIGN_PROJECT_NOTES.md): implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
@@ -120,13 +135,13 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       label="Tags"
       freeSolo
       serverSide
-      data={tagSearchData?.items ?? []}
+      data={isSearching ? tagsV2SearchData : (tagUsageData?.items ?? [])}
       value={value}
       onChange={handleChange}
       inputValue={tagInput}
       onInputChange={setTagInput}
       inheritedValues={inheritedValues}
-      loading={tagSearchFetching}
+      loading={isSearching ? tagsV2SearchFetching : tagUsageFetching}
     />
   );
 };

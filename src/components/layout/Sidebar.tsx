@@ -32,9 +32,25 @@ export const SidebarList = (props: SidebarListProps) => {
   // rather than grouping it into per-Type sections (see
   // TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c) - so this only colors each row,
   // it does not reorder or cluster them.
+  //
+  // Phase R3.2 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): getTagType itself is now id-only,
+  // matching the rest of this display cutover. Two variants stay here
+  // because this component genuinely has two different kinds of tag data -
+  // a tagFacets entry (below) now carries a real tags_v2 id straight from
+  // the server (Phase R3.1), so it resolves by id; passThroughDataTagCounts
+  // (drawer mode) is built from a plain tagList string prop with no id
+  // anywhere in it, so it still needs a name-based lookup. Kept local here,
+  // rather than growing the shared utility back out with a second,
+  // name-based variant every other display surface has already moved off.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
-  const tagAccentColor = (tag: string): string | null => {
-    const type = getTagType(tag, tagsV2);
+  const tagAccentColorById = (tagId: string): string | null => {
+    const type = getTagType(tagId, tagsV2);
+    return isDefaultTagType(type) ? null : (type?.color ?? null);
+  };
+  const tagAccentColorByName = (tag: string): string | null => {
+    const norm = tag.toLowerCase();
+    const type = tagsV2.find((r) => r.tag.toLowerCase() === norm)?.expand?.type ?? null;
     return isDefaultTagType(type) ? null : (type?.color ?? null);
   };
 
@@ -68,7 +84,7 @@ export const SidebarList = (props: SidebarListProps) => {
           // This will hide the currently searched tag
           // Enable this if we ever need it in the future
           //.filter((f) => !isTagActive(f.tag))
-          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count, color: tagAccentColor(f.tag) })),
+          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count, color: tagAccentColorById(f.tagId) })),
         ...(data?.items ?? [])
           .flatMap((item) => [
             ...(item.expand?.authors?.map((a) => a.name).filter((n): n is string => Boolean(n)) ?? []),
@@ -107,7 +123,7 @@ export const SidebarList = (props: SidebarListProps) => {
         passThroughDataTagCounts.map((thisTag) => (
           <TagListItem
             data={thisTag}
-            color={tagAccentColor(thisTag.tag)}
+            color={tagAccentColorByName(thisTag.tag)}
             key={`sidebar-link-${thisTag.tag}`}
             handleClose={props.handleClose}
           />

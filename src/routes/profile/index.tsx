@@ -223,10 +223,16 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
   // author is normally this same profile's owner, and is already shown
   // elsewhere on the page - no need to show their own name back to them
   // again as a tag chip here.
+  // Phase R3.2 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): reads tag_refs instead of tags -
+  // groupTagsByType itself is what changed, not this call site's shape.
   const { data: tagsV2ForFeatured = [] } = useQueryGetAllTagsV2();
   const featuredPatternTagGroups = useMemo(
-    () => groupTagsByType(featuredPattern?.tags ?? [], tagsV2ForFeatured).filter((group) => !isAuthorDisplayType(group.type)),
-    [featuredPattern?.tags, tagsV2ForFeatured],
+    () =>
+      groupTagsByType(featuredPattern?.tag_refs ?? [], tagsV2ForFeatured).filter(
+        (group) => !isAuthorDisplayType(group.type),
+      ),
+    [featuredPattern?.tag_refs, tagsV2ForFeatured],
   );
 
   const [uploadOpen, setUploadOpen] = useState(false);

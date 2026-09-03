@@ -138,7 +138,16 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // `tags` is stored as a JSON array column (no join table) - SQLite's
   // json_each() expands it so COUNT(*) ... GROUP BY counts every matching
   // pattern in the filtered set, not just one page.
-  function buildPatternFilters(tokens, authorIdMap, blockedTags, aliasMap, authorNameMap, tagIdByName, authorTagIdByName) {
+  function buildPatternFilters(
+    tokens,
+    authorIdMap,
+    blockedTags,
+    aliasMap,
+    aliasIdMap,
+    authorNameMap,
+    tagIdByName,
+    authorTagIdByName,
+  ) {
     const dslParts = [];
     const sqlParts = [];
     const sqlParams = {};
@@ -198,15 +207,38 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         // branch because they already match the same tag data the same way
         // - both need the same resolution.
         //
-        // Phase R3.1: the resolved name is then looked up in tagIdByName -
-        // a type-blind (any tags_v2 type) name -> id map, mirroring
-        // resolveOrCreateTagV2Row's own resolution rule (see the R1/R2
-        // correction in TAG_RELATIONAL_REFACTOR_NOTES.md). The match itself
-        // is now an id comparison against tag_refs, not a string comparison
-        // against tags.
+        // Phase R3.1 (refined in R3.5, see TAG_RELATIONAL_REFACTOR_NOTES.md):
+        // the resolved name is then looked up in tagIdByName - a name -> id
+        // map that prefers a General-type row when one exists for this
+        // name, falling back to whichever type does exist otherwise (built
+        // that way below, at map-construction time). Mirrors
+        // resolveOrCreateTagV2Row's own resolution rule exactly - a plain
+        // typed word defaults to the General meaning once a name can
+        // belong to more than one row (Phase R0's uniqueness relaxation,
+        // exercised for real in Phase R3.5). The match itself is an id
+        // comparison against tag_refs, not a string comparison against
+        // tags.
+        //
+        // R3.5 follow-up (found live-testing the "autumn (artist)" ->
+        // "autumn" rename this whole exercise was built around): an alias
+        // is tried via aliasIdMap FIRST, ahead of the aliasMap + tagIdByName
+        // path above. aliasIdMap resolves straight to the tags_v2 id the
+        // alias's target_tag_ref names - the specific row an admin picked
+        // when they set up the alias, via AliasDialog, which sets it from
+        // tag.id, not a name lookup. Falling through aliasMap -> tagIdByName
+        // instead would re-resolve the target's plain name a second time,
+        // and tagIdByName's own General-preference (just above) would then
+        // silently steer an alias like "autumn (artist)" to the General
+        // "autumn" (the season) instead of the Author-typed row the alias
+        // was actually set up to mean - wrong results, not an error. A
+        // pre-R1 alias with no target_tag_ref yet still falls back to the
+        // name-based path, same as before.
         const typedNorm = String(t.value).toLowerCase();
-        const resolvedName = (aliasMap && aliasMap[typedNorm]) || t.value;
-        const tagId = (tagIdByName && tagIdByName[String(resolvedName).toLowerCase()]) || null;
+        let tagId = (aliasIdMap && aliasIdMap[typedNorm]) || null;
+        if (!tagId) {
+          const resolvedName = (aliasMap && aliasMap[typedNorm]) || t.value;
+          tagId = (tagIdByName && tagIdByName[String(resolvedName).toLowerCase()]) || null;
+        }
         emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'author') {
         // Phase 4 (see TAG_REDESIGN_PROJECT_NOTES.md) established that
@@ -247,7 +279,9 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         //      off the account/profile name rather than the tag text,
         //      sidesteps that risk entirely - it can never affect a
         //      `text`/`tag` token, only `author`.
-        //   3. aliasMap - same fallback the old code already had.
+        //   3. aliasIdMap / aliasMap - same fallback the old code already
+        //      had, now id-first for the same reason the text/tag branch
+        //      above is (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md).
         const typedNorm = String(t.value).toLowerCase();
         let tagId = (authorTagIdByName && authorTagIdByName[typedNorm]) || null;
         if (!tagId) {
@@ -255,8 +289,11 @@ routerAdd('GET', '/api/pattern-search', (c) => {
           if (viaAccountName) tagId = (tagIdByName && tagIdByName[String(viaAccountName).toLowerCase()]) || null;
         }
         if (!tagId) {
-          const viaAlias = aliasMap && aliasMap[typedNorm];
-          if (viaAlias) tagId = (tagIdByName && tagIdByName[String(viaAlias).toLowerCase()]) || null;
+          tagId = (aliasIdMap && aliasIdMap[typedNorm]) || null;
+          if (!tagId) {
+            const viaAlias = aliasMap && aliasMap[typedNorm];
+            if (viaAlias) tagId = (tagIdByName && tagIdByName[String(viaAlias).toLowerCase()]) || null;
+          }
         }
         emitTagIdFilter(tagId, !!t.exclude);
       } else if (t.type === 'id') {
@@ -450,11 +487,20 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // applyManualTagChange in src/functions/database/tags.ts), so search
   // never needs to know about the implied_tags graph, only aliases.
   let aliasMap = {};
+  // R3.5 follow-up (see TAG_RELATIONAL_REFACTOR_NOTES.md): aliasIdMap holds
+  // target_tag_ref directly, alias(lower) -> tags_v2 id, for the alias's
+  // target row specifically - not just "whichever row this name resolves
+  // to today." aliasMap (the name) stays alongside it as the fallback for
+  // an alias created before target_tag_ref existed (Phase R0/R1).
+  let aliasIdMap = {};
   try {
     const aliasRecords = $app.findRecordsByFilter('tag_aliases', "id != ''", '', 0, 0);
     for (let i = 0; i < aliasRecords.length; i++) {
       const a = aliasRecords[i];
-      aliasMap[a.getString('alias').toLowerCase()] = a.getString('target_tag');
+      const aliasLower = a.getString('alias').toLowerCase();
+      aliasMap[aliasLower] = a.getString('target_tag');
+      const targetRef = a.getString('target_tag_ref');
+      if (targetRef) aliasIdMap[aliasLower] = targetRef;
     }
   } catch (_) {}
 
@@ -518,8 +564,21 @@ routerAdd('GET', '/api/pattern-search', (c) => {
         const row = allTagRows[i];
         const name = row.getString('tag');
         if (!name) continue;
-        if (!tagIdByName[name]) tagIdByName[name] = row.id;
-        if (authorTypeId && row.getString('type') === authorTypeId && !authorTagIdByName[name]) {
+        // Tag Relational Refactor, Phase R3.5 (see
+        // TAG_RELATIONAL_REFACTOR_NOTES.md): prefer a General-type row for
+        // this name over any other type, regardless of which one this
+        // unsorted loop happens to reach first - mirrors the identical fix
+        // in resolveOrCreateTagV2Row (src/functions/database/tags.ts). A
+        // plain text/tag token means "whichever tag has this name"; once
+        // two rows can share a name (Phase R0's uniqueness relaxation),
+        // that must default to the General one deterministically, not to
+        // whichever findRecordsByFilter happened to return first with no
+        // sort applied.
+        const rowType = row.getString('type');
+        if (!tagIdByName[name] || rowType === '') {
+          tagIdByName[name] = row.id;
+        }
+        if (authorTypeId && rowType === authorTypeId && !authorTagIdByName[name]) {
           authorTagIdByName[name] = row.id;
         }
       }
@@ -531,6 +590,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     authorIdMap,
     blockedTags,
     aliasMap,
+    aliasIdMap,
     authorNameMap,
     tagIdByName,
     authorTagIdByName,

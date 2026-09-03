@@ -68,9 +68,12 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   // patterns.authors/author_manual directly. Rendering the same name again
   // as a tag chip here would just duplicate it.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
+  // Phase R3.2 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): reads tag_refs instead of tags -
+  // groupTagsByType itself is what changed, not this call site's shape.
   const tagGroups = React.useMemo(
-    () => groupTagsByType(viewData?.tags ?? [], tagsV2).filter((group) => !isAuthorDisplayType(group.type)),
-    [viewData?.tags, tagsV2],
+    () => groupTagsByType(viewData?.tag_refs ?? [], tagsV2).filter((group) => !isAuthorDisplayType(group.type)),
+    [viewData?.tag_refs, tagsV2],
   );
 
   const [detailsExpanded, setDetailsExpanded] = React.useState(false);

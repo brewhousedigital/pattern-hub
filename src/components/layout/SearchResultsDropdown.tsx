@@ -12,6 +12,15 @@ type SearchResultsDropdownProps = {
   onItemHover: (index: number) => void;
   onItemSelect: (item: TypeReadOnlyDatabaseItem) => void;
   sx?: object;
+  /**
+   * Optional per-item display override - defaults to item.tag. Tag
+   * Relational Refactor, R3.5 follow-up (see
+   * TAG_RELATIONAL_REFACTOR_NOTES.md): lets a caller show a tag under a
+   * display-only label (e.g. "autumn (artist)") distinct from its real
+   * stored name, which onItemSelect still receives unchanged via `item` -
+   * see HomepageSearchV3.tsx's tagLabel/commitDropdownItem.
+   */
+  getLabel?: (item: TypeReadOnlyDatabaseItem) => string;
 };
 
 /**
@@ -30,6 +39,7 @@ export const SearchResultsDropdown = ({
   onItemHover,
   onItemSelect,
   sx,
+  getLabel,
 }: SearchResultsDropdownProps) => {
   return (
     <Paper
@@ -78,7 +88,10 @@ export const SearchResultsDropdown = ({
               },
             }}
           >
-            <ListItemText primary={item.tag} slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }} />
+            <ListItemText
+              primary={getLabel ? getLabel(item) : item.tag}
+              slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }}
+            />
           </ListItemButton>
         ))}
       </List>

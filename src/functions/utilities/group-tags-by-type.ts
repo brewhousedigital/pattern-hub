@@ -2,11 +2,9 @@ import type { TypeTagV2Record, TypeTagTypeRecord } from '@/functions/database/ta
 
 export interface TypeTagGroup {
   /**
-   * The tag's Type row, or null when the tag has no synced tags_v2 row yet.
-   * This happens for a tag typed moments ago, before /api/sync-tag-catalog
-   * has caught up (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 1). Both this
-   * and a tag whose Type is the default "General" row count as untyped for
-   * display purposes - see isDefaultTagType below.
+   * The tag's Type row, or null when this group's tags have no Type
+   * assigned (the default "General" case). See groupTagsByType's own
+   * comment for the one other, now-rare way a group can end up untyped.
    */
   type: TypeTagTypeRecord | null;
   /** Tag strings in this group, in their original relative order. */
@@ -14,39 +12,48 @@ export interface TypeTagGroup {
 }
 
 /**
- * Groups a pattern's flat tag list by each tag's Type, for display. See
- * TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c. One group exists per distinct
- * Type present in `tags`, plus one group (type: null) for every tag with no
- * matching row in `tagsV2`. A tag missing from `tagsV2` still renders, in
- * this untyped group, rather than being silently dropped.
+ * Groups a pattern's tag_refs by each tag's Type, for display. See
+ * TAG_RELATIONAL_REFACTOR_NOTES.md, Phase R3.2. Before this phase, this
+ * function grouped a flat `tags` string[] through a lowercased-name-keyed
+ * lookup; it now groups a `tag_refs` id[] through an id-keyed one, which
+ * needs no case normalization at all - an id either matches or it doesn't.
+ *
+ * An id with no matching row in `tagsV2` is skipped, not rendered in an
+ * untyped fallback group the way a not-yet-synced tag string used to be:
+ * a relation can only ever hold a real id, so this can now only happen if
+ * the tags_v2 row it pointed at was deleted after the fact (the pre-R3.4
+ * merge-delete gap documented in TAG_RELATIONAL_REFACTOR_NOTES.md) - rare,
+ * and showing a raw id in place of a name would be worse than not
+ * rendering it at all.
  *
  * Groups sort by tag_types.sort_order (ties break on Type name); the
- * untyped group always sorts last. Tags keep their original relative order
- * inside their own group.
+ * untyped group (a real tag with no Type assigned) always sorts last. Tags
+ * keep their original relative order inside their own group.
  *
  * This function only groups and sorts. A caller decides how to render each
  * group's tags, based on group.type?.display_mode
  * ("standard" | "author" | "block") and group.type?.color.
  */
-export function groupTagsByType(tags: string[], tagsV2: TypeTagV2Record[]): TypeTagGroup[] {
-  const byTag = new Map<string, TypeTagV2Record>();
+export function groupTagsByType(tagRefs: string[], tagsV2: TypeTagV2Record[]): TypeTagGroup[] {
+  const byId = new Map<string, TypeTagV2Record>();
   for (const row of tagsV2) {
-    byTag.set(row.tag.toLowerCase(), row);
+    byId.set(row.id, row);
   }
 
   const groups = new Map<string, TypeTagGroup>();
   const UNTYPED_KEY = '';
 
-  for (const tag of tags) {
-    const row = byTag.get(tag.toLowerCase());
-    const type = row?.expand?.type ?? null;
+  for (const tagId of tagRefs) {
+    const row = byId.get(tagId);
+    if (!row) continue;
+    const type = row.expand?.type ?? null;
     const key = type?.id ?? UNTYPED_KEY;
     let group = groups.get(key);
     if (!group) {
       group = { type, tags: [] };
       groups.set(key, group);
     }
-    group.tags.push(tag);
+    group.tags.push(row.tag);
   }
 
   return [...groups.values()].sort((a, b) => {
@@ -71,17 +78,17 @@ export function isAuthorDisplayType(type: TypeTagTypeRecord | null): boolean {
 }
 
 /**
- * Looks up a single tag's Type row. The single-tag equivalent of
- * groupTagsByType, for a component that colors or labels each tag
+ * Looks up a single tags_v2 row's Type, by id. The single-tag equivalent
+ * of groupTagsByType, for a component that colors or labels each tag
  * individually instead of grouping tags into sections - e.g. Sidebar.tsx's
  * facet list, which keeps its own count-based sort instead of clustering by
- * Type (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c). Returns null under
- * the same conditions groupTagsByType's untyped fallback group does: no
- * matching tags_v2 row, or that row has no Type assigned.
+ * Type (see TAG_REDESIGN_PROJECT_NOTES.md, Phase 3c). Takes a tags_v2 id as
+ * of Phase R3.2 (TAG_RELATIONAL_REFACTOR_NOTES.md) - previously took a tag
+ * name. Returns null under the same conditions groupTagsByType's untyped
+ * case does: no matching row, or a matching row with no Type assigned.
  */
-export function getTagType(tag: string, tagsV2: TypeTagV2Record[]): TypeTagTypeRecord | null {
-  const norm = tag.toLowerCase();
-  const row = tagsV2.find((r) => r.tag.toLowerCase() === norm);
+export function getTagType(tagId: string, tagsV2: TypeTagV2Record[]): TypeTagTypeRecord | null {
+  const row = tagsV2.find((r) => r.id === tagId);
   return row?.expand?.type ?? null;
 }
 

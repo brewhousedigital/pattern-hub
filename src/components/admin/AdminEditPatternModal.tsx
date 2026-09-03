@@ -111,6 +111,23 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
 
   const formRef = React.useRef<PatternDetailsFormHandle>(null);
 
+  // Phase R3.3 of the Tag Relational Refactor (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): the initial tag list for an existing
+  // pattern now derives from tag_refs, via the parent DataGrid's own
+  // `expand: 'tag_refs'` (useQueryGetAllPatternsByPaginationAdmin) rather
+  // than a separate useQueryGetAllTagsV2() call here - PatternDetailsForm
+  // reads initialValues.tags into a useState initializer, a one-time read
+  // on mount, not a reactive computation. A separate query's data would
+  // very plausibly still be empty at that exact moment (a cold cache on
+  // first load), permanently locking the form's tags in empty - a real bug
+  // caught during this phase's own implementation, not just a
+  // hypothetical. The parent row's own data, expand included, is already
+  // fully loaded by the time an admin can even click "edit" on it, so
+  // reading it here has no such race. An id with no matching tags_v2 row
+  // (the pre-R3.4 merge-delete gap - see TAG_RELATIONAL_REFACTOR_NOTES.md)
+  // is dropped rather than shown as a blank/broken chip.
+  const initialTags = (props?.expand?.tag_refs ?? []).map((row) => row.tag);
+
   const initialValues: TypePatternDetailsFormValues = {
     name: props?.name || '',
     description: props?.description || '',
@@ -127,7 +144,7 @@ export const AdminEditPatternModal = (props: TypeEditModalProps) => {
     // pattern size, which is inches) - defaulting to 'in' here silently turns a
     // ~1mm line into a 1-inch one on export, blowing out every stroke.
     lineWidthUnit: String(props?.line_width_unit) || 'mm',
-    tags: props?.tags || [],
+    tags: initialTags,
     authors: props?.authors || [],
     authorManual: props?.author_manual || [],
     hasLayers: props?.has_layers ?? false,

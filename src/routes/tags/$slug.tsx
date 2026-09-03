@@ -7,6 +7,7 @@ import {
   useQueryGetDirectImpliedTags,
   useQueryGetTagsImplyingDirect,
   useQueryGetAliasesForTag,
+  tagNeedsArtistSuffix,
 } from '@/functions/database/tags';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -99,15 +100,12 @@ function RouteComponent() {
   // author, so plain-name search kept resolving, on top of the rename).
   const isAuthorType = typeInfo?.name === 'Author';
   const showTypeBadge = !!typeInfo?.name && typeInfo.name.toLowerCase() !== 'general' && !isAuthorType;
-  // A collision-driven override (AUTHOR_TAG_OVERRIDES in
-  // scripts/backfill-author-tags.mjs) can already end an author's stored
-  // tag with "(artist)" - e.g. "autumn (artist)", disambiguated from the
-  // unrelated season tag "autumn". Detect that so this page doesn't double
-  // the label ("autumn (artist) (artist)"). Every other author's stored tag
-  // is just their plain name, so this only ever matters for the rare
-  // override case.
-  const alreadyHasArtistLabel = /\(artist\)\s*$/i.test(tagRecord.tag);
-  const showArtistLabel = isAuthorType && !alreadyHasArtistLabel;
+  // Tag Relational Refactor, R3.5 follow-up (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): this "(artist)" suffix logic is now
+  // shared with the tag search dropdown (HomepageSearchV3.tsx) too, not just
+  // this page - see tagNeedsArtistSuffix's own doc comment for the "don't
+  // double an already-suffixed override" guard this replaces inline.
+  const showArtistLabel = tagNeedsArtistSuffix(tagRecord);
 
   return (
     <GeneralLayout>

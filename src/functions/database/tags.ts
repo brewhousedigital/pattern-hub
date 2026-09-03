@@ -357,6 +357,12 @@ export interface TypePatternRecord {
   id: string;
   tags: string[];
   name: string;
+  /**
+   * Tag Relational Refactor, Phase R3.4 (see TAG_RELATIONAL_REFACTOR_NOTES.md):
+   * optional so a fetch that didn't request this field (e.g. one still
+   * scoped to `tags` alone) still type-checks.
+   */
+  tag_refs?: string[];
   [key: string]: unknown;
 }
 
@@ -534,6 +540,42 @@ export const useQueryGetAllTagsV2 = () =>
     },
   });
 
+/**
+ * Searches tags_v2 directly by name - Phase R3.3 of the Tag Relational
+ * Refactor (see TAG_RELATIONAL_REFACTOR_NOTES.md). Unlike the `tags`/
+ * `tag_usage` views, which only ever list a tag actually carried by a
+ * published, non-deleted pattern, this surfaces every tags_v2 row that
+ * exists at all - including one just created via ImpliedTagsDialog/
+ * AliasDialog, or only present on a draft pattern so far. tags_v2 has no
+ * usage-count column of its own to sort by (unlike the views this
+ * supplements for entry), so this sorts alphabetically - callers that want
+ * a "most used first" default keep using tags/tag_usage for an empty
+ * search term, and switch to this once there's something to search for.
+ * See PatternTagsField.tsx/UserUploadForm.tsx for that split.
+ *
+ * Expands `type` (R3.5 follow-up, see TAG_RELATIONAL_REFACTOR_NOTES.md) so a
+ * caller can tell an Author-type row apart from a same-named General one -
+ * e.g. tagNeedsArtistSuffix, used by HomepageSearchV3.tsx's tag dropdown to
+ * show both a General and an Author "autumn" as distinct, labelled options
+ * instead of one collapsed row a name-keyed view could never tell apart.
+ */
+export const useQuerySearchTagsV2 = (searchTerm: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['SearchTagsV2', searchTerm],
+    queryFn: async (): Promise<TypeTagV2Record[]> => {
+      const safe = escapeTagFilterValue(searchTerm.trim());
+      const result = await pocketbase.collection('tags_v2').getList<TypeTagV2Record>(1, 50, {
+        sort: 'tag',
+        expand: 'type',
+        ...(safe ? { filter: `tag ~ "${safe}"` } : {}),
+      });
+      return result.items;
+    },
+    enabled,
+    placeholderData: (prev) => prev,
+  });
+};
+
 export const TAG_TYPES_QUERY_KEY = ['GetAllTagTypes'] as const;
 
 export const useQueryGetAllTagTypes = () =>
@@ -608,34 +650,47 @@ export async function findTagV2Record(tagName: string): Promise<TypeTagV2Record 
 
 /**
  * Resolves the tags_v2 row for `name`, creating a General-type one if no
- * row exists at all. Matches by name alone (any type), not scoped to
- * General specifically - a first version of this (and of the pattern
- * save-path resolver below) scoped every lookup to type = "" (General)
- * only, reasoning that tags_v2.tag stopped being globally unique in Phase
- * R0 (see TAG_RELATIONAL_REFACTOR_NOTES.md) and a bare typed string should
- * never accidentally latch onto an unrelated Author-typed row. That
- * reasoning is sound for a name typed fresh into an entry field, but it
- * was applied to every name already sitting in a pattern's existing tags
- * too - including one added by the author-cascade mechanism
+ * row exists at all. Prefers an existing General-type row when one exists;
+ * otherwise falls back to findTagV2Record's type-blind "first match" -
+ * this is the Phase R3.5 fix (see TAG_RELATIONAL_REFACTOR_NOTES.md) to a
+ * gap this function's own history already predicted:
+ *
+ * A first version of this (and of the pattern save-path resolver below)
+ * scoped every lookup to type = "" (General) only, reasoning that
+ * tags_v2.tag stopped being globally unique in Phase R0 and a bare typed
+ * string should never accidentally latch onto an unrelated Author-typed
+ * row. That reasoning was sound for a name typed fresh into an entry
+ * field, but it was applied to every name already sitting in a pattern's
+ * existing tags too - including one added by the author-cascade mechanism
  * (scripts/backfill-author-tags.mjs, /api/sync-author-tags), which is
  * *already* correctly resolved to a specific Author-typed row before it
  * ever reaches patterns.tags. Scoping resolution to General-only there
  * created a redundant, disconnected General-type row for every such name
  * instead of reusing the one the cascade already created and linked -
  * caught via a live dry run of scripts/backfill-tag-refs.mjs, which
- * reported ~136 such rows. Every other tags_v2 consumer in this codebase
- * (groupTagsByType, getTagType, findTagV2Record's own other call sites)
- * has always resolved a tag name this same type-blind way, back when
- * tags_v2.tag was still globally unique and type-blind was the only kind
- * of lookup that could exist - matching that existing, established
- * semantic is safer than introducing a new, narrower one. The collision
- * this was meant to guard against (a fresh "autumn" resolving to the
- * artist's row instead of the season's) is not live today - the two
- * currently have different tag strings - and is Phase R3's own concern
- * once its uniqueness relaxation actually gets exercised by a rename.
+ * reported ~136 such rows. That led to a second version, purely
+ * type-blind, matching how every other tags_v2 consumer in this codebase
+ * had always resolved a name, back when tags_v2.tag was still globally
+ * unique and type-blind was the only kind of lookup that could exist -
+ * but that version's own comment named the exact gap it was accepting:
+ * "a fresh 'autumn' resolving to the artist's row instead of the season's
+ * ... is Phase R3's own concern once its uniqueness relaxation actually
+ * gets exercised by a rename." Phase R3.5 is that rename. Pure type-blind
+ * would have meant re-saving any of the three existing seasonal patterns
+ * after the rename could non-deterministically resolve "autumn" to the
+ * artist's row instead, silently swapping what the pattern is tagged
+ * with. Preferring General first closes that gap without reopening the
+ * first version's own bug: a name resolves General-first only when a
+ * General row already exists; if none does, the type-blind fallback still
+ * finds and reuses whatever row does exist, exactly as the second version
+ * already did.
  */
 export async function resolveOrCreateTagV2Row(name: string): Promise<{ row: TypeTagV2Record; created: boolean }> {
-  const existing = await findTagV2Record(name);
+  const generalOnly = await pocketbase
+    .collection('tags_v2')
+    .getFirstListItem<TypeTagV2Record>(`tag = "${escapeTagFilterValue(name)}" && type = ""`)
+    .catch(() => null);
+  const existing = generalOnly ?? (await findTagV2Record(name));
   if (existing) return { row: existing, created: false };
 
   const baseSlug = slugifyTag(name);
@@ -841,6 +896,28 @@ export function resolveTagAlias(tagName: string, aliases: TypeTagAliasRecord[]):
   const norm = tagName.toLowerCase();
   const match = aliases.find((a) => a.alias.toLowerCase() === norm);
   return match ? match.target_tag : tagName;
+}
+
+/**
+ * Whether a tag needs the display-only "(artist)" suffix wherever it's shown
+ * as a pickable option - originally the Definition Page only (Phase 4 of the
+ * original tag redesign), now shared with the tag search dropdown too (Tag
+ * Relational Refactor, R3.5 follow-up - see TAG_RELATIONAL_REFACTOR_NOTES.md).
+ * True only for an Author-type tag whose stored name doesn't already carry
+ * the suffix on its own (a collision-driven override baked directly into the
+ * name by AUTHOR_TAG_OVERRIDES in scripts/backfill-author-tags.mjs, e.g. a
+ * still-unrenamed "autumn (artist)") - never double it.
+ *
+ * Purely cosmetic: the tag's own stored name never changes because of this,
+ * so a caller that lets someone pick a suffixed option must still resolve it
+ * some other way than treating the suffix as part of the name - see
+ * HomepageSearchV3.tsx's commitDropdownItem, which commits an author: token
+ * instead of the literal label for exactly this reason.
+ */
+export function tagNeedsArtistSuffix(tag: { tag: string; expand?: { type?: TypeTagTypeRecord } }): boolean {
+  const isAuthorType = tag.expand?.type?.name === 'Author';
+  const alreadyHasArtistLabel = /\(artist\)\s*$/i.test(tag.tag);
+  return isAuthorType && !alreadyHasArtistLabel;
 }
 
 // Scoped single-tag reads for the public Definition Page - direct edges

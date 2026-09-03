@@ -57,7 +57,7 @@ function RouteComponent() {
   // Top 100 tags by count - powers the "Random Tag" button. Small, cached.
   const { data: topTags = [] } = useQuerySearchTags('');
 
-  const goToPatterns = (search: { q?: string; tags?: string[]; sort?: '-favorite_count' }) => {
+  const goToPatterns = (search: { q?: string; tags?: string[]; authors?: string[]; sort?: '-favorite_count' }) => {
     void navigate({
       to: '/pattern',
       // Supply the schema defaults explicitly, in schema key order. Navigating
@@ -67,6 +67,13 @@ function RouteComponent() {
       search: {
         q: search.q ?? '',
         tags: search.tags ?? [],
+        // Tag Relational Refactor, R3.5 follow-up (see
+        // TAG_RELATIONAL_REFACTOR_NOTES.md): a separate param from `tags`,
+        // used for an Author-typed tag HomepageTagSearch's dropdown labelled
+        // "(artist)" - see handleSelectTag below. /pattern's own loader maps
+        // authors= straight to an author token (search-v2.ts), the same
+        // precise, type-scoped resolution author:-prefixed tokens already get.
+        authors: search.authors ?? [],
         sort: search.sort ?? '-created',
         pageNumber: 1,
         exportTab: 'print',
@@ -85,8 +92,8 @@ function RouteComponent() {
     submitQuery();
   };
 
-  const handleSelectTag = (tag: string) => {
-    goToPatterns({ tags: [tag] });
+  const handleSelectTag = (tag: string, kind: 'tag' | 'author') => {
+    goToPatterns(kind === 'author' ? { authors: [tag] } : { tags: [tag] });
   };
 
   const handleRandomTag = () => {

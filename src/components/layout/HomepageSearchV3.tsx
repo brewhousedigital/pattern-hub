@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useMemo, useEffect, type Keyboard
 import { Link } from '@tanstack/react-router';
 import { type Token, SORT_OPTIONS, type SortValue } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { useQuerySearchTags } from '@/functions/database/tags';
+import { useQuerySearchTags, useQuerySearchTagsV2, tagNeedsArtistSuffix } from '@/functions/database/tags';
 import { useQuerySearchAuthors } from '@/functions/database/authors';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { SearchResultsDropdown } from '@/components/layout/SearchResultsDropdown';
@@ -174,18 +174,59 @@ export const HomepageSearchV3 = ({
 
   const { data: tagResults = [], isFetching: tagsFetching } = useQuerySearchTags(
     debouncedSearchTerm,
-    isDropdownOpen && mode === 'tag',
+    isDropdownOpen && mode === 'tag' && searchTerm.length === 0,
+  );
+  // Tag Relational Refactor, R3.5 follow-up (see
+  // TAG_RELATIONAL_REFACTOR_NOTES.md): `tags` (the view above) groups by
+  // string, so two tags_v2 rows sharing a name - e.g. the General "autumn"
+  // season tag and the Author-type "autumn" - can only ever appear as one
+  // collapsed row there, with no way to tell which one it was. Once there
+  // is an actual term to search for, tagsV2Results (queried straight off
+  // tags_v2, not an aggregate view) takes over, so a search for "autumn"
+  // can show both as distinct, correctly labelled options - see
+  // artistSuffixTagIds/tagLabel below. The empty-term "top 100 by usage"
+  // default above keeps using the view - tags_v2 has no usage-count column
+  // of its own to rank by, and nothing has been typed yet to disambiguate.
+  const { data: tagsV2Results = [], isFetching: tagsV2Fetching } = useQuerySearchTagsV2(
+    debouncedSearchTerm,
+    isDropdownOpen && mode === 'tag' && searchTerm.length > 0,
   );
   const { data: authorResults = [], isFetching: authorsFetching } = useQuerySearchAuthors(
     debouncedSearchTerm,
     isDropdownOpen && mode === 'author',
   );
 
-  const dropdownItems: TypeReadOnlyDatabaseItem[] = useMemo(
-    () => (mode === 'suppress' ? [] : mode === 'author' ? authorResults : tagResults),
-    [mode, authorResults, tagResults],
+  // Which of tagsV2Results' rows need the "(artist)" display suffix - see
+  // tagNeedsArtistSuffix's own doc comment. Only ever populated alongside
+  // tagsV2Results itself (searchTerm non-empty, tag mode), so an empty Set
+  // is correct, not just a safe fallback, whenever the view-backed top-100
+  // default is what's actually showing.
+  const artistSuffixTagIds = useMemo(
+    () => new Set(tagsV2Results.filter(tagNeedsArtistSuffix).map((t) => t.id)),
+    [tagsV2Results],
   );
-  const isFetchingDropdown = tagsFetching || authorsFetching;
+
+  const tagDropdownItems: TypeReadOnlyDatabaseItem[] = useMemo(
+    () =>
+      searchTerm.length > 0
+        ? tagsV2Results.map((t): TypeReadOnlyDatabaseItem => ({ id: t.id, tag: t.tag, count: 0 }))
+        : tagResults,
+    [searchTerm, tagsV2Results, tagResults],
+  );
+
+  const dropdownItems: TypeReadOnlyDatabaseItem[] = useMemo(
+    () => (mode === 'suppress' ? [] : mode === 'author' ? authorResults : tagDropdownItems),
+    [mode, authorResults, tagDropdownItems],
+  );
+  const isFetchingDropdown = tagsFetching || tagsV2Fetching || authorsFetching;
+
+  // Labels a dropdown row for display only - onItemSelect/commitDropdownItem
+  // below still read the real item.tag, never this string. Only passed for
+  // tag mode; author-mode rows have no equivalent ambiguity to label.
+  const tagLabel = useCallback(
+    (item: TypeReadOnlyDatabaseItem) => (artistSuffixTagIds.has(item.id) ? `${item.tag} (artist)` : item.tag),
+    [artistSuffixTagIds],
+  );
 
   const showDropdown = isDropdownOpen && dropdownItems.length > 0;
 
@@ -211,11 +252,21 @@ export const HomepageSearchV3 = ({
   const commitDropdownItem = useCallback(
     (item: TypeReadOnlyDatabaseItem) => {
       const excludePrefix = negated ? '-' : '';
-      const modePrefix = mode === 'author' ? 'author:' : '';
+      // Tag Relational Refactor, R3.5 follow-up (see
+      // TAG_RELATIONAL_REFACTOR_NOTES.md): an Author-typed "autumn"
+      // committed as a plain tag token would resolve ambiguously
+      // server-side (buildPatternFilters' tagIdByName defaults a bare name
+      // to the General row when one exists). Committing it as an author:
+      // token instead reuses the existing, already-precise
+      // authorTagIdByName resolution path, keyed off this exact tag's own
+      // name - the same row tagLabel just labelled it by, so the resulting
+      // chip still means what the picked option showed.
+      const isArtistTag = mode === 'tag' && artistSuffixTagIds.has(item.id);
+      const modePrefix = mode === 'author' || isArtistTag ? 'author:' : '';
       commitInput(`${excludePrefix}${modePrefix}${item.tag}`);
       inputRef.current?.focus();
     },
-    [mode, negated, commitInput],
+    [mode, negated, commitInput, artistSuffixTagIds],
   );
 
   const handleKeyDown = useCallback(
@@ -471,6 +522,7 @@ export const HomepageSearchV3 = ({
             highlightedIndex={highlightedIndex}
             onItemHover={setHighlightedIndex}
             onItemSelect={commitDropdownItem}
+            getLabel={mode === 'tag' ? tagLabel : undefined}
           />
         )}
 
