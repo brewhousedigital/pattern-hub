@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -148,42 +148,38 @@ async function fetchPatternsWithTagRef(tagId: string): Promise<TypePatternRecord
 
 /**
  * Repoints (merge) or removes (delete) a tags_v2 id across every pattern's
- * tag_refs. Pass a real `toId` to swap `fromId`
- * for it (deduping if a pattern already carried both - merge's case); pass
- * `null` to just remove `fromId` (delete's case, no replacement).
+ * tag_refs. Pass a real `toId` to swap `fromId` for it (deduping if a
+ * pattern already carried both - merge's case); pass `null` to just remove
+ * `fromId` (delete's case, no replacement).
  *
- * Only relies on processSequentially's own built-in delay between items,
- * not an additional sleep inside the per-item callback the way the old
- * string-based pattern-rewrite loop did (found via code review while
- * building this: that loop called `await sleep(BATCH_DELAY_MS)` inside a
- * processSequentially callback that already sleeps `delayMs` - 3000ms by
- * default, the same value BATCH_DELAY_MS holds - between every item on its
- * own, so every merge/delete has been waiting twice as long as intended,
- * per pattern, since this loop was first written. Not reproduced here.
+ * Runs server-side via /api/admin-repoint-pattern-tag-refs (see
+ * pb_hooks/main.pb.js) instead of looping over patterns.update() calls
+ * from the browser. That older version needed a 3-second delay between
+ * every single pattern purely to stay under PocketHost's rate limit on
+ * requests from the browser (see processSequentially's own doc comment) -
+ * for a tag used on a few hundred patterns, that meant several minutes.
+ * The hook does the same writes in-process, in one transaction, with no
+ * such delay needed - PocketHost's rate limiter applies to that
+ * browser-facing HTTP layer, not to a hook writing directly to its own
+ * database. There's no onProgress parameter anymore either - this is one
+ * request now, not N throttled ones, so there's nothing to report
+ * mid-flight; callers still get the same final affected-patterns list.
  *
  * Returns the affected patterns (id + name) so the caller can still build
  * an accurate admin-log entry without a second fetch.
  */
-async function repointPatternTagRefs(
-  fromId: string,
-  toId: string | null,
-  onProgress?: (completed: number, total: number) => void,
-): Promise<{ id: string; name: string }[]> {
-  const records = await fetchPatternsWithTagRef(fromId);
-  const affected: { id: string; name: string }[] = [];
-
-  await processSequentially(
-    records,
-    async (record) => {
-      affected.push({ id: record.id, name: record.name || '' });
-      const without = (record.tag_refs ?? []).filter((id) => id !== fromId);
-      const updated = toId && !without.includes(toId) ? [...without, toId] : without;
-      await pocketbase.collection('patterns').update(record.id, { tag_refs: updated });
+async function repointPatternTagRefs(fromId: string, toId: string | null): Promise<{ id: string; name: string }[]> {
+  const res = await fetch(`${pocketbaseDomain}/api/admin-repoint-pattern-tag-refs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${pocketbase.authStore.token}`,
     },
-    onProgress,
-  );
-
-  return affected;
+    body: JSON.stringify({ fromId, toId }),
+  });
+  if (!res.ok) throw new Error('Failed to repoint patterns');
+  const data: { patternsAffected: { id: string; name: string }[] } = await res.json();
+  return data.patternsAffected;
 }
 
 // processSequentially (batch-with-delay writes) now lives in
@@ -464,7 +460,6 @@ async function syncSatelliteTablesForOp(
   type: OperationType,
   tag: string,
   newTag?: string,
-  onProgress?: (completed: number, total: number) => void,
 ): Promise<{ patternsAffected: { id: string; name: string }[]; mergedInstead?: boolean }> {
   // normalizeTagName (not a local .toLowerCase().trim()) so this always
   // agrees with what every pattern-save path stores - collapsing internal
@@ -512,7 +507,7 @@ async function syncSatelliteTablesForOp(
         )
         .catch(() => null);
       if (collision) {
-        const result = await syncSatelliteTablesForOp('merge', tag, newTag, onProgress);
+        const result = await syncSatelliteTablesForOp('merge', tag, newTag);
         return { ...result, mergedInstead: true };
       }
     }
@@ -585,7 +580,7 @@ async function syncSatelliteTablesForOp(
       // Every id reference to the source row must be repointed to targetId
       // before the source row is deleted below - see this function's own
       // doc comment.
-      patternsAffected = await repointPatternTagRefs(tagV2Record.id, targetId, onProgress);
+      patternsAffected = await repointPatternTagRefs(tagV2Record.id, targetId);
       await retargetImpliedTagEdges(safe, safeNew, targetId);
       await retargetTagAliases(safe, safeNew, targetId);
 
@@ -607,7 +602,7 @@ async function syncSatelliteTablesForOp(
     if (tagV2Record) {
       // Same ordering discipline as merge: every pattern's tag_refs loses
       // this id before the tags_v2 row itself is deleted.
-      patternsAffected = await repointPatternTagRefs(tagV2Record.id, null, onProgress);
+      patternsAffected = await repointPatternTagRefs(tagV2Record.id, null);
       await pocketbase.collection('tags_v2').delete(tagV2Record.id);
     }
     await deleteImpliedTagEdgesFor(safe);
@@ -2208,14 +2203,10 @@ const TagManagementPage = () => {
         // tag, so syncSatelliteTablesForOp repointed everything at that
         // existing row and retired this one instead - a real merge, not a
         // no-op for patterns, even though the UI still asked for "rename".
-        // The progress callback drives the same live "Processing N of M"
-        // bar the old loop did.
-        const { patternsAffected, mergedInstead } = await syncSatelliteTablesForOp(
-          type,
-          tag,
-          newTag,
-          (completed, total) => setProgress((p) => ({ ...p, completed, total })),
-        );
+        // repointPatternTagRefs runs server-side now (one request), not a
+        // throttled per-pattern loop - there's no more mid-flight progress
+        // to report, so this resolves straight to the final result.
+        const { patternsAffected, mergedInstead } = await syncSatelliteTablesForOp(type, tag, newTag);
         const renamedInPlace = type === 'rename' && !mergedInstead;
         // invalidateQueries alone refetches each of these four - they're all
         // actively mounted on this page - so the refetchX() calls this block

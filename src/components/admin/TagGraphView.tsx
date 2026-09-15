@@ -15,6 +15,15 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import {
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+  type SimulationLinkDatum,
+  type SimulationNodeDatum,
+} from 'd3-force';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import type {
   TypeTagV2Record,
@@ -33,21 +42,19 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 // already fetched by that page for its existing dialogs, so this component
 // takes it as props and runs no query of its own.
 
-// A component's implication roots (computeLayers depth 0) sit on this
-// radius; each further depth adds another RING_SPACING beyond it. A ring
-// grows past that when it holds enough nodes that MIN_ARC_PER_NODE would
-// otherwise pack them tighter than this - see layoutComponentRadially.
-const BASE_RADIUS = 64;
-const RING_SPACING = 110;
-const MIN_ARC_PER_NODE = 92;
-// How far an alias ghost sits beyond its own tag, and the angle between
-// neighbouring aliases of the same tag so they fan out instead of stacking
-// on top of each other.
-const SATELLITE_OFFSET = 50;
-const SATELLITE_FAN = 0.4;
-// Clear space kept between two separate components once they're packed
-// onto the shared canvas - see packComponents.
-const COMPONENT_GAP = 48;
+// Negative strength on forceManyBody means mutual repulsion between every
+// pair of nodes, not just connected ones - this is what pushes unrelated
+// tags apart into visibly separate clusters instead of a single tangle.
+// The LINK_DISTANCE values are the resting length forceLink then pulls a
+// connected pair back toward; the COLLIDE radii are the minimum gap
+// forceCollide keeps between any two settled nodes so labels don't
+// overlap. See layoutWithForceSimulation.
+const CHARGE_STRENGTH = -260;
+const LINK_DISTANCE_IMPLIES = 130;
+const LINK_DISTANCE_ALIAS = 55;
+const TAG_COLLIDE_RADIUS = 60;
+const ALIAS_COLLIDE_RADIUS = 34;
+const SIMULATION_TICKS = 300;
 
 // ─── Node types ─────────────────────────────────────────────────────────────
 
@@ -72,7 +79,7 @@ type GraphNode = TagFlowNode | AliasFlowNode;
 // connection points React Flow needs to route edges to/from, not meant to
 // be seen or dragged from by an admin on a read-only graph.
 
-// The radial layout (see layoutComponentRadially below) can place a
+// The force simulation (see layoutWithForceSimulation below) can place a
 // connected node in any direction, not just to the right, so a single
 // fixed target/source pair per node - enough for the old left-to-right
 // column layout - would force edges to detour around the node to reach a
@@ -145,223 +152,59 @@ function AliasNodeComponent({ data }: NodeProps<AliasFlowNode>) {
 
 const nodeTypes: NodeTypes = { tagNode: TagNodeComponent, aliasNode: AliasNodeComponent };
 
-// ─── Layering ───────────────────────────────────────────────────────────────
+// ─── Force-directed layout ──────────────────────────────────────────────────
 
-/**
- * A node's layer is its longest path from a root - a tag nothing implies
- * (no incoming edge). The same kind of graph walk getImpliedTags/
- * getTagsImplying (src/functions/database/tags.ts) already do, measuring
- * depth instead of collecting a visited set. Memoized per id (`layer`) so a
- * node reachable via many paths is only resolved once; the `visiting` guard
- * stops an infinite loop if a cycle ever slipped into the data (the admin
- * implied-tag editor already guards against creating one on purpose, but a
- * hand-rolled layout should never hang even if that's ever wrong).
- */
-function computeLayers(nodeIds: string[], impliesEdges: { source: string; target: string }[]): Map<string, number> {
-  const incoming = new Map<string, string[]>();
-  for (const id of nodeIds) incoming.set(id, []);
-  for (const edge of impliesEdges) {
-    incoming.get(edge.target)?.push(edge.source);
-  }
-
-  const layer = new Map<string, number>();
-
-  function resolve(id: string, visiting: Set<string>): number {
-    const cached = layer.get(id);
-    if (cached !== undefined) return cached;
-    if (visiting.has(id)) return 0;
-    visiting.add(id);
-    const parents = incoming.get(id) ?? [];
-    const depth = parents.length === 0 ? 0 : Math.max(...parents.map((p) => resolve(p, visiting))) + 1;
-    visiting.delete(id);
-    layer.set(id, depth);
-    return depth;
-  }
-
-  for (const id of nodeIds) resolve(id, new Set());
-  return layer;
+interface SimNode extends SimulationNodeDatum {
+  id: string;
+  kind: 'tag' | 'alias';
 }
 
-// ─── Connected components ───────────────────────────────────────────────────
-
-/**
- * Union-find over every edge (implies and alias alike) so that tags with no
- * path between them end up in separate groups. This is the core of the
- * bubble layout: instead of every tag sharing one set of global columns -
- * where hundreds of unrelated edges all cross through the same layers -
- * each group of actually-related tags becomes its own small cluster,
- * positioned and packed independently (see layoutComponentRadially and
- * packComponents below), so a glance at the graph shows what's connected
- * and what's off in its own island.
- */
-function findComponents(nodeIds: string[], edges: { source: string; target: string }[]): Map<string, string[]> {
-  const parent = new Map<string, string>(nodeIds.map((id) => [id, id]));
-  const find = (id: string): string => {
-    let root = id;
-    while (parent.get(root) !== root) root = parent.get(root)!;
-    let cur = id;
-    while (parent.get(cur) !== root) {
-      const next = parent.get(cur)!;
-      parent.set(cur, root);
-      cur = next;
-    }
-    return root;
-  };
-
-  for (const { source, target } of edges) {
-    if (!parent.has(source) || !parent.has(target)) continue;
-    const ra = find(source);
-    const rb = find(target);
-    if (ra !== rb) parent.set(ra, rb);
-  }
-
-  const groups = new Map<string, string[]>();
-  for (const id of nodeIds) {
-    const root = find(id);
-    if (!groups.has(root)) groups.set(root, []);
-    groups.get(root)!.push(id);
-  }
-  return groups;
+interface SimLink extends SimulationLinkDatum<SimNode> {
+  kind: 'implies' | 'alias';
 }
 
-// ─── Radial layout ──────────────────────────────────────────────────────────
-
-/** Mean of a set of angles (radians) - the ordinary mean breaks down near
- * the -pi/pi wraparound, so this averages each angle's unit vector instead. */
-function circularMean(angles: number[]): number {
-  const sin = angles.reduce((s, a) => s + Math.sin(a), 0);
-  const cos = angles.reduce((s, a) => s + Math.cos(a), 0);
-  return Math.atan2(sin, cos);
-}
-
-type LocalLayout = {
-  /** Positions relative to this component's own centre, i.e. before packComponents offsets it onto the shared canvas. */
-  positions: Map<string, { x: number; y: number }>;
-  /** Bounding radius around that centre, used to pack this component against its neighbours without overlap. */
-  radius: number;
-};
-
 /**
- * Arranges one connected component as a small radial tree: implication
- * roots (computeLayers depth 0 - see that function's own doc comment) sit
- * at the centre, and each further depth gets its own ring further out.
+ * Positions every node with a physics simulation instead of an explicit
+ * layout algorithm: forceManyBody repels every node from every other node
+ * (not just connected ones), forceLink pulls each edge's two ends back
+ * together, and forceCollide keeps settled nodes from overlapping once
+ * they get close. Tags and aliases with no implies/alias path between them
+ * have nothing pulling them together, so they drift apart on their own -
+ * that's what turns "what's connected vs. not" into visibly separate
+ * clusters, without this component ever having to compute connected
+ * components or a layout for each one itself.
  *
- * A node's angle is the circular mean of its own parents' angles, then
- * every ring is re-spread to evenly fill the full circle in that
- * mean-angle order. That second pass is what keeps a ring from either
- * bunching into a narrow wedge (if nodes just inherited their parent's
- * exact angle) or losing the grouping entirely (if angle were assigned
- * without regard to parents) - it's the standard "barycenter" heuristic
- * layered-graph drawing uses to cut down on crossings, adapted from a
- * straight axis to a ring. Siblings that share a parent land next to each
- * other, which is what the old layout's plain alphabetical order within a
- * column didn't give it.
+ * Runs synchronously for a fixed number of ticks instead of animating -
+ * this is a one-shot layout for a read-only graph, not a live physics
+ * view. 300 is d3-force's own default number of ticks before a
+ * simulation's alpha decays to alphaMin, i.e. before it would consider
+ * itself settled.
  */
-function layoutComponentRadially(
-  tagIds: string[],
-  impliesEdges: { source: string; target: string }[],
-  aliasesByTarget: Map<string, string[]>,
-): LocalLayout {
-  const positions = new Map<string, { x: number; y: number }>();
+function layoutWithForceSimulation(
+  nodeDefs: { id: string; kind: 'tag' | 'alias' }[],
+  linkDefs: { source: string; target: string; kind: 'implies' | 'alias' }[],
+): Map<string, { x: number; y: number }> {
+  const nodes: SimNode[] = nodeDefs.map(({ id, kind }) => ({ id, kind }));
+  const links: SimLink[] = linkDefs.map(({ source, target, kind }) => ({ source, target, kind }));
 
-  if (tagIds.length === 1) {
-    positions.set(tagIds[0], { x: 0, y: 0 });
-  } else {
-    const layer = computeLayers(tagIds, impliesEdges);
-    const parentsOf = new Map<string, string[]>(tagIds.map((id) => [id, []]));
-    for (const e of impliesEdges) parentsOf.get(e.target)?.push(e.source);
+  const simulation = forceSimulation(nodes)
+    .force(
+      'link',
+      forceLink<SimNode, SimLink>(links)
+        .id((d) => d.id)
+        .distance((l) => (l.kind === 'alias' ? LINK_DISTANCE_ALIAS : LINK_DISTANCE_IMPLIES)),
+    )
+    .force('charge', forceManyBody<SimNode>().strength(CHARGE_STRENGTH))
+    .force(
+      'collide',
+      forceCollide<SimNode>((d) => (d.kind === 'alias' ? ALIAS_COLLIDE_RADIUS : TAG_COLLIDE_RADIUS)),
+    )
+    .force('center', forceCenter<SimNode>(0, 0))
+    .stop();
 
-    const byLayer = new Map<number, string[]>();
-    for (const id of tagIds) {
-      const l = layer.get(id) ?? 0;
-      if (!byLayer.has(l)) byLayer.set(l, []);
-      byLayer.get(l)!.push(id);
-    }
+  for (let i = 0; i < SIMULATION_TICKS; i++) simulation.tick();
 
-    const angle = new Map<string, number>();
-    const sortedLayers = [...byLayer.keys()].sort((a, b) => a - b);
-    for (const l of sortedLayers) {
-      const ranked = byLayer
-        .get(l)!
-        .map((id) => {
-          const parentAngles = (parentsOf.get(id) ?? [])
-            .map((p) => angle.get(p))
-            .filter((a): a is number => a !== undefined);
-          return { id, mean: parentAngles.length > 0 ? circularMean(parentAngles) : undefined };
-        })
-        .sort((a, b) => {
-          if (a.mean !== undefined && b.mean !== undefined) return a.mean - b.mean;
-          if (a.mean !== undefined) return -1;
-          if (b.mean !== undefined) return 1;
-          return a.id.localeCompare(b.id);
-        });
-      ranked.forEach(({ id }, i) => angle.set(id, ((i + 0.5) / ranked.length) * Math.PI * 2));
-    }
-
-    for (const l of sortedLayers) {
-      const ids = byLayer.get(l)!;
-      const ringRadius = Math.max(BASE_RADIUS + l * RING_SPACING, (ids.length * MIN_ARC_PER_NODE) / (Math.PI * 2));
-      for (const id of ids) {
-        const a = angle.get(id)!;
-        positions.set(id, { x: Math.cos(a) * ringRadius, y: Math.sin(a) * ringRadius });
-      }
-    }
-  }
-
-  // Alias ghosts aren't part of the implies rings above - they're small
-  // satellites just beyond their own tag, fanned out by angle so two
-  // aliases of the same tag don't land on top of each other.
-  let boundingRadius = BASE_RADIUS;
-  for (const { x, y } of positions.values()) boundingRadius = Math.max(boundingRadius, Math.hypot(x, y));
-  for (const [targetId, ghostIds] of aliasesByTarget) {
-    const base = positions.get(targetId);
-    if (!base) continue;
-    const baseAngle = Math.atan2(base.y, base.x);
-    const baseDist = Math.hypot(base.x, base.y);
-    ghostIds.forEach((ghostId, i) => {
-      const a = baseAngle + (i - (ghostIds.length - 1) / 2) * SATELLITE_FAN;
-      const r = baseDist + SATELLITE_OFFSET;
-      positions.set(ghostId, { x: Math.cos(a) * r, y: Math.sin(a) * r });
-      boundingRadius = Math.max(boundingRadius, r);
-    });
-  }
-
-  return { positions, radius: boundingRadius };
-}
-
-// ─── Packing ─────────────────────────────────────────────────────────────────
-
-/**
- * Places each component's local layout onto shared canvas coordinates
- * without overlapping any other component's bounding circle. Walks an
- * expanding Archimedean spiral out from the origin and takes the first
- * point that clears every circle placed so far - a standard, simple way to
- * pack circles when the goal is "no overlaps," not a minimal bounding area.
- * Callers get denser results by placing larger components first.
- */
-function packComponents(components: { radius: number }[]): { x: number; y: number }[] {
-  const placed: { x: number; y: number; radius: number }[] = [];
-
-  return components.map((comp) => {
-    if (placed.length === 0) {
-      placed.push({ x: 0, y: 0, radius: comp.radius });
-      return { x: 0, y: 0 };
-    }
-    const spiralGrowth = 8;
-    let theta = 0;
-    let x = 0;
-    let y = 0;
-    for (let i = 0; i < 20000; i++) {
-      const r = spiralGrowth * theta;
-      x = r * Math.cos(theta);
-      y = r * Math.sin(theta);
-      const clear = placed.every((p) => Math.hypot(p.x - x, p.y - y) >= p.radius + comp.radius + COMPONENT_GAP);
-      if (clear) break;
-      theta += 0.35;
-    }
-    placed.push({ x, y, radius: comp.radius });
-    return { x, y };
-  });
+  return new Map(nodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]));
 }
 
 // ─── Edge routing ────────────────────────────────────────────────────────────
@@ -427,56 +270,31 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
     // in the graph.
     const aliasLabelById = new Map<string, string>();
     const aliasEdges: { ghostId: string; targetId: string }[] = [];
-    const aliasesByTargetId = new Map<string, string[]>();
     for (const a of aliases) {
       const targetId = resolveId(a.target_tag_ref, a.target_tag);
       if (!targetId || !relevantIds.has(targetId)) continue;
       const ghostId = `alias:${a.id}`;
       aliasLabelById.set(ghostId, a.alias);
       aliasEdges.push({ ghostId, targetId });
-      if (!aliasesByTargetId.has(targetId)) aliasesByTargetId.set(targetId, []);
-      aliasesByTargetId.get(targetId)!.push(ghostId);
     }
 
-    // 3. Split into connected components (see findComponents) - tags with
-    // no implies/alias path between them lay out, and later get packed onto
-    // the canvas, independently of each other instead of sharing one set of
-    // columns.
-    const allNodeIds = [...relevantIdList, ...aliasLabelById.keys()];
-    const dsuEdges = [
-      ...impliesEdgeIds,
-      ...aliasEdges.map(({ ghostId, targetId }) => ({ source: ghostId, target: targetId })),
-    ];
-    const components = findComponents(allNodeIds, dsuEdges);
+    // 3. Let a physics simulation position everything (see
+    // layoutWithForceSimulation) instead of computing an explicit layout -
+    // tags and aliases with no implies/alias path between them drift apart
+    // once nothing pulls them together, which is what makes "what's
+    // connected vs. not" visually obvious.
+    const finalPos = layoutWithForceSimulation(
+      [
+        ...relevantIdList.map((id) => ({ id, kind: 'tag' as const })),
+        ...[...aliasLabelById.keys()].map((id) => ({ id, kind: 'alias' as const })),
+      ],
+      [
+        ...impliesEdgeIds.map(({ source, target }) => ({ source, target, kind: 'implies' as const })),
+        ...aliasEdges.map(({ ghostId, targetId }) => ({ source: targetId, target: ghostId, kind: 'alias' as const })),
+      ],
+    );
 
-    // 4. Lay out each component on its own (see layoutComponentRadially),
-    // then pack the components onto a shared canvas without overlapping
-    // (see packComponents). Largest-first is the usual circle-packing
-    // convention - it settles the few big clusters near the centre first
-    // and lets the many small ones fill in the gaps around them.
-    const laidOutComponents = [...components.values()].map((memberIds) => {
-      const tagMemberIds = memberIds.filter((id) => !aliasLabelById.has(id));
-      const memberSet = new Set(memberIds);
-      const componentImpliesEdges = impliesEdgeIds.filter((e) => memberSet.has(e.source) && memberSet.has(e.target));
-      const componentAliasesByTarget = new Map(
-        tagMemberIds
-          .map((id): [string, string[]] => [id, aliasesByTargetId.get(id) ?? []])
-          .filter(([, ghosts]) => ghosts.length > 0),
-      );
-      return layoutComponentRadially(tagMemberIds, componentImpliesEdges, componentAliasesByTarget);
-    });
-    laidOutComponents.sort((a, b) => b.radius - a.radius);
-    const offsets = packComponents(laidOutComponents);
-
-    const finalPos = new Map<string, { x: number; y: number }>();
-    laidOutComponents.forEach((comp, i) => {
-      const offset = offsets[i];
-      for (const [id, local] of comp.positions) {
-        finalPos.set(id, { x: local.x + offset.x, y: local.y + offset.y });
-      }
-    });
-
-    // 5. Build the React Flow nodes from those positions.
+    // 4. Build the React Flow nodes from those positions.
     const nodes: GraphNode[] = [];
     const usedTypeIds = new Set<string>();
     for (const [id, position] of finalPos) {
@@ -503,10 +321,9 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
       });
     }
 
-    // 6. Edges. Each one picks whichever compass handle (see COMPASS and
-    // compassSide) actually faces the other end, since the radial layout
-    // can put a connected node in any direction rather than always to the
-    // right the way the old column layout could assume.
+    // 5. Edges. Each one picks whichever compass handle (see COMPASS and
+    // compassSide) actually faces the other end, since the simulation can
+    // put a connected node in any direction from another.
     const edges: Edge[] = [
       ...impliesEdgeIds.map(({ source, target }, i) => {
         const sp = finalPos.get(source);

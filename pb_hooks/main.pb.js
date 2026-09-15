@@ -2642,6 +2642,68 @@ routerAdd(
   $apis.requireAuth('admins'),
 );
 
+// Repoints (merge) or removes (delete) a tags_v2 id across every pattern's
+// tag_refs - the server-side counterpart to the admin tag manager's own
+// repointPatternTagRefs (src/routes/space-command/tags.tsx). That function
+// used to loop over patterns.update() calls from the browser, one at a
+// time, with a 3-second delay between every single one purely to stay
+// under PocketHost's rate limit on requests FROM THE BROWSER (see
+// processSequentially's own doc comment) - for a tag used on a few hundred
+// patterns, that meant several minutes to rename or delete one tag. This
+// hook does the same writes in-process instead: $app.save is a direct
+// database write, never a request to PocketHost's own rate-limited HTTP
+// API, so no artificial delay is needed here, and the whole batch runs in
+// one transaction - a failure partway through leaves every pattern exactly
+// as it was, rather than half-repointed the way an aborted browser loop
+// could.
+//
+// Body: { fromId: string, toId: string | null }. Pass a real toId to swap
+// fromId for it, deduping if a pattern already carried both (merge's
+// case); pass toId: null (or omit it) to just remove fromId (delete's
+// case, no replacement) - mirrors repointPatternTagRefs's own two call
+// shapes exactly.
+routerAdd(
+  'POST',
+  '/api/admin-repoint-pattern-tag-refs',
+  (c) => {
+    function escSq(s) {
+      return String(s).replace(/'/g, "\\'");
+    }
+
+    const body = c.requestInfo().body || {};
+    const fromId = String(body.fromId || '');
+    const toId = body.toId ? String(body.toId) : null;
+
+    if (!fromId) return c.json(400, { error: 'fromId is required' });
+
+    try {
+      const patterns = $app.findRecordsByFilter('patterns', "tag_refs ~ '" + escSq(fromId) + "'", '', 0, 0);
+      const affected = [];
+
+      $app.runInTransaction((txApp) => {
+        for (let i = 0; i < patterns.length; i++) {
+          const record = patterns[i];
+          affected.push({ id: record.id, name: record.getString('name') || '' });
+          const without = (record.getStringSlice('tag_refs') || []).filter((id) => id !== fromId);
+          let hasToId = false;
+          for (let j = 0; j < without.length; j++) {
+            if (without[j] === toId) hasToId = true;
+          }
+          const updated = toId && !hasToId ? without.concat([toId]) : without;
+          record.set('tag_refs', updated);
+          txApp.save(record);
+        }
+      });
+
+      return c.json(200, { patternsAffected: affected });
+    } catch (err) {
+      console.log('>>>admin-repoint-pattern-tag-refs error', err?.message);
+      return c.json(500, { error: 'Unable to repoint patterns', message: err?.message });
+    }
+  },
+  $apis.requireAuth('admins'),
+);
+
 // Keeps an author's tag identity in sync with their account name. Without
 // this, renaming an
 // account would stop automatically updating that person's credit on every
