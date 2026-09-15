@@ -196,17 +196,10 @@ const TagListItem = (props: TagListItemProps) => {
           gap: 0.75,
         }}
       >
-        {props.color && (
-          <Box
-            component="span"
-            aria-hidden
-            sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: props.color, flexShrink: 0, alignSelf: 'center' }}
-          />
-        )}
         <Typography
           variant="body2"
           noWrap
-          sx={{ textTransform: 'capitalize', fontSize: '0.8125rem', fontWeight: 500, color: 'text.primary' }}
+          sx={{ textTransform: 'capitalize', fontSize: '0.8125rem', fontWeight: 500, color: props.color || 'text.primary' }}
         >
           {props.data.tag}
         </Typography>
@@ -295,20 +288,13 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
           gap: 0.75,
         }}
       >
-        {item.color && (
-          <Box
-            component="span"
-            aria-hidden
-            sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0, alignSelf: 'center' }}
-          />
-        )}
         <Typography
           variant="body2"
           noWrap
           sx={{
             fontSize: '0.8125rem',
             fontWeight: 500,
-            color: 'text.primary',
+            color: item.color || 'text.primary',
             textTransform: item.kind === 'tag' ? 'capitalize' : 'none',
           }}
         >
