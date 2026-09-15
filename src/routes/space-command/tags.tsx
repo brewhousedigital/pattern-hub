@@ -2124,6 +2124,12 @@ const TagManagementPage = () => {
     queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
   }, [queryClient]);
 
+  // Memoized rather than an inline arrow function - TagGraphView's graph
+  // layout is a memo keyed partly on this callback's identity, and an
+  // unstable one would replay its settle animation on every unrelated
+  // re-render of this page instead of only when the graph's data changes.
+  const handleTagGraphNodeClick = useCallback((tag: TypeReadOnlyDatabaseItem) => setImpliedTagsRow(tag), []);
+
   // ── Alias dialog ────────────────────────────────────────────────────────────
   const [aliasRow, setAliasRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: tagAliasesList = [] } = useQueryGetAllTagAliases();
@@ -2726,7 +2732,7 @@ const TagManagementPage = () => {
             impliedTags={impliedTagsList}
             aliases={tagAliasesList}
             tagTypes={tagTypesList}
-            onNodeClick={(tag) => setImpliedTagsRow(tag)}
+            onNodeClick={handleTagGraphNodeClick}
           />
         </Paper>
       )}

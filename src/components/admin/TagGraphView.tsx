@@ -53,7 +53,7 @@ const ALIAS_NODE_DIAMETER = 10;
 // force simulation decides how close two nodes may settle (forceCollide) -
 // without it, a node's label (rendered below the dot, outside its own
 // circle) would overlap a neighbour's dot once things settle.
-const COLLIDE_LABEL_PADDING = 24;
+const COLLIDE_LABEL_PADDING = 30;
 
 // Negative strength on forceManyBody means mutual repulsion between every
 // pair of nodes, not just connected ones - this is what pushes unrelated
@@ -61,9 +61,9 @@ const COLLIDE_LABEL_PADDING = 24;
 // The LINK_DISTANCE values are the resting length forceLink then pulls a
 // connected pair back toward. Both are tuned for small dots rather than
 // the old text-chip nodes - see layoutWithForceSimulation.
-const CHARGE_STRENGTH = -140;
-const LINK_DISTANCE_IMPLIES = 70;
-const LINK_DISTANCE_ALIAS = 26;
+const CHARGE_STRENGTH = -170;
+const LINK_DISTANCE_IMPLIES = 95;
+const LINK_DISTANCE_ALIAS = 34;
 const SIMULATION_TICKS = 300;
 
 /** A tag's on-screen size, driven by how many edges touch it - the same "hub tags read as bigger dots" cue Obsidian's graph uses. */
