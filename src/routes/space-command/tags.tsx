@@ -2050,7 +2050,7 @@ const TagManagementPage = () => {
   const { log } = useAdminLogger();
 
   const { data: tagStats = [] } = useQueryAdminTagStats();
-  const { data: hierarchy = [], refetch: refetchHierarchy } = useQueryGetTagHierarchy();
+  const { data: hierarchy = [] } = useQueryGetTagHierarchy();
 
   const { setIsFetchingPatterns } = useGlobalIsFetchingPatterns();
 
@@ -2082,10 +2082,11 @@ const TagManagementPage = () => {
   // ── Set Parent dialog ──────────────────────────────────────────────────────
   const [setParentRow, setSetParentRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
 
+  // invalidateQueries alone already refetches this - it's actively mounted
+  // right here - a paired refetch() call fired the same GET a second time.
   const handleSetParentSaved = useCallback(() => {
-    refetchHierarchy();
     queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
-  }, [refetchHierarchy, queryClient]);
+  }, [queryClient]);
 
   // ── Tag metadata (Type + Definition) dialog ────────────────────────────────
   //
@@ -2093,7 +2094,7 @@ const TagManagementPage = () => {
   // metadata. Full-list fetches, same convention as `hierarchy` above - a
   // per-row Map lookup client-side rather than a query per DataGrid row.
   const [metadataRow, setMetadataRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
-  const { data: tagsV2List = [], refetch: refetchTagsV2 } = useQueryGetAllTagsV2();
+  const { data: tagsV2List = [] } = useQueryGetAllTagsV2();
   const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
   // Keyed by id, not by `tag` (the display name). Since two tags_v2 rows
   // can share a name (e.g. the "autumn (artist)" -> "autumn" rename that
@@ -2111,27 +2112,24 @@ const TagManagementPage = () => {
   const tagsV2ById = useMemo(() => new Map(tagsV2List.map((r) => [r.id, r])), [tagsV2List]);
 
   const handleMetadataSaved = useCallback(() => {
-    refetchTagsV2();
     queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
-  }, [refetchTagsV2, queryClient]);
+  }, [queryClient]);
 
   // ── Implied Tags dialog ────────────────────────────────────────────────────
   const [impliedTagsRow, setImpliedTagsRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
-  const { data: impliedTagsList = [], refetch: refetchImpliedTags } = useQueryGetImpliedTags();
+  const { data: impliedTagsList = [] } = useQueryGetImpliedTags();
 
   const handleImpliedTagsSaved = useCallback(() => {
-    refetchImpliedTags();
     queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
-  }, [refetchImpliedTags, queryClient]);
+  }, [queryClient]);
 
   // ── Alias dialog ────────────────────────────────────────────────────────────
   const [aliasRow, setAliasRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
-  const { data: tagAliasesList = [], refetch: refetchTagAliases } = useQueryGetAllTagAliases();
+  const { data: tagAliasesList = [] } = useQueryGetAllTagAliases();
 
   const handleAliasSaved = useCallback(() => {
-    refetchTagAliases();
     queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
-  }, [refetchTagAliases, queryClient]);
+  }, [queryClient]);
 
   // ── Operation state ────────────────────────────────────────────────────────
   const [pendingOp, setPendingOp] = useState<{
@@ -2194,10 +2192,15 @@ const TagManagementPage = () => {
         const { patternsAffected } = await syncSatelliteTablesForOp(type, tag, newTag, (completed, total) =>
           setProgress((p) => ({ ...p, completed, total })),
         );
-        refetchHierarchy();
-        refetchTagsV2();
-        refetchImpliedTags();
-        refetchTagAliases();
+        // invalidateQueries alone refetches each of these four - they're all
+        // actively mounted on this page - so the refetchX() calls this block
+        // used to also fire right alongside each one fired the same GET a
+        // second time, doubling every request below to eight. This went
+        // unnoticed on rename specifically because syncSatelliteTablesForOp
+        // above used to throw before execution ever reached this far (see
+        // the requestKey: null fixes added to it and its helpers) - now
+        // that it actually completes, this block runs for real and the
+        // doubled burst is what was tripping the rate limiter right after.
         queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
@@ -2244,16 +2247,7 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [
-      queryClient,
-      refetchHierarchy,
-      refetchTagsV2,
-      refetchImpliedTags,
-      refetchTagAliases,
-      log,
-      setIsFetchingPatterns,
-      tagStats,
-    ],
+    [queryClient, log, setIsFetchingPatterns, tagStats],
   );
 
   const startOp = useCallback(
