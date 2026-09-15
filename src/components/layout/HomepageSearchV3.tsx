@@ -2,8 +2,14 @@ import React, { useRef, useState, useCallback, useMemo, useEffect, type Keyboard
 import { Link } from '@tanstack/react-router';
 import { type Token, SORT_OPTIONS, type SortValue } from '@/functions/utilities/search-v2';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
-import { useQuerySearchTags, useQuerySearchTagsV2, tagNeedsArtistSuffix } from '@/functions/database/tags';
+import {
+  useQuerySearchTags,
+  useQuerySearchTagsV2,
+  useQueryGetAllTagsV2,
+  tagNeedsArtistSuffix,
+} from '@/functions/database/tags';
 import { useQuerySearchAuthors } from '@/functions/database/authors';
+import { isDefaultTagType, isAuthorDisplayType } from '@/functions/utilities/group-tags-by-type';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { SearchResultsDropdown } from '@/components/layout/SearchResultsDropdown';
 import { AdvancedSearchModal } from '@/components/layout/AdvancedSearchModal';
@@ -47,9 +53,26 @@ const TOKEN_STYLES: Record<Token['type'], { color: TypColorEnum; icon: React.Rea
   height_cm: { color: 'warning', icon: <FilterListRoundedIcon fontSize="small" /> },
 };
 
-function getTokenStyle(token: Token) {
+// customColor, when present, is a Type's own free-text CSS color - Chip's
+// `color` prop only accepts this fixed MUI palette enum, not an arbitrary
+// hex, so the render side switches to sx-based bg/text styling instead of
+// the `color` prop whenever this is set.
+function getTokenStyle(
+  token: Token,
+  tagColorByName: Map<string, string>,
+  authorColorByName: Map<string, string>,
+): { color: TypColorEnum; icon: React.ReactElement; customColor?: string } {
   if ('exclude' in token && token.exclude) return { color: 'error' as const, icon: TOKEN_STYLES[token.type].icon };
-  return TOKEN_STYLES[token.type];
+  const base = TOKEN_STYLES[token.type];
+  if (token.type === 'tag') {
+    const customColor = tagColorByName.get(token.value.toLowerCase());
+    if (customColor) return { ...base, customColor };
+  }
+  if (token.type === 'author') {
+    const customColor = authorColorByName.get(token.value.toLowerCase());
+    if (customColor) return { ...base, customColor };
+  }
+  return base;
 }
 
 function getTokenLabel(token: Token): string {
@@ -156,6 +179,40 @@ export const HomepageSearchV3 = ({
   sx,
 }: TokenizedSearchBarProps) => {
   const { tokens, addRawInput, removeToken, removeLastToken, clearTokens, sort, setSort } = usePatternSearch();
+
+  // Colors a tag/author chip by its Type, when one has a color set - resolved
+  // by name the same way the server itself resolves a bare tag: token, so
+  // the chip's color always matches what's actually being searched instead
+  // of some other same-named row.
+  const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
+  const tagColorByName = useMemo(() => {
+    // Same "prefer General when a name has more than one row" rule used
+    // everywhere else a bare name resolves to a specific tags_v2 row
+    // (tagIdByName in main.pb.js, resolveOrCreateTagV2Row) - a General row
+    // (or one with no Type at all) intentionally carries no color, so a
+    // name that resolves to General shows no accent here either, even if
+    // some other same-named row (e.g. an Author-typed one) has one set.
+    const preferred = new Map<string, (typeof tagsV2)[number]>();
+    for (const row of tagsV2) {
+      const norm = row.tag.toLowerCase();
+      const existing = preferred.get(norm);
+      if (!existing || isDefaultTagType(row.expand?.type ?? null)) preferred.set(norm, row);
+    }
+    const colors = new Map<string, string>();
+    for (const [norm, row] of preferred) {
+      const type = row.expand?.type ?? null;
+      if (!isDefaultTagType(type) && type?.color) colors.set(norm, type.color);
+    }
+    return colors;
+  }, [tagsV2]);
+  const authorTagColorByName = useMemo(() => {
+    const colors = new Map<string, string>();
+    for (const row of tagsV2) {
+      const type = row.expand?.type ?? null;
+      if (isAuthorDisplayType(type) && type?.color) colors.set(row.tag.toLowerCase(), type.color);
+    }
+    return colors;
+  }, [tagsV2]);
 
   const [inputValue, setInputValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -400,16 +457,28 @@ export const HomepageSearchV3 = ({
           <SearchIcon fontSize="small" sx={{ color: 'text.disabled', mr: 0.5, flexShrink: 0 }} />
 
           {tokens.map((token, index) => {
-            const { color } = getTokenStyle(token);
+            const { color, customColor } = getTokenStyle(token, tagColorByName, authorTagColorByName);
             return (
               <Tooltip key={index} title={getTokenTooltip(token)} arrow>
                 <Chip
                   size="small"
                   label={getTokenLabel(token)}
-                  color={color}
+                  color={customColor ? undefined : color}
                   onDelete={() => removeToken(index)}
                   onClick={(e) => e.stopPropagation()}
-                  sx={{ maxWidth: 200 }}
+                  sx={{
+                    maxWidth: 200,
+                    ...(customColor
+                      ? {
+                          bgcolor: customColor,
+                          color: '#fff',
+                          '& .MuiChip-deleteIcon': {
+                            color: 'rgba(255,255,255,0.7)',
+                            '&:hover': { color: '#fff' },
+                          },
+                        }
+                      : {}),
+                  }}
                 />
               </Tooltip>
             );
