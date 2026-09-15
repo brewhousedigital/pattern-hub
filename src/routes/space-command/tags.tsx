@@ -51,7 +51,6 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 import SearchIcon from '@mui/icons-material/Search';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
-import MergeIcon from '@mui/icons-material/Merge';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
@@ -85,8 +84,6 @@ import {
   InputAdornment,
   Tooltip,
   IconButton,
-  Tabs,
-  Tab,
   Checkbox,
   Snackbar,
   Divider,
@@ -492,7 +489,7 @@ async function syncSatelliteTablesForOp(
   tag: string,
   newTag?: string,
   onProgress?: (completed: number, total: number) => void,
-): Promise<{ patternsAffected: { id: string; name: string }[] }> {
+): Promise<{ patternsAffected: { id: string; name: string }[]; mergedInstead?: boolean }> {
   // normalizeTagName (not a local .toLowerCase().trim()) so this always
   // agrees with what every pattern-save path stores - collapsing internal
   // whitespace too, not just casing. Found via code review: the old local
@@ -516,6 +513,34 @@ async function syncSatelliteTablesForOp(
       .getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safeFilter}"`, requestKey: null }),
     findTagV2Record(safe),
   ]);
+
+  if (type === 'rename' && newTag && tagV2Record) {
+    const safeNewCheck = normalizeTagName(newTag);
+    // (tag, type) is what's actually unique on tags_v2, not tag alone - a
+    // different-typed row sharing this name isn't a collision at all, it's
+    // the exact disambiguation this whole system exists to support (a
+    // General "autumn" and an Author "autumn" coexisting, say). Only a
+    // same-typed row would make the update below fail PocketBase's own
+    // unique index with validation_not_unique - found via a live rename
+    // that hit exactly that. When one exists, the right move is the one
+    // the user already gets when picking an existing name in the merge
+    // flow: repoint everything at it and retire this row, not fail. Reuses
+    // the merge branch below wholesale rather than duplicating its
+    // repoint-then-delete ordering here.
+    if (safeNewCheck !== safe) {
+      const collision = await pocketbase
+        .collection('tags_v2')
+        .getFirstListItem<TypeTagV2Record>(
+          `tag = "${escapeTagFilterValue(safeNewCheck)}" && type = "${tagV2Record.type}" && id != "${tagV2Record.id}"`,
+          { requestKey: null },
+        )
+        .catch(() => null);
+      if (collision) {
+        const result = await syncSatelliteTablesForOp('merge', tag, newTag, onProgress);
+        return { ...result, mergedInstead: true };
+      }
+    }
+  }
 
   if (type === 'rename' && newTag) {
     const safeNew = normalizeTagName(newTag);
@@ -549,7 +574,7 @@ async function syncSatelliteTablesForOp(
     // as its own "source" cleanup - meaningfully worse now that patterns
     // reference tags by id: every pattern's tag_refs would get "repointed"
     // to the id of the row that just got deleted out from under it, going
-    // dangling. RenameOrMergePanel's own canSubmit (see below) already
+    // dangling. RenamePanel's own canSubmit (see below) already
     // disables the button for this input, so this specific trigger isn't
     // reachable through the live admin UI today - this guard is defense in
     // depth, not a fix for a reachable path, and stays regardless in case a
@@ -1535,7 +1560,7 @@ function AliasDialog({ open, tag, aliases, onClose, onSaved }: AliasDialogProps)
       // there instead of guessing.
       const existingTagRow = await findTagV2Record(alias);
       if (existingTagRow) {
-        setError(`"${alias}" already exists as its own tag. Use Rename/Merge instead if you want to fold it into "${tag.tag}".`);
+        setError(`"${alias}" already exists as its own tag. Use Rename instead if you want to fold it into "${tag.tag}" - renaming to a name that already exists merges the two.`);
         setSaving(false);
         return;
       }
@@ -1831,18 +1856,25 @@ function TagTreeView({
   );
 }
 
-// ─── Rename / Merge Panel ─────────────────────────────────────────────────────
+// ─── Rename Panel ─────────────────────────────────────────────────────────────
 
-interface RenameOrMergePanelProps {
+interface RenamePanelProps {
   tagStats: TypeTagStat[];
   onRename: (from: string, to: string) => void;
-  onMerge: (from: string, into: string) => void;
 }
 
-function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelProps) {
+// No separate Merge flow anymore - renaming to a name that already exists
+// under the same Type now merges the two automatically (syncSatelliteTablesForOp
+// detects the (tag, type) collision and repoints everything at the existing
+// row instead of failing). The one thing a dedicated Merge UI could do that
+// this can't is deliberately fold two DIFFERENT-typed same-named tags
+// together - that's not auto-detected on purpose, since keeping a
+// same-named-different-typed pair apart is what Types exist for. That's
+// rare enough, and arguably against the point of Types, that it isn't worth
+// a whole second flow - do it by hand in the database if it's ever needed.
+function RenamePanel({ tagStats, onRename }: RenamePanelProps) {
   const [fromTag, setFromTag] = useState('');
   const [toTag, setToTag] = useState('');
-  const [mode, setMode] = useState<'rename' | 'merge'>('rename');
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
 
   // Compared via normalizeTagName, not raw .trim(), on both counts: tagStats
@@ -1864,14 +1896,16 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
 
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>
-      <Tabs value={mode} onChange={(_, v) => setMode(v)} sx={{ mb: 3 }} textColor="primary" indicatorColor="primary">
-        <Tab value="rename" label="Rename Tag" icon={<DriveFileRenameOutlineIcon />} iconPosition="start" />
-        <Tab value="merge" label="Merge Tags" icon={<MergeIcon />} iconPosition="start" />
-      </Tabs>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+        <DriveFileRenameOutlineIcon color="action" />
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          Rename Tag
+        </Typography>
+      </Box>
 
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
         <TextField
-          label={mode === 'rename' ? 'Current tag name' : 'Tag to absorb'}
+          label="Current tag name"
           value={fromTag}
           onChange={(e) => setFromTag(e.target.value)}
           size="small"
@@ -1880,10 +1914,10 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
           helperText={fromTag.trim() !== '' && !fromExists ? 'Tag not found' : ' '}
         />
 
-        <Box sx={{ pt: 1, color: 'text.secondary', fontSize: 20 }}>{mode === 'rename' ? '→' : '⊂'}</Box>
+        <Box sx={{ pt: 1, color: 'text.secondary', fontSize: 20 }}>→</Box>
 
         <TextField
-          label={mode === 'rename' ? 'New tag name' : 'Target tag (keep this)'}
+          label="New tag name"
           value={toTag}
           onChange={(e) => setToTag(e.target.value)}
           size="small"
@@ -1891,9 +1925,9 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
           error={sameTag}
           helperText={
             sameTag
-              ? `Same as ${mode === 'rename' ? 'the current name' : 'the tag to absorb'}`
-              : mode === 'merge' && toTag.trim() && !toExists
-                ? 'This tag will be created'
+              ? 'Same as the current name'
+              : toExists
+                ? `A tag named "${toTag.trim()}" already exists - if it's the same Type, this merges into it instead of creating a duplicate.`
                 : ' '
           }
         />
@@ -1901,22 +1935,18 @@ function RenameOrMergePanel({ tagStats, onRename, onMerge }: RenameOrMergePanelP
         <Button
           loading={isFetchingPatterns}
           variant="contained"
-          onClick={() => {
-            if (mode === 'rename') onRename(fromTag.trim(), toTag.trim());
-            else onMerge(fromTag.trim(), toTag.trim());
-          }}
+          onClick={() => onRename(fromTag.trim(), toTag.trim())}
           disabled={!canSubmit}
-          startIcon={mode === 'rename' ? <DriveFileRenameOutlineIcon /> : <MergeIcon />}
+          startIcon={<DriveFileRenameOutlineIcon />}
           sx={{ mt: 0.25 }}
         >
-          {mode === 'rename' ? 'Rename' : 'Merge'}
+          Rename
         </Button>
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {mode === 'rename'
-          ? 'Replaces the tag name across all patterns. Child relationships in the hierarchy are keyed on tag name - rename will update them automatically.'
-          : 'Adds the target tag to all patterns that have the source tag, then removes the source tag.'}
+        Replaces the tag name across all patterns. Child relationships in the hierarchy are keyed on tag name - rename
+        will update them automatically.
       </Typography>
     </Paper>
   );
@@ -2184,14 +2214,22 @@ const TagManagementPage = () => {
         // itself, id-based (tag_refs ~ id, via repointPatternTagRefs - not
         // fetchPatternsWithTag's string match, since patterns.tags is
         // frozen and can no longer be trusted to find every pattern that
-        // actually carries a given tag). A rename
-        // touches no patterns at all - a renamed tags_v2 row keeps its own
-        // id, so every pattern already pointing at it is still correct.
+        // actually carries a given tag). A plain rename touches no patterns
+        // at all - a renamed tags_v2 row keeps its own id, so every pattern
+        // already pointing at it is still correct. mergedInstead means the
+        // requested rename's target name already existed as a same-typed
+        // tag, so syncSatelliteTablesForOp repointed everything at that
+        // existing row and retired this one instead - a real merge, not a
+        // no-op for patterns, even though the UI still asked for "rename".
         // The progress callback drives the same live "Processing N of M"
         // bar the old loop did.
-        const { patternsAffected } = await syncSatelliteTablesForOp(type, tag, newTag, (completed, total) =>
-          setProgress((p) => ({ ...p, completed, total })),
+        const { patternsAffected, mergedInstead } = await syncSatelliteTablesForOp(
+          type,
+          tag,
+          newTag,
+          (completed, total) => setProgress((p) => ({ ...p, completed, total })),
         );
+        const renamedInPlace = type === 'rename' && !mergedInstead;
         // invalidateQueries alone refetches each of these four - they're all
         // actively mounted on this page - so the refetchX() calls this block
         // used to also fire right alongside each one fired the same GET a
@@ -2206,25 +2244,29 @@ const TagManagementPage = () => {
         queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
 
-        // A rename's own patternsAffected stays empty - on purpose, no
-        // pattern was touched. For the admin log's own record (an audit
-        // trail of how many patterns a tag reached, not a claim about what
-        // this specific operation touched), fall back to this tag's
-        // last-known usage count from the already-loaded tagStats grid data
-        // instead of fetching patterns again just to count them.
-        const loggedPatternCount =
-          type === 'rename' ? (tagStats.find((s) => s.tag === tag)?.count ?? 0) : patternsAffected.length;
+        // A true in-place rename's own patternsAffected stays empty - on
+        // purpose, no pattern was touched. For the admin log's own record
+        // (an audit trail of how many patterns a tag reached, not a claim
+        // about what this specific operation touched), fall back to this
+        // tag's last-known usage count from the already-loaded tagStats
+        // grid data instead of fetching patterns again just to count them.
+        // A merge - requested as one, or a rename redirected into one -
+        // already has the real count in patternsAffected.
+        const loggedPatternCount = renamedInPlace
+          ? (tagStats.find((s) => s.tag === tag)?.count ?? 0)
+          : patternsAffected.length;
 
         setProgress((p) => ({
           ...p,
           done: true,
           total: patternsAffected.length,
           completed: patternsAffected.length,
-          successMessage:
-            type === 'rename' ? `"${tag}" renamed to "${newTag}" - no pattern records needed updating.` : undefined,
+          successMessage: renamedInPlace
+            ? `"${tag}" renamed to "${newTag}" - no pattern records needed updating.`
+            : undefined,
         }));
 
-        const actionLabel = type === 'delete' ? 'Tag Deleted' : type === 'rename' ? 'Tag Renamed' : 'Tag Merged';
+        const actionLabel = type === 'delete' ? 'Tag Deleted' : renamedInPlace ? 'Tag Renamed' : 'Tag Merged';
         log({
           action: actionLabel,
           entity_type: 'Tag',
@@ -2234,6 +2276,7 @@ const TagManagementPage = () => {
           metadata: {
             number_of_affected_patterns: loggedPatternCount,
             type,
+            merged_instead: !!mergedInstead,
             patterns: patternsAffected,
           },
         });
@@ -2789,11 +2832,7 @@ const TagManagementPage = () => {
       />
 
       <Box sx={{ mb: 3, mt: 3 }}>
-        <RenameOrMergePanel
-          tagStats={tagStats}
-          onRename={(from, to) => startOp('rename', from, to)}
-          onMerge={(from, into) => startOp('merge', from, into)}
-        />
+        <RenamePanel tagStats={tagStats} onRename={(from, to) => startOp('rename', from, to)} />
       </Box>
 
       <Box sx={{ mb: 3 }}>
