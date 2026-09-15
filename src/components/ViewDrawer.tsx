@@ -5,6 +5,8 @@ import { PatternViewContent } from '@/components/PatternViewContent';
 import { type TypePatternResponse } from '@/functions/database/patterns.ts';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
+import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
+import { groupTagsByType, isAuthorDisplayType } from '@/functions/utilities/group-tags-by-type';
 
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded';
 import { Box, Button, Container, Typography } from '@mui/material';
@@ -30,6 +32,22 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   }, [patternId, handleOpenView, handleCloseView]);
 
   const notFound = !props.isLoading && patternId && !viewData;
+
+  // Same source and filter PatternViewContent's own standalone-tags block
+  // uses (tag_refs, Author-type groups excluded - the Attribution panel
+  // below already shows the author). viewData.tags is the older field this
+  // used to read - it stopped being written once tag-entry moved to
+  // tag_refs, so a tag added since then would never show up here even
+  // though it's already searchable and already showing on the standalone
+  // pattern page.
+  const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
+  const sidebarTagNames = React.useMemo(
+    () =>
+      groupTagsByType(viewData?.tag_refs ?? [], tagsV2)
+        .filter((group) => !isAuthorDisplayType(group.type))
+        .flatMap((group) => group.tags),
+    [viewData?.tag_refs, tagsV2],
+  );
 
   if (notFound) {
     return (
@@ -67,9 +85,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
         <PatternViewContent
           viewData={viewData}
-          sidebar={
-            <ViewDrawerPatternSidebar tagList={viewData?.tags || []} handleClose={props.handleClose} />
-          }
+          sidebar={<ViewDrawerPatternSidebar tagList={sidebarTagNames} handleClose={props.handleClose} />}
         />
       </Container>
     </Box>
