@@ -94,20 +94,30 @@ function RouteComponent() {
       filterable: false,
       align: 'right',
       headerAlign: 'right',
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => setEditing(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton size="small" color="error" onClick={() => setDeleteTarget(params.row)}>
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
+      renderCell: (params) => {
+        // General and Author are required by the app - General is the
+        // implicit default every tag starts as, and Author is what the
+        // author-tagging cron/backfill look up by name to attach author
+        // tags. Deleting either would break tag resolution site-wide, so
+        // there's no UI path to it - still editable, just not deletable.
+        const isProtected = ['general', 'author'].includes(params.row.name.toLowerCase());
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Edit">
+              <IconButton size="small" onClick={() => setEditing(params.row)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            {!isProtected && (
+              <Tooltip title="Delete">
+                <IconButton size="small" color="error" onClick={() => setDeleteTarget(params.row)}>
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        );
+      },
     },
   ];
 
