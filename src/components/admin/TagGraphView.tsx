@@ -33,12 +33,21 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 // already fetched by that page for its existing dialogs, so this component
 // takes it as props and runs no query of its own.
 
-const LAYER_WIDTH = 240;
-const ROW_HEIGHT = 64;
-// A graph layer (implication depth - see computeLayers) with more ids than
-// this splits into multiple side-by-side columns instead of one column
-// stacking all of them - see the Position step below.
-const MAX_TAGS_PER_COLUMN = 50;
+// A component's implication roots (computeLayers depth 0) sit on this
+// radius; each further depth adds another RING_SPACING beyond it. A ring
+// grows past that when it holds enough nodes that MIN_ARC_PER_NODE would
+// otherwise pack them tighter than this - see layoutComponentRadially.
+const BASE_RADIUS = 64;
+const RING_SPACING = 110;
+const MIN_ARC_PER_NODE = 92;
+// How far an alias ghost sits beyond its own tag, and the angle between
+// neighbouring aliases of the same tag so they fan out instead of stacking
+// on top of each other.
+const SATELLITE_OFFSET = 50;
+const SATELLITE_FAN = 0.4;
+// Clear space kept between two separate components once they're packed
+// onto the shared canvas - see packComponents.
+const COMPONENT_GAP = 48;
 
 // ─── Node types ─────────────────────────────────────────────────────────────
 
@@ -63,6 +72,20 @@ type GraphNode = TagFlowNode | AliasFlowNode;
 // connection points React Flow needs to route edges to/from, not meant to
 // be seen or dragged from by an admin on a read-only graph.
 
+// The radial layout (see layoutComponentRadially below) can place a
+// connected node in any direction, not just to the right, so a single
+// fixed target/source pair per node - enough for the old left-to-right
+// column layout - would force edges to detour around the node to reach a
+// fixed side. Every node instead gets one target and one source handle on
+// each side, and TagGraphView picks whichever pair actually faces the
+// other end of a given edge (see compassSide).
+const COMPASS: { id: 'top' | 'right' | 'bottom' | 'left'; position: Position }[] = [
+  { id: 'top', position: Position.Top },
+  { id: 'right', position: Position.Right },
+  { id: 'bottom', position: Position.Bottom },
+  { id: 'left', position: Position.Left },
+];
+
 function TagNodeComponent({ data }: NodeProps<TagFlowNode>) {
   const theme = useTheme();
   const color = data.color ?? theme.palette.text.disabled;
@@ -86,17 +109,13 @@ function TagNodeComponent({ data }: NodeProps<TagFlowNode>) {
         '&:hover': { boxShadow: 4 },
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+      {COMPASS.map(({ id, position }) => (
+        <Handle key={`t-${id}`} type="target" position={position} id={`${id}-target`} style={{ opacity: 0 }} />
+      ))}
       {data.label}
-      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-      {/* Dedicated handle for an outgoing alias edge, separate from the
-          left/right pair above - an alias's ghost node shares this tag's own
-          column (see the layout comment on TagGraphView), so routing that
-          edge through the same left-to-right handles as an implies edge
-          would have to loop back on itself to reach a node that isn't
-          actually to the right. Top-to-bottom instead, matching the ghost
-          node's own placement just below it in the same column. */}
-      <Handle type="source" position={Position.Bottom} id="alias" style={{ opacity: 0 }} />
+      {COMPASS.map(({ id, position }) => (
+        <Handle key={`s-${id}`} type="source" position={position} id={`${id}-source`} style={{ opacity: 0 }} />
+      ))}
     </Box>
   );
 }
@@ -116,7 +135,9 @@ function AliasNodeComponent({ data }: NodeProps<AliasFlowNode>) {
         whiteSpace: 'nowrap',
       }}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      {COMPASS.map(({ id, position }) => (
+        <Handle key={`t-${id}`} type="target" position={position} id={`${id}-target`} style={{ opacity: 0 }} />
+      ))}
       {data.label}
     </Box>
   );
@@ -159,6 +180,196 @@ function computeLayers(nodeIds: string[], impliesEdges: { source: string; target
 
   for (const id of nodeIds) resolve(id, new Set());
   return layer;
+}
+
+// ─── Connected components ───────────────────────────────────────────────────
+
+/**
+ * Union-find over every edge (implies and alias alike) so that tags with no
+ * path between them end up in separate groups. This is the core of the
+ * bubble layout: instead of every tag sharing one set of global columns -
+ * where hundreds of unrelated edges all cross through the same layers -
+ * each group of actually-related tags becomes its own small cluster,
+ * positioned and packed independently (see layoutComponentRadially and
+ * packComponents below), so a glance at the graph shows what's connected
+ * and what's off in its own island.
+ */
+function findComponents(nodeIds: string[], edges: { source: string; target: string }[]): Map<string, string[]> {
+  const parent = new Map<string, string>(nodeIds.map((id) => [id, id]));
+  const find = (id: string): string => {
+    let root = id;
+    while (parent.get(root) !== root) root = parent.get(root)!;
+    let cur = id;
+    while (parent.get(cur) !== root) {
+      const next = parent.get(cur)!;
+      parent.set(cur, root);
+      cur = next;
+    }
+    return root;
+  };
+
+  for (const { source, target } of edges) {
+    if (!parent.has(source) || !parent.has(target)) continue;
+    const ra = find(source);
+    const rb = find(target);
+    if (ra !== rb) parent.set(ra, rb);
+  }
+
+  const groups = new Map<string, string[]>();
+  for (const id of nodeIds) {
+    const root = find(id);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root)!.push(id);
+  }
+  return groups;
+}
+
+// ─── Radial layout ──────────────────────────────────────────────────────────
+
+/** Mean of a set of angles (radians) - the ordinary mean breaks down near
+ * the -pi/pi wraparound, so this averages each angle's unit vector instead. */
+function circularMean(angles: number[]): number {
+  const sin = angles.reduce((s, a) => s + Math.sin(a), 0);
+  const cos = angles.reduce((s, a) => s + Math.cos(a), 0);
+  return Math.atan2(sin, cos);
+}
+
+type LocalLayout = {
+  /** Positions relative to this component's own centre, i.e. before packComponents offsets it onto the shared canvas. */
+  positions: Map<string, { x: number; y: number }>;
+  /** Bounding radius around that centre, used to pack this component against its neighbours without overlap. */
+  radius: number;
+};
+
+/**
+ * Arranges one connected component as a small radial tree: implication
+ * roots (computeLayers depth 0 - see that function's own doc comment) sit
+ * at the centre, and each further depth gets its own ring further out.
+ *
+ * A node's angle is the circular mean of its own parents' angles, then
+ * every ring is re-spread to evenly fill the full circle in that
+ * mean-angle order. That second pass is what keeps a ring from either
+ * bunching into a narrow wedge (if nodes just inherited their parent's
+ * exact angle) or losing the grouping entirely (if angle were assigned
+ * without regard to parents) - it's the standard "barycenter" heuristic
+ * layered-graph drawing uses to cut down on crossings, adapted from a
+ * straight axis to a ring. Siblings that share a parent land next to each
+ * other, which is what the old layout's plain alphabetical order within a
+ * column didn't give it.
+ */
+function layoutComponentRadially(
+  tagIds: string[],
+  impliesEdges: { source: string; target: string }[],
+  aliasesByTarget: Map<string, string[]>,
+): LocalLayout {
+  const positions = new Map<string, { x: number; y: number }>();
+
+  if (tagIds.length === 1) {
+    positions.set(tagIds[0], { x: 0, y: 0 });
+  } else {
+    const layer = computeLayers(tagIds, impliesEdges);
+    const parentsOf = new Map<string, string[]>(tagIds.map((id) => [id, []]));
+    for (const e of impliesEdges) parentsOf.get(e.target)?.push(e.source);
+
+    const byLayer = new Map<number, string[]>();
+    for (const id of tagIds) {
+      const l = layer.get(id) ?? 0;
+      if (!byLayer.has(l)) byLayer.set(l, []);
+      byLayer.get(l)!.push(id);
+    }
+
+    const angle = new Map<string, number>();
+    const sortedLayers = [...byLayer.keys()].sort((a, b) => a - b);
+    for (const l of sortedLayers) {
+      const ranked = byLayer
+        .get(l)!
+        .map((id) => {
+          const parentAngles = (parentsOf.get(id) ?? [])
+            .map((p) => angle.get(p))
+            .filter((a): a is number => a !== undefined);
+          return { id, mean: parentAngles.length > 0 ? circularMean(parentAngles) : undefined };
+        })
+        .sort((a, b) => {
+          if (a.mean !== undefined && b.mean !== undefined) return a.mean - b.mean;
+          if (a.mean !== undefined) return -1;
+          if (b.mean !== undefined) return 1;
+          return a.id.localeCompare(b.id);
+        });
+      ranked.forEach(({ id }, i) => angle.set(id, ((i + 0.5) / ranked.length) * Math.PI * 2));
+    }
+
+    for (const l of sortedLayers) {
+      const ids = byLayer.get(l)!;
+      const ringRadius = Math.max(BASE_RADIUS + l * RING_SPACING, (ids.length * MIN_ARC_PER_NODE) / (Math.PI * 2));
+      for (const id of ids) {
+        const a = angle.get(id)!;
+        positions.set(id, { x: Math.cos(a) * ringRadius, y: Math.sin(a) * ringRadius });
+      }
+    }
+  }
+
+  // Alias ghosts aren't part of the implies rings above - they're small
+  // satellites just beyond their own tag, fanned out by angle so two
+  // aliases of the same tag don't land on top of each other.
+  let boundingRadius = BASE_RADIUS;
+  for (const { x, y } of positions.values()) boundingRadius = Math.max(boundingRadius, Math.hypot(x, y));
+  for (const [targetId, ghostIds] of aliasesByTarget) {
+    const base = positions.get(targetId);
+    if (!base) continue;
+    const baseAngle = Math.atan2(base.y, base.x);
+    const baseDist = Math.hypot(base.x, base.y);
+    ghostIds.forEach((ghostId, i) => {
+      const a = baseAngle + (i - (ghostIds.length - 1) / 2) * SATELLITE_FAN;
+      const r = baseDist + SATELLITE_OFFSET;
+      positions.set(ghostId, { x: Math.cos(a) * r, y: Math.sin(a) * r });
+      boundingRadius = Math.max(boundingRadius, r);
+    });
+  }
+
+  return { positions, radius: boundingRadius };
+}
+
+// ─── Packing ─────────────────────────────────────────────────────────────────
+
+/**
+ * Places each component's local layout onto shared canvas coordinates
+ * without overlapping any other component's bounding circle. Walks an
+ * expanding Archimedean spiral out from the origin and takes the first
+ * point that clears every circle placed so far - a standard, simple way to
+ * pack circles when the goal is "no overlaps," not a minimal bounding area.
+ * Callers get denser results by placing larger components first.
+ */
+function packComponents(components: { radius: number }[]): { x: number; y: number }[] {
+  const placed: { x: number; y: number; radius: number }[] = [];
+
+  return components.map((comp) => {
+    if (placed.length === 0) {
+      placed.push({ x: 0, y: 0, radius: comp.radius });
+      return { x: 0, y: 0 };
+    }
+    const spiralGrowth = 8;
+    let theta = 0;
+    let x = 0;
+    let y = 0;
+    for (let i = 0; i < 20000; i++) {
+      const r = spiralGrowth * theta;
+      x = r * Math.cos(theta);
+      y = r * Math.sin(theta);
+      const clear = placed.every((p) => Math.hypot(p.x - x, p.y - y) >= p.radius + comp.radius + COMPONENT_GAP);
+      if (clear) break;
+      theta += 0.35;
+    }
+    placed.push({ x, y, radius: comp.radius });
+    return { x, y };
+  });
+}
+
+// ─── Edge routing ────────────────────────────────────────────────────────────
+
+/** Which of a node's four compass handles (see COMPASS) faces a point offset by (dx, dy) from it. */
+function compassSide(dx: number, dy: number): 'top' | 'right' | 'bottom' | 'left' {
+  if (Math.abs(dx) > Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
+  return dy >= 0 ? 'bottom' : 'top';
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -209,118 +420,125 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
       relevantIds.add(target);
     }
 
-    // 2. Layer every relevant tag by its longest path from a root.
     const relevantIdList = [...relevantIds];
-    const layer = computeLayers(relevantIdList, impliesEdgeIds);
 
-    // 3. Group ids by layer, alphabetically within a layer - a stable,
-    // predictable order instead of whatever order tags_v2 happened to load in.
-    const byLayer = new Map<number, string[]>();
-    const sortedRelevant = [...relevantIdList].sort((a, b) =>
-      (tagsById.get(a)?.tag ?? '').localeCompare(tagsById.get(b)?.tag ?? ''),
-    );
-    for (const id of sortedRelevant) {
-      const l = layer.get(id) ?? 0;
-      if (!byLayer.has(l)) byLayer.set(l, []);
-      byLayer.get(l)!.push(id);
-    }
-
-    // 4. An alias's ghost node joins its target's layer, appended after the
-    // real tag nodes already placed there - only when the target is itself
-    // already in the graph. An alias for a tag with no implied-tag edges of
-    // its own would otherwise need pulling in an unrelated, edge-less tag
-    // just to give the alias somewhere to point, contradicting rule 1 above.
+    // 2. Group aliases by the tag they target - same gating as rule 1 above,
+    // an alias only gets a ghost node when its target tag is itself already
+    // in the graph.
     const aliasLabelById = new Map<string, string>();
     const aliasEdges: { ghostId: string; targetId: string }[] = [];
+    const aliasesByTargetId = new Map<string, string[]>();
     for (const a of aliases) {
       const targetId = resolveId(a.target_tag_ref, a.target_tag);
       if (!targetId || !relevantIds.has(targetId)) continue;
       const ghostId = `alias:${a.id}`;
-      const targetLayer = layer.get(targetId) ?? 0;
-      if (!byLayer.has(targetLayer)) byLayer.set(targetLayer, []);
-      byLayer.get(targetLayer)!.push(ghostId);
       aliasLabelById.set(ghostId, a.alias);
       aliasEdges.push({ ghostId, targetId });
+      if (!aliasesByTargetId.has(targetId)) aliasesByTargetId.set(targetId, []);
+      aliasesByTargetId.get(targetId)!.push(ghostId);
     }
 
-    // 5. Position. Each graph layer (implication depth) can need more than
-    // one visual column - a layer with more than MAX_TAGS_PER_COLUMN ids
-    // would otherwise stack every one of them into a single, impractically
-    // tall column. Split into consecutive chunks of at most
-    // MAX_TAGS_PER_COLUMN instead, one column per chunk, side by side within
-    // the layer's own horizontal span.
-    //
-    // A layer's x-offset is cumulative, not a fixed multiple of LAYER_WIDTH,
-    // so a layer that needed extra columns pushes every later layer further
-    // right to make room, rather than a later layer's single column
-    // overlapping an earlier layer's second or third one. Layers are still
-    // visited in depth order (sortedLayerKeys), so this preserves the same
-    // "arrows mostly point forward" property the original single-column
-    // layout had.
-    const sortedLayerKeys = [...byLayer.keys()].sort((a, b) => a - b);
-    const layerStartX = new Map<number, number>();
-    let cumulativeX = 0;
-    for (const l of sortedLayerKeys) {
-      layerStartX.set(l, cumulativeX);
-      const columnsNeeded = Math.max(1, Math.ceil(byLayer.get(l)!.length / MAX_TAGS_PER_COLUMN));
-      cumulativeX += columnsNeeded * LAYER_WIDTH;
-    }
+    // 3. Split into connected components (see findComponents) - tags with
+    // no implies/alias path between them lay out, and later get packed onto
+    // the canvas, independently of each other instead of sharing one set of
+    // columns.
+    const allNodeIds = [...relevantIdList, ...aliasLabelById.keys()];
+    const dsuEdges = [
+      ...impliesEdgeIds,
+      ...aliasEdges.map(({ ghostId, targetId }) => ({ source: ghostId, target: targetId })),
+    ];
+    const components = findComponents(allNodeIds, dsuEdges);
 
+    // 4. Lay out each component on its own (see layoutComponentRadially),
+    // then pack the components onto a shared canvas without overlapping
+    // (see packComponents). Largest-first is the usual circle-packing
+    // convention - it settles the few big clusters near the centre first
+    // and lets the many small ones fill in the gaps around them.
+    const laidOutComponents = [...components.values()].map((memberIds) => {
+      const tagMemberIds = memberIds.filter((id) => !aliasLabelById.has(id));
+      const memberSet = new Set(memberIds);
+      const componentImpliesEdges = impliesEdgeIds.filter((e) => memberSet.has(e.source) && memberSet.has(e.target));
+      const componentAliasesByTarget = new Map(
+        tagMemberIds
+          .map((id): [string, string[]] => [id, aliasesByTargetId.get(id) ?? []])
+          .filter(([, ghosts]) => ghosts.length > 0),
+      );
+      return layoutComponentRadially(tagMemberIds, componentImpliesEdges, componentAliasesByTarget);
+    });
+    laidOutComponents.sort((a, b) => b.radius - a.radius);
+    const offsets = packComponents(laidOutComponents);
+
+    const finalPos = new Map<string, { x: number; y: number }>();
+    laidOutComponents.forEach((comp, i) => {
+      const offset = offsets[i];
+      for (const [id, local] of comp.positions) {
+        finalPos.set(id, { x: local.x + offset.x, y: local.y + offset.y });
+      }
+    });
+
+    // 5. Build the React Flow nodes from those positions.
     const nodes: GraphNode[] = [];
     const usedTypeIds = new Set<string>();
-    for (const l of sortedLayerKeys) {
-      const ids = byLayer.get(l)!;
-      const baseX = layerStartX.get(l)!;
-      for (let chunkStart = 0; chunkStart < ids.length; chunkStart += MAX_TAGS_PER_COLUMN) {
-        const chunk = ids.slice(chunkStart, chunkStart + MAX_TAGS_PER_COLUMN);
-        // Each column of up to 100 is centered around the same y=0 midline
-        // as every other column in this layer - a 30-tag leftover column
-        // sits centered against a full 100-tag one next to it, rather than
-        // computing its own, likely different, center.
-        const x = baseX + (chunkStart / MAX_TAGS_PER_COLUMN) * LAYER_WIDTH;
-        const startY = -((chunk.length - 1) * ROW_HEIGHT) / 2;
-        chunk.forEach((id, index) => {
-          const position = { x, y: startY + index * ROW_HEIGHT };
-          const aliasLabel = aliasLabelById.get(id);
-          if (aliasLabel !== undefined) {
-            nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel }, draggable: true });
-            return;
-          }
-          const row = tagsById.get(id);
-          if (!row) return;
-          const type = row.expand?.type ?? null;
-          const isGeneral = !type || type.name.toLowerCase() === 'general';
-          if (type && !isGeneral) usedTypeIds.add(type.id);
-          nodes.push({
-            id,
-            type: 'tagNode',
-            position,
-            data: {
-              label: row.tag,
-              color: type && !isGeneral ? type.color || null : null,
-              onOpen: () => onNodeClick({ id: row.id, tag: row.tag, count: 0 }),
-            },
-            draggable: true,
-          });
-        });
+    for (const [id, position] of finalPos) {
+      const aliasLabel = aliasLabelById.get(id);
+      if (aliasLabel !== undefined) {
+        nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel }, draggable: true });
+        continue;
       }
+      const row = tagsById.get(id);
+      if (!row) continue;
+      const type = row.expand?.type ?? null;
+      const isGeneral = !type || type.name.toLowerCase() === 'general';
+      if (type && !isGeneral) usedTypeIds.add(type.id);
+      nodes.push({
+        id,
+        type: 'tagNode',
+        position,
+        data: {
+          label: row.tag,
+          color: type && !isGeneral ? type.color || null : null,
+          onOpen: () => onNodeClick({ id: row.id, tag: row.tag, count: 0 }),
+        },
+        draggable: true,
+      });
     }
 
+    // 6. Edges. Each one picks whichever compass handle (see COMPASS and
+    // compassSide) actually faces the other end, since the radial layout
+    // can put a connected node in any direction rather than always to the
+    // right the way the old column layout could assume.
     const edges: Edge[] = [
-      ...impliesEdgeIds.map(({ source, target }, i) => ({
-        id: `implies-${i}-${source}-${target}`,
-        source,
-        target,
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: theme.palette.text.secondary },
-      })),
-      ...aliasEdges.map(({ ghostId, targetId }) => ({
-        id: `alias-${ghostId}`,
-        source: targetId,
-        sourceHandle: 'alias',
-        target: ghostId,
-        style: { stroke: theme.palette.divider, strokeDasharray: '4 3' },
-      })),
+      ...impliesEdgeIds.map(({ source, target }, i) => {
+        const sp = finalPos.get(source);
+        const tp = finalPos.get(target);
+        const dx = sp && tp ? tp.x - sp.x : 1;
+        const dy = sp && tp ? tp.y - sp.y : 0;
+        return {
+          id: `implies-${i}-${source}-${target}`,
+          source,
+          target,
+          sourceHandle: `${compassSide(dx, dy)}-source`,
+          targetHandle: `${compassSide(-dx, -dy)}-target`,
+          type: 'straight',
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: theme.palette.text.secondary },
+        };
+      }),
+      ...aliasEdges.map(({ ghostId, targetId }) => {
+        const sp = finalPos.get(targetId);
+        const tp = finalPos.get(ghostId);
+        const dx = sp && tp ? tp.x - sp.x : 0;
+        const dy = sp && tp ? tp.y - sp.y : 1;
+        return {
+          id: `alias-${ghostId}`,
+          source: targetId,
+          sourceHandle: `${compassSide(dx, dy)}-source`,
+          target: ghostId,
+          targetHandle: `${compassSide(-dx, -dy)}-target`,
+          type: 'straight',
+          style: { stroke: theme.palette.divider, strokeDasharray: '4 3' },
+        };
+      }),
     ];
 
     return {
