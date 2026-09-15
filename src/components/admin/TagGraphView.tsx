@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
-  Background,
   Controls,
   Panel,
   Handle,
@@ -42,38 +41,58 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 // already fetched by that page for its existing dialogs, so this component
 // takes it as props and runs no query of its own.
 
+// Obsidian-style sizing: a tag node is a small dot, not a text chip, sized
+// by its degree (how many implies/alias edges touch it) the way Obsidian
+// sizes a note's dot by how many links it has - a quick visual read of
+// which tags are hubs versus leaves. See tagNodeDiameter.
+const TAG_NODE_MIN_DIAMETER = 14;
+const TAG_NODE_MAX_DIAMETER = 40;
+const TAG_NODE_DEGREE_STEP = 3;
+const ALIAS_NODE_DIAMETER = 10;
+// Extra clearance added on top of half a node's own diameter when the
+// force simulation decides how close two nodes may settle (forceCollide) -
+// without it, a node's label (rendered below the dot, outside its own
+// circle) would overlap a neighbour's dot once things settle.
+const COLLIDE_LABEL_PADDING = 24;
+
 // Negative strength on forceManyBody means mutual repulsion between every
 // pair of nodes, not just connected ones - this is what pushes unrelated
 // tags apart into visibly separate clusters instead of a single tangle.
 // The LINK_DISTANCE values are the resting length forceLink then pulls a
-// connected pair back toward; the COLLIDE radii are the minimum gap
-// forceCollide keeps between any two settled nodes so labels don't
-// overlap. See layoutWithForceSimulation.
-const CHARGE_STRENGTH = -260;
-const LINK_DISTANCE_IMPLIES = 130;
-const LINK_DISTANCE_ALIAS = 55;
-const TAG_COLLIDE_RADIUS = 60;
-const ALIAS_COLLIDE_RADIUS = 34;
+// connected pair back toward. Both are tuned for small dots rather than
+// the old text-chip nodes - see layoutWithForceSimulation.
+const CHARGE_STRENGTH = -140;
+const LINK_DISTANCE_IMPLIES = 70;
+const LINK_DISTANCE_ALIAS = 26;
 const SIMULATION_TICKS = 300;
+
+/** A tag's on-screen size, driven by how many edges touch it - the same "hub tags read as bigger dots" cue Obsidian's graph uses. */
+function tagNodeDiameter(degree: number): number {
+  return Math.min(TAG_NODE_MAX_DIAMETER, TAG_NODE_MIN_DIAMETER + degree * TAG_NODE_DEGREE_STEP);
+}
 
 // ─── Node types ─────────────────────────────────────────────────────────────
 
 type TagNodeData = {
   label: string;
   color: string | null;
+  diameter: number;
+  dimmed: boolean;
+  hovered: boolean;
   onOpen: () => void;
 };
 type TagFlowNode = Node<TagNodeData, 'tagNode'>;
 
 type AliasNodeData = {
   label: string;
+  dimmed: boolean;
 };
 type AliasFlowNode = Node<AliasNodeData, 'aliasNode'>;
 
 type GraphNode = TagFlowNode | AliasFlowNode;
 
 // Plain MUI-styled boxes rather than a design-system component of their own
-// - this graph is the only place a "tag chip as a graph node" needs to
+// - this graph is the only place a "tag dot as a graph node" needs to
 // exist, so a one-off styled Box here costs less than a shared component
 // only one caller would ever use. Handles are invisible (opacity 0) - real
 // connection points React Flow needs to route edges to/from, not meant to
@@ -93,59 +112,84 @@ const COMPASS: { id: 'top' | 'right' | 'bottom' | 'left'; position: Position }[]
   { id: 'left', position: Position.Left },
 ];
 
+// The label sits outside the node's own box (position: absolute, no effect
+// on layout/handle placement) rather than inside it, the way Obsidian
+// labels a dot from below rather than sizing the dot to fit text - it's
+// what lets the dot itself stay small and size-by-degree instead of
+// growing to fit whatever the tag's name happens to be.
+function NodeLabel({ dimmed, italic, children }: { dimmed: boolean; italic?: boolean; children: string }) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        mt: 0.5,
+        fontSize: '0.7rem',
+        fontStyle: italic ? 'italic' : 'normal',
+        color: 'text.secondary',
+        whiteSpace: 'nowrap',
+        opacity: dimmed ? 0.2 : 1,
+        pointerEvents: 'none',
+        transition: 'opacity 0.15s',
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
 function TagNodeComponent({ data }: NodeProps<TagFlowNode>) {
   const theme = useTheme();
-  const color = data.color ?? theme.palette.text.disabled;
+  const fill = data.color ?? theme.palette.action.disabled;
   return (
     <Box
       onClick={data.onOpen}
       title="Manage implied tags"
       sx={{
-        px: 1.5,
-        py: 0.75,
-        borderRadius: 2,
-        border: '2px solid',
-        borderColor: color,
-        backgroundColor: data.color ? alpha(data.color, 0.14) : theme.palette.action.hover,
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
+        position: 'relative',
+        width: data.diameter,
+        height: data.diameter,
+        borderRadius: '50%',
+        backgroundColor: fill,
         cursor: 'pointer',
-        boxShadow: 1,
-        transition: 'box-shadow 0.15s',
-        '&:hover': { boxShadow: 4 },
+        opacity: data.dimmed ? 0.15 : 1,
+        boxShadow: data.hovered ? `0 0 0 3px ${alpha(fill, 0.4)}` : 'none',
+        transition: 'opacity 0.15s, box-shadow 0.15s',
       }}
     >
       {COMPASS.map(({ id, position }) => (
         <Handle key={`t-${id}`} type="target" position={position} id={`${id}-target`} style={{ opacity: 0 }} />
       ))}
-      {data.label}
       {COMPASS.map(({ id, position }) => (
         <Handle key={`s-${id}`} type="source" position={position} id={`${id}-source`} style={{ opacity: 0 }} />
       ))}
+      <NodeLabel dimmed={data.dimmed}>{data.label}</NodeLabel>
     </Box>
   );
 }
 
 function AliasNodeComponent({ data }: NodeProps<AliasFlowNode>) {
+  const theme = useTheme();
   return (
     <Box
       sx={{
-        px: 1.25,
-        py: 0.5,
-        borderRadius: 2,
-        border: '1.5px dashed',
-        borderColor: 'divider',
-        fontSize: '0.7rem',
-        fontStyle: 'italic',
-        color: 'text.secondary',
-        whiteSpace: 'nowrap',
+        position: 'relative',
+        width: ALIAS_NODE_DIAMETER,
+        height: ALIAS_NODE_DIAMETER,
+        borderRadius: '50%',
+        backgroundColor: alpha(theme.palette.text.disabled, 0.6),
+        opacity: data.dimmed ? 0.15 : 1,
+        transition: 'opacity 0.15s',
       }}
     >
       {COMPASS.map(({ id, position }) => (
         <Handle key={`t-${id}`} type="target" position={position} id={`${id}-target`} style={{ opacity: 0 }} />
       ))}
-      {data.label}
+      <NodeLabel dimmed={data.dimmed} italic>
+        {data.label}
+      </NodeLabel>
     </Box>
   );
 }
@@ -156,7 +200,8 @@ const nodeTypes: NodeTypes = { tagNode: TagNodeComponent, aliasNode: AliasNodeCo
 
 interface SimNode extends SimulationNodeDatum {
   id: string;
-  kind: 'tag' | 'alias';
+  /** Collision radius - the same size the node renders at (see tagNodeDiameter/ALIAS_NODE_DIAMETER), plus label clearance, so the physics and the visuals never disagree about how much room a node needs. */
+  radius: number;
 }
 
 interface SimLink extends SimulationLinkDatum<SimNode> {
@@ -181,10 +226,10 @@ interface SimLink extends SimulationLinkDatum<SimNode> {
  * itself settled.
  */
 function layoutWithForceSimulation(
-  nodeDefs: { id: string; kind: 'tag' | 'alias' }[],
+  nodeDefs: { id: string; radius: number }[],
   linkDefs: { source: string; target: string; kind: 'implies' | 'alias' }[],
 ): Map<string, { x: number; y: number }> {
-  const nodes: SimNode[] = nodeDefs.map(({ id, kind }) => ({ id, kind }));
+  const nodes: SimNode[] = nodeDefs.map(({ id, radius }) => ({ id, radius }));
   const links: SimLink[] = linkDefs.map(({ source, target, kind }) => ({ source, target, kind }));
 
   const simulation = forceSimulation(nodes)
@@ -195,10 +240,7 @@ function layoutWithForceSimulation(
         .distance((l) => (l.kind === 'alias' ? LINK_DISTANCE_ALIAS : LINK_DISTANCE_IMPLIES)),
     )
     .force('charge', forceManyBody<SimNode>().strength(CHARGE_STRENGTH))
-    .force(
-      'collide',
-      forceCollide<SimNode>((d) => (d.kind === 'alias' ? ALIAS_COLLIDE_RADIUS : TAG_COLLIDE_RADIUS)),
-    )
+    .force('collide', forceCollide<SimNode>((d) => d.radius))
     .force('center', forceCenter<SimNode>(0, 0))
     .stop();
 
@@ -278,15 +320,33 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
       aliasEdges.push({ ghostId, targetId });
     }
 
-    // 3. Let a physics simulation position everything (see
+    // 3. Degree (edge count) per tag drives its dot size below - the same
+    // "more-connected tags read as bigger" cue Obsidian's graph uses.
+    // Aliases don't get sized individually; they're always the same small
+    // fixed dot (ALIAS_NODE_DIAMETER).
+    const degree = new Map<string, number>();
+    const bump = (id: string) => degree.set(id, (degree.get(id) ?? 0) + 1);
+    for (const { source, target } of impliesEdgeIds) {
+      bump(source);
+      bump(target);
+    }
+    for (const { targetId } of aliasEdges) bump(targetId);
+
+    // 4. Let a physics simulation position everything (see
     // layoutWithForceSimulation) instead of computing an explicit layout -
     // tags and aliases with no implies/alias path between them drift apart
     // once nothing pulls them together, which is what makes "what's
-    // connected vs. not" visually obvious.
+    // connected vs. not" visually obvious. Each node's collision radius
+    // matches the size it will actually render at (plus label clearance),
+    // so a hub tag's bigger dot gets the breathing room it needs while
+    // sparse tags settle into a tighter cluster.
     const finalPos = layoutWithForceSimulation(
       [
-        ...relevantIdList.map((id) => ({ id, kind: 'tag' as const })),
-        ...[...aliasLabelById.keys()].map((id) => ({ id, kind: 'alias' as const })),
+        ...relevantIdList.map((id) => ({
+          id,
+          radius: tagNodeDiameter(degree.get(id) ?? 0) / 2 + COLLIDE_LABEL_PADDING,
+        })),
+        ...[...aliasLabelById.keys()].map((id) => ({ id, radius: ALIAS_NODE_DIAMETER / 2 + COLLIDE_LABEL_PADDING / 2 })),
       ],
       [
         ...impliesEdgeIds.map(({ source, target }) => ({ source, target, kind: 'implies' as const })),
@@ -294,13 +354,15 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
       ],
     );
 
-    // 4. Build the React Flow nodes from those positions.
+    // 5. Build the React Flow nodes from those positions. dimmed/hovered
+    // start false here - TagGraphView layers the actual hover-highlight
+    // state on top of this base data at render time (see displayNodes).
     const nodes: GraphNode[] = [];
     const usedTypeIds = new Set<string>();
     for (const [id, position] of finalPos) {
       const aliasLabel = aliasLabelById.get(id);
       if (aliasLabel !== undefined) {
-        nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel }, draggable: true });
+        nodes.push({ id, type: 'aliasNode', position, data: { label: aliasLabel, dimmed: false }, draggable: true });
         continue;
       }
       const row = tagsById.get(id);
@@ -315,15 +377,25 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
         data: {
           label: row.tag,
           color: type && !isGeneral ? type.color || null : null,
+          diameter: tagNodeDiameter(degree.get(id) ?? 0),
+          dimmed: false,
+          hovered: false,
           onOpen: () => onNodeClick({ id: row.id, tag: row.tag, count: 0 }),
         },
         draggable: true,
       });
     }
 
-    // 5. Edges. Each one picks whichever compass handle (see COMPASS and
-    // compassSide) actually faces the other end, since the simulation can
-    // put a connected node in any direction from another.
+    // 6. Edges. Thin and low-opacity at rest, the way Obsidian's graph
+    // draws links - with hundreds of them on screen at once, a resting
+    // edge should barely register; TagGraphView's hover state (see
+    // displayEdges) is what brings one node's edges into full view. No
+    // arrowhead at rest either, for the same reason; hovering a node
+    // reveals direction on just its own edges instead of every edge in the
+    // graph fighting for attention with one. Each edge still picks
+    // whichever compass handle (see COMPASS and compassSide) actually
+    // faces the other end, since the simulation can put a connected node
+    // in any direction from another.
     const edges: Edge[] = [
       ...impliesEdgeIds.map(({ source, target }, i) => {
         const sp = finalPos.get(source);
@@ -337,8 +409,8 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
           sourceHandle: `${compassSide(dx, dy)}-source`,
           targetHandle: `${compassSide(-dx, -dy)}-target`,
           type: 'straight',
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: theme.palette.text.secondary },
+          data: { kind: 'implies' as const },
+          style: { stroke: alpha(theme.palette.text.secondary, 0.25), strokeWidth: 1 },
         };
       }),
       ...aliasEdges.map(({ ghostId, targetId }) => {
@@ -351,9 +423,10 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
           source: targetId,
           sourceHandle: `${compassSide(dx, dy)}-source`,
           target: ghostId,
+          data: { kind: 'alias' as const },
           targetHandle: `${compassSide(-dx, -dy)}-target`,
           type: 'straight',
-          style: { stroke: theme.palette.divider, strokeDasharray: '4 3' },
+          style: { stroke: alpha(theme.palette.text.disabled, 0.4), strokeWidth: 1, strokeDasharray: '3 3' },
         };
       }),
     ];
@@ -377,6 +450,59 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
+  // Obsidian's signature graph interaction: hovering a node brings it and
+  // its direct neighbours to full opacity and fades everything else back,
+  // so one tag's relationships stay readable even inside a dense cluster.
+  // neighborsOf is keyed off edges (not initialEdges) so a manual drag -
+  // which doesn't change which nodes are connected - never needs to
+  // recompute it.
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const neighborsOf = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    const link = (a: string, b: string) => {
+      if (!map.has(a)) map.set(a, new Set());
+      map.get(a)!.add(b);
+    };
+    for (const e of edges) {
+      link(e.source, e.target);
+      link(e.target, e.source);
+    }
+    return map;
+  }, [edges]);
+
+  const displayNodes = useMemo(() => {
+    if (!hoveredNodeId) return nodes;
+    const related = neighborsOf.get(hoveredNodeId);
+    // Branched by n.type (rather than one generic spread) so each branch
+    // keeps GraphNode's data shape tied to its own node type - a single
+    // `{ ...n, data: { ...n.data, dimmed } }` across the union loses that
+    // link and widens data to a shape TypeScript can no longer match back
+    // to either TagNodeData or AliasNodeData.
+    return nodes.map((n): GraphNode => {
+      const dimmed = n.id !== hoveredNodeId && !related?.has(n.id);
+      if (n.type === 'aliasNode') return { ...n, data: { ...n.data, dimmed } };
+      return { ...n, data: { ...n.data, dimmed, hovered: n.id === hoveredNodeId } };
+    });
+  }, [nodes, hoveredNodeId, neighborsOf]);
+
+  const displayEdges = useMemo(() => {
+    if (!hoveredNodeId) return edges;
+    return edges.map((e) => {
+      if (e.source !== hoveredNodeId && e.target !== hoveredNodeId) {
+        return { ...e, style: { ...e.style, opacity: 0.05 } };
+      }
+      // A resting edge's dimness comes from its own semi-transparent stroke
+      // (see the main useMemo above), not a CSS opacity toggle - so
+      // highlighting one here has to swap in a solid stroke, not just set
+      // opacity back to 1, or it would still render at the same ~25% alpha.
+      return {
+        ...e,
+        style: { ...e.style, stroke: theme.palette.text.primary, opacity: 1 },
+        markerEnd: e.data?.kind === 'implies' ? { type: MarkerType.ArrowClosed } : undefined,
+      };
+    });
+  }, [edges, hoveredNodeId, theme]);
+
   if (initialNodes.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -391,17 +517,21 @@ export const TagGraphView = ({ tagsV2, impliedTags, aliases, tagTypes, onNodeCli
   return (
     <Box sx={{ height: 600 }}>
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={displayNodes}
+        edges={displayEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeMouseEnter={(_, node) => setHoveredNodeId(node.id)}
+        onNodeMouseLeave={() => setHoveredNodeId(null)}
         nodeTypes={nodeTypes}
         fitView
         nodesConnectable={false}
         elementsSelectable={false}
         proOptions={{ hideAttribution: true }}
+        // No dot-grid Background - Obsidian's graph is a flat canvas, and a
+        // grid would compete with hundreds of small tag dots for attention.
+        style={{ backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[50] }}
       >
-        <Background />
         <Controls showInteractive={false} />
         <Panel position="top-right">
           <Box
