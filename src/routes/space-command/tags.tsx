@@ -118,40 +118,16 @@ async function sleep(ms: number) {
 }
 
 /**
- * Fetch ALL patterns that contain a specific tag (exact element match).
- * Wrapping in double-quotes matches the JSON storage format ["tag1","tag2"],
- * so '"cat"' matches "cat" but not "suncatcher".
- */
-async function fetchPatternsWithTag(tag: string): Promise<TypePatternRecord[]> {
-  const records: TypePatternRecord[] = [];
-  let page = 1;
-  const perPage = 500;
-
-  while (true) {
-    const result = await pocketbase
-      .collection('patterns')
-      .getList<TypePatternRecord>(page, perPage, { filter: `tags ~ '"${tag}"'`, fields: 'id,tags,name' });
-    records.push(...result.items);
-    if (records.length >= result.totalItems) break;
-    page++;
-  }
-
-  return records;
-}
-
-/**
- * Fetch ALL patterns whose tag_refs contains a specific tags_v2 id - the
- * id-based equivalent of fetchPatternsWithTag above. Uses the same
+ * Fetch ALL patterns whose tag_refs contains a specific tags_v2 id. Uses the
  * `~`-on-a-multi-relation-column idiom already proven live for
  * patterns.authors (`authors ~ id`), not a quote-wrapped match - ids are
  * opaque, fixed-length strings, not human text a substring match could
  * accidentally over-match the way a tag name could.
  *
- * This is not just a faster version of fetchPatternsWithTag - patterns.tags
- * is frozen, so a string search can no longer find every pattern that
- * actually carries a given tag. A tag added through a normal edit reaches
- * tag_refs only, never patterns.tags, so fetchPatternsWithTag would
- * silently miss it.
+ * This is the only reliable way to find every pattern carrying a tag -
+ * patterns.tags (the older, now-frozen string field) stops being written on
+ * a normal edit, so a tag added since then reaches tag_refs only and a
+ * string search against patterns.tags would silently miss it.
  */
 async function fetchPatternsWithTagRef(tagId: string): Promise<TypePatternRecord[]> {
   const records: TypePatternRecord[] = [];
@@ -2182,6 +2158,17 @@ const TagManagementPage = () => {
 
   const [toast, setToast] = useState<string | null>(null);
 
+  // Every rename/merge/delete touches all four of these tables - single-tag
+  // (executeOperation) and bulk (confirmOp's cleanup branch) both need the
+  // same invalidation list, so it lives here once rather than as two copies
+  // that could drift apart.
+  const invalidateTagSatelliteQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
+  }, [queryClient]);
+
   const executeOperation = useCallback(
     async (op: { type: OperationType; tag: string; newTag?: string }) => {
       const { type, tag } = op;
@@ -2239,10 +2226,7 @@ const TagManagementPage = () => {
         // the requestKey: null fixes added to it and its helpers) - now
         // that it actually completes, this block runs for real and the
         // doubled burst is what was tripping the rate limiter right after.
-        queryClient.invalidateQueries({ queryKey: TAG_HIERARCHY_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
+        invalidateTagSatelliteQueries();
 
         // A true in-place rename's own patternsAffected stays empty - on
         // purpose, no pattern was touched. For the admin log's own record
@@ -2290,14 +2274,22 @@ const TagManagementPage = () => {
 
       setIsFetchingPatterns(false);
     },
-    [queryClient, log, setIsFetchingPatterns, tagStats],
+    [queryClient, log, setIsFetchingPatterns, tagStats, invalidateTagSatelliteQueries],
   );
 
   const startOp = useCallback(
     async (type: OperationType, tag: string, newTag?: string) => {
       setIsFetchingPatterns(true);
 
-      const records = await fetchPatternsWithTag(tag);
+      // tag_refs, not patterns.tags - the frozen string field can no longer
+      // be trusted to find every pattern that actually carries this tag
+      // (see fetchPatternsWithTagRef's own comment). Resolves the tag name
+      // to its tags_v2 id first, the same type-blind lookup
+      // syncSatelliteTablesForOp itself uses right before doing the real
+      // work, so this confirmation preview counts the same patterns the
+      // operation is actually about to touch.
+      const tagV2Row = await findTagV2Record(tag);
+      const records = tagV2Row ? await fetchPatternsWithTagRef(tagV2Row.id) : [];
 
       // For delete: warn about direct children that will become orphaned
       const childTags = type === 'delete' ? hierarchy.filter((h) => h.parent_tag === tag).map((h) => h.tag) : [];
@@ -2315,7 +2307,8 @@ const TagManagementPage = () => {
       setIsFetchingPatterns(true);
 
       for (const t of tags) {
-        const records = await fetchPatternsWithTag(t);
+        const tagV2Row = await findTagV2Record(t);
+        const records = tagV2Row ? await fetchPatternsWithTagRef(tagV2Row.id) : [];
         total += records.length;
         await sleep(BATCH_DELAY_MS);
       }
@@ -2346,15 +2339,19 @@ const TagManagementPage = () => {
 
       try {
         let completed = 0;
+        let totalPatternsAffected = 0;
+        // Reuses syncSatelliteTablesForOp('delete', ...) per tag - the same
+        // complete, tag_refs-based path the single-tag Delete button
+        // already uses. The old version here only ever stripped the tag
+        // string from patterns.tags directly: it couldn't find a pattern
+        // tagged only through tag_refs, and even for the patterns it did
+        // find, it left tag_refs, the tags_v2 row itself, and every
+        // implied_tags/tag_aliases/tag_hierarchy reference untouched - a
+        // tag "deleted" this way kept showing up in search and display.
+        // Found via code review.
         for (const tag of tags) {
-          const records = await fetchPatternsWithTag(tag);
-          await processSequentially(
-            records,
-            async (r) => {
-              await pocketbase.collection('patterns').update(r.id, { tags: r.tags.filter((t) => t !== tag) });
-            },
-            () => {},
-          );
+          const { patternsAffected } = await syncSatelliteTablesForOp('delete', tag);
+          totalPatternsAffected += patternsAffected.length;
           await sleep(BATCH_DELAY_MS);
           completed++;
           setProgress((p) => ({ ...p, completed, total: tags.length }));
@@ -2366,10 +2363,11 @@ const TagManagementPage = () => {
           entity_id: '',
           entity_name: `${tags.length} tags`,
           changes: {},
-          metadata: { tags, affected_patterns: tags.length },
+          metadata: { tags, affected_patterns: totalPatternsAffected },
         });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
+        invalidateTagSatelliteQueries();
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setProgress((p) => ({ ...p, error: msg }));
@@ -2377,7 +2375,7 @@ const TagManagementPage = () => {
     } else {
       await executeOperation({ type: op.type, tag: op.tag, newTag: op.newTag });
     }
-  }, [pendingOp, executeOperation, queryClient, log]);
+  }, [pendingOp, executeOperation, queryClient, log, invalidateTagSatelliteQueries]);
 
   // ── Sync Ancestor Tags ─────────────────────────────────────────────────────
   const [syncConfirmOpen, setSyncConfirmOpen] = useState(false);
