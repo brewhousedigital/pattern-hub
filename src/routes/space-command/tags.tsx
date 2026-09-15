@@ -25,6 +25,7 @@ import {
   isSlugTaken,
   uniqueSlugFor,
   resolveOrCreateTagV2Row,
+  resolveOrCreateTagRefs,
   TAGS_V2_QUERY_KEY,
   IMPLIED_TAGS_QUERY_KEY,
   TAG_ALIASES_QUERY_KEY,
@@ -2329,31 +2330,44 @@ const TagManagementPage = () => {
     while (true) {
       const result = await pocketbase
         .collection('patterns')
-        .getList<TypePatternRecord>(page, 500, { fields: 'id,tags' });
+        .getList<TypePatternRecord>(page, 500, { fields: 'id,tag_refs' });
       allPatterns.push(...result.items);
       if (allPatterns.length >= result.totalItems) break;
       page++;
     }
 
-    const needsUpdate = allPatterns.filter((p) => {
-      if (!Array.isArray(p.tags)) return false;
-      for (const tag of p.tags) {
-        const ancestors = getAncestors(tag, hierarchy);
-        if (ancestors.some((a) => !p.tags.includes(a))) return true;
-      }
-      return false;
-    });
+    // Reads tag_refs, not patterns.tags - the frozen string field has
+    // nothing in it for a pattern tagged since tag-entry moved to
+    // tag_refs-only, so this would silently stop seeing (and fixing) any
+    // pattern tagged after that cutover. tag_hierarchy itself is still
+    // name-keyed (see its own comment above - retiring it is a later
+    // cleanup), so tagsV2ById turns each ref id back into the name
+    // getAncestors needs.
+    const candidates = allPatterns
+      .map((p) => {
+        const currentRefs = p.tag_refs ?? [];
+        const currentNames = currentRefs.map((id) => tagsV2ById.get(id)?.tag).filter((t): t is string => !!t);
+        const currentNameSet = new Set(currentNames);
+        const missingAncestors = new Set<string>();
+        for (const name of currentNames) {
+          for (const ancestor of getAncestors(name, hierarchy)) {
+            if (!currentNameSet.has(ancestor)) missingAncestors.add(ancestor);
+          }
+        }
+        return { id: p.id, currentRefs, missingAncestors: [...missingAncestors] };
+      })
+      .filter((p) => p.missingAncestors.length > 0);
 
-    if (needsUpdate.length === 0) {
+    if (candidates.length === 0) {
       setToast('All patterns already have up-to-date parent tags.');
       return;
     }
 
     setProgress({
       open: true,
-      title: `Syncing parent tags across ${needsUpdate.length} patterns…`,
+      title: `Syncing parent tags across ${candidates.length} patterns…`,
       completed: 0,
-      total: needsUpdate.length,
+      total: candidates.length,
       done: false,
     });
 
@@ -2361,15 +2375,14 @@ const TagManagementPage = () => {
       setIsFetchingPatterns(true);
 
       await processSequentially(
-        needsUpdate,
-        async (pattern) => {
-          const newTags = [...pattern.tags];
-          for (const tag of [...pattern.tags]) {
-            for (const a of getAncestors(tag, hierarchy)) {
-              if (!newTags.includes(a)) newTags.push(a);
-            }
-          }
-          await pocketbase.collection('patterns').update(pattern.id, { tags: newTags });
+        candidates,
+        async (candidate) => {
+          // resolveOrCreateTagRefs finds each ancestor's existing tags_v2
+          // row, or creates a General-type one - same resolution every
+          // other tag-entry save path already uses.
+          const missingIds = await resolveOrCreateTagRefs(candidate.missingAncestors);
+          const newRefs = [...new Set([...candidate.currentRefs, ...missingIds])];
+          await pocketbase.collection('patterns').update(candidate.id, { tag_refs: newRefs });
           await sleep(BATCH_DELAY_MS);
         },
         (completed, total) => setProgress((p) => ({ ...p, completed, total })),
@@ -2382,7 +2395,7 @@ const TagManagementPage = () => {
         entity_id: '',
         entity_name: 'Sync Ancestor Tags',
         changes: {},
-        metadata: { patterns_updated: needsUpdate.length },
+        metadata: { patterns_updated: candidates.length },
       });
       queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
@@ -2392,7 +2405,7 @@ const TagManagementPage = () => {
     } finally {
       setIsFetchingPatterns(false);
     }
-  }, [hierarchy, queryClient, log, setIsFetchingPatterns]);
+  }, [hierarchy, queryClient, log, setIsFetchingPatterns, tagsV2ById]);
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);

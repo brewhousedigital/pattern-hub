@@ -148,6 +148,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     authorNameMap,
     tagIdByName,
     authorTagIdByName,
+    validTagIds,
   ) {
     const dslParts = [];
     const sqlParts = [];
@@ -361,18 +362,23 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     // bare typed word already gets.
     //
     // blockedTagRefs is parallel to blockedTags, same length/index - '' for
-    // an entry with
-    // no specific id resolved client-side (a free-solo block, or one from
-    // before this field existed). Index i's ref is tried first, reaching
-    // the exact row BlockedTagsSection.tsx's picker showed (e.g. the
-    // Author-typed "autumn", not the General one tagIdByName would default
-    // to for the bare name) - only falling back to name-based resolution
-    // when that index has no ref at all, unchanged from before this existed.
+    // an entry with no specific id resolved client-side (a free-solo block,
+    // or one from before this field existed). Index i's ref is tried first,
+    // reaching the exact row BlockedTagsSection.tsx's picker showed (e.g.
+    // the Author-typed "autumn", not the General one tagIdByName would
+    // default to for the bare name) - but only once validTagIds confirms
+    // that id still names a real row. A ref can go stale (its tags_v2 row
+    // merged or deleted after the block was set) without anything clearing
+    // it client-side - trusting a merely non-empty refId would then exclude
+    // nothing at all, silently, since a stale id still reads as "resolved."
+    // Falls back to name-based resolution both when an index has no ref at
+    // all and when its ref no longer points at a real row.
     for (let i = 0; i < (blockedTags || []).length; i++) {
       const tag = blockedTags[i];
       if (!tag) continue;
       const refId = blockedTagRefs && blockedTagRefs[i];
-      const tagId = refId || (tagIdByName && tagIdByName[String(tag).toLowerCase()]) || null;
+      const validRefId = refId && validTagIds && validTagIds[refId] ? refId : null;
+      const tagId = validRefId || (tagIdByName && tagIdByName[String(tag).toLowerCase()]) || null;
       emitTagIdFilter(tagId, true);
     }
 
@@ -552,6 +558,11 @@ routerAdd('GET', '/api/pattern-search', (c) => {
   // authorNameMap's own conditional build already documents).
   let tagIdByName = {};
   let authorTagIdByName = {};
+  // Every real tags_v2 id, keyed for an O(1) membership check - lets the
+  // blocked-tags branch below tell a still-real refId apart from a stale
+  // one (its row merged or deleted since the block was set) instead of
+  // trusting any non-empty string.
+  let validTagIds = {};
   const needsTagIdResolution =
     (blockedTags && blockedTags.length > 0) ||
     tokens.some((t) => t && (t.type === 'text' || t.type === 'tag' || t.type === 'author'));
@@ -562,6 +573,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
       const allTagRows = $app.findRecordsByFilter('tags_v2', "id != ''", '', 0, 0);
       for (let i = 0; i < allTagRows.length; i++) {
         const row = allTagRows[i];
+        validTagIds[row.id] = true;
         const name = row.getString('tag');
         if (!name) continue;
         // Prefer a General-type row for this name over any other type,
@@ -593,6 +605,7 @@ routerAdd('GET', '/api/pattern-search', (c) => {
     authorNameMap,
     tagIdByName,
     authorTagIdByName,
+    validTagIds,
   );
   const baseDsl =
     (dslFilter ? dslFilter + ' && ' : '') +
