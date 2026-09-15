@@ -265,12 +265,24 @@ async function retargetImpliedTagEdges(oldTag: string, newTag: string, newTagId?
 
   const oldSafe = escapeTagFilterValue(oldTag);
   const newSafe = escapeTagFilterValue(newTag);
+  // requestKey: null on all three - PocketBase auto-derives a request key
+  // from method + collection path alone, ignoring the filter (same
+  // mechanism useQueryAdminTagStats's own comment in
+  // functions/database/tags.ts documents), so three concurrent getFullList
+  // calls against the same collection would otherwise share one key and
+  // silently auto-cancel each other. Found via a live "request was
+  // aborted" error on rename.
   const [outgoingRaw, incomingRaw, newTagEdges] = await Promise.all([
-    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `tag = "${oldSafe}"` }),
-    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldSafe}"` }),
     pocketbase
       .collection('implied_tags')
-      .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${newSafe}" || implies_tag = "${newSafe}"` }),
+      .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${oldSafe}"`, requestKey: null }),
+    pocketbase
+      .collection('implied_tags')
+      .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${oldSafe}"`, requestKey: null }),
+    pocketbase.collection('implied_tags').getFullList<TypeImpliedTagRecord>({
+      filter: `tag = "${newSafe}" || implies_tag = "${newSafe}"`,
+      requestKey: null,
+    }),
   ]);
 
   // A self-loop row (tag === implies_tag === oldTag) matches both queries
@@ -339,9 +351,15 @@ async function retargetTagAliases(oldTag: string, newTag: string, newTagId?: str
   if (oldTag === newTag) return; // see retargetImpliedTagEdges - nothing changed, nothing to retarget
 
   const oldSafe = escapeTagFilterValue(oldTag);
+  // requestKey: null on both - same same-collection auto-cancellation
+  // hazard as retargetImpliedTagEdges above.
   const [asAliasRaw, asTargetRaw] = await Promise.all([
-    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `alias = "${oldSafe}"` }),
-    pocketbase.collection('tag_aliases').getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${oldSafe}"` }),
+    pocketbase
+      .collection('tag_aliases')
+      .getFullList<TypeTagAliasRecord>({ filter: `alias = "${oldSafe}"`, requestKey: null }),
+    pocketbase
+      .collection('tag_aliases')
+      .getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${oldSafe}"`, requestKey: null }),
   ]);
 
   // A row aliased to itself (alias === target_tag === oldTag) matches both
@@ -483,14 +501,19 @@ async function syncSatelliteTablesForOp(
   const safe = normalizeTagName(tag);
   const safeFilter = escapeTagFilterValue(safe);
 
+  // requestKey: null on both tag_hierarchy calls - same same-collection
+  // auto-cancellation hazard as retargetImpliedTagEdges above (getFirstListItem
+  // and getFullList against the same collection still share PocketBase's
+  // default request key, ignoring the fact that one filters on `tag` and the
+  // other on `parent_tag`).
   const [ownRecord, childRecords, tagV2Record] = await Promise.all([
     pocketbase
       .collection('tag_hierarchy')
-      .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safeFilter}"`)
+      .getFirstListItem<TypeTagHierarchyRecord>(`tag = "${safeFilter}"`, { requestKey: null })
       .catch(() => null),
     pocketbase
       .collection('tag_hierarchy')
-      .getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safeFilter}"` }),
+      .getFullList<TypeTagHierarchyRecord>({ filter: `parent_tag = "${safeFilter}"`, requestKey: null }),
     findTagV2Record(safe),
   ]);
 
