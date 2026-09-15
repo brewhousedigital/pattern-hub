@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -1832,6 +1832,14 @@ function TagTreeView({
 interface RenamePanelProps {
   tagStats: TypeTagStat[];
   onRename: (from: string, to: string) => void;
+  /**
+   * Set by the tags table's own Rename action (see tagColumns below) to
+   * seed this panel with the clicked row's tag and bring it into view. A
+   * fresh object every time, even re-clicking the same row's tag twice in
+   * a row, so the effect below always re-fires instead of silently no-op'ing
+   * on an unchanged string.
+   */
+  prefill: { tag: string; nonce: number } | null;
 }
 
 // No separate Merge flow anymore - renaming to a name that already exists
@@ -1843,10 +1851,27 @@ interface RenamePanelProps {
 // same-named-different-typed pair apart is what Types exist for. That's
 // rare enough, and arguably against the point of Types, that it isn't worth
 // a whole second flow - do it by hand in the database if it's ever needed.
-function RenamePanel({ tagStats, onRename }: RenamePanelProps) {
+function RenamePanel({ tagStats, onRename, prefill }: RenamePanelProps) {
   const [fromTag, setFromTag] = useState('');
   const [toTag, setToTag] = useState('');
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
+  const paperRef = useRef<HTMLDivElement>(null);
+  const toTagInputRef = useRef<HTMLInputElement>(null);
+
+  // Scrolls this panel into view and focuses "new tag name" - "current tag
+  // name" arrives already filled in, so that's the field the admin
+  // actually needs next. A short delay before focusing rather than doing
+  // it immediately: the input is already mounted (this panel never
+  // unmounts), so nothing async is actually being waited on - it's purely
+  // to avoid fighting the browser's own focus/scroll handling mid-scroll.
+  useEffect(() => {
+    if (!prefill) return;
+    setFromTag(prefill.tag);
+    setToTag('');
+    paperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timer = setTimeout(() => toTagInputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, [prefill]);
 
   // Compared via normalizeTagName, not raw .trim(), on both counts: tagStats
   // entries are already canonically-cased (the tags view lowercases them),
@@ -1864,9 +1889,10 @@ function RenamePanel({ tagStats, onRename }: RenamePanelProps) {
   // this UI lets it through today.
   const sameTag = fromTag.trim() !== '' && toTag.trim() !== '' && normalizeTagName(fromTag) === normalizeTagName(toTag);
   const canSubmit = fromTag.trim() && toTag.trim() && !sameTag && fromExists;
+  const tagOptions = useMemo(() => tagStats.map((t) => t.tag), [tagStats]);
 
   return (
-    <Paper variant="outlined" sx={{ p: 3 }}>
+    <Paper ref={paperRef} variant="outlined" sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <DriveFileRenameOutlineIcon color="action" />
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -1887,20 +1913,30 @@ function RenamePanel({ tagStats, onRename }: RenamePanelProps) {
 
         <Box sx={{ pt: 1, color: 'text.secondary', fontSize: 20 }}>→</Box>
 
-        <TextField
-          label="New tag name"
+        {/* freeSolo - a rename target doesn't have to already exist, this
+            is purely to help pick an existing one without mistyping it. */}
+        <Autocomplete
+          freeSolo
+          options={tagOptions}
           value={toTag}
-          onChange={(e) => setToTag(e.target.value)}
-          size="small"
+          onInputChange={(_, v) => setToTag(v)}
           sx={{ flex: 1 }}
-          error={sameTag}
-          helperText={
-            sameTag
-              ? 'Same as the current name'
-              : toExists
-                ? `A tag named "${toTag.trim()}" already exists - if it's the same Type, this merges into it instead of creating a duplicate.`
-                : ' '
-          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              inputRef={toTagInputRef}
+              label="New tag name"
+              size="small"
+              error={sameTag}
+              helperText={
+                sameTag
+                  ? 'Same as the current name'
+                  : toExists
+                    ? `A tag named "${toTag.trim()}" already exists - if it's the same Type, this merges into it instead of creating a duplicate.`
+                    : ' '
+              }
+            />
+          )}
         />
 
         <Button
@@ -2061,6 +2097,10 @@ const TagManagementPage = () => {
   const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
   const [tagViewMode, setTagViewMode] = useState<'list' | 'tree' | 'graph'>('list');
+
+  // Set by a row's own Rename action below - RenamePanel picks this up to
+  // seed "current tag name" and scroll/focus itself into view.
+  const [renamePrefill, setRenamePrefill] = useState<{ tag: string; nonce: number } | null>(null);
 
   useEffect(() => {
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
@@ -2540,7 +2580,7 @@ const TagManagementPage = () => {
       {
         field: 'actions',
         headerName: 'Actions',
-        width: 230,
+        width: 276,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -2566,6 +2606,14 @@ const TagManagementPage = () => {
             <Tooltip title="Set parent tag (legacy hierarchy)">
               <IconButton size="small" onClick={() => setSetParentRow(params.row)}>
                 <AccountTreeOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Rename this tag">
+              <IconButton
+                size="small"
+                onClick={() => setRenamePrefill({ tag: params.row.tag, nonce: Date.now() })}
+              >
+                <DriveFileRenameOutlineIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title="Delete this tag globally">
@@ -2827,7 +2875,11 @@ const TagManagementPage = () => {
       />
 
       <Box sx={{ mb: 3, mt: 3 }}>
-        <RenamePanel tagStats={tagStats} onRename={(from, to) => startOp('rename', from, to)} />
+        <RenamePanel
+          tagStats={tagStats}
+          onRename={(from, to) => startOp('rename', from, to)}
+          prefill={renamePrefill}
+        />
       </Box>
 
       <Box sx={{ mb: 3 }}>
