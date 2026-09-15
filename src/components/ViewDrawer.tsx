@@ -39,13 +39,12 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
   // used to read - it stopped being written once tag-entry moved to
   // tag_refs, so a tag added since then would never show up here even
   // though it's already searchable and already showing on the standalone
-  // pattern page.
+  // pattern page. Left grouped (not flattened) - ViewDrawerPatternSidebar
+  // renders one section per group, the same category split
+  // PatternViewContent's own tag block uses.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
-  const sidebarTagNames = React.useMemo(
-    () =>
-      groupTagsByType(viewData?.tag_refs ?? [], tagsV2)
-        .filter((group) => !isAuthorDisplayType(group.type))
-        .flatMap((group) => group.tags),
+  const sidebarTagGroups = React.useMemo(
+    () => groupTagsByType(viewData?.tag_refs ?? [], tagsV2).filter((group) => !isAuthorDisplayType(group.type)),
     [viewData?.tag_refs, tagsV2],
   );
 
@@ -85,7 +84,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
 
         <PatternViewContent
           viewData={viewData}
-          sidebar={<ViewDrawerPatternSidebar tagList={sidebarTagNames} handleClose={props.handleClose} />}
+          sidebar={<ViewDrawerPatternSidebar tagGroups={sidebarTagGroups} handleClose={props.handleClose} />}
         />
       </Container>
     </Box>

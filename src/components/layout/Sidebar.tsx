@@ -4,7 +4,7 @@ import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
-import { getTagType, isDefaultTagType } from '@/functions/utilities/group-tags-by-type';
+import { getTagType, isDefaultTagType, type TypeTagGroup } from '@/functions/utilities/group-tags-by-type';
 import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
 // color is set only for kind: 'tag' items with a real (non-default) Type
@@ -439,12 +439,33 @@ export const MobileSidebarBlock = () => {
   );
 };
 
-export const ViewDrawerPatternSidebar = (props: SidebarListProps) => {
+type ViewDrawerPatternSidebarProps = {
+  tagGroups: TypeTagGroup[];
+  handleClose?: () => void;
+};
+
+export const ViewDrawerPatternSidebar = (props: ViewDrawerPatternSidebarProps) => {
+  // Default-typed groups (no Type at all, or the "General" Type) collapse
+  // into one bucket under this section's existing heading, sorted first -
+  // General isn't a distinct category worth its own label, it's what every
+  // tag starts as. Every other Type gets its own heading below, named after
+  // its group_label (falling back to the Type's own name) - the same
+  // fallback rule PatternViewContent's own standalone tag block already
+  // uses, so a Type reads the same wherever its tags are grouped.
+  const defaultTags = props.tagGroups.filter((g) => isDefaultTagType(g.type)).flatMap((g) => g.tags);
+  const namedGroups = props.tagGroups.filter((g) => !isDefaultTagType(g.type));
+
   return (
     <Box sx={drawerSidebarBlockStyles}>
       <SidebarCategoryTitle title="Current Pattern Tags" />
+      {defaultTags.length > 0 && <SidebarList tagList={defaultTags} handleClose={props.handleClose} />}
 
-      <SidebarList tagList={props.tagList} handleClose={props.handleClose} />
+      {namedGroups.map((group) => (
+        <Box key={group.type?.id ?? 'untyped'}>
+          <SidebarCategoryTitle title={group.type?.group_label || group.type?.name || ''} />
+          <SidebarList tagList={group.tags} handleClose={props.handleClose} />
+        </Box>
+      ))}
     </Box>
   );
 };
