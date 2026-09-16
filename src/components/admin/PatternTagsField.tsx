@@ -10,6 +10,7 @@ import {
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
+  type TypeTagTypeRecord,
 } from '@/functions/database/tags';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 
@@ -95,15 +96,19 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
   // above, so in practice this only matters for two non-Author types
   // sharing a name, an edge case not worth a full id-aware rework here).
   const { data: tagsV2List = [] } = useQueryGetAllTagsV2();
-  const typeColorByTag = React.useMemo(() => {
-    const map = new Map<string, string>();
+  const typeInfoByTag = React.useMemo(() => {
+    const map = new Map<string, TypeTagTypeRecord>();
     for (const t of tagsV2List) {
-      const color = t.expand?.type?.color;
-      if (color && !map.has(t.tag)) map.set(t.tag, color);
+      const type = t.expand?.type;
+      if (type && !map.has(t.tag)) map.set(t.tag, type);
     }
     return map;
   }, [tagsV2List]);
-  const getChipBorderColor = React.useCallback((tag: string) => typeColorByTag.get(tag), [typeColorByTag]);
+  const getChipBorderColor = React.useCallback(
+    (tag: string) => typeInfoByTag.get(tag)?.color || undefined,
+    [typeInfoByTag],
+  );
+  const getChipTooltip = React.useCallback((tag: string) => typeInfoByTag.get(tag)?.name, [typeInfoByTag]);
 
   // implied_tags + tag_aliases replace tag_hierarchy as the source for
   // auto-added tags and alias resolution on this entry surface.
@@ -235,6 +240,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       onInputChange={setTagInput}
       inheritedValues={inheritedValues}
       getChipBorderColor={getChipBorderColor}
+      getChipTooltip={getChipTooltip}
       loading={isSearching ? tagsV2SearchFetching : tagUsageFetching}
     />
   );

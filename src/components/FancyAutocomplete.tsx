@@ -33,6 +33,12 @@ type FancyAutocompleteProps = {
    * resolving a tag name to its Type's color.
    */
   getChipBorderColor?: (option: string) => string | undefined;
+  /**
+   * Given a selected chip's value, returns its Type's name to show in a
+   * hover tooltip (e.g. "Defect Tags"), or undefined when there's nothing to
+   * report. Merged with the inherited-tag tooltip below when a chip is both.
+   */
+  getChipTooltip?: (option: string) => string | undefined;
 };
 
 // Collapses internal whitespace too, not just casing - matches the
@@ -105,6 +111,10 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
           const { key, ...itemProps } = getItemProps({ index });
           const isInherited = props.inheritedValues?.has(option) ?? false;
           const borderColor = props.getChipBorderColor?.(option);
+          const typeName = props.getChipTooltip?.(option);
+          const tooltipText = [isInherited ? 'Auto-added parent tag' : null, typeName ? `Type: ${typeName}` : null]
+            .filter(Boolean)
+            .join(' · ');
           const chip = (
             <Chip
               variant={isInherited ? 'outlined' : 'filled'}
@@ -117,8 +127,8 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
               {...itemProps}
             />
           );
-          return isInherited ? (
-            <Tooltip key={key} title={`Auto-added parent tag`} placement="top">
+          return tooltipText ? (
+            <Tooltip key={key} title={tooltipText} placement="top">
               {chip}
             </Tooltip>
           ) : (
