@@ -439,6 +439,16 @@ export interface TypeAdminTagStatsPaginatedParams {
    * same way it treats `search`. Omit for "all types."
    */
   typeFilter?: string;
+  /**
+   * When true, ANDs `count = 0` into the filter - tags_v2 rows with no
+   * patterns (e.g. one just created standalone via the Add Tag dialog).
+   * Only meaningful now that tag_usage's view query is a LEFT JOIN from
+   * tags_v2 (see this hook's own comment below) - before that fix, no row
+   * could ever have count = 0 in the first place, since one with zero
+   * matching patterns was dropped from the view entirely rather than kept
+   * with a 0.
+   */
+  unusedOnly?: boolean;
 }
 
 // Reads the `tag_usage` view instead of `tags`. Same shape (id/tag/count),
@@ -492,6 +502,7 @@ export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginate
       const filterParts = [];
       if (safeSearch) filterParts.push(`tag ~ "${safeSearch}"`);
       if (params.typeFilter) filterParts.push(params.typeFilter);
+      if (params.unusedOnly) filterParts.push('count = 0');
       const filter = filterParts.join(' && ');
       const sort = `${params.sortDir === 'desc' ? '-' : ''}${params.sortField}`;
 

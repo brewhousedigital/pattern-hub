@@ -74,6 +74,8 @@ import {
   Snackbar,
   ToggleButton,
   ToggleButtonGroup,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { DataGrid, type GridSortModel } from '@mui/x-data-grid';
 
@@ -119,6 +121,10 @@ const TagManagementPage = () => {
   // later, deliberate "All types" selection.
   const [tagTypeFilter, setTagTypeFilter] = useState('');
   const didSetDefaultTypeFilter = useRef(false);
+  // Server-side "count = 0" filter - see unusedOnly's own doc comment on
+  // TypeAdminTagStatsPaginatedParams. Independent of tagTypeFilter, so an
+  // admin can still narrow an unused-only view down to one Type.
+  const [unusedOnly, setUnusedOnly] = useState(false);
   const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
   const [tagViewMode, setTagViewMode] = useState<'list' | 'tree' | 'graph'>('list');
@@ -129,7 +135,7 @@ const TagManagementPage = () => {
 
   useEffect(() => {
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
-  }, [debouncedSearch, tagTypeFilter]);
+  }, [debouncedSearch, tagTypeFilter, unusedOnly]);
 
   useEffect(() => {
     if (didSetDefaultTypeFilter.current || tagTypesList.length === 0) return;
@@ -164,6 +170,7 @@ const TagManagementPage = () => {
     pageSize: tagPaginationModel.pageSize,
     search: debouncedSearch,
     typeFilter: typeFilterExpr,
+    unusedOnly,
     sortField: (sortItem?.field as 'tag' | 'count') ?? 'count',
     sortDir: (sortItem?.sort as 'asc' | 'desc') ?? 'desc',
   });
@@ -621,15 +628,19 @@ const TagManagementPage = () => {
   // view change lands, with no further code change needed here.
   const unusedTagCount = tagStats.filter((t) => t.count === 0).length;
 
-  // Jumps straight to any unused tags instead of leaving an admin to hunt
-  // for them on the last page of the default "most-used first" sort, or
-  // behind the default General-only type filter (see didSetDefaultTypeFilter
-  // above) if the tag they're after was created under a different Type.
+  // Jumps straight to any unused tags via the real unusedOnly filter,
+  // instead of just sorting them to the top and hoping - also clears the
+  // default General-only type filter (see didSetDefaultTypeFilter above),
+  // since an unused tag created under a different Type would otherwise stay
+  // hidden. Sorts alphabetically rather than by count - every visible row
+  // is tied at 0 once this filter is on, so "most patterns first" has
+  // nothing left to say.
   const handleShowUnusedTags = useCallback(() => {
     setTagViewMode('list');
     setTagTypeFilter('');
     setTagSearch('');
-    setTagSortModel([{ field: 'count', sort: 'asc' }]);
+    setUnusedOnly(true);
+    setTagSortModel([{ field: 'tag', sort: 'asc' }]);
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
   }, []);
 
@@ -677,7 +688,7 @@ const TagManagementPage = () => {
                 variant="outlined"
                 size="small"
               />
-              <Tooltip title="Sort the list below by fewest patterns first, so any unused tag sorts to the top">
+              <Tooltip title="Filter the list below to only unused tags">
                 <Chip
                   label={`${unusedTagCount.toLocaleString()} unused tags`}
                   color="info"
@@ -739,6 +750,20 @@ const TagManagementPage = () => {
               </MenuItem>
             ))}
           </TextField>
+        )}
+
+        {tagViewMode === 'list' && (
+          <FormControlLabel
+            sx={{ mr: 0 }}
+            control={
+              <Checkbox size="small" checked={unusedOnly} onChange={(e) => setUnusedOnly(e.target.checked)} />
+            }
+            label={
+              <Typography variant="body2" color="text.secondary">
+                Unused only
+              </Typography>
+            }
+          />
         )}
 
         <ToggleButtonGroup value={tagViewMode} exclusive onChange={(_, v) => v && setTagViewMode(v)} size="small">
