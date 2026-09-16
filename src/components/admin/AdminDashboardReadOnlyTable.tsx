@@ -1,5 +1,4 @@
 import React from 'react';
-import { useQueryGetAllTags } from '@/functions/database/tags';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 import { AdminDashboardCardTitle } from '@/components/admin/AdminDashboardCardTitle';
 

@@ -80,11 +80,12 @@ type SetRecord = { id: string; updated: string; created: string };
 type AuthorRecord = { slug: string; updated: string; created: string };
 type ArtistUserRecord = { id: string; updated: string };
 type TagV2Record = { slug: string; updated: string; created: string; tag: string; definition: string };
-// Every row in the `tags` view represents at least one (pattern, tag) pair
-// by construction (it's a live aggregate over patterns.tags) - so a tag
-// NAME appearing here at all already means "used on >=1 pattern," with no
-// need to also check a count field.
-type TagViewRecord = { tag: string };
+// Every row in the `tag_usage` view represents at least one (pattern, tag)
+// pair by construction (it's a live aggregate over patterns.tag_refs/
+// tags_v2, scoped to published, non-deleted patterns) - so a tag NAME
+// appearing here at all already means "used on >=1 published pattern," with
+// no need to also check a count field.
+type TagUsageRecord = { tag: string };
 
 async function buildSitemaps(): Promise<Record<string, string>> {
   const [patterns, wikiCategories, wikiPages, sets, authors, artistUsers, tagsV2, tagsInUse] = await Promise.all([
@@ -110,7 +111,7 @@ async function buildSitemaps(): Promise<Record<string, string>> {
     // which only ever returns is_artist=true, non-banned ids.
     fetchAllPages<ArtistUserRecord>('/api/public-artist-ids', {}),
     fetchAllPages<TagV2Record>('/api/collections/tags_v2/records', { fields: 'slug,updated,tag,definition' }),
-    fetchAllPages<TagViewRecord>('/api/collections/tags/records', { fields: 'tag' }),
+    fetchAllPages<TagUsageRecord>('/api/collections/tag_usage/records', { fields: 'tag' }),
   ]);
 
   const sitemapPatterns = buildUrlset(

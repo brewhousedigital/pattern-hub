@@ -18,31 +18,22 @@ export function escapeTagFilterValue(value: string): string {
   return value.replace(/"/g, '\\"');
 }
 
-// ─── Tags view (read-only) ────────────────────────────────────────────────────
+// ─── Tag usage (read-only) ────────────────────────────────────────────────────
 //
-// The `tags` collection is a PocketBase View Collection generated from a SQL
-// SELECT that aggregates pattern tag counts.  It is read-only and its IDs are
-// random per-query - do NOT use its IDs as foreign keys.
-
-export const useQueryGetAllTags = () => {
-  return useQuery({
-    queryKey: ['GetAllTags'],
-    queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
-      const items = await pocketbase.collection('tags').getFullList<TypeReadOnlyDatabaseItem>({
-        sort: '-count',
-      });
-      // Defense-in-depth: ensure numeric-looking tags (e.g. "2007") are strings.
-      return items.map((item) => ({ ...item, tag: String(item.tag) }));
-    },
-  });
-};
+// `tag_usage` is a PocketBase View Collection generated from a SQL SELECT
+// that aggregates tag counts from patterns.tag_refs/tags_v2, scoped to
+// published, non-deleted patterns. It replaced the older `tags` view (which
+// aggregated the now-frozen patterns.tags column directly) - every reader in
+// this file has been migrated off `tags` onto this view, which has no
+// readers left anywhere in the app. Unlike `tags`' random-per-query id,
+// tag_usage's id is a real, stable tags_v2 id.
 
 export const useQuerySearchTags = (searchTerm: string, enabled = true) => {
   return useQuery({
     queryKey: ['SearchTags', searchTerm],
     queryFn: async (): Promise<TypeReadOnlyDatabaseItem[]> => {
       const safe = searchTerm.trim().replace(/"/g, '\\"');
-      const result = await pocketbase.collection('tags').getList<TypeReadOnlyDatabaseItem>(1, 100, {
+      const result = await pocketbase.collection('tag_usage').getList<TypeReadOnlyDatabaseItem>(1, 100, {
         sort: '-count',
         ...(safe ? { filter: `tag ~ "${safe}"` } : {}),
       });
@@ -402,10 +393,10 @@ export interface TypeTagStat {
 
 export const ADMIN_TAG_STATS_QUERY_KEY = ['AdminTagStats'] as const;
 
-// Reads the pre-aggregated `tags` view (one row per unique tag + its pattern
-// count) instead of walking every pattern page-by-page and counting in JS -
-// that used to cost 5+ full-collection requests on every load. Same class of
-// bug as the one fixed in AdminEditPatternModal.tsx (see its
+// Reads the pre-aggregated `tag_usage` view (one row per unique tag + its
+// pattern count) instead of walking every pattern page-by-page and counting
+// in JS - that used to cost 5+ full-collection requests on every load. Same
+// class of bug as the one fixed in AdminEditPatternModal.tsx (see its
 // refetchTagManagementStats comment), just triggered by a direct subscriber
 // (the tags admin page) instead of a per-row modal.
 export const useQueryAdminTagStats = () => {
@@ -415,10 +406,10 @@ export const useQueryAdminTagStats = () => {
       // requestKey: null disables PocketBase's auto-cancellation for this call.
       // By default it derives a request key from just the method + collection
       // path (ignoring filter/sort/page), so this getFullList() would share a
-      // key with useQueryAdminTagStatsPaginated's getList() on the same 'tags'
-      // collection - whichever fires second silently cancels the other when
-      // both mount together on the tags admin page.
-      const items = await pocketbase.collection('tags').getFullList<TypeReadOnlyDatabaseItem>({
+      // key with useQueryAdminTagStatsPaginated's getList() on the same
+      // 'tag_usage' collection - whichever fires second silently cancels the
+      // other when both mount together on the tags admin page.
+      const items = await pocketbase.collection('tag_usage').getFullList<TypeReadOnlyDatabaseItem>({
         sort: '-count',
         requestKey: null,
       });
@@ -446,12 +437,12 @@ export interface TypeAdminTagStatsPaginatedParams {
 // what it's computed from: `tag_usage` walks patterns.tag_refs joined to
 // tags_v2, `tags` walks patterns.tags directly. Tag-entry and rename both
 // stopped writing patterns.tags, so `tag_usage` is the only one of the two
-// that stays accurate going forward. `tags` itself is untouched and still
-// exists, kept around for its other, not-yet-migrated readers
-// (useQueryGetAllTags, useQuerySearchTags, useQueryGetTagUsageCount). This
-// hook's own id is now a real, stable tags_v2 id (unlike `tags`', which is
-// random per-query and never safe as a foreign key) - nothing here relies
-// on that yet, but a future caller safely could.
+// that stays accurate going forward. Every other reader in this file has
+// since migrated to tag_usage too, so `tags` itself has no readers left and
+// is safe to drop from PocketBase. This hook's own id is a real, stable
+// tags_v2 id (unlike `tags`', which is random per-query and never safe as a
+// foreign key) - nothing here relies on that yet, but a future caller safely
+// could.
 export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
   return useQuery({
     queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],
@@ -1040,7 +1031,7 @@ export const useQueryGetAliasesForTag = (tag: string) =>
     enabled: !!tag,
   });
 
-// Reads the `tag` view's precomputed count for one tag - reused on the
+// Reads the `tag_usage` view's precomputed count for one tag - reused on the
 // Definition Page to link out to "N patterns tagged X" without a second,
 // heavier query against `patterns` itself.
 export const useQueryGetTagUsageCount = (tag: string) =>
@@ -1048,7 +1039,7 @@ export const useQueryGetTagUsageCount = (tag: string) =>
     queryKey: ['TagUsageCount', tag],
     queryFn: async (): Promise<number> => {
       const safe = escapeTagFilterValue(tag);
-      const result = await pocketbase.collection('tags').getList<TypeReadOnlyDatabaseItem>(1, 1, {
+      const result = await pocketbase.collection('tag_usage').getList<TypeReadOnlyDatabaseItem>(1, 1, {
         filter: `tag = "${safe}"`,
       });
       return result.items[0]?.count ?? 0;
