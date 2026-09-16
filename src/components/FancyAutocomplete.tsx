@@ -1,6 +1,14 @@
 import React from 'react';
 import { useQueries } from '@tanstack/react-query';
-import { Autocomplete, Chip, TextField, Tooltip, type AutocompleteValueOrFreeSoloValueMapping } from '@mui/material';
+import {
+  Autocomplete,
+  Box,
+  Chip,
+  TextField,
+  Tooltip,
+  Typography,
+  type AutocompleteValueOrFreeSoloValueMapping,
+} from '@mui/material';
 import { getUserByIdOptions } from '@/functions/database/users';
 
 type FancyAutocompleteProps = {
@@ -83,6 +91,32 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
       loading={props.loading}
       loadingText="Searching…"
       noOptionsText={props.serverSide ? (props.inputValue ? 'No tags found' : 'Type to search tags') : undefined}
+      renderOption={(optionProps, option) => {
+        const { key, ...rest } = optionProps;
+        // Same two callbacks the selected chips already use in renderValue
+        // below - reused here rather than a third, dropdown-specific prop,
+        // so a caller only ever resolves a tag's Type color/name once. A
+        // General/no-Type tag gets no color there either (typeInfoByTag in
+        // PatternTagsField.tsx only has entries for a real, non-blank Type),
+        // so the text just falls back to the theme's default color.
+        const borderColor = props.getChipBorderColor?.(option);
+        const typeName = props.getChipTooltip?.(option);
+        return (
+          <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              component="span"
+              sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: borderColor || undefined }}
+            >
+              {option}
+            </Box>
+            {typeName && (
+              <Typography variant="caption" color="text.secondary">
+                {typeName}
+              </Typography>
+            )}
+          </Box>
+        );
+      }}
       value={props.value}
       onChange={(event: any, newValue: string[]) => {
         clearDuplicateWarning();
