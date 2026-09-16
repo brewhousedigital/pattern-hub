@@ -70,7 +70,13 @@ export const BlockedTagsSection = ({ customization, setCust, onReset }: SectionC
     queryKey: ['BlockedTagRefTypes', nonEmptyRefIds],
     queryFn: async (): Promise<Set<string>> => {
       const filter = nonEmptyRefIds.map((id) => `id = "${escapeTagFilterValue(id)}"`).join(' || ');
-      const rows = await pocketbase.collection('tags_v2').getFullList<TypeTagV2Record>({ filter, expand: 'type' });
+      // requestKey: null - see useQueryGetAllTagsV2's own comment in
+      // functions/database/tags.ts. This page also calls that hook, and
+      // without this both tags_v2 reads share PocketBase's default
+      // auto-cancellation key.
+      const rows = await pocketbase
+        .collection('tags_v2')
+        .getFullList<TypeTagV2Record>({ filter, expand: 'type', requestKey: null });
       return new Set(rows.filter(tagNeedsArtistSuffix).map((r) => r.id));
     },
     enabled: nonEmptyRefIds.length > 0,

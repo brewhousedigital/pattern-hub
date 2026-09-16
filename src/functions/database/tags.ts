@@ -554,7 +554,12 @@ export const getTagBySlugOptions = (slug: string) => {
     queryFn: () =>
       pocketbase
         .collection('tags_v2')
-        .getFirstListItem<TypeTagV2Record>(`slug = '${safe}' || previous_slugs ~ '"${safe}"'`, { expand: 'type' }),
+        .getFirstListItem<TypeTagV2Record>(`slug = '${safe}' || previous_slugs ~ '"${safe}"'`, {
+          expand: 'type',
+          // See useQueryGetAllTagsV2's own comment - every tags_v2 read
+          // needs this, not just this one.
+          requestKey: null,
+        }),
     retry: false,
   });
 };
@@ -576,9 +581,24 @@ export const useQueryGetAllTagsV2 = () =>
   useQuery({
     queryKey: TAGS_V2_QUERY_KEY,
     queryFn: async (): Promise<TypeTagV2Record[]> => {
+      // requestKey: null disables PocketBase's auto-cancellation for this
+      // call. By default it derives a request key from just the method +
+      // collection path (ignoring filter/sort/expand/pagination), so every
+      // read against tags_v2 - this one, useQuerySearchTagsV2,
+      // useQueryAuthorTagIds, getTagBySlugOptions, etc. - shares ONE key.
+      // Whichever fires last silently cancels every other one still in
+      // flight. On /pattern, HomepageSearchV3 and Sidebar both call this
+      // hook (deduped fine, same query key), but Sidebar's own
+      // useQueryAuthorTagIds fires a second, separate tags_v2 getFullList
+      // slightly later (it first waits on useQueryGetAllTagTypes) - without
+      // this, that later call cancelled this one's still-in-flight
+      // multi-page fetch every time, leaving tagsV2 permanently empty and
+      // every Type-color lookup silently falling back to "no color." Same
+      // class of bug already fixed for the tag_usage collection above (see
+      // useQueryAdminTagStats).
       return await pocketbase
         .collection('tags_v2')
-        .getFullList<TypeTagV2Record>({ sort: 'tag', expand: 'type,linked_user' });
+        .getFullList<TypeTagV2Record>({ sort: 'tag', expand: 'type,linked_user', requestKey: null });
     },
   });
 
@@ -605,9 +625,13 @@ export const useQuerySearchTagsV2 = (searchTerm: string, enabled = true) => {
     queryKey: ['SearchTagsV2', searchTerm],
     queryFn: async (): Promise<TypeTagV2Record[]> => {
       const safe = escapeTagFilterValue(searchTerm.trim());
+      // requestKey: null - see useQueryGetAllTagsV2's own comment; this hook
+      // is one of the other tags_v2 readers that would otherwise share its
+      // default auto-cancellation key.
       const result = await pocketbase.collection('tags_v2').getList<TypeTagV2Record>(1, 50, {
         sort: 'tag',
         expand: 'type',
+        requestKey: null,
         ...(safe ? { filter: `tag ~ "${safe}"` } : {}),
       });
       return result.items;
@@ -648,9 +672,14 @@ export const useQueryAuthorTagIds = () => {
   return useQuery({
     queryKey: [...AUTHOR_TAG_IDS_QUERY_KEY, authorTypeId],
     queryFn: async (): Promise<Set<string>> => {
+      // requestKey: null - see useQueryGetAllTagsV2's own comment. This is
+      // the specific call that used to silently cancel that one: it depends
+      // on useQueryGetAllTagTypes resolving first, so it reliably fires
+      // later than useQueryGetAllTagsV2's own tags_v2 fetch whenever both
+      // mount together (e.g. Sidebar.tsx).
       const rows = await pocketbase
         .collection('tags_v2')
-        .getFullList<TypeTagV2Record>({ filter: `type = "${authorTypeId}"` });
+        .getFullList<TypeTagV2Record>({ filter: `type = "${authorTypeId}"`, requestKey: null });
       return new Set(rows.map((r) => r.id));
     },
     enabled: !!authorTypeId,
