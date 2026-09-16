@@ -1,5 +1,7 @@
 import React from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { Autocomplete, Chip, TextField, Tooltip, type AutocompleteValueOrFreeSoloValueMapping } from '@mui/material';
+import { getUserByIdOptions } from '@/functions/database/users';
 
 type FancyAutocompleteProps = {
   label: string;
@@ -172,10 +174,27 @@ export const FancyAutocompleteAuthors = (props: FancyAutocompleteAuthorsProps) =
       id: item.id,
     })) || [];
 
-  // Derive full objects from stored IDs; fall back to {label: id, id} for free-solo entries
-  const selectedOptions: TypeFilteredAuthor[] = (props.value ?? []).map(
-    (id) => filteredData.find((opt) => opt.id === id) ?? { label: id, id },
-  );
+  // filteredData only ever reflects the current search box - the live query
+  // term, or an arbitrary "first 25 users alphabetically" page when it's
+  // empty - so an already-assigned author whose name doesn't happen to be in
+  // that page (the normal case right when the modal opens, or right after
+  // picking one clears the search box) had no name to show and fell back to
+  // its bare id. Resolving every selected id directly by id fixes that
+  // independent of whatever's currently typed. getUserByIdOptions uses
+  // getOne (the users collection's View rule, public) rather than getList
+  // (its List rule, admin-only) - see authors.ts's useQueryResolveAuthorUserIds
+  // for the same List-rule constraint biting a different, search-based query.
+  const selectedAuthorQueries = useQueries({ queries: (props.value ?? []).map((id) => getUserByIdOptions(id)) });
+  const resolvedNameById = new Map((props.value ?? []).map((id, i) => [id, selectedAuthorQueries[i]?.data?.name]));
+
+  // Derive full objects from stored IDs; fall back to the direct-by-id fetch
+  // above, and only to {label: id, id} for a genuine freeSolo entry with no
+  // account behind it (or while that fetch is still in flight).
+  const selectedOptions: TypeFilteredAuthor[] = (props.value ?? []).map((id) => {
+    const fromSearch = filteredData.find((opt) => opt.id === id);
+    if (fromSearch) return fromSearch;
+    return { label: resolvedNameById.get(id) ?? id, id };
+  });
 
   return (
     <Autocomplete
