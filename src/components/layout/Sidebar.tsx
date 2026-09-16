@@ -3,13 +3,15 @@ import type { TypeTagObject } from '@/functions/types/types';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
+import { useQueryGetAllTagsV2, useQueryAuthorTagIds } from '@/functions/database/tags';
 import { getTagType, isDefaultTagType, type TypeTagGroup } from '@/functions/utilities/group-tags-by-type';
 import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
-// color is set only for kind: 'tag' items with a real (non-default) Type
-// that has a color configured. Author items never carry one; authors have
-// no Type concept of their own.
+// color is set for a 'tag' item with a real (non-default) Type that has a
+// color configured, and now also for an 'author' item derived from a real
+// tagFacets id (an Author-typed tag has a Type - its own color) - only the
+// name-only fallback derivation (see mixedItems below) has no id to resolve
+// a Type/color from at all.
 type SidebarItem = { kind: 'tag' | 'author'; label: string; count: number; color?: string | null };
 
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -75,19 +77,46 @@ export const SidebarList = (props: SidebarListProps) => {
   // filtered result set, not just this page (see useQueryGetAllPatternsByPagination).
   // Author counts still come from the current page only; that's a known,
   // separate gap left out of this pass - see the note on useQueryGetAllPatternsByPagination.
+  const facetTagNames = new Set((data?.tagFacets ?? []).map((f) => f.tag.toLowerCase()));
+
+  // Now that Author-typed tags are correctly cascaded into tag_refs, a
+  // tagFacets entry can itself be an Author-typed tag (e.g. "spectrum
+  // glass"). MixedListItem's click handlers route purely on `kind` -
+  // addAuthor/setOnlyAuthor for 'author', addTag/setOnlyTag for 'tag' - so a
+  // facet left at 'tag' here would search it as a plain tag/text token
+  // instead of an author: token, reintroducing the exact "same name, wrong
+  // type" ambiguity the dedicated author: token exists to avoid (see
+  // pb_hooks/main.pb.js's buildPatternFilters, the `t.type === 'author'`
+  // branch's own comment).
+  const { data: authorTagIds = new Set<string>() } = useQueryAuthorTagIds();
+
   const mixedItems: SidebarItem[] = !props?.tagList
     ? [
         ...(data?.tagFacets ?? [])
           // This will hide the currently searched tag
           // Enable this if we ever need it in the future
           //.filter((f) => !isTagActive(f.tag))
-          .map((f): SidebarItem => ({ kind: 'tag', label: f.tag, count: f.count, color: tagAccentColorById(f.tagId) })),
+          .map((f): SidebarItem => ({
+            kind: authorTagIds.has(f.tagId) ? 'author' : 'tag',
+            label: f.tag,
+            count: f.count,
+            color: tagAccentColorById(f.tagId),
+          })),
         ...(data?.items ?? [])
           .flatMap((item) => [
             ...(item.expand?.authors?.map((a) => a.name).filter((n): n is string => Boolean(n)) ?? []),
             ...(item.author_manual ?? []),
           ])
           .filter((name) => !isAuthorActive(name))
+          // Author-typed tags are now correctly cascaded into tag_refs (see
+          // pb_hooks/main.pb.js's /api/sync-author-tags fix), so an author
+          // already counted server-side via tagFacets above needs no
+          // separate "Author: X" entry - deriving one here was previously
+          // the ONLY way an author ever showed up in this list, back when
+          // the cascade bug meant most authors' tag_refs were never actually
+          // populated. Kept as a fallback rather than removed outright, for
+          // the narrow window before a brand-new credit's next sync run.
+          .filter((name) => !facetTagNames.has(name.toLowerCase()))
           .reduce<SidebarItem[]>((acc, name) => {
             const existing = acc.find((x) => x.kind === 'author' && x.label === name);
             if (existing) existing.count++;
@@ -199,7 +228,12 @@ const TagListItem = (props: TagListItemProps) => {
         <Typography
           variant="body2"
           noWrap
-          sx={{ textTransform: 'capitalize', fontSize: '0.8125rem', fontWeight: 500, color: props.color || 'text.primary' }}
+          sx={{
+            textTransform: 'capitalize',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            color: props.color || 'text.primary',
+          }}
         >
           {props.data.tag}
         </Typography>
