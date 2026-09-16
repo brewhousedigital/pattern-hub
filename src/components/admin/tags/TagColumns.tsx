@@ -6,6 +6,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import type { TypeTagHierarchyRecord, TypeTagV2Record } from '@/functions/database/tags';
 import type { OperationType } from '@/functions/database/tags-admin/satellite-sync';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
@@ -95,6 +96,39 @@ export function buildTagColumns({
             size="small"
             sx={typeInfo.color ? { bgcolor: typeInfo.color, color: '#fff' } : undefined}
           />
+        );
+      },
+    },
+    {
+      field: 'linked_author',
+      headerName: 'Author',
+      width: 70,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const tagV2 = tagsV2ById.get(params.row.id);
+        const typeInfo = tagV2?.expand?.type;
+        const linkedUser = tagV2?.expand?.linked_user;
+        // Only an Author-typed tag can carry a linked_user at all - see
+        // TypeTagV2Record.linked_user's own doc comment - and an
+        // Author-typed tag with no account yet (a manual-only credit) has
+        // nothing to link to, so there's nothing to render either way.
+        if (typeInfo?.name.toLowerCase() !== 'author' || !linkedUser) return null;
+        return (
+          <Tooltip title={linkedUser.name}>
+            <IconButton
+              size="small"
+              component="a"
+              href={`/profile/${linkedUser.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <AccountCircleIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         );
       },
     },

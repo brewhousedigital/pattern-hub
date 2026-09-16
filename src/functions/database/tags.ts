@@ -536,7 +536,7 @@ export interface TypeTagV2Record {
    * enforced the same way.
    */
   linked_user: string;
-  expand?: { type?: TypeTagTypeRecord };
+  expand?: { type?: TypeTagTypeRecord; linked_user?: { id: string; name: string } };
 }
 
 // Matches either the current slug, or a past one filed in `previous_slugs`
@@ -576,7 +576,9 @@ export const useQueryGetAllTagsV2 = () =>
   useQuery({
     queryKey: TAGS_V2_QUERY_KEY,
     queryFn: async (): Promise<TypeTagV2Record[]> => {
-      return await pocketbase.collection('tags_v2').getFullList<TypeTagV2Record>({ sort: 'tag', expand: 'type' });
+      return await pocketbase
+        .collection('tags_v2')
+        .getFullList<TypeTagV2Record>({ sort: 'tag', expand: 'type,linked_user' });
     },
   });
 

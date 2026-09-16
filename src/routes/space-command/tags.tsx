@@ -829,11 +829,7 @@ const TagManagementPage = () => {
       />
 
       <Box sx={{ mb: 3, mt: 3 }}>
-        <RenamePanel
-          tagStats={tagStats}
-          onRename={(from, to) => startOp('rename', from, to)}
-          prefill={renamePrefill}
-        />
+        <RenamePanel tagStats={tagStats} onRename={(from, to) => startOp('rename', from, to)} prefill={renamePrefill} />
       </Box>
 
       <Box sx={{ mb: 3 }}>
