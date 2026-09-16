@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -56,6 +56,7 @@ import {
   Box,
   Typography,
   TextField,
+  MenuItem,
   Button,
   Chip,
   Paper,
@@ -101,12 +102,19 @@ const TagManagementPage = () => {
 
   const { data: tagStats = [] } = useQueryAdminTagStats();
   const { data: hierarchy = [] } = useQueryGetTagHierarchy();
+  const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
 
   const { setIsFetchingPatterns } = useGlobalIsFetchingPatterns();
 
   // ── All Tags table ─────────────────────────────────────────────────────────
   const [tagSearch, setTagSearch] = useState('');
   const debouncedSearch = useDebounce(tagSearch, 400);
+  // '' = All types; otherwise a tag_types id (see typeFilterExpr below).
+  // Defaults to the General type once tagTypesList loads - see the effect
+  // below, which applies that default exactly once so it never overrides a
+  // later, deliberate "All types" selection.
+  const [tagTypeFilter, setTagTypeFilter] = useState('');
+  const didSetDefaultTypeFilter = useRef(false);
   const [tagPaginationModel, setTagPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [tagSortModel, setTagSortModel] = useState<GridSortModel>([{ field: 'count', sort: 'desc' }]);
   const [tagViewMode, setTagViewMode] = useState<'list' | 'tree' | 'graph'>('list');
@@ -117,7 +125,29 @@ const TagManagementPage = () => {
 
   useEffect(() => {
     setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
-  }, [debouncedSearch]);
+  }, [debouncedSearch, tagTypeFilter]);
+
+  useEffect(() => {
+    if (didSetDefaultTypeFilter.current || tagTypesList.length === 0) return;
+    didSetDefaultTypeFilter.current = true;
+    const general = tagTypesList.find((t) => t.name.toLowerCase() === 'general');
+    if (general) setTagTypeFilter(general.id);
+  }, [tagTypesList]);
+
+  // "General" also stands in for an untyped tag (see TagColumns.tsx's Type
+  // column, which shows "General" for a blank type the same way) - matching
+  // it here means an admin filtering to General gets both, one bucket, not
+  // two. See useQueryAdminTagStatsPaginated's own doc comment for the
+  // tag_usage view change this depends on.
+  const typeFilterExpr = useMemo(() => {
+    if (!tagTypeFilter) return undefined;
+    const safeId = tagTypeFilter.replace(/"/g, '\\"');
+    const selected = tagTypesList.find((t) => t.id === tagTypeFilter);
+    if (selected?.name.toLowerCase() === 'general') {
+      return `(type = "${safeId}" || type = "")`;
+    }
+    return `type = "${safeId}"`;
+  }, [tagTypeFilter, tagTypesList]);
 
   const sortItem = tagSortModel[0];
   const {
@@ -129,6 +159,7 @@ const TagManagementPage = () => {
     page: tagPaginationModel.page,
     pageSize: tagPaginationModel.pageSize,
     search: debouncedSearch,
+    typeFilter: typeFilterExpr,
     sortField: (sortItem?.field as 'tag' | 'count') ?? 'count',
     sortDir: (sortItem?.sort as 'asc' | 'desc') ?? 'desc',
   });
@@ -149,7 +180,6 @@ const TagManagementPage = () => {
   // per-row Map lookup client-side rather than a query per DataGrid row.
   const [metadataRow, setMetadataRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: tagsV2List = [] } = useQueryGetAllTagsV2();
-  const { data: tagTypesList = [] } = useQueryGetAllTagTypes();
   // Keyed by id, not by `tag` (the display name). Since two tags_v2 rows
   // can share a name (e.g. the "autumn (artist)" -> "autumn" rename that
   // exercised this for real), a name-keyed Map can only ever hold one of
@@ -593,6 +623,24 @@ const TagManagementPage = () => {
               },
             }}
           />
+        )}
+
+        {tagViewMode === 'list' && (
+          <TextField
+            select
+            label="Tag Type"
+            value={tagTypeFilter}
+            onChange={(e) => setTagTypeFilter(e.target.value)}
+            size="small"
+            sx={{ width: 180 }}
+          >
+            <MenuItem value="">All types</MenuItem>
+            {tagTypesList.map((t) => (
+              <MenuItem key={t.id} value={t.id}>
+                {t.name}
+              </MenuItem>
+            ))}
+          </TextField>
         )}
 
         <ToggleButtonGroup value={tagViewMode} exclusive onChange={(_, v) => v && setTagViewMode(v)} size="small">

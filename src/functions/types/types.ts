@@ -19,6 +19,8 @@ export type TypeReadOnlyDatabaseItem = {
   count: number;
   manual?: number;
   user_id?: string;
+  /** tags_v2.type relation id - present on `tag_usage` rows once that view's query selects it. */
+  type?: string;
 };
 
 export type TypeTagObject = {

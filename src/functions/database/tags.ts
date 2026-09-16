@@ -430,6 +430,15 @@ export interface TypeAdminTagStatsPaginatedParams {
   search: string;
   sortField: 'tag' | 'count';
   sortDir: 'asc' | 'desc';
+  /**
+   * A pre-built PocketBase filter fragment on `tag_usage`'s `type` column
+   * (e.g. `type = "<tag_types id>"`), ANDed in alongside `search`. The
+   * caller builds this (see space-command/tags.tsx's typeFilterExpr) since
+   * it already has the tag_types list and knows the "General" special case
+   * (matching a blank type too) - this hook stays a dumb pass-through, the
+   * same way it treats `search`. Omit for "all types."
+   */
+  typeFilter?: string;
 }
 
 // Reads the `tag_usage` view instead of `tags`. Same shape (id/tag/count),
@@ -441,14 +450,29 @@ export interface TypeAdminTagStatsPaginatedParams {
 // since migrated to tag_usage too, so `tags` itself has no readers left and
 // is safe to drop from PocketBase. This hook's own id is a real, stable
 // tags_v2 id (unlike `tags`', which is random per-query and never safe as a
-// foreign key) - nothing here relies on that yet, but a future caller safely
-// could.
+// foreign key).
+//
+// `typeFilter` (see TypeAdminTagStatsPaginatedParams) requires tag_usage's
+// own view query to SELECT tags_v2.type AS type - it isn't there yet as of
+// this comment, so filtering by Type does nothing server-side until that
+// view query is updated in PocketBase to:
+//   SELECT tags_v2.id AS id, tags_v2.tag AS tag, COUNT(*) AS count, tags_v2.type AS type
+//   FROM patterns, json_each(patterns.tag_refs) je
+//   JOIN tags_v2 ON tags_v2.id = je.value
+//   WHERE patterns.isDeleted = false AND patterns.is_draft = false
+//   GROUP BY tags_v2.id
+// The Type column itself doesn't need this - it already reads type from
+// tagsV2ById (a separate, full tags_v2 fetch) in TagColumns.tsx, independent
+// of what this view returns.
 export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
   return useQuery({
     queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],
     queryFn: async (): Promise<{ items: TypeReadOnlyDatabaseItem[]; totalItems: number }> => {
       const safeSearch = params.search.trim().replace(/"/g, '\\"');
-      const filter = safeSearch ? `tag ~ "${safeSearch}"` : '';
+      const filterParts = [];
+      if (safeSearch) filterParts.push(`tag ~ "${safeSearch}"`);
+      if (params.typeFilter) filterParts.push(params.typeFilter);
+      const filter = filterParts.join(' && ');
       const sort = `${params.sortDir === 'desc' ? '-' : ''}${params.sortField}`;
 
       // requestKey: null - see useQueryAdminTagStats above. This hook has
