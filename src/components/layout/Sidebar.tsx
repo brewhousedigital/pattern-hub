@@ -3,7 +3,7 @@ import type { TypeTagObject } from '@/functions/types/types';
 import { useGlobalIsSidebarOpen } from '@/data/sidebar';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
-import { useQueryGetAllTagsV2, useQueryAuthorTagIds } from '@/functions/database/tags';
+import { useQueryGetAllTagsV2, useQueryGetAllTagTypes } from '@/functions/database/tags';
 import { getTagType, isDefaultTagType, type TypeTagGroup } from '@/functions/utilities/group-tags-by-type';
 import { BlockedTagsBanner } from '@/components/BlockedTagsBanner';
 
@@ -20,7 +20,8 @@ import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
 import { Box, Skeleton, Typography, Stack, IconButton, Tooltip, Alert, Drawer } from '@mui/material';
 
 type SidebarListProps = {
-  tagList?: string[];
+  /** Each tag's Type color already resolved by the caller (see ViewDrawerPatternSidebar) - id-based upstream, so no name-collision risk. */
+  tagList?: { tag: string; color?: string | null }[];
   handleClose?: () => void;
 };
 
@@ -29,40 +30,31 @@ export const SidebarList = (props: SidebarListProps) => {
 
   const { isTagActive, tokens } = usePatternSearch();
 
-  // Per-tag color accent, resolved from each tag's Type. The developer
-  // chose to keep this list's existing flat, count-sorted layout rather
-  // than grouping it into per-Type sections - so this only colors each row,
-  // it does not reorder or cluster them.
-  //
-  // getTagType itself is id-only. Two variants stay here because this
-  // component genuinely has two different kinds of tag data - a tagFacets
-  // entry (below) carries a real tags_v2 id straight from the server, so it
-  // resolves by id; passThroughDataTagCounts
-  // (drawer mode) is built from a plain tagList string prop with no id
-  // anywhere in it, so it still needs a name-based lookup. Kept local here,
-  // rather than growing the shared utility back out with a second,
-  // name-based variant every other display surface has already moved off.
+  // Per-tag color accent, resolved from each tag's Type below via
+  // getTagType(tagId, tagsV2) - id-based, so it's exact even when a name is
+  // shared across types. Sidebar always loads tagsV2 anyway (HomepageSearchV3,
+  // co-rendered on /pattern, needs the same full list for its own chip
+  // coloring - React Query dedupes both calls to one fetch under the shared
+  // query key), so this and the author-type check below both resolve
+  // straight off it - no separate fetch needed for either.
   const { data: tagsV2 = [] } = useQueryGetAllTagsV2();
-  const tagAccentColorById = (tagId: string): string | null => {
-    const type = getTagType(tagId, tagsV2);
-    return isDefaultTagType(type) ? null : (type?.color ?? null);
-  };
-  const tagAccentColorByName = (tag: string): string | null => {
-    const norm = tag.toLowerCase();
-    const type = tagsV2.find((r) => r.tag.toLowerCase() === norm)?.expand?.type ?? null;
-    return isDefaultTagType(type) ? null : (type?.color ?? null);
-  };
 
   // ── Pass-through tags (drawer mode) ──────────────────────────────────────
+  // Each entry already carries its Type's color, resolved upstream in
+  // ViewDrawer.tsx (via groupTagsByType, which matches by id against the
+  // pattern's own tag_refs - precise, no name-collision risk) and threaded
+  // through by ViewDrawerPatternSidebar below. Re-deriving it here by name
+  // used to require its own tagsV2 name-scan, which could silently pick the
+  // wrong row when two tags_v2 rows share a name under different types.
   const passThroughDataTagCounts = (props?.tagList ?? [])
-    .map((tag) => tag.trim().toLowerCase())
+    .map((t) => ({ tag: t.tag.trim().toLowerCase(), color: t.color }))
     //.filter((tag) => !isTagActive(tag))
-    .reduce<TypeTagObject[]>((acc, tag) => {
-      const existing = acc.find((item) => item.tag === tag);
+    .reduce<TypeTagObject[]>((acc, t) => {
+      const existing = acc.find((item) => item.tag === t.tag);
       if (existing) {
         existing.count++;
       } else {
-        acc.push({ tag, count: 0 });
+        acc.push({ tag: t.tag, count: 0, color: t.color });
       }
       return acc;
     }, [])
@@ -88,7 +80,14 @@ export const SidebarList = (props: SidebarListProps) => {
   // type" ambiguity the dedicated author: token exists to avoid (see
   // pb_hooks/main.pb.js's buildPatternFilters, the `t.type === 'author'`
   // branch's own comment).
-  const { data: authorTagIds = new Set<string>() } = useQueryAuthorTagIds();
+  //
+  // Resolved from the tag_types list (tiny, 7 rows) rather than
+  // useQueryAuthorTagIds - that hook's own value comes from a SECOND,
+  // separate tags_v2 fetch filtered to just the Author type, which is
+  // redundant here: tagsV2 above already has every row, so the same
+  // getTagType() lookup used for color below tells us the Type directly.
+  const { data: tagTypes = [] } = useQueryGetAllTagTypes();
+  const authorTypeId = tagTypes.find((t) => t.name === 'Author')?.id;
 
   const mixedItems: SidebarItem[] = !props?.tagList
     ? [
@@ -96,12 +95,15 @@ export const SidebarList = (props: SidebarListProps) => {
           // This will hide the currently searched tag
           // Enable this if we ever need it in the future
           //.filter((f) => !isTagActive(f.tag))
-          .map((f): SidebarItem => ({
-            kind: authorTagIds.has(f.tagId) ? 'author' : 'tag',
-            label: f.tag,
-            count: f.count,
-            color: tagAccentColorById(f.tagId),
-          })),
+          .map((f): SidebarItem => {
+            const type = getTagType(f.tagId, tagsV2);
+            return {
+              kind: type?.id === authorTypeId ? 'author' : 'tag',
+              label: f.tag,
+              count: f.count,
+              color: isDefaultTagType(type) ? null : (type?.color ?? null),
+            };
+          }),
         ...(data?.items ?? [])
           .flatMap((item) => [
             ...(item.expand?.authors?.map((a) => a.name).filter((n): n is string => Boolean(n)) ?? []),
@@ -149,7 +151,7 @@ export const SidebarList = (props: SidebarListProps) => {
         passThroughDataTagCounts.map((thisTag) => (
           <TagListItem
             data={thisTag}
-            color={tagAccentColorByName(thisTag.tag)}
+            color={thisTag.color}
             key={`sidebar-link-${thisTag.tag}`}
             handleClose={props.handleClose}
           />
@@ -160,7 +162,7 @@ export const SidebarList = (props: SidebarListProps) => {
 
 type TagListItemProps = {
   data: TypeTagObject;
-  /** This tag's Type color, or null/undefined for the default type - see tagAccentColor above. */
+  /** This tag's Type color, or null/undefined for the default type - resolved by the caller (see SidebarList's passThroughDataTagCounts / mixedItems). */
   color?: string | null;
   handleClose?: () => void;
 };
@@ -467,7 +469,15 @@ export const ViewDrawerPatternSidebar = (props: ViewDrawerPatternSidebarProps) =
   // its group_label (falling back to the Type's own name) - the same
   // fallback rule PatternViewContent's own standalone tag block already
   // uses, so a Type reads the same wherever its tags are grouped.
-  const defaultTags = props.tagGroups.filter((g) => isDefaultTagType(g.type)).flatMap((g) => g.tags);
+  //
+  // color is threaded straight from each group's already-resolved Type
+  // (matched by id against this pattern's own tag_refs in ViewDrawer.tsx's
+  // groupTagsByType) instead of being re-derived later by name - a default
+  // group's color is always null, same as the old isDefaultTagType(type) ?
+  // null : ... check this replaces.
+  const defaultTags = props.tagGroups
+    .filter((g) => isDefaultTagType(g.type))
+    .flatMap((g) => g.tags.map((tag) => ({ tag, color: null })));
   const namedGroups = props.tagGroups.filter((g) => !isDefaultTagType(g.type));
 
   return (
@@ -478,7 +488,10 @@ export const ViewDrawerPatternSidebar = (props: ViewDrawerPatternSidebarProps) =
       {namedGroups.map((group) => (
         <Box key={group.type?.id ?? 'untyped'}>
           <SidebarCategoryTitle title={group.type?.group_label || group.type?.name || ''} />
-          <SidebarList tagList={group.tags} handleClose={props.handleClose} />
+          <SidebarList
+            tagList={group.tags.map((tag) => ({ tag, color: group.type?.color ?? null }))}
+            handleClose={props.handleClose}
+          />
         </Box>
       ))}
     </Box>

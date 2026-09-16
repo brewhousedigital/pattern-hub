@@ -26,6 +26,8 @@ export type TypeReadOnlyDatabaseItem = {
 export type TypeTagObject = {
   tag: string;
   count: number;
+  /** This tag's Type color, when the caller already knows it (e.g. Sidebar.tsx's drawer-mode groups, each already resolved by id upstream). */
+  color?: string | null;
 };
 
 // This is shared between Favorites | Marked Done | Ratings
