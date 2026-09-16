@@ -25,6 +25,14 @@ type FancyAutocompleteProps = {
    */
   serverSide?: boolean;
   disabled?: boolean;
+  /**
+   * Given a selected chip's value, returns a border color to render around
+   * it (e.g. its tags_v2 Type's color), or undefined for the default,
+   * uncolored border. Generic like `inheritedValues` above - this component
+   * stays domain-agnostic, so the caller (PatternTagsField.tsx) owns
+   * resolving a tag name to its Type's color.
+   */
+  getChipBorderColor?: (option: string) => string | undefined;
 };
 
 // Collapses internal whitespace too, not just casing - matches the
@@ -96,12 +104,16 @@ export const FancyAutocomplete = (props: FancyAutocompleteProps) => {
         value.map((option: string, index: number) => {
           const { key, ...itemProps } = getItemProps({ index });
           const isInherited = props.inheritedValues?.has(option) ?? false;
+          const borderColor = props.getChipBorderColor?.(option);
           const chip = (
             <Chip
               variant={isInherited ? 'outlined' : 'filled'}
               label={isInherited ? `↑ ${option}` : option}
               key={key}
-              sx={isInherited ? { opacity: 0.65, fontStyle: 'italic' } : undefined}
+              sx={{
+                ...(isInherited ? { opacity: 0.65, fontStyle: 'italic' } : undefined),
+                ...(borderColor ? { border: '2px solid', borderColor } : undefined),
+              }}
               {...itemProps}
             />
           );

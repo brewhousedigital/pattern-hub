@@ -6,6 +6,7 @@ import {
   useQueryGetImpliedTags,
   useQueryGetAllTagAliases,
   useQueryAuthorTagIds,
+  useQueryGetAllTagsV2,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
@@ -86,6 +87,23 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
     () => (tagUsageData?.items ?? []).filter((item) => !authorTagIds.has(item.id)),
     [tagUsageData, authorTagIds],
   );
+
+  // Full-list fetch, same convention as the admin tag manager's tagsV2ById
+  // (see space-command/tags.tsx) - keyed by name here rather than id since
+  // this field's value is plain tag strings, not ids. First match wins for
+  // the rare name shared across types (Author-typed rows are filtered out
+  // above, so in practice this only matters for two non-Author types
+  // sharing a name, an edge case not worth a full id-aware rework here).
+  const { data: tagsV2List = [] } = useQueryGetAllTagsV2();
+  const typeColorByTag = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tagsV2List) {
+      const color = t.expand?.type?.color;
+      if (color && !map.has(t.tag)) map.set(t.tag, color);
+    }
+    return map;
+  }, [tagsV2List]);
+  const getChipBorderColor = React.useCallback((tag: string) => typeColorByTag.get(tag), [typeColorByTag]);
 
   // implied_tags + tag_aliases replace tag_hierarchy as the source for
   // auto-added tags and alias resolution on this entry surface.
@@ -216,6 +234,7 @@ export const PatternTagsField = (props: PatternTagsFieldProps) => {
       inputValue={tagInput}
       onInputChange={setTagInput}
       inheritedValues={inheritedValues}
+      getChipBorderColor={getChipBorderColor}
       loading={isSearching ? tagsV2SearchFetching : tagUsageFetching}
     />
   );
