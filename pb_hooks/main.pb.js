@@ -490,10 +490,11 @@ routerAdd('GET', '/api/pattern-search', (c) => {
 
   // Look up tag_aliases once per request, server-side (never
   // client-supplied), and hand the map into buildPatternFilters. implied
-  // tags need no equivalent lookup here - they are already baked into
-  // patterns.tags at save time (see applyManualTagChange in
-  // src/functions/database/tags.ts), so search never needs to know about
-  // the implied_tags graph, only aliases.
+  // tags need no equivalent lookup here - they are already baked into the
+  // resolved tag list at edit time (see applyManualTagChange in
+  // src/functions/database/tags.ts), which becomes tag_refs via
+  // resolveOrCreateTagRefs at save time, so search never needs to know
+  // about the implied_tags graph, only aliases.
   let aliasMap = {};
   // aliasIdMap holds target_tag_ref directly, alias(lower) -> tags_v2 id,
   // for the alias's target row specifically - not just "whichever row this
@@ -747,11 +748,7 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
         const ratingData = ratingsMap[id] || { avg_rating: 0, total_ratings: 0 };
         const diffData = diffMap[id] || { avg_difficulty: 0, total_difficulty_ratings: 0 };
 
-        let tagCount = 0;
-        try {
-          const tags = JSON.parse(p.getString('tags'));
-          tagCount = Array.isArray(tags) ? tags.length : 0;
-        } catch (_) {}
+        const tagCount = (p.getStringSlice('tag_refs') || []).length;
 
         p.set('avg_rating', ratingData.avg_rating);
         p.set('total_ratings', ratingData.total_ratings);
@@ -795,150 +792,13 @@ routerAdd('POST', '/api/sync-aggregates', (c) => {
   }
 });
 
-// An external cron service sends a POST to /api/sync-tag-catalog with the
-// `X-Sync-Key` header, same mechanism as /api/sync-aggregates above (reuses
-// the same WEBHOOK_API_KEY - no separate secret to provision). Point
-// whatever cron service already calls /api/sync-aggregates at this endpoint
-// too, on a similar schedule (e.g. daily).
-//
-// scripts/backfill-tags-v2.mjs does the one-time initial population of the
-// tags_v2 collection from patterns.tags; this endpoint is what keeps it
-// caught up with every tag typed after that backfill ran. Finds any tag
-// string in use on a published pattern that's missing from tags_v2, and
-// inserts a default row for it (type left empty, meaning General). Safe to
-// call again after a missed run - it only ever creates what's still
-// missing. Two genuinely concurrent runs (e.g. a slow-response cron retry
-// overlapping the original) both compute from the same snapshot and could
-// both attempt to create a row for the same new tag - tags_v2's unique
-// index on `tag` stops a duplicate row from ever actually existing, and
-// each create below is individually try/caught so one such collision can't
-// roll back the rest of an otherwise-successful run. Corrected via code
-// review - this used to claim overlapping runs "can't create duplicates" at
-// all, which the unique
-// index backstops but the snapshot-then-transact approach here doesn't
-// prevent on its own.
-routerAdd('POST', '/api/sync-tag-catalog', (c) => {
-  // Mirrors normalizeTagName() in src/functions/utilities/normalize-tag.ts.
-  // JSVM can't import a .ts file from src/ directly - keep this copy in
-  // sync if the canonical rule ever changes. (Duplicated for the same
-  // reason in scripts/backfill-tags-v2.mjs and scripts/audit-duplicate-
-  // author-names.mjs.)
-  function normalizeTagName(raw) {
-    return String(raw).trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  // Mirrors slugifyTag() in src/functions/utilities/slugify-tag.ts - same
-  // cross-runtime-boundary reasoning as normalizeTagName above.
-  function slugifyTag(tag) {
-    return tag
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
-  try {
-    const apiKey = c.request.header.get('X-Sync-Key');
-    if (apiKey !== $os.getenv('WEBHOOK_API_KEY')) {
-      return c.json(401, { error: 'unauthorized' });
-    }
-
-    const startTime = Date.now();
-
-    const existingTagRows = $app.findRecordsByFilter('tags_v2', "id != ''", '', 0, 0);
-    const existingTagSet = {};
-    const usedSlugs = {};
-    for (let i = 0; i < existingTagRows.length; i++) {
-      existingTagSet[existingTagRows[i].getString('tag')] = true;
-      usedSlugs[existingTagRows[i].getString('slug')] = true;
-    }
-
-    const patterns = $app.findRecordsByFilter('patterns', 'isDeleted = false && is_draft = false', '', 0, 0);
-
-    // Walk every published pattern's tags once, normalizing as we go, and
-    // split into "already in tags_v2" vs "needs a new row" - same
-    // distinct-tag collection shape as scripts/backfill-tags-v2.mjs.
-    const distinctSeen = {};
-    const toCreate = [];
-    for (let i = 0; i < patterns.length; i++) {
-      let tags = [];
-      try {
-        tags = JSON.parse(patterns[i].getString('tags')) || [];
-      } catch (_) {
-        continue;
-      }
-      for (let j = 0; j < tags.length; j++) {
-        const raw = tags[j];
-        if (!raw || !String(raw).trim()) continue;
-        const norm = normalizeTagName(raw);
-        if (distinctSeen[norm]) continue;
-        distinctSeen[norm] = true;
-        if (!existingTagSet[norm]) toCreate.push(norm);
-      }
-    }
-    toCreate.sort();
-
-    const collection = $app.findCollectionByNameOrId('tags_v2');
-    const skippedEmptySlug = [];
-    const skippedErrors = [];
-    let created = 0;
-
-    $app.runInTransaction((txApp) => {
-      for (let i = 0; i < toCreate.length; i++) {
-        const tag = toCreate[i];
-        const baseSlug = slugifyTag(tag);
-        if (!baseSlug) {
-          // Extremely rare (a tag made entirely of punctuation, say) - skip
-          // and report it rather than guessing at a slug. An admin can add
-          // it by hand via the tag manager afterward.
-          skippedEmptySlug.push(tag);
-          continue;
-        }
-        // Disambiguate a slug collision the same way the backfill script
-        // and syncSatelliteTablesForOp (tags.tsx) both do: append -2, -3...
-        let candidate = baseSlug;
-        let suffix = 2;
-        while (usedSlugs[candidate]) {
-          candidate = baseSlug + '-' + suffix++;
-        }
-        usedSlugs[candidate] = true;
-
-        // Individually try/caught so one collision (e.g. a genuinely
-        // concurrent overlapping run hitting tags_v2's unique index on
-        // `tag` first) can't roll back the rest of this otherwise-valid
-        // batch - see this endpoint's own top comment.
-        try {
-          const record = new Record(collection, { tag: tag, slug: candidate, previous_slugs: [] });
-          txApp.save(record);
-          created++;
-        } catch (saveErr) {
-          skippedErrors.push(tag);
-          console.log('>>>sync-tag-catalog: failed to create row for tag', tag, saveErr.message);
-        }
-      }
-    });
-
-    return c.json(200, {
-      ok: true,
-      distinct_tags_scanned: Object.keys(distinctSeen).length,
-      created,
-      skipped_empty_slug: skippedEmptySlug,
-      skipped_errors: skippedErrors,
-      elapsed_ms: Date.now() - startTime,
-    });
-  } catch (error) {
-    console.log('>>>Error', error.message);
-    return c.json(500, { error: 'something went wrong', message: error?.message });
-  }
-});
-
 // Keeps author tags current for a pattern saved or edited after
 // scripts/backfill-author-tags.mjs's one-time run. Mirrors that script:
 // find or create an Author-type tags_v2
 // row per distinct author name, cascade the resolved name into every
 // pattern that credits them. Runs as a periodic sync instead of a hook on
-// the pattern-save path, the same reasoning /api/sync-tag-catalog above
-// already documents for staying off that path.
+// the pattern-save path, keeping a heavier full-table scan off the hot
+// save path.
 //
 // Unlike the one-time backfill, this endpoint never auto-resolves a name
 // that collides with an existing, differently-typed tag (a brand-new
@@ -995,8 +855,8 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
 
     // normalized -> { linkedUserId: string, patternIds: [] } - same shape as
     // scripts/backfill-author-tags.mjs's identities map, rebuilt fresh every
-    // run rather than tracked incrementally, matching /api/sync-tag-catalog's
-    // own "just rescan everything, it's cheap enough" approach.
+    // run rather than tracked incrementally - rescanning everything each
+    // time is cheap enough at this table's size.
     const identities = {};
     for (let i = 0; i < patterns.length; i++) {
       let authors = [];
@@ -1139,16 +999,14 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
       }
 
       // Cascade every non-conflicted identity's resolved tag onto every
-      // pattern that credits it - "add, never remove," same rule the
-      // backfill script uses. tag_refs gets the identical cascade,
-      // dual-write alongside tags - every tagId here is already
-      // real by this point (toCreate's loop above already replaced
-      // tagIdByNorm's entries with real ids, in this same transaction),
-      // unlike the backfill script's separate dry-run preview pass.
+      // pattern that credits it, as tag_refs - "add, never remove," same
+      // rule the backfill script uses. Every tagId here is already real by
+      // this point (toCreate's loop above already replaced tagIdByNorm's
+      // entries with real ids, in this same transaction), unlike the
+      // backfill script's separate dry-run preview pass.
       const patternById = {};
       for (let i = 0; i < patterns.length; i++) patternById[patterns[i].id] = patterns[i];
 
-      const missingByPattern = {}; // patternId -> [] of tag strings to add
       const missingRefsByPattern = {}; // patternId -> { tagId: true, ... } (de-duped set)
       for (let i = 0; i < norms.length; i++) {
         const norm = norms[i];
@@ -1158,27 +1016,16 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
         const identity = identities[norm];
         for (let j = 0; j < identity.patternIds.length; j++) {
           const pid = identity.patternIds[j];
-          if (!missingByPattern[pid]) missingByPattern[pid] = [];
-          missingByPattern[pid].push(norm);
           if (!missingRefsByPattern[pid]) missingRefsByPattern[pid] = {};
           missingRefsByPattern[pid][tagId] = true;
         }
       }
 
-      const patternIds = Object.keys(missingByPattern);
+      const patternIds = Object.keys(missingRefsByPattern);
       for (let i = 0; i < patternIds.length; i++) {
         const pid = patternIds[i];
         const record = patternById[pid];
         if (!record) continue;
-        let currentTags = [];
-        try {
-          currentTags = JSON.parse(record.getString('tags')) || [];
-        } catch (_) {}
-        const currentTagSet = {};
-        for (let j = 0; j < currentTags.length; j++) currentTagSet[currentTags[j]] = true;
-        const toAdd = missingByPattern[pid].filter(function (n) {
-          return !currentTagSet[n];
-        });
 
         const currentRefs = record.getStringSlice('tag_refs') || [];
         const currentRefSet = {};
@@ -1187,10 +1034,9 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
           return !currentRefSet[id];
         });
 
-        if (toAdd.length === 0 && refsToAdd.length === 0) continue;
+        if (refsToAdd.length === 0) continue;
         try {
-          if (toAdd.length > 0) record.set('tags', currentTags.concat(toAdd));
-          if (refsToAdd.length > 0) record.set('tag_refs', currentRefs.concat(refsToAdd));
+          record.set('tag_refs', currentRefs.concat(refsToAdd));
           txApp.save(record);
           patternsUpdated++;
         } catch (saveErr) {
@@ -2708,11 +2554,13 @@ routerAdd(
 // this, renaming an
 // account would stop automatically updating that person's credit on every
 // pattern - today it is instant, because patterns.authors is a live
-// relation; once an author is a tag string baked into patterns.tags,
-// nothing keeps it current unless something does this on purpose. This
-// hook restores that behavior, and goes one better: the old name becomes a
-// search alias, so a bookmark or a typed search for someone's old name
-// still finds their patterns.
+// relation; once an author is credited via a tags_v2 row (through
+// patterns.tag_refs) instead, nothing keeps that row's name current unless
+// something does this on purpose. This hook does that by renaming the
+// linked tags_v2 row in place - same id, so every tag_refs-based reader is
+// instantly correct with no pattern writes needed - and goes one better:
+// the old name becomes a search alias, so a bookmark or a typed search for
+// someone's old name still finds their patterns.
 //
 // Fires after the account save has already succeeded - a rename must
 // always go through, even when the tag-sync step below cannot complete
@@ -2738,10 +2586,6 @@ onRecordAfterUpdateSuccess((e) => {
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-  }
-
-  function escDq(s) {
-    return String(s).replace(/"/g, '\\"');
   }
 
   function escSq(s) {
@@ -2820,36 +2664,7 @@ onRecordAfterUpdateSuccess((e) => {
       authorTag.set('previous_slugs', [oldSlug].concat(oldPreviousSlugs));
       txApp.save(authorTag);
 
-      // 2. Rewrite every pattern crediting the old name to credit the new
-      // one - the same "instant credit update" the old patterns.authors
-      // relation gave for free.
-      const affectedPatterns = $app.findRecordsByFilter(
-        'patterns',
-        'tags ~ \'"' + escDq(normalizedOldName) + '"\'',
-        '',
-        0,
-        0,
-      );
-      for (let i = 0; i < affectedPatterns.length; i++) {
-        const pattern = affectedPatterns[i];
-        let tags = [];
-        try {
-          tags = JSON.parse(pattern.getString('tags')) || [];
-        } catch (_) {
-          continue;
-        }
-        const rewritten = tags.map(function (t) {
-          return t === normalizedOldName ? normalizedNewName : t;
-        });
-        try {
-          pattern.set('tags', rewritten);
-          txApp.save(pattern);
-        } catch (saveErr) {
-          console.log('>>>account-rename-sync: failed to update pattern', pattern.id, saveErr.message);
-        }
-      }
-
-      // 3. Retarget any existing alias that pointed at the old name, so a
+      // 2. Retarget any existing alias that pointed at the old name, so a
       // chain of renames (Jane Doe -> Jane Smith -> Jane Johnson) keeps
       // every earlier name resolving to the current one, not a stale middle
       // name. Alias resolution is single-hop by design (see
@@ -2872,7 +2687,7 @@ onRecordAfterUpdateSuccess((e) => {
         }
       }
 
-      // 4. Add the old name itself as a new alias of the new one, so a
+      // 3. Add the old name itself as a new alias of the new one, so a
       // bookmark or a typed search for it still finds these patterns.
       const existingAliasForOldName = $app.findRecordsByFilter(
         'tag_aliases',

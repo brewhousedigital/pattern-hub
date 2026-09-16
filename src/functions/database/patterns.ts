@@ -515,7 +515,7 @@ export const getPatternByIdOptions = (patternId: string) =>
   queryOptions({
     queryKey: ['GetPatternById', patternId],
     queryFn: (): Promise<TypePatternResponse> =>
-      pocketbase.collection('patterns').getOne(patternId, { expand: 'authors' }),
+      pocketbase.collection('patterns').getOne(patternId, { expand: 'authors,tag_refs' }),
   });
 
 export const useQueryGetPatternById = (patternId: string) => {

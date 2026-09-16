@@ -38,6 +38,10 @@ function deriveCreators(pattern: TypePatternResponse): string[] {
   return Array.from(new Set([...linked, ...manual]));
 }
 
+function deriveKeywords(pattern: TypePatternResponse): string[] {
+  return (pattern.expand?.tag_refs ?? []).map((t) => t.tag).filter(Boolean);
+}
+
 function toIsoDate(value: TypePatternResponse['design_date'] | string | null | undefined): string | undefined {
   if (!value) return undefined;
   try {
@@ -57,7 +61,7 @@ export function buildPatternXmpMeta(pattern: TypePatternResponse, opts?: { sizeL
     title: pattern.name ?? '',
     description: pattern.description ?? '',
     creators: deriveCreators(pattern),
-    keywords: pattern.tags?.filter(Boolean) ?? [],
+    keywords: deriveKeywords(pattern),
     sourceUrl: DOMAIN_URL,
     patternUrl: `${DOMAIN_URL}/pattern/${pattern.id}`,
     creatorTool: CREATOR_TOOL,

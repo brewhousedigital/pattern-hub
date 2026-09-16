@@ -16,7 +16,8 @@ export const PatternJsonLd = ({ pattern }: { pattern: TypePatternResponse }) => 
     image: generatePbImageOpenGraph(pattern),
   };
 
-  if (pattern.tags?.length) jsonLd.keywords = pattern.tags.join(', ');
+  const tagNames = (pattern.expand?.tag_refs ?? []).map((t) => t.tag).filter(Boolean);
+  if (tagNames.length) jsonLd.keywords = tagNames.join(', ');
   if (pattern.design_date) jsonLd.dateCreated = new Date(pattern.design_date as unknown as string).toISOString();
   if (pattern.created) jsonLd.datePublished = new Date(pattern.created).toISOString();
   if (pattern.updated) jsonLd.dateModified = new Date(pattern.updated).toISOString();
