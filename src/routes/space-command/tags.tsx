@@ -38,6 +38,7 @@ import { ProgressDialog } from '@/components/admin/tags/ProgressDialog';
 import { ConfirmDialog } from '@/components/admin/tags/ConfirmDialog';
 import { SetParentDialog } from '@/components/admin/tags/SetParentDialog';
 import { TagMetadataDialog } from '@/components/admin/tags/TagMetadataDialog';
+import { AddTagDialog } from '@/components/admin/tags/AddTagDialog';
 import { ImpliedTagsDialog } from '@/components/admin/tags/ImpliedTagsDialog';
 import { AliasDialog } from '@/components/admin/tags/AliasDialog';
 import { TagTreeView } from '@/components/admin/tags/TagTreeView';
@@ -51,6 +52,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ListIcon from '@mui/icons-material/List';
 import SyncIcon from '@mui/icons-material/Sync';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
+import AddIcon from '@mui/icons-material/Add';
 
 import {
   Box,
@@ -241,6 +243,21 @@ const TagManagementPage = () => {
   }>({ open: false, title: '', completed: 0, total: 0, done: false });
 
   const [toast, setToast] = useState<string | null>(null);
+
+  // ── Add Tag dialog ─────────────────────────────────────────────────────────
+  // Creates a tags_v2 row directly, with no pattern attached. Since the grid
+  // below reads tag_usage (patterns joined to tags_v2 - see
+  // useQueryAdminTagStatsPaginated's own comment), a fresh zero-patterns tag
+  // won't show up there - the toast says so, since there's nothing in the
+  // grid itself to confirm the create for the admin.
+  const [addTagOpen, setAddTagOpen] = useState(false);
+
+  const handleTagCreated = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
+    setToast('Tag created. It will not appear in the list below until a pattern uses it.');
+  }, [queryClient]);
 
   // Every rename/merge/delete touches all four of these tables - single-tag
   // (executeOperation) and bulk (confirmOp's cleanup branch) both need the
@@ -667,6 +684,15 @@ const TagManagementPage = () => {
           </Button>
         )}
 
+        <Button
+          size="small"
+          variant="contained"
+          startIcon={<AddIcon fontSize="small" />}
+          onClick={() => setAddTagOpen(true)}
+        >
+          Add Tag
+        </Button>
+
         {/*<Tooltip title="Walk all patterns and add any missing parent tags based on the current hierarchy. Safe to run multiple times.">
           <Button
             size="small"
@@ -756,6 +782,14 @@ const TagManagementPage = () => {
         tagTypes={tagTypesList}
         onClose={() => setMetadataRow(null)}
         onSaved={handleMetadataSaved}
+      />
+
+      {/* Add Tag Dialog */}
+      <AddTagDialog
+        open={addTagOpen}
+        tagTypes={tagTypesList}
+        onClose={() => setAddTagOpen(false)}
+        onSaved={handleTagCreated}
       />
 
       {/* Implied Tags Dialog */}
