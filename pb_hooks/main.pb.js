@@ -859,10 +859,17 @@ routerAdd('POST', '/api/sync-author-tags', (c) => {
     // time is cheap enough at this table's size.
     const identities = {};
     for (let i = 0; i < patterns.length; i++) {
+      // `authors` is a relation field - getStringSlice is the correct
+      // accessor (same as tag_refs elsewhere in this file), not
+      // getString()+JSON.parse(), which is only for genuine JSON-type fields
+      // like author_manual (see notifyDiscordNewPattern's comment on that
+      // convention). Using JSON.parse() here silently threw on every pattern
+      // (caught by the empty catch below), so any author credited only via
+      // the authors relation - never author_manual - was never cascaded.
       let authors = [];
       let authorManual = [];
       try {
-        authors = JSON.parse(patterns[i].getString('authors')) || [];
+        authors = patterns[i].getStringSlice('authors') || [];
       } catch (_) {}
       try {
         authorManual = JSON.parse(patterns[i].getString('author_manual')) || [];
