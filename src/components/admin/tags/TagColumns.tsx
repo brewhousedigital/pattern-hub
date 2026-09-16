@@ -7,13 +7,21 @@ import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import type { TypeTagHierarchyRecord, TypeTagV2Record } from '@/functions/database/tags';
+import type { TypeTagHierarchyRecord, TypeTagV2Record, TypeImpliedTagRecord, TypeTagAliasRecord } from '@/functions/database/tags';
 import type { OperationType } from '@/functions/database/tags-admin/satellite-sync';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
 interface BuildTagColumnsOptions {
   hierarchy: TypeTagHierarchyRecord[];
   tagsV2ById: Map<string, TypeTagV2Record>;
+  /** This row's own alias record, if its name is itself registered as an alias of another, root tag. */
+  aliasByOwnName: Map<string, TypeTagAliasRecord>;
+  /** Aliases whose target is this row's name - other strings that resolve here. */
+  aliasesByTarget: Map<string, TypeTagAliasRecord[]>;
+  /** implied_tags edges this row's name triggers (the "tag" side). */
+  impliesByTag: Map<string, TypeImpliedTagRecord[]>;
+  /** implied_tags edges this row's name is the target of (the "implies_tag" side). */
+  impliedByTag: Map<string, TypeImpliedTagRecord[]>;
   setMetadataRow: (row: TypeReadOnlyDatabaseItem) => void;
   setImpliedTagsRow: (row: TypeReadOnlyDatabaseItem) => void;
   setAliasRow: (row: TypeReadOnlyDatabaseItem) => void;
@@ -31,6 +39,10 @@ interface BuildTagColumnsOptions {
 export function buildTagColumns({
   hierarchy,
   tagsV2ById,
+  aliasByOwnName,
+  aliasesByTarget,
+  impliesByTag,
+  impliedByTag,
   setMetadataRow,
   setImpliedTagsRow,
   setAliasRow,
@@ -45,15 +57,28 @@ export function buildTagColumns({
       flex: 1,
       sortable: true,
       disableColumnMenu: true,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          variant={params.row.count === 1 ? 'outlined' : 'filled'}
-          color={params.row.count === 1 ? 'warning' : 'default'}
-          sx={{ fontFamily: 'monospace' }}
-        />
-      ),
+      renderCell: (params) => {
+        const chip = (
+          <Chip
+            label={params.value}
+            size="small"
+            variant={params.row.count <= 1 ? 'outlined' : 'filled'}
+            color={params.row.count === 0 ? 'info' : params.row.count === 1 ? 'warning' : 'default'}
+            sx={{ fontFamily: 'monospace' }}
+          />
+        );
+        // A 0-count tag (created standalone via Add Tag, never yet put on a
+        // pattern) needs its own look distinct from a singleton - it's not
+        // a cleanup candidate the way a used-once tag might be, it just
+        // hasn't been assigned yet. The tooltip is the only place that
+        // distinction is spelled out, since the chip's color alone doesn't
+        // explain itself.
+        return params.row.count === 0 ? (
+          <Tooltip title="Not used on any pattern yet">{chip}</Tooltip>
+        ) : (
+          chip
+        );
+      },
     },
     {
       field: 'parent',
@@ -129,6 +154,68 @@ export function buildTagColumns({
               <AccountCircleIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+        );
+      },
+    },
+    {
+      field: 'relations',
+      headerName: 'Relations',
+      width: 90,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const aliasOf = aliasByOwnName.get(params.row.tag);
+        const aliasTargets = aliasesByTarget.get(params.row.tag) ?? [];
+        const implies = impliesByTag.get(params.row.tag) ?? [];
+        const impliedBy = impliedByTag.get(params.row.tag) ?? [];
+        const hasAliasEdge = !!aliasOf || aliasTargets.length > 0;
+        const hasImpliedEdge = implies.length > 0 || impliedBy.length > 0;
+
+        // No badge is the common case - a "true" tag with no alias or
+        // implied-tag relationships at all - the same "blank means nothing
+        // special" convention the Type column above uses for a plain
+        // General tag, rather than a redundant badge on every other row.
+        if (!hasAliasEdge && !hasImpliedEdge) return null;
+
+        const aliasTooltip = [
+          aliasOf && `Alias of "${aliasOf.target_tag}" - resolves there instead of here`,
+          aliasTargets.length > 0 &&
+            `Target of ${aliasTargets.length} alias${aliasTargets.length === 1 ? '' : 'es'}: ${aliasTargets.map((a) => a.alias).join(', ')}`,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+
+        const impliedTooltip = [
+          implies.length > 0 && `Implies: ${implies.map((e) => e.implies_tag).join(', ')}`,
+          impliedBy.length > 0 && `Implied by: ${impliedBy.map((e) => e.tag).join(', ')}`,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+            {hasAliasEdge && (
+              <Tooltip title={aliasTooltip}>
+                {/* secondary (this row itself redirects elsewhere) vs. action
+                    grey (this row is only a target other aliases point at) -
+                    the first is the one that actually changes how this row
+                    behaves, so it gets the louder color. */}
+                <SwapHorizIcon fontSize="small" color={aliasOf ? 'secondary' : 'action'} />
+              </Tooltip>
+            )}
+            {hasImpliedEdge && (
+              <Tooltip title={impliedTooltip}>
+                {/* primary (this row implies others - tagging a pattern with
+                    it silently pulls in more tags) vs. action grey (this row
+                    is only implied by others, which doesn't change what
+                    tagging it here does). */}
+                <DeviceHubIcon fontSize="small" color={implies.length > 0 ? 'primary' : 'action'} />
+              </Tooltip>
+            )}
+          </Box>
         );
       },
     },

@@ -22,13 +22,16 @@ import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor'
 // dialog is the only entry point for a tag with zero patterns, so it
 // collects the name itself instead of receiving one.
 //
-// A tag created here has zero patterns, so it will not appear in the "All
-// Tags" grid above: that grid reads the tag_usage view, which is an inner
-// join from patterns.tag_refs to tags_v2 (see useQueryAdminTagStatsPaginated
-// in src/functions/database/tags.ts) and only lists a tag at least one
-// pattern carries. The row is still real the moment it is created - every
-// other tags_v2 reader (search dropdowns, the tag graph, pattern tag entry)
-// can find and use it right away.
+// A tag created here has zero patterns. It's real - and shows up in the
+// "All Tags" grid above with a "Not used on any pattern yet" badge (see
+// TagColumns.tsx) and in every other tags_v2 reader (search dropdowns, the
+// tag graph, pattern tag entry) - the moment it's created, since
+// tag_usage's view query was updated in PocketBase (2026-09-16) to a LEFT
+// JOIN that no longer drops a tags_v2 row with no matching pattern (see
+// useQueryAdminTagStatsPaginated's own comment in
+// src/functions/database/tags.ts). Sorted by "Patterns" descending (the
+// grid's default), it lands on the last page - the "unused tags" stat chip
+// on the page header jumps straight to it.
 
 interface AddTagDialogProps {
   open: boolean;
@@ -173,11 +176,6 @@ export function AddTagDialog({ open, tagTypes, onClose, onSaved }: AddTagDialogP
             {error}
           </Alert>
         )}
-
-        <Alert severity="info" sx={{ mb: 2 }}>
-          This tag will have no patterns yet. It will not appear in the list below until a pattern uses it. You can
-          still find and select it anywhere tags are used.
-        </Alert>
 
         <Box sx={{ py: 1 }}>
           <TextField

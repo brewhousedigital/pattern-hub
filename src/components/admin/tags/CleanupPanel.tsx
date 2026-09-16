@@ -30,7 +30,11 @@ export function CleanupPanel({ tagStats, onDeleteMany }: CleanupPanelProps) {
   const { isFetchingPatterns } = useGlobalIsFetchingPatterns();
   const [threshold, setThreshold] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const candidates = tagStats.filter((t) => t.count <= threshold);
+  // count > 0 excludes a tag an admin created standalone (via Add Tag) and
+  // hasn't put on a pattern yet - it has no real-world usage history to
+  // judge as "low," so it doesn't belong in a cleanup sweep next to a tag
+  // that was actually tried and only caught on once or twice.
+  const candidates = tagStats.filter((t) => t.count > 0 && t.count <= threshold);
 
   const toggleAll = () => {
     if (selected.size === candidates.length) {

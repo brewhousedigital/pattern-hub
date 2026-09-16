@@ -453,17 +453,37 @@ export interface TypeAdminTagStatsPaginatedParams {
 // foreign key).
 //
 // `typeFilter` (see TypeAdminTagStatsPaginatedParams) requires tag_usage's
-// own view query to SELECT tags_v2.type AS type - it isn't there yet as of
-// this comment, so filtering by Type does nothing server-side until that
-// view query is updated in PocketBase to:
-//   SELECT tags_v2.id AS id, tags_v2.tag AS tag, COUNT(*) AS count, tags_v2.type AS type
-//   FROM patterns, json_each(patterns.tag_refs) je
-//   JOIN tags_v2 ON tags_v2.id = je.value
-//   WHERE patterns.isDeleted = false AND patterns.is_draft = false
+// own view query to SELECT tags_v2.type AS type - unconfirmed whether
+// that's live, so filtering by Type may still do nothing server-side.
+//
+// Fixed 2026-09-16: the view used to be an INNER JOIN starting from
+// patterns, so a tags_v2 row with zero patterns - e.g. one created
+// standalone via the Add Tag dialog in space-command/tags.tsx - was dropped
+// entirely instead of counted as 0. The view query was updated in
+// PocketBase to:
+//   SELECT
+//     tags_v2.id AS id,
+//     tags_v2.tag AS tag,
+//     COUNT(pt.pattern_id) AS count,
+//     tags_v2.type AS type
+//   FROM tags_v2
+//   LEFT JOIN (
+//     SELECT patterns.id AS pattern_id, je.value AS tag_id
+//     FROM patterns, json_each(patterns.tag_refs) je
+//     WHERE patterns.isDeleted = false AND patterns.is_draft = false
+//   ) pt ON pt.tag_id = tags_v2.id
 //   GROUP BY tags_v2.id
-// The Type column itself doesn't need this - it already reads type from
-// tagsV2ById (a separate, full tags_v2 fetch) in TagColumns.tsx, independent
-// of what this view returns.
+// The derived subquery computes the same (pattern, tag) pairs the old
+// direct INNER JOIN did, in one pass; switching the outer join to LEFT is
+// what lets a tags_v2 row with no matches survive instead of being
+// dropped, with COUNT(pt.pattern_id) correctly reading 0 for it (COUNT
+// ignores the NULL a LEFT JOIN's unmatched side produces - COUNT(*)
+// would not). The Type column itself doesn't need this - it already reads
+// type from tagsV2ById (a separate, full tags_v2 fetch) in TagColumns.tsx,
+// independent of what this view returns. CleanupPanel.tsx's candidate
+// filter and TagColumns.tsx's tag chip both already special-case a 0 count
+// correctly - see their own comments - so no further app-code change was
+// needed once this view query landed.
 export const useQueryAdminTagStatsPaginated = (params: TypeAdminTagStatsPaginatedParams) => {
   return useQuery({
     queryKey: [...ADMIN_TAG_STATS_PAGINATED_QUERY_KEY, params],

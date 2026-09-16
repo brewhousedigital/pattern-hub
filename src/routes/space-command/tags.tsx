@@ -21,6 +21,8 @@ import {
   IMPLIED_TAGS_QUERY_KEY,
   TAG_ALIASES_QUERY_KEY,
   type TypePatternRecord,
+  type TypeImpliedTagRecord,
+  type TypeTagAliasRecord,
 } from '@/functions/database/tags';
 import {
   type OperationType,
@@ -205,6 +207,32 @@ const TagManagementPage = () => {
   const [impliedTagsRow, setImpliedTagsRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: impliedTagsList = [] } = useQueryGetImpliedTags();
 
+  // Name-keyed, one bucket per side of the edge - mirrors
+  // ImpliedTagsDialog's own outgoing/incoming lookups
+  // (impliedTags.filter((e) => e.tag === tag.tag) etc.). implied_tags is a
+  // name-based relation by design (unlike tagsV2ById above, which has to be
+  // id-keyed for correctness - see its own comment), so this matches the
+  // dialog's existing resolution instead of inventing a second convention
+  // for the same table. Feeds TagColumns.tsx's Relations badge below.
+  const impliesByTag = useMemo(() => {
+    const map = new Map<string, TypeImpliedTagRecord[]>();
+    for (const edge of impliedTagsList) {
+      const arr = map.get(edge.tag);
+      if (arr) arr.push(edge);
+      else map.set(edge.tag, [edge]);
+    }
+    return map;
+  }, [impliedTagsList]);
+  const impliedByTag = useMemo(() => {
+    const map = new Map<string, TypeImpliedTagRecord[]>();
+    for (const edge of impliedTagsList) {
+      const arr = map.get(edge.implies_tag);
+      if (arr) arr.push(edge);
+      else map.set(edge.implies_tag, [edge]);
+    }
+    return map;
+  }, [impliedTagsList]);
+
   const handleImpliedTagsSaved = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: IMPLIED_TAGS_QUERY_KEY });
   }, [queryClient]);
@@ -218,6 +246,28 @@ const TagManagementPage = () => {
   // ── Alias dialog ────────────────────────────────────────────────────────────
   const [aliasRow, setAliasRow] = useState<TypeReadOnlyDatabaseItem | null>(null);
   const { data: tagAliasesList = [] } = useQueryGetAllTagAliases();
+
+  // Name-keyed, mirroring AliasDialog's own ownAlias/pointingHere lookups.
+  // aliasByOwnName answers "is this row itself registered as an alias of
+  // some other, root tag" - possible even for a row with real usage, since
+  // AliasDialog's "Make this tag an alias of…" field (handleSetAlias) can
+  // point an already-real, already-in-use tag at another root without
+  // touching its own tags_v2 row or any pattern's tag_refs; that's a
+  // different action from handleAddIncomingAlias, which blocks creating a
+  // new alias string that collides with an existing tags_v2 row. A pure
+  // alias string with no tags_v2 row of its own (e.g. "orca") never has a
+  // row here to key against - it only ever surfaces inside its target's own
+  // aliasesByTarget list below. Feeds TagColumns.tsx's Relations badge.
+  const aliasByOwnName = useMemo(() => new Map(tagAliasesList.map((a) => [a.alias, a])), [tagAliasesList]);
+  const aliasesByTarget = useMemo(() => {
+    const map = new Map<string, TypeTagAliasRecord[]>();
+    for (const a of tagAliasesList) {
+      const arr = map.get(a.target_tag);
+      if (arr) arr.push(a);
+      else map.set(a.target_tag, [a]);
+    }
+    return map;
+  }, [tagAliasesList]);
 
   const handleAliasSaved = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: TAG_ALIASES_QUERY_KEY });
@@ -245,18 +295,19 @@ const TagManagementPage = () => {
   const [toast, setToast] = useState<string | null>(null);
 
   // ── Add Tag dialog ─────────────────────────────────────────────────────────
-  // Creates a tags_v2 row directly, with no pattern attached. Since the grid
-  // below reads tag_usage (patterns joined to tags_v2 - see
-  // useQueryAdminTagStatsPaginated's own comment), a fresh zero-patterns tag
-  // won't show up there - the toast says so, since there's nothing in the
-  // grid itself to confirm the create for the admin.
+  // Creates a tags_v2 row directly, with no pattern attached. It shows up in
+  // the grid below right away (tag_usage's view query was updated to a LEFT
+  // JOIN - see useQueryAdminTagStatsPaginated's own comment), but sorted
+  // last under the grid's default "most patterns first" sort - the toast
+  // points at the "unused tags" chip so the admin doesn't have to go hunting
+  // for the page it landed on.
   const [addTagOpen, setAddTagOpen] = useState(false);
 
   const handleTagCreated = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: TAGS_V2_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: ADMIN_TAG_STATS_PAGINATED_QUERY_KEY });
-    setToast('Tag created. It will not appear in the list below until a pattern uses it.');
+    setToast('Tag created. Use the "unused tags" chip above to find it.');
   }, [queryClient]);
 
   // Every rename/merge/delete touches all four of these tables - single-tag
@@ -564,6 +615,23 @@ const TagManagementPage = () => {
 
   const uniqueTagCount = tagStats.length;
   const totalTagUsages = tagStats.reduce((s, t) => s + t.count, 0);
+  // 0 until tag_usage's view query is updated to a LEFT JOIN - see the
+  // "Add Tag dialog" section above. Harmless either way: this just reads 0
+  // unused tags until then, and starts counting for real the moment that
+  // view change lands, with no further code change needed here.
+  const unusedTagCount = tagStats.filter((t) => t.count === 0).length;
+
+  // Jumps straight to any unused tags instead of leaving an admin to hunt
+  // for them on the last page of the default "most-used first" sort, or
+  // behind the default General-only type filter (see didSetDefaultTypeFilter
+  // above) if the tag they're after was created under a different Type.
+  const handleShowUnusedTags = useCallback(() => {
+    setTagViewMode('list');
+    setTagTypeFilter('');
+    setTagSearch('');
+    setTagSortModel([{ field: 'count', sort: 'asc' }]);
+    setTagPaginationModel((prev) => ({ ...prev, page: 0 }));
+  }, []);
 
   // ── DataGrid column definitions ────────────────────────────────────────────
   const tagColumns = useMemo(
@@ -571,6 +639,10 @@ const TagManagementPage = () => {
       buildTagColumns({
         hierarchy,
         tagsV2ById,
+        aliasByOwnName,
+        aliasesByTarget,
+        impliesByTag,
+        impliedByTag,
         setMetadataRow,
         setImpliedTagsRow,
         setAliasRow,
@@ -578,7 +650,7 @@ const TagManagementPage = () => {
         setRenamePrefill,
         startOp,
       }),
-    [hierarchy, startOp, tagsV2ById],
+    [hierarchy, startOp, tagsV2ById, aliasByOwnName, aliasesByTarget, impliesByTag, impliedByTag],
   );
 
   return (
@@ -605,6 +677,15 @@ const TagManagementPage = () => {
                 variant="outlined"
                 size="small"
               />
+              <Tooltip title="Sort the list below by fewest patterns first, so any unused tag sorts to the top">
+                <Chip
+                  label={`${unusedTagCount.toLocaleString()} unused tags`}
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  onClick={handleShowUnusedTags}
+                />
+              </Tooltip>
               <Chip
                 label={`${hierarchy.length} hierarchy relationships`}
                 color="info"
