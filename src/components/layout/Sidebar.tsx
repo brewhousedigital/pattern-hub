@@ -332,11 +332,6 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
             textTransform: item.kind === 'tag' ? 'capitalize' : 'none',
           }}
         >
-          {item.kind === 'author' && (
-            <Typography component="span" sx={{ fontSize: 'inherit', color: 'text.disabled', fontWeight: 400 }}>
-              Author:{' '}
-            </Typography>
-          )}
           {item.label}
         </Typography>
 
