@@ -52,6 +52,7 @@ function RouteComponent() {
             isLoading={isLoading}
             basePath="/news"
             title="News"
+            variant="news"
           />
         </Container>
       </PageWrapper>
