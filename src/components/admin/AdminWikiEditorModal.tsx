@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Dayjs } from 'dayjs';
 import {
   useMutationCreateWikiCategory,
   useMutationUpdateWikiCategory,
@@ -10,6 +11,7 @@ import {
   type TypeWikiPage,
 } from '@/functions/database/wiki';
 import { GenericMarkdownEditor } from '@/components/admin/GenericMarkdownEditor';
+import { parsePbCalendarDate, toPbCalendarDate } from '@/functions/utilities/dates';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -28,6 +30,7 @@ import {
   Alert,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { enqueueSnackbar } from 'notistack';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 
@@ -193,6 +196,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
   const [categoryId, setCategoryId] = React.useState('');
   const [content, setContent] = React.useState('');
   const [order, setOrder] = React.useState('0');
+  const [displayDate, setDisplayDate] = React.useState<Dayjs | null>(null);
   const [slugTouched, setSlugTouched] = React.useState(false);
 
   const { data: categories = [] } = useQueryGetAllWikiCategories();
@@ -202,6 +206,8 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
   const { log } = useAdminLogger();
   const isPending = create.isPending || update.isPending;
   const isEdit = props.page !== null;
+  // The date field holds an invalid value while the admin types a part of a date. Saving then stays off.
+  const isDisplayDateInvalid = displayDate !== null && !displayDate.isValid();
 
   React.useEffect(() => {
     if (props.open) {
@@ -210,6 +216,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
       setCategoryId(props.page?.category ?? props.defaultCategoryId ?? '');
       setContent(props.page?.content ?? '');
       setOrder(String(props.page?.order ?? 0));
+      setDisplayDate(parsePbCalendarDate(props.page?.display_date));
       setSlugTouched(isEdit);
     }
   }, [props.open, props.page, props.defaultCategoryId, isEdit]);
@@ -220,7 +227,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
   };
 
   async function handleSubmit() {
-    if (!title.trim() || !slug.trim() || !categoryId) return;
+    if (!title.trim() || !slug.trim() || !categoryId || isDisplayDateInvalid) return;
     const payload = {
       id: props.page?.id,
       title: title.trim(),
@@ -228,6 +235,8 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
       content,
       category: categoryId,
       order: Number(order) || 0,
+      // An empty string clears the date in PocketBase.
+      display_date: displayDate ? toPbCalendarDate(displayDate) : '',
     };
     try {
       if (isEdit) {
@@ -272,8 +281,10 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
       </DialogTitle>
 
       <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2.5 }}>
-        {/* Row 1: title + category + slug + order */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 200px 1fr 100px', gap: 2, alignItems: 'flex-start' }}>
+        {/* Row 1: title + category + slug + order + display date */}
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: '1fr 200px 1fr 100px 220px', gap: 2, alignItems: 'flex-start' }}
+        >
           <TextField
             label="Title"
             variant="filled"
@@ -324,6 +335,21 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
             size="small"
             helperText="Lower first"
           />
+
+          <DatePicker
+            label="Display date"
+            value={displayDate}
+            onChange={(value) => setDisplayDate(value)}
+            slotProps={{
+              field: { clearable: true },
+              textField: {
+                variant: 'filled',
+                size: 'small',
+                fullWidth: true,
+                helperText: 'Optional · shown on the site',
+              },
+            }}
+          />
         </Box>
 
         {/* Internal link syntax hint */}
@@ -358,7 +384,7 @@ export const AdminWikiPageModal = (props: AdminWikiPageModalProps) => {
           onClick={handleSubmit}
           variant="contained"
           color="success"
-          disabled={isPending || !title.trim() || !slug.trim() || !categoryId}
+          disabled={isPending || !title.trim() || !slug.trim() || !categoryId || isDisplayDateInvalid}
           startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : null}
         >
           {isEdit ? 'Save changes' : 'Create Page'}

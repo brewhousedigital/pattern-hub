@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import type { TypeWikiCategory, TypeWikiPage } from '@/functions/database/wiki';
+import { WikiPageDate } from '@/components/wiki/WikiPageDate';
+import { createMarkdownSnippet } from '@/functions/utilities/markdown-snippet';
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -19,16 +21,10 @@ type WikiCategoryPageListProps = {
   variant?: 'wiki' | 'news';
 };
 
-// First 150 characters of the page body, without its first heading.
-const getSnippet = (content: string) => {
-  const body = content.replace(/^#+\s.+$/m, '').trim();
-  return `${body.slice(0, 150)}${content.length > 150 ? '…' : ''}`;
-};
-
 // The "title + count + list of article cards" body shared by /wiki/$categorySlug
 // and /news - deliberately excludes the breadcrumb, since that trail differs
 // between the two (and /news doesn't show one at all). /news uses the larger
-// "news" card.
+// "news" card. Each card shows a plain-text teaser of the page (no markdown syntax).
 export const WikiCategoryPageList = ({
   category,
   pages,
@@ -70,10 +66,11 @@ export const WikiCategoryPageList = ({
               <NewsCard>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <Box sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <WikiPageDate value={page.display_date} />
                     <Typography component="h2" variant="h6" sx={{ color: 'text.primary', mb: 0.75 }}>
                       {page.title}
                     </Typography>
-                    <Typography sx={{ color: 'text.secondary' }}>{getSnippet(page.content)}</Typography>
+                    <Typography sx={{ color: 'text.secondary' }}>{createMarkdownSnippet(page.content)}</Typography>
                   </Box>
                   <ChevronRightIcon sx={{ color: 'primary.main', flexShrink: 0 }} />
                 </Box>
@@ -84,8 +81,9 @@ export const WikiCategoryPageList = ({
                   <ArticleIcon sx={{ color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
                   <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>{page.title}</Typography>
+                    <WikiPageDate value={page.display_date} variant="muted" />
                     <Typography variant="body2" sx={{ color: 'text.secondary', lineClamp: 2 }}>
-                      {getSnippet(page.content)}
+                      {createMarkdownSnippet(page.content)}
                     </Typography>
                   </Box>
                   <ChevronRightIcon sx={{ color: 'text.disabled', mt: 0.25, flexShrink: 0 }} />

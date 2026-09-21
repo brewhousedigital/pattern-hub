@@ -20,3 +20,25 @@ export const createPrettyDate = (date: string | Date | Dayjs) => {
 
   return parsed.isValid() ? parsed.format('MMM DD, YYYY') : 'No Date Selected';
 };
+
+// ─── Calendar dates (a day, with no time) ─────────────────────────────────────
+// PocketBase has no date-only field. A calendar date is saved as midnight UTC
+// ("YYYY-MM-DD 00:00:00.000Z"), and only its "YYYY-MM-DD" part is read back.
+// The date then shows the same day for every viewer, on the server and in the
+// browser. createPrettyDate above moves the day for viewers in other time zones.
+
+/** PocketBase date string -> Dayjs for that calendar day. Returns null when the value is empty or not valid. */
+export const parsePbCalendarDate = (value?: string | null): Dayjs | null => {
+  const day = value?.slice(0, 10);
+  if (!day) return null;
+
+  const parsed = dayjs(day);
+  return parsed.isValid() ? parsed : null;
+};
+
+/** Dayjs -> PocketBase date string for that calendar day, at midnight UTC. */
+export const toPbCalendarDate = (date: Dayjs): string => `${date.format('YYYY-MM-DD')} 00:00:00.000Z`;
+
+/** PocketBase date string -> text such as "September 12, 2026". Returns "" when the value is empty or not valid. */
+export const createPrettyCalendarDate = (value?: string | null, format = 'MMMM D, YYYY'): string =>
+  parsePbCalendarDate(value)?.format(format) ?? '';

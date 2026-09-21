@@ -15,6 +15,7 @@ import { AdminWikiCategoryModal, AdminWikiPageModal } from '@/components/admin/A
 import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { generateSEO } from '@/functions/utilities/seo';
+import { createPrettyCalendarDate } from '@/functions/utilities/dates';
 
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -101,6 +102,7 @@ type SortablePageRowProps = {
 const SortablePageRow = (props: SortablePageRowProps) => {
   const { page, pageIndex, cat } = props;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const dateLabel = createPrettyCalendarDate(page.display_date, 'MMM D, YYYY');
 
   return (
     <div
@@ -147,6 +149,8 @@ const SortablePageRow = (props: SortablePageRowProps) => {
         <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
           {page.title}
         </Typography>
+
+        {dateLabel && <Chip label={dateLabel} size="small" sx={{ fontSize: '0.68rem', height: 18 }} />}
 
         <Chip label={page.slug} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 18 }} />
 

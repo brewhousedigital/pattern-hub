@@ -1,5 +1,6 @@
 import type { TypeWikiPage } from '@/functions/database/wiki';
 import { WikiMarkdownWrapper } from '@/components/wiki/WikiMarkdownWrapper';
+import { WikiPageDate } from '@/components/wiki/WikiPageDate';
 import { WikiTableOfContents } from '@/components/wiki/WikiTableOfContents';
 
 import { styled } from '@mui/material/styles';
@@ -41,6 +42,8 @@ export const WikiPageContent = ({ page, isLoading, isError, allPages }: WikiPage
     <ContentGrid>
       {/* Main content */}
       <Box>
+        <WikiPageDate value={page.display_date} />
+
         <Typography variant="h1" sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 0.75, color: 'text.primary' }}>
           {page.title}
         </Typography>

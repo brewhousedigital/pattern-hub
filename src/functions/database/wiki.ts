@@ -23,6 +23,8 @@ export type TypeWikiPage = {
   content: string;
   category: string; // category record ID
   order: number;
+  /** Optional calendar date to show on the page ("YYYY-MM-DD 00:00:00.000Z"). Empty when not set. */
+  display_date?: string;
   created: Date;
   updated: Date;
   expand?: {
@@ -131,6 +133,7 @@ export type TypeWikiPagePayload = {
   content: string;
   category: string; // category record ID
   order?: number;
+  display_date?: string; // "YYYY-MM-DD 00:00:00.000Z". An empty string clears the date.
 };
 
 export const useMutationCreateWikiPage = () => {
