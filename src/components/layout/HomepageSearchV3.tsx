@@ -608,6 +608,7 @@ export const HomepageSearchV3 = ({
           onChange={(e) => setSort(e.target.value as SortValue)}
           variant="standard"
           disableUnderline
+          inputProps={{ 'aria-label': 'Sort by' }}
           sx={{ fontSize: '0.8rem', color: 'text.secondary', '& .MuiSelect-select': { py: 0 } }}
         >
           {SORT_OPTIONS.map((opt) => (
