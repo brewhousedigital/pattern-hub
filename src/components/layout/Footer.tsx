@@ -30,12 +30,12 @@ const VisitorCounter = () => {
     >
       <Typography
         variant="caption"
-        sx={{ color: 'text.disabled', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.6875rem' }}
+        sx={{ color: 'text.secondary', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.6875rem' }}
       >
         You are visitor
       </Typography>
 
-      <Stack direction="row" sx={{ gap: '3px' }} aria-label={`Visitor number ${count}`}>
+      <Stack direction="row" role="img" sx={{ gap: '3px' }} aria-label={`Visitor number ${count}`}>
         {digits.map((digit, index) => (
           <Box
             key={index}

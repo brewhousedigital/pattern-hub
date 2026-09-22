@@ -241,7 +241,7 @@ const TagListItem = (props: TagListItemProps) => {
         </Typography>
 
         {!!props.data.count && (
-          <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', flexShrink: 0 }}>
             {props.data.count}
           </Typography>
         )}
@@ -337,7 +337,7 @@ const MixedListItem = ({ item }: MixedListItemProps) => {
           {item.label}
         </Typography>
 
-        <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', flexShrink: 0 }}>
           {item.count}
         </Typography>
       </Box>
@@ -403,7 +403,7 @@ export const SidebarCategoryTitle = (props: SidebarCategoryTitleProps) => {
           fontSize: '0.6875rem',
           fontWeight: 700,
           letterSpacing: '0.08em',
-          color: 'text.disabled',
+          color: 'text.secondary',
           lineHeight: 1,
         }}
       >
@@ -450,7 +450,12 @@ export const MobileSidebarBlock = () => {
   const { isSidebarOpen, handleCloseMobileSidebar } = useGlobalIsSidebarOpen();
 
   return (
-    <Drawer anchor="right" open={isSidebarOpen} onClose={handleCloseMobileSidebar}>
+    <Drawer
+      anchor="right"
+      open={isSidebarOpen}
+      onClose={handleCloseMobileSidebar}
+      slotProps={{ paper: { 'aria-label': 'Tag filters' } }}
+    >
       <SidebarBlock />
     </Drawer>
   );

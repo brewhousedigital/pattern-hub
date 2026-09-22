@@ -14,5 +14,12 @@ export function DifficultyChip({ value, size = 'small', sx }: DifficultyChipProp
 
   const info = getDifficultyInfo(value);
 
-  return <Chip size={size} label={info.label} color={info.color} sx={sx} />;
+  return (
+    <Chip
+      size={size}
+      label={info.label}
+      color={info.color}
+      sx={[{ color: '#fff' }, ...(Array.isArray(sx) ? sx : [sx])]}
+    />
+  );
 }

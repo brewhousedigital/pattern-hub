@@ -199,14 +199,19 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                   '& .MuiRating-iconEmpty': { color: alpha(communityDifficultyInfo.hex, 0.22) },
                 }}
               />
-              <Chip label={communityDifficultyInfo.label} color={communityDifficultyInfo.color} size="small" />
+              <Chip
+                label={communityDifficultyInfo.label}
+                color={communityDifficultyInfo.color}
+                size="small"
+                sx={{ color: '#000' }}
+              />
             </Stack>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {communityDifficultyData.total_ratings} rating{communityDifficultyData.total_ratings !== 1 ? 's' : ''}
             </Typography>
           </>
         ) : (
-          <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             No ratings yet
           </Typography>
         )}
@@ -288,7 +293,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
             </Stack>
 
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 0.5 }}>
-              <Typography variant="caption" color="text.disabled">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 Easy to Hard
               </Typography>
 

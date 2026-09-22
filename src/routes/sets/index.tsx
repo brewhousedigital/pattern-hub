@@ -50,11 +50,11 @@ function RouteComponent() {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700, lineHeight: 1.2 }} gutterBottom>
             Sets
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560 }}>
+          <Typography variant="body1" sx={{ maxWidth: 560, color: 'text.secondary' }}>
             Curated collections of patterns handpicked by our team
           </Typography>
           {!isPending && sets.length > 0 && (
-            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'text.secondary' }}>
               {sets.length} set{sets.length !== 1 ? 's' : ''} available
             </Typography>
           )}
@@ -79,10 +79,10 @@ function RouteComponent() {
         {!isPending && !isError && sets.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 10 }}>
             <StyleRoundedIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Typography variant="h6" sx={{ color: 'text.secondary' }} gutterBottom>
               No sets yet
             </Typography>
-            <Typography variant="body2" color="text.disabled">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               No sets were found. Check back in a few days.
             </Typography>
           </Box>
@@ -150,6 +150,7 @@ function RouteComponent() {
                           </Box>
                           <Typography
                             variant="h6"
+                            component="h2"
                             sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff', pt: 0.5 }}
                           >
                             {set.title}

@@ -163,6 +163,7 @@ const ViewDrawerContainer = () => {
       open={isViewOpen}
       onClose={handleClose}
       onOpen={handleOpenView}
+      slotProps={{ paper: { 'aria-label': 'Pattern details' } }}
       sx={{
         '& > .MuiPaper-root': {
           maxHeight: '95svh',

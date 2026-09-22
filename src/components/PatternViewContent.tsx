@@ -215,7 +215,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                         fontSize: '0.7rem',
                         letterSpacing: '0.09em',
                         textTransform: 'uppercase',
-                        color: 'text.disabled',
+                        color: 'text.secondary',
                       }}
                     >
                       Layers
@@ -296,7 +296,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                 <Typography
                   onClick={handleCopyId}
                   variant="caption"
-                  sx={{ color: 'text.disabled', letterSpacing: '0.08em', cursor: 'pointer', fontSize: '0.7rem' }}
+                  sx={{ color: 'text.secondary', letterSpacing: '0.08em', cursor: 'pointer', fontSize: '0.7rem' }}
                 >
                   {viewData?.id}
                 </Typography>
@@ -481,7 +481,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   fontSize: '0.6875rem',
                   fontWeight: 700,
                   letterSpacing: '0.08em',
-                  color: 'text.disabled',
+                  color: 'text.secondary',
                   pb: 0.75,
                 }}
               >
@@ -489,7 +489,13 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                 {patternSets.map((set) => (
-                  <Tooltip key={set.id} title={set.description || ''} arrow disableHoverListener={!set.description}>
+                  <Tooltip
+                    key={set.id}
+                    title={set.description || ''}
+                    arrow
+                    describeChild
+                    disableHoverListener={!set.description}
+                  >
                     <Link to="/sets/$setId" params={{ setId: set.id }}>
                       <Chip
                         icon={<StyleRoundedIcon sx={{ fontSize: '1rem !important' }} />}
@@ -515,7 +521,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   fontSize: '0.6875rem',
                   fontWeight: 700,
                   letterSpacing: '0.08em',
-                  color: 'text.disabled',
+                  color: 'text.secondary',
                   pb: 0.75,
                 }}
               >
@@ -540,7 +546,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                     return (
                       <Box key={groupKey}>
                         {label}
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                           {group.tags.map((tag) => (
                             <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
                               <Chip
@@ -548,14 +554,15 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                                 size="small"
                                 variant="filled"
                                 clickable
-                                sx={
+                                sx={[
+                                  { minHeight: 28 },
                                   group.type?.color
                                     ? {
                                         backgroundColor: group.type.color,
                                         color: (theme) => theme.palette.getContrastText(group.type!.color),
                                       }
-                                    : undefined
-                                }
+                                    : {},
+                                ]}
                               />
                             </Link>
                           ))}
@@ -570,7 +577,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                   return (
                     <Box key={groupKey}>
                       {label}
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {group.tags.map((tag) => (
                           <Link key={tag} to="/pattern" search={{ tags: [tag] }}>
                             <Chip
@@ -578,7 +585,10 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
                               size="small"
                               variant="outlined"
                               clickable
-                              sx={group.type?.color ? { borderColor: group.type.color, color: group.type.color } : undefined}
+                              sx={[
+                                { minHeight: 28 },
+                                group.type?.color ? { borderColor: group.type.color, color: group.type.color } : {},
+                              ]}
                             />
                           </Link>
                         ))}
@@ -609,7 +619,7 @@ const PanelSectionTitle = ({ children }: { children: React.ReactNode }) => (
       fontSize: '0.6875rem',
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: 'text.disabled',
+      color: 'text.secondary',
       px: 1,
       pt: 2,
       pb: 0.5,
@@ -630,7 +640,7 @@ const TagGroupLabel = ({ type, children }: { type: TypeTagTypeRecord | null; chi
       display: 'block',
       fontWeight: 600,
       pb: 0.5,
-      color: type?.color || 'text.disabled',
+      color: type?.color || 'text.secondary',
     }}
   >
     {children}
@@ -650,7 +660,7 @@ const CompactRow = ({ label, children }: { label: string; children: React.ReactN
       '&:hover': { backgroundColor: 'action.hover' },
     }}
   >
-    <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontWeight: 500, flexShrink: 0 }}>
+    <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 500, flexShrink: 0 }}>
       {label}
     </Typography>
     <Box sx={{ fontSize: '0.8rem', color: 'text.primary', fontWeight: 500, textAlign: 'right' }}>{children}</Box>

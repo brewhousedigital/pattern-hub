@@ -102,7 +102,7 @@ export const MainPageContent = () => {
 
                   <Box
                     sx={{
-                      px: 1.5,
+                      px: 0.5,
                       pb: 1.5,
                       display: 'flex',
                       gap: 0.75,
@@ -118,9 +118,9 @@ export const MainPageContent = () => {
                       sx={{
                         fontSize: '0.65rem',
                         height: 18,
-                        color: 'rgba(0, 0, 0, 0.5)',
+                        color: 'text.secondary',
                         borderColor: 'rgba(0, 0, 0, 0.3)',
-                        '& .MuiChip-icon': { color: 'text.disabled' },
+                        '& .MuiChip-icon': { color: 'text.secondary' },
                       }}
                     />
                     <Chip
@@ -131,9 +131,9 @@ export const MainPageContent = () => {
                       sx={{
                         fontSize: '0.65rem',
                         height: 18,
-                        color: 'rgba(0, 0, 0, 0.5)',
+                        color: 'text.secondary',
                         borderColor: 'rgba(0, 0, 0, 0.3)',
-                        '& .MuiChip-icon': { color: 'text.disabled' },
+                        '& .MuiChip-icon': { color: 'text.secondary' },
                       }}
                     />
                     {!!pattern.pieces && (
@@ -145,9 +145,9 @@ export const MainPageContent = () => {
                         sx={{
                           fontSize: '0.65rem',
                           height: 18,
-                          color: 'rgba(0, 0, 0, 0.5)',
+                          color: 'text.secondary',
                           borderColor: 'rgba(0, 0, 0, 0.3)',
-                          '& .MuiChip-icon': { color: 'text.disabled' },
+                          '& .MuiChip-icon': { color: 'text.secondary' },
                         }}
                       />
                     )}

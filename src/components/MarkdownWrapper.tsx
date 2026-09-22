@@ -111,8 +111,7 @@ const StyledMarkdownWrapper = styled(Box)(({ theme }) => ({
 
   '& a': {
     color: theme.palette.primary.main,
-    textDecoration: 'none',
-    '&:hover': { textDecoration: 'underline' },
+    textDecoration: 'underline',
   },
 
   '& hr': {

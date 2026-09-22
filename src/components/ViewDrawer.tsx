@@ -67,7 +67,7 @@ export const ViewDrawer = (props: ViewDrawerProps) => {
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Pattern not found
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
+        <Typography variant="body2" sx={{ maxWidth: 360, color: 'text.secondary' }}>
           This pattern may have been removed or the link may be incorrect.
         </Typography>
         <Button variant="outlined" onClick={props.handleClose}>

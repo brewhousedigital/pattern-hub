@@ -81,6 +81,7 @@ export const BrowseSearchBar = ({
           onChange={(e) => onSortChange(e.target.value as BrowseSortValue)}
           variant="standard"
           disableUnderline
+          inputProps={{ 'aria-label': 'Sort by' }}
           sx={{ fontSize: '0.8rem', color: 'text.secondary', '& .MuiSelect-select': { py: 0 } }}
         >
           {BROWSE_SORT_OPTIONS.map((opt) => (
@@ -93,7 +94,7 @@ export const BrowseSearchBar = ({
     </Box>
 
     {value && (
-      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+      <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'text.secondary' }}>
         {resultCount} of {totalCount} {resultCount === 1 ? 'result' : 'results'} in {title}
       </Typography>
     )}

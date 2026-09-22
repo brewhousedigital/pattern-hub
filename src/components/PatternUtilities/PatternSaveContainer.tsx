@@ -33,16 +33,16 @@ export const PatternSaveContainer = (props: TypeViewData) => {
   return (
     <Stack direction="row" sx={{ gap: 1 }}>
       <Tooltip title="Copy pattern link" arrow>
-        <span>
-          <IconButton onClick={handleCopyLink} disabled={!patternUrl}>
+        <span role="group">
+          <IconButton onClick={handleCopyLink} disabled={!patternUrl} aria-label="Copy pattern link">
             <LinkRoundedIcon color="primary" />
           </IconButton>
         </span>
       </Tooltip>
 
       <Tooltip title="Open in new tab" arrow>
-        <span>
-          <IconButton onClick={handleOpenNewTab} disabled={!patternUrl}>
+        <span role="group">
+          <IconButton onClick={handleOpenNewTab} disabled={!patternUrl} aria-label="Open in new tab">
             <OpenInNewRoundedIcon color="primary" />
           </IconButton>
         </span>

@@ -118,10 +118,17 @@ function RouteComponent() {
 
           {results &&
             results.map((faq, index) => (
-              <StyledAccordion key={index} expanded={expanded === index} onChange={handleChange(index)} disableGutters>
+              <StyledAccordion
+                key={index}
+                expanded={expanded === index}
+                onChange={handleChange(index)}
+                disableGutters
+                slots={{ heading: 'h2' }}
+              >
                 <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography
                     variant="subtitle1"
+                    component="span"
                     sx={{ fontWeight: expanded === index ? 700 : 500, transition: 'font-weight 0.2s' }}
                   >
                     {faq.title}
