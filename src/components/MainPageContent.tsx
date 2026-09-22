@@ -49,11 +49,14 @@ export const MainPageContent = () => {
                 component={Link}
                 to={`/pattern/${pattern.id}`}
                 onClick={(e) => handleClick(e, pattern)}
-                style={{ textDecoration: 'none', display: 'block' }}
+                style={{ textDecoration: 'none', display: 'block', height: '100%' }}
               >
                 <Card
                   elevation={0}
                   sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: 4,
@@ -67,7 +70,7 @@ export const MainPageContent = () => {
                   }}
                 >
                   {pattern.pattern_file_external ? (
-                    <Box sx={{ p: 2, position: 'relative' }}>
+                    <Box sx={{ p: 2, position: 'relative', flexShrink: 0 }}>
                       <Box
                         sx={{
                           aspectRatio: '1/1',
@@ -85,7 +88,7 @@ export const MainPageContent = () => {
                       />
                     </Box>
                   ) : (
-                    <Box sx={{ p: 2 }}>
+                    <Box sx={{ p: 2, flexShrink: 0 }}>
                       <img
                         loading="lazy"
                         src={generatePbImage(pattern)}
@@ -102,6 +105,7 @@ export const MainPageContent = () => {
 
                   <Box
                     sx={{
+                      mt: 'auto',
                       px: 0.5,
                       pb: 1.5,
                       display: 'flex',
