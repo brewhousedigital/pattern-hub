@@ -13,6 +13,14 @@ import ExtensionRoundedIcon from '@mui/icons-material/ExtensionRounded';
 import { Box, Grid, Card, Chip, Stack, Alert, Link as MuiLink, Skeleton } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
+const statChipSx = {
+  fontSize: '0.65rem',
+  height: 18,
+  color: 'text.secondary',
+  borderColor: 'rgba(0, 0, 0, 0.3)',
+  '& .MuiChip-icon': { color: 'text.secondary', ml: '7px' },
+};
+
 export const MainPageContent = () => {
   // Get the pattern data
   const { isPending, data } = useQueryGetAllPatternsByPagination();
@@ -106,7 +114,7 @@ export const MainPageContent = () => {
                   <Box
                     sx={{
                       mt: 'auto',
-                      px: 0.5,
+                      px: 1.5,
                       pb: 1.5,
                       display: 'flex',
                       gap: 0.75,
@@ -119,26 +127,14 @@ export const MainPageContent = () => {
                       variant="outlined"
                       icon={<FavoriteRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                       label={pattern.favorite_count ?? 0}
-                      sx={{
-                        fontSize: '0.65rem',
-                        height: 18,
-                        color: 'text.secondary',
-                        borderColor: 'rgba(0, 0, 0, 0.3)',
-                        '& .MuiChip-icon': { color: 'text.secondary' },
-                      }}
+                      sx={statChipSx}
                     />
                     <Chip
                       size="small"
                       variant="outlined"
                       icon={<StarRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                       label={(pattern.avg_rating ?? 0).toFixed(1)}
-                      sx={{
-                        fontSize: '0.65rem',
-                        height: 18,
-                        color: 'text.secondary',
-                        borderColor: 'rgba(0, 0, 0, 0.3)',
-                        '& .MuiChip-icon': { color: 'text.secondary' },
-                      }}
+                      sx={statChipSx}
                     />
                     {!!pattern.pieces && (
                       <Chip
@@ -146,13 +142,7 @@ export const MainPageContent = () => {
                         variant="outlined"
                         icon={<ExtensionRoundedIcon sx={{ fontSize: '0.7rem !important' }} />}
                         label={pattern.pieces}
-                        sx={{
-                          fontSize: '0.65rem',
-                          height: 18,
-                          color: 'text.secondary',
-                          borderColor: 'rgba(0, 0, 0, 0.3)',
-                          '& .MuiChip-icon': { color: 'text.secondary' },
-                        }}
+                        sx={statChipSx}
                       />
                     )}
                     <DifficultyChip value={pattern.avg_difficulty} sx={{ fontSize: '0.65rem', height: 18 }} />
