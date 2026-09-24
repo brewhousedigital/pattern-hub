@@ -49,7 +49,7 @@ import {
 export const Route = createFileRoute('/sets/$setId')({
   component: RouteComponent,
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getSetByIdOptions(params.setId)).catch(() => undefined),
+    context.queryClient.query({ ...getSetByIdOptions(params.setId), staleTime: 'static' }).catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,

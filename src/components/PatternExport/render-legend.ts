@@ -171,7 +171,7 @@ export async function buildLegend(input: LegendInput): Promise<LegendOutput> {
 }
 
 async function fetchAsDataUri(url: string, queryClient: QueryClient): Promise<string> {
-  return queryClient.fetchQuery({
+  return queryClient.query({
     queryKey: ['pattern-key-icon', url],
     queryFn: async () => {
       const res = await fetch(url);

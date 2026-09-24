@@ -60,7 +60,7 @@ export function useExportPattern() {
     setError(null);
     try {
       // ── 1. Fetch source SVG ────────────────────────────────────────────────
-      const rawSvgText = await queryClient.fetchQuery({
+      const rawSvgText = await queryClient.query({
         queryKey: ['pattern-svg', ctx.patternFileUrl],
         queryFn: () =>
           fetch(ctx.patternFileUrl).then((r) => {
@@ -70,10 +70,9 @@ export function useExportPattern() {
         staleTime: Infinity,
         gcTime: 1000 * 60 * 60,
       });
-      const svgText =
-        ctx.hiddenLayerIds?.length
-          ? applyHiddenLayers(rawSvgText, new Set(ctx.hiddenLayerIds))
-          : rawSvgText;
+      const svgText = ctx.hiddenLayerIds?.length
+        ? applyHiddenLayers(rawSvgText, new Set(ctx.hiddenLayerIds))
+        : rawSvgText;
 
       // ── 2. Resolve target output px ────────────────────────────────────────
       // For 'svg' + 'original' variant we skip everything else; composite handles it.

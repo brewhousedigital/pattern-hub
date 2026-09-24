@@ -36,7 +36,7 @@ export const Route = createFileRoute('/authors/$slug')({
     // Page 1 of the author's patterns comes back in the same request, so the
     // first render needs no client-side fetch at all.
     const data = await context.queryClient
-      .ensureQueryData(getAuthorPageDataOptions(params.slug, 1))
+      .query({ ...getAuthorPageDataOptions(params.slug, 1), staleTime: 'static' })
       .catch(() => undefined);
     const author = data?.author;
     // This profile's slug is untouched - every existing /authors/$slug

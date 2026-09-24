@@ -21,7 +21,7 @@ export const Route = createFileRoute('/profile/$userId')({
     return { tab: Number.isFinite(tab) && tab >= 0 && tab <= 5 ? tab : 0 };
   },
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getUserByIdOptions(params.userId)).catch(() => undefined),
+    context.queryClient.query({ ...getUserByIdOptions(params.userId), staleTime: 'static' }).catch(() => undefined),
   head: ({ loaderData, match }) => {
     const rawName = loaderData?.name || '';
     const displayName = rawName.startsWith('NewUser_') ? '' : rawName;

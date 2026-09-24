@@ -16,7 +16,12 @@ import {
   RESOURCE_SORT_OPTIONS,
   type TypeResourceSortValue,
 } from '@/functions/utilities/learning-resources-search';
-import { RESOURCE_TYPE_COLORS, RESOURCE_TYPE_ICONS, RESOURCE_TYPE_LABELS, getYouTubeThumbnail } from '@/functions/utilities/resource-types';
+import {
+  RESOURCE_TYPE_COLORS,
+  RESOURCE_TYPE_ICONS,
+  RESOURCE_TYPE_LABELS,
+  getYouTubeThumbnail,
+} from '@/functions/utilities/resource-types';
 import { alpha } from '@mui/material/styles';
 
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
@@ -52,7 +57,10 @@ export const Route = createFileRoute('/learning-resources/')({
   loaderDeps: ({ search }) => ({ q: search.q, sort: search.sort, page: search.page }),
   loader: ({ context, deps }) =>
     context.queryClient
-      .ensureQueryData(getPublishedResourcesOptions({ page: deps.page, search: deps.q, sort: deps.sort }))
+      .query({
+        ...getPublishedResourcesOptions({ page: deps.page, search: deps.q, sort: deps.sort }),
+        staleTime: 'static',
+      })
       .catch(() => undefined),
   head: ({ match }) =>
     generateSEO(
@@ -170,7 +178,9 @@ function RouteComponent() {
               {q ? 'No matching resources' : 'No resources yet'}
             </Typography>
             <Typography variant="body2" color="text.disabled">
-              {q ? `No resources found for "${q}". Try a different search.` : 'Check back soon for videos, articles, and more.'}
+              {q
+                ? `No resources found for "${q}". Try a different search.`
+                : 'Check back soon for videos, articles, and more.'}
             </Typography>
           </Box>
         )}

@@ -15,7 +15,8 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/wiki/')({
   component: RouteComponent,
-  loader: ({ context }) => context.queryClient.ensureQueryData(getWikiDataOptions()).catch(() => undefined),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...getWikiDataOptions(), staleTime: 'static' }).catch(() => undefined),
   head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
   headers: staticCacheHeaders,
 });

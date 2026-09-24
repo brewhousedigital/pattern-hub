@@ -25,7 +25,8 @@ import {
 
 export const Route = createFileRoute('/help/faq')({
   component: RouteComponent,
-  loader: ({ context }) => context.queryClient.ensureQueryData(getAllFAQOptions()).catch(() => undefined),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...getAllFAQOptions(), staleTime: 'static' }).catch(() => undefined),
   head: ({ match }) => generateSEO('FAQ', '', match.pathname),
   headers: staticCacheHeaders,
 });

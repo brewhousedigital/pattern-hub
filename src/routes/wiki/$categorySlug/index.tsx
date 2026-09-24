@@ -15,7 +15,7 @@ export const Route = createFileRoute('/wiki/$categorySlug/')({
   // Categories and pages come back in one request, so the article list is in
   // the server-rendered HTML.
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+    context.queryClient.query({ ...getWikiDataOptions(), staleTime: 'static' }).then(
       (data) => data.categories.find((c) => c.slug === params.categorySlug),
       () => undefined,
     ),
@@ -41,7 +41,9 @@ function RouteComponent() {
       <PageWrapper>
         <Container maxWidth="md">
           {/* Breadcrumb */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 4, color: 'text.disabled', fontSize: '0.85rem' }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 4, color: 'text.disabled', fontSize: '0.85rem' }}
+          >
             <Link to="/wiki" style={{ color: 'inherit', textDecoration: 'none' }}>
               Wiki
             </Link>

@@ -15,7 +15,7 @@ import { Box, Container, Typography } from '@mui/material';
 export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
   component: RouteComponent,
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+    context.queryClient.query({ ...getWikiDataOptions(), staleTime: 'static' }).then(
       (data) => findWikiPage(data.pages, params.categorySlug, params.pageSlug),
       () => undefined,
     ),

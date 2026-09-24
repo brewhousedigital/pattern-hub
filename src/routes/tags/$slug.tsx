@@ -20,7 +20,9 @@ import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, Typography
 export const Route = createFileRoute('/tags/$slug')({
   component: RouteComponent,
   loader: async ({ params, context }) => {
-    const data = await context.queryClient.ensureQueryData(getTagPageDataOptions(params.slug)).catch(() => undefined);
+    const data = await context.queryClient
+      .query({ ...getTagPageDataOptions(params.slug), staleTime: 'static' })
+      .catch(() => undefined);
     const tag = data?.tag;
     // getTagPageDataOptions matches either the current slug or a past one
     // filed in previous_slugs - a mismatch here means this tag was renamed

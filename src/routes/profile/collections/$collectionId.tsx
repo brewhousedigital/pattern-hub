@@ -36,7 +36,9 @@ export const Route = createFileRoute('/profile/collections/$collectionId')({
   // the component itself renders client-side only (auth-dependent UI).
   ssr: 'data-only',
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getCollectionByIdOptions(params.collectionId)).catch(() => undefined),
+    context.queryClient
+      .query({ ...getCollectionByIdOptions(params.collectionId), staleTime: 'static' })
+      .catch(() => undefined),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.name,

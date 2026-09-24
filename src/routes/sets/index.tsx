@@ -28,7 +28,8 @@ import {
 
 export const Route = createFileRoute('/sets/')({
   component: RouteComponent,
-  loader: ({ context }) => context.queryClient.ensureQueryData(getPublishedSetsOptions()).catch(() => undefined),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...getPublishedSetsOptions(), staleTime: 'static' }).catch(() => undefined),
   head: ({ match }) => generateSEO('Sets', 'Browse curated pattern collections', match.pathname),
   headers: staticCacheHeaders,
 });

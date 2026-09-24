@@ -37,7 +37,7 @@ export const Route = createFileRoute('/pattern/')({
     if (!deps.patternId) return undefined;
 
     const sharedPattern = context.queryClient
-      .ensureQueryData(getPatternByIdOptions(deps.patternId))
+      .query({ ...getPatternByIdOptions(deps.patternId), staleTime: 'static' })
       .catch(() => undefined);
 
     // On the client, a pattern-card click already has this pattern's data

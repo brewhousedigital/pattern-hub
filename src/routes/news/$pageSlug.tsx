@@ -16,7 +16,7 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 export const Route = createFileRoute('/news/$pageSlug')({
   component: RouteComponent,
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+    context.queryClient.query({ ...getWikiDataOptions(), staleTime: 'static' }).then(
       (data) => findWikiPage(data.pages, NEWS_CATEGORY_SLUG, params.pageSlug),
       () => undefined,
     ),

@@ -18,7 +18,7 @@ export const Route = createFileRoute('/news/')({
   // Categories and pages come back in one request, so the article list is in
   // the server-rendered HTML.
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+    context.queryClient.query({ ...getWikiDataOptions(), staleTime: 'static' }).then(
       (data) => data.categories.find((c) => c.slug === NEWS_CATEGORY_SLUG),
       () => undefined,
     ),

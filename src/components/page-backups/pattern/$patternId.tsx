@@ -9,7 +9,7 @@
 
 /*export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
-  loader: ({ params }) => queryClient.ensureQueryData(getPatternByIdOptions(params.patternId)),
+  loader: ({ params }) => queryClient.query({ ...getPatternByIdOptions(params.patternId), staleTime: 'static' }),
   head: ({ loaderData, match }) => ({
     meta: generateSEO(loaderData?.name, loaderData?.description, match.pathname),
   }),

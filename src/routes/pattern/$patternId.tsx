@@ -15,7 +15,8 @@ import { Alert, Box, Container, Link as MuiLink } from '@mui/material';
 
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
-  loader: ({ params, context }) => context.queryClient.ensureQueryData(getPatternByIdOptions(params.patternId)),
+  loader: ({ params, context }) =>
+    context.queryClient.query({ ...getPatternByIdOptions(params.patternId), staleTime: 'static' }),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.name,
