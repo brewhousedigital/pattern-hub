@@ -29,6 +29,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import { generatePatternLink } from '@/functions/utilities/generate-pattern-link.ts';
+import { getVisibleReporterEmail, HIDDEN_REPORTER_EMAIL_LABEL } from '@/functions/utilities/reporter-email';
 
 type AdminComplaintsModalProps = {
   open: boolean;
@@ -85,7 +86,8 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
           ...(isSpam ? { spam: { from: false, to: true } } : {}),
         },
         metadata: {
-          reporter_email: props.complaint.email,
+          // The log is visible to the admin team, so it gets the same hidden-email rule as the UI.
+          reporter_email: getVisibleReporterEmail(props.complaint) ?? undefined,
           category: props.complaint.category,
           review_notes: notes,
         },
@@ -143,7 +145,7 @@ export const AdminComplaintsModal = (props: AdminComplaintsModalProps) => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ display: 'block' }}>
-              Reporter: {props.complaint?.email}
+              Reporter: {getVisibleReporterEmail(props.complaint) ?? HIDDEN_REPORTER_EMAIL_LABEL}
             </Typography>
 
             <Typography variant="body2" color="text.secondary">

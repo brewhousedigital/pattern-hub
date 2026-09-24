@@ -1,10 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  getAllWikiCategoriesOptions,
-  getAllWikiPagesOptions,
-  useQueryGetAllWikiCategories,
-  useQueryGetAllWikiPages,
-} from '@/functions/database/wiki';
+import { getWikiDataOptions, useQueryGetWikiData } from '@/functions/database/wiki';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -20,14 +15,11 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/news/')({
   component: RouteComponent,
-  // Prefetches pages alongside categories so the article list is in the
-  // server-rendered HTML (the component reads both queries).
+  // Categories and pages come back in one request, so the article list is in
+  // the server-rendered HTML.
   loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()),
-      context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
-    ]).then(
-      ([categories]) => categories.find((c) => c.slug === NEWS_CATEGORY_SLUG),
+    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+      (data) => data.categories.find((c) => c.slug === NEWS_CATEGORY_SLUG),
       () => undefined,
     ),
   head: ({ match }) => generateSEO('News', 'Announcements and updates from Pattern Archive.', match.pathname),
@@ -35,12 +27,10 @@ export const Route = createFileRoute('/news/')({
 });
 
 function RouteComponent() {
-  const { data: categories = [], isLoading: catsLoading } = useQueryGetAllWikiCategories();
-  const { data: pages = [], isLoading: pagesLoading } = useQueryGetAllWikiPages();
+  const { data, isLoading } = useQueryGetWikiData();
 
-  const category = categories.find((c) => c.slug === NEWS_CATEGORY_SLUG);
-  const newsPages = pages.filter((p) => p.category === category?.id);
-  const isLoading = catsLoading || pagesLoading;
+  const category = data?.categories.find((c) => c.slug === NEWS_CATEGORY_SLUG);
+  const newsPages = (data?.pages ?? []).filter((p) => p.category === category?.id);
 
   return (
     <GeneralLayout>

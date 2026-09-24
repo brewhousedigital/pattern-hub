@@ -18,6 +18,8 @@ export type ProfileDataParams = {
   artistPage: number;
   isOwner: boolean;
   isArtist: boolean;
+  /** The profile user's featured_pattern_id. Empty when none is set. */
+  featuredPatternId: string;
 };
 
 export type TypeProfileDataResponse = {
@@ -28,7 +30,10 @@ export type TypeProfileDataResponse = {
   gallery: TypePaginationDatabaseResponse<TypeGalleryResponse>;
   collections: TypePaginationDatabaseResponse<TypeCollectionResponse>;
   followedCollections: TypeFollowedCollectionResponse[] | null;
+  /** Full pattern records (authors + tag_refs expanded), same shape as getPatternByIdOptions. */
   artistPatterns: TypePaginationDatabaseResponse<TypePatternResponse> | null;
+  /** Full pattern record (authors + tag_refs expanded), or null when none is set or it no longer exists. */
+  featuredPattern: TypePatternResponse | null;
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -48,6 +53,7 @@ export const useQueryGetProfileData = (params: ProfileDataParams) => {
         artistPage:     String(params.artistPage),
         isOwner:        String(params.isOwner),
         isArtist:       String(params.isArtist),
+        featuredPatternId: params.featuredPatternId,
       });
       const res = await fetch(`${pocketbaseDomain}/api/profile-data?${p}`);
       if (!res.ok) throw new Error('Failed to load profile data');

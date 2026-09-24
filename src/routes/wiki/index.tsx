@@ -1,10 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import {
-  getAllWikiCategoriesOptions,
-  getAllWikiPagesOptions,
-  useQueryGetAllWikiCategories,
-  useQueryGetAllWikiPages,
-} from '@/functions/database/wiki';
+import { getWikiDataOptions, useQueryGetWikiData } from '@/functions/database/wiki';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
@@ -20,20 +15,15 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 
 export const Route = createFileRoute('/wiki/')({
   component: RouteComponent,
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()),
-      context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
-    ]).catch(() => undefined),
+  loader: ({ context }) => context.queryClient.ensureQueryData(getWikiDataOptions()).catch(() => undefined),
   head: ({ match }) => generateSEO('Wiki', 'Browse the Pattern Archive wiki', match.pathname),
   headers: staticCacheHeaders,
 });
 
 function RouteComponent() {
-  const { data: allCategories = [], isLoading: catsLoading } = useQueryGetAllWikiCategories();
-  const { data: pages = [], isLoading: pagesLoading } = useQueryGetAllWikiPages();
-  const categories = allCategories.filter((c) => c.slug !== NEWS_CATEGORY_SLUG);
-  const isLoading = catsLoading || pagesLoading;
+  const { data, isLoading } = useQueryGetWikiData();
+  const pages = data?.pages ?? [];
+  const categories = (data?.categories ?? []).filter((c) => c.slug !== NEWS_CATEGORY_SLUG);
 
   return (
     <GeneralLayout>

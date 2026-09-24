@@ -1,10 +1,5 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import {
-  getAllWikiCategoriesOptions,
-  getAllWikiPagesOptions,
-  useQueryGetAllWikiCategories,
-  useQueryGetAllWikiPages,
-} from '@/functions/database/wiki';
+import { getWikiDataOptions, useQueryGetWikiData } from '@/functions/database/wiki';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { WikiCategoryPageList } from '@/components/wiki/WikiCategoryPageList';
 import { generateSEO } from '@/functions/utilities/seo';
@@ -17,14 +12,11 @@ import { Box, Container, Typography } from '@mui/material';
 
 export const Route = createFileRoute('/wiki/$categorySlug/')({
   component: RouteComponent,
-  // Prefetches pages alongside categories so the article list is in the
-  // server-rendered HTML (the component reads both queries).
+  // Categories and pages come back in one request, so the article list is in
+  // the server-rendered HTML.
   loader: ({ params, context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(getAllWikiCategoriesOptions()),
-      context.queryClient.ensureQueryData(getAllWikiPagesOptions()),
-    ]).then(
-      ([categories]) => categories.find((c) => c.slug === params.categorySlug),
+    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+      (data) => data.categories.find((c) => c.slug === params.categorySlug),
       () => undefined,
     ),
   head: ({ loaderData, match }) =>
@@ -39,12 +31,10 @@ export const Route = createFileRoute('/wiki/$categorySlug/')({
 function RouteComponent() {
   const { categorySlug } = useParams({ from: '/wiki/$categorySlug/' });
 
-  const { data: categories = [], isLoading: catsLoading } = useQueryGetAllWikiCategories();
-  const { data: pages = [], isLoading: pagesLoading } = useQueryGetAllWikiPages();
+  const { data, isLoading } = useQueryGetWikiData();
 
-  const category = categories.find((c) => c.slug === categorySlug);
-  const catPages = pages.filter((p) => p.category === category?.id);
-  const isLoading = catsLoading || pagesLoading;
+  const category = data?.categories.find((c) => c.slug === categorySlug);
+  const catPages = (data?.pages ?? []).filter((p) => p.category === category?.id);
 
   return (
     <GeneralLayout>

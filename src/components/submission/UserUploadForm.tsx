@@ -7,15 +7,12 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import { useDebounce } from '@/functions/hooks/useDebounce';
 import { useQuerySearchManualAuthors } from '@/functions/database/authors';
 import {
-  useQuerySearchTags,
   useQuerySearchTagsV2,
-  useQueryGetImpliedTags,
-  useQueryGetAllTagAliases,
-  useQueryAuthorTagIds,
   deriveHierarchyInherited,
   applyManualTagChange,
   applyKeyTagChange,
 } from '@/functions/database/tags';
+import { useQueryGetTagEntryData } from '@/functions/database/tag-entry-data';
 import { normalizeTagName } from '@/functions/utilities/normalize-tag';
 import { FancyAutocomplete } from '@/components/FancyAutocomplete';
 import { SvgDropZone } from '@/components/admin/SvgDropZone';
@@ -150,16 +147,16 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   const [tagValue, setTagValue] = React.useState<string[]>(() => editSubmission?.tags ?? []);
   const [tagInput, setTagInput] = React.useState('');
   const debouncedTagSearch = useDebounce(tagInput, 400);
-  // An empty search still shows the
-  // most-used tags first, from the `tags` view (unchanged, and already
-  // known to be publicly readable, unlike the admin-scoped tag_usage view
-  // this form's own admin equivalent, PatternTagsField.tsx, uses instead).
-  // Once there's something typed, tags_v2 (also already publicly readable -
-  // the per-tag Definition Page depends on it) takes over: it surfaces
-  // every real tag, including one with no published-pattern usage yet,
-  // which the `tags` view never would.
+  // This form's tag reference data - the top tags, the Author-typed tag ids,
+  // and the implied-tag and alias tables - comes back in one request (see
+  // /api/tag-entry-data). Only the search-as-you-type reads stay separate.
+  const { data: tagEntryData, isFetching: tagViewFetching } = useQueryGetTagEntryData();
+  // An empty search still shows the most-used tags first, from the
+  // tag_usage view. Once there's something typed, tags_v2 takes over: it
+  // surfaces every real tag, including one with no published-pattern usage
+  // yet, which tag_usage never would.
   const isSearchingTags = debouncedTagSearch.trim() !== '';
-  const { data: tagViewData, isFetching: tagViewFetching } = useQuerySearchTags('');
+  const tagViewData = tagEntryData?.topTags;
   const { data: tagsV2SearchData = [], isFetching: tagsV2SearchFetching } = useQuerySearchTagsV2(
     debouncedTagSearch,
     isSearchingTags,
@@ -167,10 +164,8 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   // Same treatment
   // PatternTagsField.tsx (the admin equivalent of this field) already got -
   // an Author-typed tag is meant to be entirely derived from a pattern's
-  // credited author(s), never picked directly here either. tags_v2/
-  // tag_types (which useQueryAuthorTagIds itself reads) are both already
-  // public, same as the rest of this form's own tag data.
-  const { data: authorTagIds = new Set<string>() } = useQueryAuthorTagIds();
+  // credited author(s), never picked directly here either.
+  const authorTagIds = React.useMemo(() => tagEntryData?.authorTagIds ?? new Set<string>(), [tagEntryData]);
   const tagSearchOptions = React.useMemo(
     () => tagsV2SearchData.filter((row) => !authorTagIds.has(row.id)),
     [tagsV2SearchData, authorTagIds],
@@ -182,8 +177,8 @@ export const UserUploadForm = ({ editSubmission }: UserUploadFormProps = {}) => 
   // implied_tags + tag_aliases
   // replace tag_hierarchy as the source for auto-added tags and alias
   // resolution on this entry surface.
-  const { data: impliedTagsData = [] } = useQueryGetImpliedTags();
-  const { data: aliasesData = [] } = useQueryGetAllTagAliases();
+  const impliedTagsData = React.useMemo(() => tagEntryData?.impliedTags ?? [], [tagEntryData]);
+  const aliasesData = React.useMemo(() => tagEntryData?.aliases ?? [], [tagEntryData]);
 
   /** Tags present only because they're implied by another tag currently present. */
   const [hierarchyInherited, setHierarchyInherited] = React.useState<Set<string>>(new Set());

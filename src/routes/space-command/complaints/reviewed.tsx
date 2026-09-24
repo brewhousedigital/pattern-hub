@@ -21,6 +21,7 @@ import {
   useGlobalAdminPaginationContentReports,
 } from '@/data/admin-global-state';
 import { useDebounce } from '@/functions/hooks/useDebounce';
+import { getVisibleReporterEmail, HIDDEN_REPORTER_EMAIL_LABEL } from '@/functions/utilities/reporter-email';
 
 import { Box, Button, Chip, Tab, Tabs, Typography } from '@mui/material';
 
@@ -137,6 +138,8 @@ function PatternReportsGrid() {
     {
       field: 'email',
       headerName: 'Email',
+      // The getter also feeds the CSV export, so the hidden email cannot leak from the toolbar.
+      valueGetter: (_value, row) => getVisibleReporterEmail(row) ?? HIDDEN_REPORTER_EMAIL_LABEL,
       disableColumnMenu: true,
       width: 200,
       sortable: false,
@@ -304,6 +307,8 @@ function ContentReportsGrid() {
     {
       field: 'email',
       headerName: 'Email',
+      // The getter also feeds the CSV export, so the hidden email cannot leak from the toolbar.
+      valueGetter: (_value, row) => getVisibleReporterEmail(row) ?? HIDDEN_REPORTER_EMAIL_LABEL,
       disableColumnMenu: true,
       width: 200,
       sortable: false,

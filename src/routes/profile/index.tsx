@@ -17,10 +17,9 @@ import { PatternListDrawer } from '@/components/PatternListDrawer';
 import { DifficultyChip } from '@/components/PatternUtilities/DifficultyChip';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { enqueueSnackbar } from 'notistack';
-import { getPatternByIdOptions, type TypePatternResponse } from '@/functions/database/patterns';
+import type { TypePatternResponse } from '@/functions/database/patterns';
 import { useQueryGetAllTagsV2 } from '@/functions/database/tags';
 import { groupTagsByType, isAuthorDisplayType } from '@/functions/utilities/group-tags-by-type';
-import { useQueries, useQuery } from '@tanstack/react-query';
 import { generateSEO } from '@/functions/utilities/seo.ts';
 import {
   generateUserAvatarUrl,
@@ -170,6 +169,8 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
   const [difficultyPage, setDifficultyPage] = React.useState(1);
   const [galleryPage, setGalleryPage] = React.useState(1);
   const [collectionsPage, setCollectionsPage] = React.useState(1);
+  // The featured pattern card only shows for an artist, so only ask for it then.
+  const featuredPatternId = isArtist ? (thisAuthData?.featured_pattern_id ?? '') : '';
   const {
     isPending,
     isError,
@@ -186,6 +187,7 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
     artistPage: 1,
     isOwner: !isPublicView,
     isArtist,
+    featuredPatternId,
   });
 
   const dataFav = profileData?.favorites;
@@ -195,24 +197,12 @@ export const ProfileContent = ({ userData, tab, setTab }: ProfileContentProps) =
   const dataGallery = profileData?.gallery;
   const dataCols = profileData?.collections;
   const followedCols = profileData?.followedCollections ?? [];
+  // Full pattern records (see /api/profile-data), so both the grid tiles and
+  // PatternListDrawer (and PatternViewContent/ExportWizard inside it) read
+  // this one list - no per-pattern fetch before a tile can be opened.
   const artistPatterns = profileData?.artistPatterns ?? undefined;
-
-  // The artist-patterns summary endpoint only returns a lightweight subset (id,
-  // name, thumbnail fields, pieces) for the grid tiles - PatternListDrawer (and
-  // PatternViewContent/ExportWizard inside it) need the full record, so fetch
-  // each one before it can be opened. The grid itself keeps using the lightweight
-  // list below (already sufficient for the tiles, always instantly available).
-  const artistPatternIds = artistPatterns?.items?.map((p) => p.id) ?? [];
-  const artistPatternQueries = useQueries({
-    queries: artistPatternIds.map((id) => ({ ...getPatternByIdOptions(id), enabled: !!id })),
-  });
-  const fullArtistPatterns = artistPatternIds.map((_, i) => artistPatternQueries[i]?.data) as TypePatternResponse[];
-
-  const featuredPatternId = thisAuthData?.featured_pattern_id ?? '';
-  const { data: featuredPattern } = useQuery({
-    ...getPatternByIdOptions(featuredPatternId),
-    enabled: !!featuredPatternId,
-  });
+  const fullArtistPatterns = artistPatterns?.items ?? [];
+  const featuredPattern = profileData?.featuredPattern ?? undefined;
 
   // Groups the featured pattern's tags by Type, so same-type tags render
   // clustered together and color-coded below, instead of a plain uncolored

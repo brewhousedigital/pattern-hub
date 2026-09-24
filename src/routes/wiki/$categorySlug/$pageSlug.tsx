@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import { findWikiPage, getWikiDataOptions, useQueryGetWikiData } from '@/functions/database/wiki';
 import { WikiPageContent } from '@/components/wiki/WikiPageContent';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
@@ -15,7 +15,10 @@ import { Box, Container, Typography } from '@mui/material';
 export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
   component: RouteComponent,
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getWikiPageOptions(params.categorySlug, params.pageSlug)).catch(() => undefined),
+    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+      (data) => findWikiPage(data.pages, params.categorySlug, params.pageSlug),
+      () => undefined,
+    ),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,
@@ -31,10 +34,12 @@ export const Route = createFileRoute('/wiki/$categorySlug/$pageSlug')({
 function RouteComponent() {
   const { categorySlug, pageSlug } = useParams({ from: '/wiki/$categorySlug/$pageSlug' });
 
-  const { data: page, isLoading, isError } = useQueryGetWikiPage(categorySlug, pageSlug);
-
-  // All pages are fetched for [[wiki-link]] resolution - cached by React Query
-  const { data: allPages = [] } = useQueryGetAllWikiPages();
+  // One cached request for every wiki page - this page, and all the others
+  // for [[wiki-link]] resolution.
+  const { data, isLoading, isError: isWikiError } = useQueryGetWikiData();
+  const allPages = data?.pages ?? [];
+  const page = findWikiPage(allPages, categorySlug, pageSlug);
+  const isError = isWikiError || (!!data && !page);
 
   return (
     <GeneralLayout>

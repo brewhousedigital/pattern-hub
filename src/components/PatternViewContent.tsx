@@ -55,8 +55,15 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
   const { data: publishedManualAuthors = [] } = useQueryGetPublishedManualAuthors();
 
   const { authData } = useGlobalAuthData();
-  const { data: drawerData } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
+  const {
+    data: drawerData,
+    isLoading: isDrawerDataLoading,
+    isError: isDrawerDataError,
+  } = useQueryGetPatternDrawerData(viewData?.id || '', authData?.id || '');
   const patternSets = drawerData?.sets ?? [];
+  // The "In Sets" section shows while the drawer data loads or fails, and
+  // after that only when the pattern is in at least one set.
+  const showSetsSection = isDrawerDataLoading || isDrawerDataError || patternSets.length > 0;
 
   // Groups the standalone tags block below by each tag's Type. Computed
   // unconditionally (rules of hooks) even though it's only rendered under
@@ -472,7 +479,7 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
             <></>
           )}
 
-          {patternSets.length > 0 && (
+          {showSetsSection && (
             <Box sx={{ px: 1, pt: 2 }}>
               <Typography
                 variant="overline"
@@ -487,28 +494,39 @@ export const PatternViewContent = (props: PatternViewContentProps) => {
               >
                 In Sets
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                {patternSets.map((set) => (
-                  <Tooltip
-                    key={set.id}
-                    title={set.description || ''}
-                    arrow
-                    describeChild
-                    disableHoverListener={!set.description}
-                  >
-                    <Link to="/sets/$setId" params={{ setId: set.id }}>
-                      <Chip
-                        icon={<StyleRoundedIcon sx={{ fontSize: '1rem !important' }} />}
-                        label={set.title}
-                        size="small"
-                        variant="outlined"
-                        clickable
-                        sx={set.color ? { borderColor: set.color, color: set.color } : undefined}
-                      />
-                    </Link>
-                  </Tooltip>
-                ))}
-              </Box>
+              {isDrawerDataLoading ? (
+                <Box sx={{ display: 'flex', gap: 0.75 }} aria-busy="true" aria-label="Loading sets">
+                  <Skeleton variant="rounded" width={96} height={24} sx={{ borderRadius: 4 }} />
+                  <Skeleton variant="rounded" width={72} height={24} sx={{ borderRadius: 4 }} />
+                </Box>
+              ) : isDrawerDataError ? (
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Could not load the sets for this pattern.
+                </Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                  {patternSets.map((set) => (
+                    <Tooltip
+                      key={set.id}
+                      title={set.description || ''}
+                      arrow
+                      describeChild
+                      disableHoverListener={!set.description}
+                    >
+                      <Link to="/sets/$setId" params={{ setId: set.id }}>
+                        <Chip
+                          icon={<StyleRoundedIcon sx={{ fontSize: '1rem !important' }} />}
+                          label={set.title}
+                          size="small"
+                          variant="outlined"
+                          clickable
+                          sx={set.color ? { borderColor: set.color, color: set.color } : undefined}
+                        />
+                      </Link>
+                    </Tooltip>
+                  ))}
+                </Box>
+              )}
             </Box>
           )}
 

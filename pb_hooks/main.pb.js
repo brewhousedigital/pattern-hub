@@ -1097,6 +1097,7 @@ routerAdd('GET', '/api/profile-data', (c) => {
   const artistPage = Math.max(1, parseInt(q.get('artistPage') || '1', 10));
   const isOwner = q.get('isOwner') === 'true';
   const isArtist = q.get('isArtist') === 'true';
+  const featuredPatternId = q.get('featuredPatternId') || '';
 
   // Patterns collection ID is needed by the client to build image URLs
   let patternsColId = '';
@@ -1130,7 +1131,9 @@ routerAdd('GET', '/api/profile-data', (c) => {
       collectionId: patternsColId,
       name: r.getString('name'),
       pattern_file: r.getString('pattern_file'),
-      pattern_file_external: r.getBool('pattern_file_external'),
+      // A file field (the file name), not a bool - generatePbImage falls
+      // back to it when pattern_file is empty.
+      pattern_file_external: r.getString('pattern_file_external'),
       description: r.getString('description'),
     };
   }
@@ -1263,6 +1266,10 @@ routerAdd('GET', '/api/profile-data', (c) => {
     return items;
   }
 
+  // Full pattern records (same fields + expand as getPatternByIdOptions on
+  // the client), not a lightweight subset. The grid tiles only need a few
+  // fields, but PatternListDrawer needs the full record. Sending it here
+  // removes one extra getOne call per tile (up to 8) from the client.
   function fetchArtistPatterns(page) {
     if (!isArtist) return null;
     // Count patterns where userId appears in the JSON authors array
@@ -1270,7 +1277,7 @@ routerAdd('GET', '/api/profile-data', (c) => {
       likeUid: '%"' + userId + '"%',
     });
     const offset = (page - 1) * PER_PAGE_ARTIST;
-    const items = [];
+    let items = [];
     try {
       const records = $app.findRecordsByFilter(
         'patterns',
@@ -1280,19 +1287,23 @@ routerAdd('GET', '/api/profile-data', (c) => {
         offset,
         { uid: userId },
       );
-      for (let i = 0; i < records.length; i++) {
-        const r = records[i];
-        items.push({
-          id: r.id,
-          collectionId: patternsColId,
-          name: r.getString('name'),
-          pattern_file: r.getString('pattern_file'),
-          pattern_file_external: r.getBool('pattern_file_external'),
-          pieces: r.getInt('pieces'),
-        });
-      }
+      $app.expandRecords(records, ['authors', 'tag_refs'], null);
+      items = records;
     } catch (_) {}
     return buildPaged(total, page, PER_PAGE_ARTIST, items);
+  }
+
+  // The client sends the featured pattern id it already has (from the user
+  // record), so a change to it makes a new query key and a new fetch.
+  function fetchFeaturedPattern() {
+    if (!featuredPatternId) return null;
+    try {
+      const r = $app.findRecordById('patterns', featuredPatternId);
+      $app.expandRecord(r, ['authors', 'tag_refs'], null);
+      return r;
+    } catch (_) {
+      return null;
+    }
   }
 
   try {
@@ -1305,11 +1316,394 @@ routerAdd('GET', '/api/profile-data', (c) => {
       collections: fetchCollections(colsPage),
       followedCollections: fetchFollowedCollections(),
       artistPatterns: fetchArtistPatterns(artistPage),
+      featuredPattern: fetchFeaturedPattern(),
     });
   } catch (err) {
     console.log('>>>profile-data error', err?.message);
     return c.json(500, { error: 'internal error' });
   }
+});
+
+// Consolidates the 4 NotificationBell lookups (followed collections, followed
+// sets, submission results, resolved reports) into one call. The header shows
+// the bell on every page for a signed-in user, so this call runs often. The
+// set and collection pages read their "am I following" state from this same
+// response too (see useQueryGetUserFollowedSets/-Collections).
+//
+// The user id comes from the auth token, never from the query string. Each
+// row is serialized by hand so an expanded record only carries the fields the
+// bell reads - `complaints` has no public view rule, so only the reported
+// pattern's id and name go out, never the report itself.
+routerAdd(
+  'GET',
+  '/api/user-notifications',
+  (c) => {
+    const userId = c.auth?.id || '';
+    if (!userId) return c.json(401, { error: 'unauthorized' });
+    const params = { uid: userId };
+
+    const result = {
+      followedCollections: [],
+      followedSets: [],
+      submissionNotifications: [],
+      complaintNotifications: [],
+    };
+
+    try {
+      const records = $app.findRecordsByFilter('user_followed_collections', 'owner_id = {:uid}', '-created', 0, 0, params);
+      $app.expandRecords(records, ['collection_id', 'collection_id.owner_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const row = {
+          id: r.id,
+          collectionId: r.collection().id,
+          collectionName: 'user_followed_collections',
+          owner_id: r.getString('owner_id'),
+          collection_id: r.getString('collection_id'),
+          last_checked_updated: r.getString('last_checked_updated'),
+          created: r.getString('created'),
+          updated: r.getString('updated'),
+        };
+        const col = r.expandedOne('collection_id');
+        if (col) {
+          const colRow = {
+            id: col.id,
+            collectionId: col.collection().id,
+            collectionName: 'user_collections',
+            name: col.getString('name'),
+            description: col.getString('description'),
+            owner_id: col.getString('owner_id'),
+            patterns: col.getStringSlice('patterns'),
+            created: col.getString('created'),
+            updated: col.getString('updated'),
+          };
+          const owner = col.expandedOne('owner_id');
+          if (owner) colRow.expand = { owner_id: { id: owner.id, name: owner.getString('name') } };
+          row.expand = { collection_id: colRow };
+        }
+        result.followedCollections.push(row);
+      }
+    } catch (_) {}
+
+    try {
+      const records = $app.findRecordsByFilter('user_followed_sets', 'owner_id = {:uid}', '-created', 0, 0, params);
+      $app.expandRecords(records, ['set_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const row = {
+          id: r.id,
+          owner_id: r.getString('owner_id'),
+          set_id: r.getString('set_id'),
+          last_checked_updated: r.getString('last_checked_updated'),
+          created: r.getString('created'),
+          updated: r.getString('updated'),
+        };
+        const set = r.expandedOne('set_id');
+        if (set) {
+          row.expand = {
+            set_id: {
+              id: set.id,
+              title: set.getString('title'),
+              description: set.getString('description'),
+              patterns: set.getStringSlice('patterns'),
+              position: set.getFloat('position'),
+              is_published: set.getBool('is_published'),
+              color: set.getString('color'),
+              created: set.getString('created'),
+              updated: set.getString('updated'),
+            },
+          };
+        }
+        result.followedSets.push(row);
+      }
+    } catch (_) {}
+
+    try {
+      const records = $app.findRecordsByFilter(
+        'user_submission_notifications',
+        'submitter = {:uid}',
+        '-created',
+        0,
+        0,
+        params,
+      );
+      $app.expandRecords(records, ['submission'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const row = {
+          id: r.id,
+          collectionId: r.collection().id,
+          collectionName: 'user_submission_notifications',
+          submitter: r.getString('submitter'),
+          submission: r.getString('submission'),
+          status: r.getString('status'),
+          reason: r.getString('reason'),
+          created: r.getString('created'),
+          updated: r.getString('updated'),
+        };
+        const sub = r.expandedOne('submission');
+        if (sub) {
+          row.expand = {
+            submission: {
+              id: sub.id,
+              name: sub.getString('name'),
+              resulting_pattern: sub.getString('resulting_pattern'),
+            },
+          };
+        }
+        result.submissionNotifications.push(row);
+      }
+    } catch (_) {}
+
+    try {
+      const records = $app.findRecordsByFilter('complaint_notifications', 'owner_id = {:uid}', '-created', 0, 0, params);
+      $app.expandRecords(records, ['complaint', 'complaint.pattern_id'], null);
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const row = {
+          id: r.id,
+          collectionId: r.collection().id,
+          collectionName: 'complaint_notifications',
+          owner_id: r.getString('owner_id'),
+          complaint: r.getString('complaint'),
+          reason: r.getString('reason'),
+          created: r.getString('created'),
+          updated: r.getString('updated'),
+        };
+        const complaint = r.expandedOne('complaint');
+        if (complaint) {
+          const complaintRow = { id: complaint.id, pattern_id: complaint.getString('pattern_id') };
+          const pattern = complaint.expandedOne('pattern_id');
+          if (pattern) complaintRow.expand = { pattern_id: { id: pattern.id, name: pattern.getString('name') } };
+          row.expand = { complaint: complaintRow };
+        }
+        result.complaintNotifications.push(row);
+      }
+    } catch (_) {}
+
+    return c.json(200, result);
+  },
+  $apis.requireAuth('users'),
+);
+
+// Consolidates the 5 lookups the /tags/$slug Definition Page needs (the tag
+// itself, its usage count, the tags it implies, the tags that imply it, and
+// its aliases) into one call. Records serialize via their own PublicExport,
+// so each part has the same shape the SDK returned before.
+routerAdd('GET', '/api/tag-page-data', (c) => {
+  const slug = c.request.url.query().get('slug') || '';
+  if (!slug) return c.json(400, { error: 'slug is required' });
+
+  // Matches either the current slug or a past one filed in previous_slugs.
+  // The quotes make the previous_slugs match hit a JSON element boundary, so
+  // a slug that is only a substring of another slug does not match.
+  let tag;
+  try {
+    tag = $app.findFirstRecordByFilter('tags_v2', 'slug = {:slug} || previous_slugs ~ {:quoted}', {
+      slug,
+      quoted: '"' + slug + '"',
+    });
+  } catch (_) {
+    return c.json(404, { error: 'not found' });
+  }
+  try {
+    $app.expandRecord(tag, ['type'], null);
+  } catch (_) {}
+
+  const tagName = tag.getString('tag');
+  const result = { tag, usageCount: 0, implies: [], impliedBy: [], aliases: [] };
+
+  // tag_usage's id is the tags_v2 id, so this finds the count for this exact
+  // row - not for some other row that has the same name but a different Type.
+  try {
+    result.usageCount = $app.findRecordById('tag_usage', tag.id).getInt('count');
+  } catch (_) {}
+
+  try {
+    result.implies = $app.findRecordsByFilter('implied_tags', 'tag = {:t}', '', 0, 0, { t: tagName });
+  } catch (_) {}
+  try {
+    result.impliedBy = $app.findRecordsByFilter('implied_tags', 'implies_tag = {:t}', '', 0, 0, { t: tagName });
+  } catch (_) {}
+  try {
+    result.aliases = $app.findRecordsByFilter('tag_aliases', 'target_tag = {:t}', '', 0, 0, { t: tagName });
+  } catch (_) {}
+
+  return c.json(200, result);
+});
+
+// Consolidates the /authors/$slug page's two lookups (the author profile, then
+// one page of their patterns) into one call. The second lookup used to wait
+// for the first on the client, because the pattern filter needs the author's
+// tag.
+//
+// Patterns match on tag_refs (the tags_v2 relation), not the frozen legacy
+// `tags` string column, so patterns tagged after the tags_v2 cutover show here.
+routerAdd('GET', '/api/author-page-data', (c) => {
+  const q = c.request.url.query();
+  const slug = q.get('slug') || '';
+  if (!slug) return c.json(400, { error: 'slug is required' });
+
+  const PER_PAGE = 12;
+  const page = Math.max(1, parseInt(q.get('page') || '1', 10) || 1);
+
+  let author;
+  try {
+    author = $app.findFirstRecordByFilter('manual_authors', 'slug = {:slug} && is_published = true', { slug });
+  } catch (_) {
+    return c.json(404, { error: 'not found' });
+  }
+  try {
+    $app.expandRecord(author, ['linked_tag'], null);
+  } catch (_) {}
+
+  // Use the linked Author tag when there is one. If not, find the tag by the
+  // author's normalized name (same rule as normalizeTagName on the client),
+  // and prefer an Author-typed row over a same-named row of another Type.
+  let tagId = author.getString('linked_tag');
+  if (!tagId) {
+    const name = author.getString('name').trim().toLowerCase().replace(/\s+/g, ' ');
+    try {
+      let authorTypeId = '';
+      try {
+        authorTypeId = $app.findFirstRecordByFilter('tag_types', "name = 'Author'").id;
+      } catch (_) {}
+      const rows = $app.findRecordsByFilter('tags_v2', 'tag = {:name}', '', 0, 0, { name });
+      for (let i = 0; i < rows.length; i++) {
+        if (authorTypeId && rows[i].getString('type') === authorTypeId) {
+          tagId = rows[i].id;
+          break;
+        }
+      }
+      if (!tagId && rows.length > 0) tagId = rows[0].id;
+    } catch (_) {}
+  }
+
+  let items = [];
+  let totalItems = 0;
+  if (tagId) {
+    try {
+      const records = $app.findRecordsByFilter(
+        'patterns',
+        'tag_refs ~ {:tid} && isDeleted = false && is_draft = false',
+        '-created',
+        PER_PAGE,
+        (page - 1) * PER_PAGE,
+        { tid: tagId },
+      );
+      $app.expandRecords(records, ['authors'], null);
+      items = records;
+    } catch (_) {}
+
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery(
+          'SELECT COUNT(*) as count FROM patterns WHERE tag_refs LIKE {:like} AND isDeleted = 0 AND is_draft = 0',
+        )
+        .bind({ like: '%"' + tagId + '"%' })
+        .all(rows);
+      totalItems = parseInt(rows[0]?.count || 0, 10);
+    } catch (_) {}
+  }
+
+  return c.json(200, {
+    author,
+    patterns: {
+      page,
+      perPage: PER_PAGE,
+      totalItems,
+      totalPages: Math.max(1, Math.ceil(totalItems / PER_PAGE)),
+      items,
+    },
+  });
+});
+
+// Every wiki category and page (pages expanded with their category) in one
+// call. All the public /wiki and /news routes read from this one response -
+// the index lists, the category lists, the single page view, and the
+// [[wiki-link]] resolution inside a page.
+routerAdd('GET', '/api/wiki-data', (c) => {
+  try {
+    const categories = $app.findRecordsByFilter('wiki_categories', "id != ''", 'order,name', 0, 0);
+    const pages = $app.findRecordsByFilter('wiki_pages', "id != ''", 'category.order,order,title', 0, 0);
+    $app.expandRecords(pages, ['category'], null);
+    return c.json(200, { categories, pages });
+  } catch (_) {
+    return c.json(500, { error: 'failed to load wiki' });
+  }
+});
+
+// The /community page's stats strip and growth-chart history in one call.
+// Replaces /api/public-site-stats and /api/public-database-stats-history.
+// Same hand-picked, non-sensitive projection as those two routes - the full
+// snapshot stays admin-only behind database_stats_snapshots' List rule.
+routerAdd('GET', '/api/community-data', (c) => {
+  function countRows(table, whereSQL) {
+    try {
+      const rows = arrayOf(new DynamicModel({ count: 0 }));
+      $app
+        .db()
+        .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
+        .all(rows);
+      return parseInt(rows[0]?.count || 0, 10);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  const history = [];
+  try {
+    const records = $app.findRecordsByFilter('database_stats_snapshots', "id != ''", 'created', 0, 0);
+    for (let i = 0; i < records.length; i++) {
+      const r = records[i];
+      history.push({
+        created: r.getString('created'),
+        total_patterns: r.getInt('total_patterns'),
+        total_users: r.getInt('total_users'),
+        total_tags: r.getInt('total_tags'),
+      });
+    }
+  } catch (_) {}
+
+  return c.json(200, {
+    stats: {
+      patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
+      members: countRows('users', "id != ''"),
+      // Every tags_v2 row, not the legacy `tags` view (which reads the
+      // frozen patterns.tags column).
+      tags: countRows('tags_v2', "id != ''"),
+    },
+    history,
+  });
+});
+
+// The reference data the public pattern submission form (UserUploadForm.tsx)
+// needs before the user types anything, in one call: the top 100 tags by
+// usage, the ids of every Author-typed tag (hidden from that form's tag
+// picker), and the full implied-tag and alias tables.
+routerAdd('GET', '/api/tag-entry-data', (c) => {
+  const result = { topTags: [], authorTagIds: [], impliedTags: [], aliases: [] };
+
+  try {
+    result.topTags = $app.findRecordsByFilter('tag_usage', "id != ''", '-count', 100, 0);
+  } catch (_) {}
+
+  try {
+    const authorType = $app.findFirstRecordByFilter('tag_types', "name = 'Author'");
+    const rows = $app.findRecordsByFilter('tags_v2', 'type = {:tid}', '', 0, 0, { tid: authorType.id });
+    for (let i = 0; i < rows.length; i++) result.authorTagIds.push(rows[i].id);
+  } catch (_) {}
+
+  try {
+    result.impliedTags = $app.findRecordsByFilter('implied_tags', "id != ''", 'tag', 0, 0);
+  } catch (_) {}
+  try {
+    result.aliases = $app.findRecordsByFilter('tag_aliases', "id != ''", 'alias', 0, 0);
+  } catch (_) {}
+
+  return c.json(200, result);
 });
 
 // Consolidates the 4 sidebar-badge lookups the admin layout fires on every
@@ -1639,7 +2033,7 @@ routerAdd('POST', '/api/sync-database-stats', (c) => {
       total_patterns: countRows('patterns', 'isDeleted = 0'),
       published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
       draft_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 1'),
-      total_tags: countRows('tags', "id != ''"),
+      total_tags: countRows('tags_v2', "id != ''"),
       total_users: countRows('users', "id != ''"),
       verified_users: countRows('users', 'verified = 1'),
       artist_users: countRows('users', 'is_artist = 1'),
@@ -1929,7 +2323,7 @@ routerAdd(
         total_patterns: countRows('patterns', 'isDeleted = 0'),
         published_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
         draft_patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 1'),
-        total_tags: countRows('tags', "id != ''"),
+        total_tags: countRows('tags_v2', "id != ''"),
         total_users: countRows('users', "id != ''"),
         verified_users: countRows('users', 'verified = 1'),
         artist_users: countRows('users', 'is_artist = 1'),
@@ -2052,49 +2446,6 @@ routerAdd(
   },
   $apis.requireAuth('admins'),
 );
-
-// Public, unauthenticated aggregate counts for the /community page's stats strip.
-// Intentionally minimal - just enough for a "join N members, browse M patterns"
-// blurb, nothing sensitive.
-routerAdd('GET', '/api/public-site-stats', (c) => {
-  function countRows(table, whereSQL) {
-    try {
-      const rows = arrayOf(new DynamicModel({ count: 0 }));
-      $app
-        .db()
-        .newQuery('SELECT COUNT(*) as count FROM ' + table + ' WHERE ' + whereSQL)
-        .all(rows);
-      return parseInt(rows[0]?.count || 0, 10);
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  return c.json(200, {
-    patterns: countRows('patterns', 'isDeleted = 0 AND is_draft = 0'),
-    members: countRows('users', "id != ''"),
-    tags: countRows('tags', "id != ''"),
-  });
-});
-
-// Public, unauthenticated curated history for the /community page's growth
-// charts - same "hand-picked non-sensitive projection" shape as
-// /api/public-site-stats just above. The full snapshot (export breakdowns,
-// ratings, etc.) stays admin-only behind database_stats_snapshots' List rule.
-routerAdd('GET', '/api/public-database-stats-history', (c) => {
-  try {
-    const records = $app.findRecordsByFilter('database_stats_snapshots', "id != ''", 'created', 0, 0);
-    const items = records.map((r) => ({
-      created: r.getString('created'),
-      total_patterns: r.getInt('total_patterns'),
-      total_users: r.getInt('total_users'),
-      total_tags: r.getInt('total_tags'),
-    }));
-    return c.json(200, { items });
-  } catch (error) {
-    return c.json(500, { error: 'failed to load stats history' });
-  }
-});
 
 onRecordAfterCreateSuccess((e) => {
   // ─── Discord "new pattern" notifications ─────────────────────────────────

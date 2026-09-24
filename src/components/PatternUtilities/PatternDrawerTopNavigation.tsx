@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { useGlobalIsViewOpen } from '@/data/view';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
+import { RingSpinner } from '@/components/RingSpinner';
 
 import { alpha } from '@mui/material/styles';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -25,6 +26,26 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
     () => data?.items.map((item) => item.id) ?? [],
     [data],
   );
+
+  // Closing re-renders the drawer and the page before the slide-down starts,
+  // which can take a moment. The button shows a spinner for that time. The
+  // drawer stays mounted after it closes, so the spinner clears as soon as
+  // the drawer's open flag turns false (the slide-down has started) - it is
+  // not left on the button for the next open.
+  const { isViewOpen } = useGlobalIsViewOpen();
+  const [isClosing, setIsClosing] = useState(false);
+  if (isClosing && !isViewOpen) setIsClosing(false);
+
+  const handleCloseClick = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    // Close only after the browser paints the spinner - see the same pattern
+    // in MainPageContent's handleClick. requestAnimationFrame runs just
+    // before the next paint, and the setTimeout inside it runs just after it.
+    requestAnimationFrame(() => {
+      setTimeout(() => props.handleClose?.(), 0);
+    });
+  };
 
   const currentIndex = patternId ? resultIds.indexOf(patternId) : -1;
   const prevId = currentIndex > 0 ? resultIds[currentIndex - 1] : null;
@@ -76,7 +97,16 @@ export const PatternDrawerTopNavigation = (props: TopNavigationProps) => {
         </Box>
 
         <Box sx={{ order: { xs: 3, md: 2 }, gridColumn: 'span 2', textAlign: 'center' }}>
-          <Button fullWidth startIcon={<CloseIcon />} variant="outlined" size="small" onClick={props.handleClose}>
+          <Button
+            fullWidth
+            startIcon={<CloseIcon />}
+            variant="outlined"
+            size="small"
+            onClick={handleCloseClick}
+            loading={isClosing}
+            loadingPosition="start"
+            loadingIndicator={<RingSpinner size={16} thickness={2} />}
+          >
             Close Window
           </Button>
         </Box>

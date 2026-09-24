@@ -4,7 +4,7 @@
 //   2. External links → open in new tab (unchanged from MarkdownWrapper)
 //   3. ## / ### headings → injected id attributes so the TOC can anchor to them
 //
-// Pass `wikiPages` from useQueryGetAllWikiPages() so internal link labels
+// Pass `wikiPages` from useQueryGetWikiData() so internal link labels
 // can be resolved to their real page titles.
 
 import React from 'react';

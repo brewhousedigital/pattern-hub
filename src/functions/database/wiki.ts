@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain, queryClient } from '@/functions/database/authentication-setup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,43 @@ export type TypeWikiPage = {
   };
 };
 
+// ─── Public wiki data ─────────────────────────────────────────────────────────
+
+export type TypeWikiData = {
+  categories: TypeWikiCategory[];
+  /** Every page, with `category` expanded, sorted by category order, then page order, then title. */
+  pages: TypeWikiPage[];
+};
+
+export const WIKI_DATA_QUERY_KEY = ['WikiData'] as const;
+
+// Every category and page in one request (see pb_hooks/main.pb.js
+// /api/wiki-data). All the public /wiki and /news routes read this one cached
+// query - the index lists, the category lists, the single page view (see
+// findWikiPage), and [[wiki-link]] resolution - so moving between wiki pages
+// makes no new request. Shared between the route loaders (SSR) and
+// useQueryGetWikiData so the key and fetcher can't drift apart.
+export const getWikiDataOptions = () =>
+  queryOptions({
+    queryKey: WIKI_DATA_QUERY_KEY,
+    queryFn: async (): Promise<TypeWikiData> => {
+      const res = await fetch(`${pocketbaseDomain}/api/wiki-data`);
+      if (!res.ok) throw new Error('Failed to load wiki');
+      return res.json();
+    },
+  });
+
+export const useQueryGetWikiData = () => {
+  return useQuery(getWikiDataOptions());
+};
+
+export const findWikiPage = (pages: TypeWikiPage[], categorySlug: string, pageSlug: string) =>
+  pages.find((p) => p.expand?.category?.slug === categorySlug && p.slug === pageSlug);
+
+// The admin editor reads its own queries (useQueryGetAllWikiCategories/-Pages
+// below), so every wiki mutation also marks the public WikiData query stale.
+const invalidateWikiData = () => queryClient.invalidateQueries({ queryKey: WIKI_DATA_QUERY_KEY });
+
 // ─── Category queries ─────────────────────────────────────────────────────────
 
 export const useQueryGetAllWikiCategories = () => {
@@ -45,14 +82,6 @@ export const useQueryGetAllWikiCategories = () => {
   });
 };
 
-// This is a fancy thing to handle automate queries for data on dynamic pages
-export const getAllWikiCategoriesOptions = () =>
-  queryOptions({
-    queryKey: ['GetAllWikiCategories'],
-    queryFn: (): Promise<TypeWikiCategory[]> =>
-      pocketbase.collection('wiki_categories').getFullList({ sort: 'order,name' }),
-  });
-
 export type TypeWikiCategoryPayload = {
   id?: string;
   name: string;
@@ -65,6 +94,7 @@ export const useMutationCreateWikiCategory = () => {
     mutationFn: async (payload: TypeWikiCategoryPayload) => {
       await pocketbase.collection('wiki_categories').create(payload);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -73,6 +103,7 @@ export const useMutationUpdateWikiCategory = () => {
     mutationFn: async (payload: TypeWikiCategoryPayload) => {
       await pocketbase.collection('wiki_categories').update(payload.id ?? '', payload);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -81,13 +112,13 @@ export const useMutationDeleteWikiCategory = () => {
     mutationFn: async (id: string) => {
       await pocketbase.collection('wiki_categories').delete(id);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
 // ─── Page queries ─────────────────────────────────────────────────────────────
 
-// Shared between the /wiki route loader (SSR) and useQueryGetAllWikiPages
-// so the key and fetcher can't drift apart.
+// Admin editor only - the public routes read useQueryGetWikiData above.
 export const getAllWikiPagesOptions = () =>
   queryOptions({
     queryKey: ['GetAllWikiPages'],
@@ -101,30 +132,6 @@ export const getAllWikiPagesOptions = () =>
 export const useQueryGetAllWikiPages = () => {
   return useQuery(getAllWikiPagesOptions());
 };
-
-export const useQueryGetWikiPage = (categorySlug: string, pageSlug: string) => {
-  return useQuery({
-    queryKey: ['GetWikiPage', categorySlug, pageSlug],
-    queryFn: async (): Promise<TypeWikiPage> => {
-      return await pocketbase
-        .collection('wiki_pages')
-        .getFirstListItem(`category.slug="${categorySlug}" && slug="${pageSlug}"`, {
-          expand: 'category',
-        });
-    },
-    enabled: !!categorySlug && !!pageSlug,
-  });
-};
-
-// This is a fancy thing to handle automate queries for data on dynamic pages
-export const getWikiPageOptions = (categorySlug: string, pageSlug: string) =>
-  queryOptions({
-    queryKey: ['GetWikiPage', categorySlug, pageSlug],
-    queryFn: (): Promise<TypeWikiPage> =>
-      pocketbase
-        .collection('wiki_pages')
-        .getFirstListItem(`category.slug="${categorySlug}" && slug="${pageSlug}"`, { expand: 'category' }),
-  });
 
 export type TypeWikiPagePayload = {
   id?: string;
@@ -141,6 +148,7 @@ export const useMutationCreateWikiPage = () => {
     mutationFn: async (payload: TypeWikiPagePayload) => {
       await pocketbase.collection('wiki_pages').create(payload);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -149,6 +157,7 @@ export const useMutationUpdateWikiPage = () => {
     mutationFn: async (payload: TypeWikiPagePayload) => {
       await pocketbase.collection('wiki_pages').update(payload.id ?? '', payload);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -157,6 +166,7 @@ export const useMutationDeleteWikiPage = () => {
     mutationFn: async (id: string) => {
       await pocketbase.collection('wiki_pages').delete(id);
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -167,6 +177,7 @@ export const useMutationReorderWikiCategories = () => {
         items.map((item) => pocketbase.collection('wiki_categories').update(item.id, { order: item.order })),
       );
     },
+    onSuccess: invalidateWikiData,
   });
 };
 
@@ -177,5 +188,6 @@ export const useMutationReorderWikiPages = () => {
         items.map((item) => pocketbase.collection('wiki_pages').update(item.id, { order: item.order })),
       );
     },
+    onSuccess: invalidateWikiData,
   });
 };

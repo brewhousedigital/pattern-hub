@@ -1,4 +1,4 @@
-import { useQuery, queryOptions } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { slugifyTag } from '@/functions/utilities/slugify-tag';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
@@ -12,7 +12,7 @@ import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
  * otherwise breaks the filter's quoting - either erroring the request or
  * letting the tag's own text reshape the query. Matches the escaping
  * convention already used elsewhere in this codebase (authors.ts, sets.ts,
- * admin-logs.ts) and by useQueryGetTagUsageCount below.
+ * admin-logs.ts).
  */
 export function escapeTagFilterValue(value: string): string {
   return value.replace(/"/g, '\\"');
@@ -570,36 +570,9 @@ export interface TypeTagV2Record {
   expand?: { type?: TypeTagTypeRecord; linked_user?: { id: string; name: string } };
 }
 
-// Matches either the current slug, or a past one filed in `previous_slugs`
-// by syncSatelliteTablesForOp (space-command/tags.tsx) after a rename - the
-// caller compares the returned row's own `slug` against the requested one
-// to detect the previous_slugs case and redirect to the canonical URL.
-// Quote-wraps the previous_slugs match so it hits a JSON element boundary,
-// the same way tag matching does elsewhere (see buildPatternFilters in
-// pb_hooks/main.pb.js) - an unquoted match could over-match a slug that's
-// merely a substring of another.
-export const getTagBySlugOptions = (slug: string) => {
-  const safe = slug.replace(/'/g, "\\'");
-  return queryOptions({
-    queryKey: ['TagBySlug', slug],
-    queryFn: () =>
-      pocketbase
-        .collection('tags_v2')
-        .getFirstListItem<TypeTagV2Record>(`slug = '${safe}' || previous_slugs ~ '"${safe}"'`, {
-          expand: 'type',
-          // See useQueryGetAllTagsV2's own comment - every tags_v2 read
-          // needs this, not just this one.
-          requestKey: null,
-        }),
-    retry: false,
-  });
-};
-
-export const useQueryGetTagBySlug = (slug: string) =>
-  useQuery({
-    ...getTagBySlugOptions(slug),
-    enabled: !!slug,
-  });
+// The single-tag lookup by slug (current or previous) for the public
+// Definition Page lives in tag-page-data.ts - it comes back in one request
+// with the rest of that page's data.
 
 // Full-list reads, same convention as useQueryGetTagHierarchy above (a
 // per-row Map lookup client-side, not a paginated fetch) - reasonable at
@@ -616,7 +589,7 @@ export const useQueryGetAllTagsV2 = () =>
       // call. By default it derives a request key from just the method +
       // collection path (ignoring filter/sort/expand/pagination), so every
       // read against tags_v2 - this one, useQuerySearchTagsV2,
-      // useQueryAuthorTagIds, getTagBySlugOptions, etc. - shares ONE key.
+      // useQueryAuthorTagIds, etc. - shares ONE key.
       // Whichever fires last silently cancels every other one still in
       // flight. On /pattern, HomepageSearchV3 and Sidebar both call this
       // hook (deduped fine, same query key), but Sidebar's own
@@ -727,7 +700,7 @@ export const useQueryAuthorTagIds = () => {
  * Checks both the live `slug` column AND every row's `previous_slugs`
  * history - a candidate can't be handed out if it's already parked in
  * another tag's redirect history, or two different URLs would end up
- * claiming the same slug (getTagBySlugOptions's `slug = X || previous_slugs
+ * claiming the same slug (/api/tag-page-data's `slug = X || previous_slugs
  * ~ X` lookup would then match two different rows for the same request).
  */
 export async function isSlugTaken(slug: string, excludeId: string): Promise<boolean> {
@@ -1080,55 +1053,3 @@ export function tagNeedsArtistSuffix(tag: { tag: string; expand?: { type?: TypeT
   const alreadyHasArtistLabel = /\(artist\)\s*$/i.test(tag.tag);
   return isAuthorType && !alreadyHasArtistLabel;
 }
-
-// Scoped single-tag reads for the public Definition Page - direct edges
-// only (not the full transitive closure `getImpliedTags`/`getTagsImplying`
-// compute for the admin graph editor), so a page view doesn't need to fetch
-// either whole table. A visitor can click through to a directly-implied
-// tag's own page to keep exploring the graph one hop at a time.
-
-export const useQueryGetDirectImpliedTags = (tag: string) =>
-  useQuery({
-    queryKey: ['DirectImpliedTags', tag],
-    queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
-      await pocketbase
-        .collection('implied_tags')
-        .getFullList<TypeImpliedTagRecord>({ filter: `tag = "${escapeTagFilterValue(tag)}"` }),
-    enabled: !!tag,
-  });
-
-export const useQueryGetTagsImplyingDirect = (tag: string) =>
-  useQuery({
-    queryKey: ['TagsImplyingDirect', tag],
-    queryFn: async (): Promise<TypeImpliedTagRecord[]> =>
-      await pocketbase
-        .collection('implied_tags')
-        .getFullList<TypeImpliedTagRecord>({ filter: `implies_tag = "${escapeTagFilterValue(tag)}"` }),
-    enabled: !!tag,
-  });
-
-export const useQueryGetAliasesForTag = (tag: string) =>
-  useQuery({
-    queryKey: ['AliasesForTag', tag],
-    queryFn: async (): Promise<TypeTagAliasRecord[]> =>
-      await pocketbase
-        .collection('tag_aliases')
-        .getFullList<TypeTagAliasRecord>({ filter: `target_tag = "${escapeTagFilterValue(tag)}"` }),
-    enabled: !!tag,
-  });
-
-// Reads the `tag_usage` view's precomputed count for one tag - reused on the
-// Definition Page to link out to "N patterns tagged X" without a second,
-// heavier query against `patterns` itself.
-export const useQueryGetTagUsageCount = (tag: string) =>
-  useQuery({
-    queryKey: ['TagUsageCount', tag],
-    queryFn: async (): Promise<number> => {
-      const safe = escapeTagFilterValue(tag);
-      const result = await pocketbase.collection('tag_usage').getList<TypeReadOnlyDatabaseItem>(1, 1, {
-        filter: `tag = "${safe}"`,
-      });
-      return result.items[0]?.count ?? 0;
-    },
-    enabled: !!tag,
-  });

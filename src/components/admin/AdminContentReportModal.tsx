@@ -11,6 +11,7 @@ import { useCheckAdminAccess } from '@/functions/hooks/useCheckAccess';
 import { EnumLevelsAdmin } from '@/functions/database/authentication';
 import { useAdminLogger } from '@/functions/database/admin-logs';
 import { createPrettyDate } from '@/functions/utilities/dates';
+import { getVisibleReporterEmail, HIDDEN_REPORTER_EMAIL_LABEL } from '@/functions/utilities/reporter-email';
 
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -88,7 +89,8 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
         metadata: {
           content_type: props.report.content_type,
           category: props.report.category,
-          reporter_email: props.report.email,
+          // The log is visible to the admin team, so it gets the same hidden-email rule as the UI.
+          reporter_email: getVisibleReporterEmail(props.report) ?? undefined,
           review_notes: notes,
         },
       });
@@ -130,7 +132,7 @@ export const AdminContentReportModal = (props: AdminContentReportModalProps) => 
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Reporter: {props.report?.email}
+            Reporter: {getVisibleReporterEmail(props.report) ?? HIDDEN_REPORTER_EMAIL_LABEL}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">

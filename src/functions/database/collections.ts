@@ -4,11 +4,11 @@ import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import type { TypeAuthData } from '@/functions/database/authentication';
 import { useGlobalAuthData } from '@/data/auth-data';
+import { getUserNotificationsOptions } from '@/functions/database/user-notifications';
 
 // ─── Query key constants ──────────────────────────────────────────────────────
 
 export const COLLECTIONS_QUERY_KEY = ['UserCollections'] as const;
-export const FOLLOWED_COLLECTIONS_QUERY_KEY = ['UserFollowedCollections'] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,18 +94,15 @@ export const useQueryGetUserCollectionsAll = (userId: string) => {
   });
 };
 
-/** Fetch all collections the logged-in user follows, with the collection expanded. */
+/**
+ * All collections the logged-in user follows, with the collection expanded.
+ * A view of the shared /api/user-notifications query (NotificationBell reads
+ * the same data), so this makes no request of its own.
+ */
 export const useQueryGetUserFollowedCollections = (userId: string) => {
   return useQuery({
-    queryKey: [...FOLLOWED_COLLECTIONS_QUERY_KEY, userId],
-    queryFn: async (): Promise<TypeFollowedCollectionResponse[]> => {
-      return await pocketbase.collection('user_followed_collections').getFullList({
-        filter: `owner_id = "${userId}"`,
-        expand: 'collection_id,collection_id.owner_id',
-        sort: '-created',
-      });
-    },
-    enabled: !!userId,
+    ...getUserNotificationsOptions(userId),
+    select: (data): TypeFollowedCollectionResponse[] => data.followedCollections,
   });
 };
 

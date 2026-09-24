@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import dayjs, { type Dayjs } from 'dayjs';
 import { pocketbase, pocketbaseDomain, queryClient } from '@/functions/database/authentication-setup';
 import { useAuthorizationHeaders } from '@/functions/database/useAuthorizationHeaders';
+import { COMMUNITY_DATA_QUERY_KEY } from '@/functions/database/community-data';
 import { parsePbDate } from '@/functions/utilities/dates';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -90,7 +91,6 @@ export type TypeStatsBucket = {
 // ─── Queries / mutations ────────────────────────────────────────────────────
 
 export const DATABASE_STATS_QUERY_KEY = ['DatabaseStatsHistory'] as const;
-export const PUBLIC_DATABASE_STATS_QUERY_KEY = ['PublicDatabaseStatsHistory'] as const;
 
 // Admin, full history. The collection's List rule already restricts reads to
 // admins, so this goes straight through the client SDK - no custom route needed.
@@ -105,19 +105,6 @@ export const useQueryGetDatabaseStatsHistory = () => {
         .collection('database_stats_snapshots')
         .getFullList<TypeDatabaseStatsSnapshot>({ sort: 'created' });
       return dedupeSnapshotsByDay(records);
-    },
-  });
-};
-
-// Public, unauthenticated. Powers the /community page's growth charts.
-export const useQueryGetPublicDatabaseStatsHistory = () => {
-  return useQuery({
-    queryKey: PUBLIC_DATABASE_STATS_QUERY_KEY,
-    queryFn: async (): Promise<TypePublicDatabaseStatsSnapshot[]> => {
-      const res = await fetch(`${pocketbaseDomain}/api/public-database-stats-history`);
-      if (!res.ok) throw new Error('Failed to load stats history');
-      const data = await res.json();
-      return data.items ?? [];
     },
   });
 };
@@ -149,7 +136,7 @@ export const useMutationTriggerDatabaseStatsSnapshot = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DATABASE_STATS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: PUBLIC_DATABASE_STATS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: COMMUNITY_DATA_QUERY_KEY });
     },
   });
 };

@@ -5,6 +5,8 @@ import { generatePbImage } from '@/functions/utilities/generate-pb-image';
 import { useQueryGetAllPatternsByPagination } from '@/functions/database/patterns';
 import { usePatternSearch } from '@/functions/hooks/usePatternSearchV2';
 import { DifficultyChip } from '@/components/PatternUtilities/DifficultyChip';
+import { useGlobalIsViewOpen } from '@/data/view';
+import { RingSpinner } from '@/components/RingSpinner';
 
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
@@ -27,12 +29,35 @@ export const MainPageContent = () => {
   const resultIds = data?.items.map((p) => p.id) || [];
 
   const { navigateToPattern } = usePatternSearch();
+  const { isViewOpen } = useGlobalIsViewOpen();
+
+  // The card the user clicked, until the View Drawer opens. The drawer can
+  // take a moment to open (for example, on the first open), so the card
+  // shows a spinner to tell the user that the click worked. The drawer
+  // covers the grid when it opens, so the spinner is not necessary after
+  // that.
+  const [openingPatternId, setOpeningPatternId] = React.useState<string | null>(null);
+  if (openingPatternId && isViewOpen) setOpeningPatternId(null);
 
   const handleClick = (e: React.MouseEvent, pattern: TypePatternResponse) => {
     e.preventDefault();
 
-    // Set the global view
-    navigateToPattern(pattern?.id, resultIds);
+    setOpeningPatternId(pattern.id);
+    // Safety net: if the drawer does not open (for example, a failed
+    // navigation), do not leave the spinner on the card.
+    window.setTimeout(() => {
+      setOpeningPatternId((current) => (current === pattern.id ? null : current));
+    }, 10_000);
+
+    // Set the global view - but only after the browser paints the spinner.
+    // The navigation opens the drawer, and the drawer's first render is slow
+    // enough to block the main thread. If it starts in this same task, the
+    // spinner goes into the DOM and comes out again before any frame shows
+    // it. requestAnimationFrame runs just before the next paint, and the
+    // setTimeout inside it runs just after that paint.
+    requestAnimationFrame(() => {
+      setTimeout(() => navigateToPattern(pattern.id, resultIds), 0);
+    });
   };
 
   if (isPending) {
@@ -51,17 +76,20 @@ export const MainPageContent = () => {
     return (
       <Grid container spacing={2}>
         {data?.items?.map((pattern) => {
+          const isOpening = openingPatternId === pattern.id;
           return (
             <Grid key={`pattern-${pattern.id}`} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 }}>
               <MuiLink
                 component={Link}
                 to={`/pattern/${pattern.id}`}
                 onClick={(e) => handleClick(e, pattern)}
+                aria-busy={isOpening}
                 style={{ textDecoration: 'none', display: 'block', height: '100%' }}
               >
                 <Card
                   elevation={0}
                   sx={{
+                    position: 'relative',
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
@@ -147,6 +175,23 @@ export const MainPageContent = () => {
                     )}
                     <DifficultyChip value={pattern.avg_difficulty} sx={{ fontSize: '0.65rem', height: 18 }} />
                   </Box>
+
+                  {isOpening && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 1,
+                        borderRadius: 'inherit',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: (t) => alpha(t.palette.background.paper, 0.55),
+                      }}
+                    >
+                      <RingSpinner label={`Opening ${pattern.name}`} />
+                    </Box>
+                  )}
                 </Card>
               </MuiLink>
             </Grid>

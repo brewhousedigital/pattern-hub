@@ -1,14 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
-import {
-  getTagBySlugOptions,
-  useQueryGetTagBySlug,
-  useQueryGetTagUsageCount,
-  useQueryGetDirectImpliedTags,
-  useQueryGetTagsImplyingDirect,
-  useQueryGetAliasesForTag,
-  tagNeedsArtistSuffix,
-} from '@/functions/database/tags';
+import { tagNeedsArtistSuffix } from '@/functions/database/tags';
+import { getTagPageDataOptions, useQueryGetTagPageData } from '@/functions/database/tag-page-data';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
@@ -27,8 +20,9 @@ import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, Typography
 export const Route = createFileRoute('/tags/$slug')({
   component: RouteComponent,
   loader: async ({ params, context }) => {
-    const tag = await context.queryClient.ensureQueryData(getTagBySlugOptions(params.slug)).catch(() => undefined);
-    // getTagBySlugOptions matches either the current slug or a past one
+    const data = await context.queryClient.ensureQueryData(getTagPageDataOptions(params.slug)).catch(() => undefined);
+    const tag = data?.tag;
+    // getTagPageDataOptions matches either the current slug or a past one
     // filed in previous_slugs - a mismatch here means this tag was renamed
     // since the requested URL was indexed or bookmarked. Redirect to the
     // canonical current slug instead of rendering under the stale one.
@@ -59,11 +53,14 @@ function RouteComponent() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
 
-  const { data: tagRecord, isPending, isError } = useQueryGetTagBySlug(slug);
-  const { data: usageCount } = useQueryGetTagUsageCount(tagRecord?.tag ?? '');
-  const { data: implies = [] } = useQueryGetDirectImpliedTags(tagRecord?.tag ?? '');
-  const { data: impliedBy = [] } = useQueryGetTagsImplyingDirect(tagRecord?.tag ?? '');
-  const { data: alsoKnownAs = [] } = useQueryGetAliasesForTag(tagRecord?.tag ?? '');
+  // One request for the tag and every section below it (see
+  // /api/tag-page-data). The loader already fetched it during SSR.
+  const { data, isPending, isError } = useQueryGetTagPageData(slug);
+  const tagRecord = data?.tag;
+  const usageCount = data?.usageCount;
+  const implies = data?.implies ?? [];
+  const impliedBy = data?.impliedBy ?? [];
+  const alsoKnownAs = data?.aliases ?? [];
 
   if (isPending) {
     return (

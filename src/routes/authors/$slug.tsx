@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { generateSEO } from '@/functions/utilities/seo';
-import {
-  getManualAuthorBySlugOptions,
-  useQueryGetManualAuthorBySlug,
-  useQueryGetPatternsByAuthorTag,
-} from '@/functions/database/manual-authors';
-import { normalizeTagName } from '@/functions/utilities/normalize-tag';
+import { getAuthorPageDataOptions, useQueryGetAuthorPageData } from '@/functions/database/author-page-data';
 import { generateManualAuthorAvatarUrl } from '@/functions/utilities/generate-pb-image';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { MarkdownWrapper } from '@/components/MarkdownWrapper';
@@ -38,9 +33,12 @@ import {
 export const Route = createFileRoute('/authors/$slug')({
   component: RouteComponent,
   loader: async ({ params, context }) => {
-    const author = await context.queryClient
-      .ensureQueryData(getManualAuthorBySlugOptions(params.slug))
+    // Page 1 of the author's patterns comes back in the same request, so the
+    // first render needs no client-side fetch at all.
+    const data = await context.queryClient
+      .ensureQueryData(getAuthorPageDataOptions(params.slug, 1))
       .catch(() => undefined);
+    const author = data?.author;
     // This profile's slug is untouched - every existing /authors/$slug
     // bookmark keeps resolving here first, exactly as before. Only what
     // happens next is new: if the linked Author tag belongs to a registered
@@ -73,15 +71,13 @@ function RouteComponent() {
   const [page, setPage] = useState(1);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const { data: author, isPending: authorPending, isError: authorError } = useQueryGetManualAuthorBySlug(slug);
-  // Prefer the linked Author tag's own canonical name - it's already
-  // normalized, and stays correct even if this profile's own `name` field
-  // drifts from it. Falls back to this profile's name, normalized the same
-  // way, for a profile the backfill script hasn't linked yet (see
-  // scripts/backfill-author-tags.mjs) - still an exact tag match either way,
-  // never the old substring search.
-  const effectiveAuthorTag = author?.expand?.linked_tag?.tag ?? (author ? normalizeTagName(author.name) : '');
-  const { data: patternsData, isPending: patternsPending } = useQueryGetPatternsByAuthorTag(effectiveAuthorTag, page);
+  // One request for the author and the current page of their patterns (see
+  // /api/author-page-data). keepPreviousData keeps the author and the old
+  // page on screen while a new page loads.
+  const { data, isPending: authorPending, isError: authorError } = useQueryGetAuthorPageData(slug, page);
+  const author = data?.author;
+  const patternsData = data?.patterns;
+  const patternsPending = authorPending;
 
   const patterns = patternsData?.items ?? [];
   const totalPages = patternsData?.totalPages ?? 1;

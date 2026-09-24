@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import { buildReporterEmailSearchClause } from '@/functions/utilities/reporter-email';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export const useQueryGetReviewedContentReportsByPagination = (
 
       if (searchTerm) {
         filter +=
-          ` && (email ~ '${searchTerm}' || reason ~ '${searchTerm}' || content_id ~ '${searchTerm}'` +
+          ` && (${buildReporterEmailSearchClause(searchTerm)} || reason ~ '${searchTerm}' || content_id ~ '${searchTerm}'` +
           ` || content_name ~ '${searchTerm}' || review_notes ~ '${searchTerm}')`;
       }
 

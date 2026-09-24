@@ -3,6 +3,7 @@ import { pocketbase } from '@/functions/database/authentication-setup';
 import type { TypePaginationDatabaseResponse } from '@/functions/types/types';
 import type { TypePatternResponse } from '@/functions/database/patterns';
 import type { TypeAuthData } from '@/functions/database/authentication';
+import { buildReporterEmailSearchClause } from '@/functions/utilities/reporter-email';
 
 /** @deprecated - Uses Netlify functions instead  */
 type TypeComplaintPayload = {
@@ -65,7 +66,7 @@ export const useQueryGetReviewedComplaintsByPagination = (searchTerm: string, pa
       if (searchTerm) {
         filter =
           filter +
-          ` && (email ~ '${searchTerm}' || reason ~ '${searchTerm}' || pattern_id ~ '${searchTerm}' || review_notes ~ '${searchTerm}')`;
+          ` && (${buildReporterEmailSearchClause(searchTerm)} || reason ~ '${searchTerm}' || pattern_id ~ '${searchTerm}' || review_notes ~ '${searchTerm}')`;
       }
 
       return await pocketbase.collection('complaints').getList(pageNumber, 25, {
@@ -99,7 +100,8 @@ export const useMutationUpdateComplaint = () => {
 // server-side by the pb_hooks onRecordAfterUpdateSuccess hook on `complaints`
 // (see pb_hooks/main.pb.js) when an admin marks a report reviewed - the client
 // never creates these directly, only reads and dismisses (deletes) its own.
-// Only reports filed while signed in (owner_id set) ever get one.
+// Only reports filed while signed in (owner_id set) ever get one. Reads go
+// through /api/user-notifications (see user-notifications.ts).
 export type TypeComplaintNotificationResponse = {
   collectionId: string;
   collectionName: string;
@@ -112,22 +114,6 @@ export type TypeComplaintNotificationResponse = {
   expand?: {
     complaint?: TypeComplaintsResponse;
   };
-};
-
-export const COMPLAINT_NOTIFICATIONS_QUERY_KEY = ['ComplaintNotifications'] as const;
-
-export const useQueryGetComplaintNotifications = (userId: string) => {
-  return useQuery({
-    queryKey: [...COMPLAINT_NOTIFICATIONS_QUERY_KEY, userId],
-    queryFn: async (): Promise<TypeComplaintNotificationResponse[]> => {
-      return await pocketbase.collection('complaint_notifications').getFullList({
-        filter: `owner_id = "${userId}"`,
-        expand: 'complaint,complaint.pattern_id',
-        sort: '-created',
-      });
-    },
-    enabled: !!userId,
-  });
 };
 
 // Dismissing a complaint notification deletes the row outright (unlike the

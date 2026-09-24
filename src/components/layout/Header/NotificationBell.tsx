@@ -2,25 +2,19 @@ import React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useGlobalAuthData } from '@/data/auth-data';
 import {
-  useQueryGetUserFollowedCollections,
   useMutationDismissCollectionNotification,
   type TypeFollowedCollectionResponse,
 } from '@/functions/database/collections';
+import { useMutationDismissSetNotification, type TypeFollowedSetResponse } from '@/functions/database/sets';
 import {
-  useQueryGetUserFollowedSets,
-  useMutationDismissSetNotification,
-  type TypeFollowedSetResponse,
-} from '@/functions/database/sets';
-import {
-  useQueryGetUserSubmissionNotifications,
   useMutationDismissSubmissionNotification,
   type TypeUserSubmissionNotificationResponse,
 } from '@/functions/database/user-submissions';
 import {
-  useQueryGetComplaintNotifications,
   useMutationDismissComplaintNotification,
   type TypeComplaintNotificationResponse,
 } from '@/functions/database/complaints';
+import { useQueryGetUserNotifications } from '@/functions/database/user-notifications';
 
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -56,16 +50,13 @@ export const NotificationBell = () => {
   const [isClearingAll, setIsClearingAll] = React.useState(false);
   const open = Boolean(anchorEl);
 
-  const { data: followedCollections = [], refetch: refetchCollections } = useQueryGetUserFollowedCollections(
-    authData?.id || '',
-  );
-  const { data: followedSets = [], refetch: refetchSets } = useQueryGetUserFollowedSets(authData?.id || '');
-  const { data: submissionNotifications = [], refetch: refetchSubmissions } = useQueryGetUserSubmissionNotifications(
-    authData?.id || '',
-  );
-  const { data: complaintNotifications = [], refetch: refetchComplaints } = useQueryGetComplaintNotifications(
-    authData?.id || '',
-  );
+  // All four notification sources come from one request (see
+  // /api/user-notifications), so one refetch refreshes all of them.
+  const { data: notifications, refetch } = useQueryGetUserNotifications(authData?.id || '');
+  const followedCollections = notifications?.followedCollections ?? [];
+  const followedSets = notifications?.followedSets ?? [];
+  const submissionNotifications = notifications?.submissionNotifications ?? [];
+  const complaintNotifications = notifications?.complaintNotifications ?? [];
 
   const dismissCollectionNotification = useMutationDismissCollectionNotification();
   const dismissSetNotification = useMutationDismissSetNotification();
@@ -118,7 +109,10 @@ export const NotificationBell = () => {
    * original per-type handling this was extracted from - a failed dismiss
    * just means the notification reappears on next mount.
    */
-  const dismissUpdate = async (update: AnyUpdate, { refetch = true }: { refetch?: boolean } = {}): Promise<boolean> => {
+  const dismissUpdate = async (
+    update: AnyUpdate,
+    { refetch: shouldRefetch = true }: { refetch?: boolean } = {},
+  ): Promise<boolean> => {
     try {
       if (update.type === 'collection') {
         const collectionUpdated = update.record.expand?.collection_id?.updated;
@@ -127,7 +121,6 @@ export const NotificationBell = () => {
           followRecordId: update.record.id,
           collectionUpdated,
         });
-        if (refetch) await refetchCollections();
       } else if (update.type === 'set') {
         const setUpdated = update.record.expand?.set_id?.updated;
         if (!setUpdated) return false;
@@ -135,14 +128,12 @@ export const NotificationBell = () => {
           followRecordId: update.record.id,
           setUpdated,
         });
-        if (refetch) await refetchSets();
       } else if (update.type === 'submission') {
         await dismissSubmissionNotification.mutateAsync(update.record.id);
-        if (refetch) await refetchSubmissions();
       } else {
         await dismissComplaintNotification.mutateAsync(update.record.id);
-        if (refetch) await refetchComplaints();
       }
+      if (shouldRefetch) await refetch();
       return true;
     } catch {
       // Silent — badge will reappear on next mount if dismiss failed
@@ -189,7 +180,7 @@ export const NotificationBell = () => {
     setIsClearingAll(true);
     try {
       await Promise.allSettled(updates.map((update) => dismissUpdate(update, { refetch: false })));
-      await Promise.all([refetchCollections(), refetchSets(), refetchSubmissions(), refetchComplaints()]);
+      await refetch();
     } finally {
       setIsClearingAll(false);
     }

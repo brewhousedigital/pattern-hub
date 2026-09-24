@@ -21,7 +21,7 @@ import {
 import { useQueryGetPatternDrawerData, useInvalidateDrawerData } from '@/functions/database/pattern-drawer-data';
 
 import { alpha } from '@mui/material/styles';
-import { Box, Button, Typography, Rating, Chip, Stack, useMediaQuery } from '@mui/material';
+import { Alert, Box, Button, Typography, Rating, Chip, Skeleton, Stack, useMediaQuery } from '@mui/material';
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import { CollapsibleCard } from '@/components/cards/CollapsibleCard';
 import { getDifficultyInfo, toScale10, toRatingValue as toRatingVal } from '@/functions/utilities/difficulty';
@@ -44,7 +44,16 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
   const patternId = viewData?.id || '';
   const userId = authData?.id || '';
 
-  const { data: drawerData } = useQueryGetPatternDrawerData(patternId, userId);
+  const {
+    data: drawerData,
+    isLoading: isDrawerDataLoading,
+    isError: isDrawerDataError,
+    refetch: refetchDrawerData,
+  } = useQueryGetPatternDrawerData(patternId, userId);
+  // Until the drawer data arrives, we do not know if the user already rated
+  // this pattern. A rating given in that time could create a second rating
+  // record instead of updating the first, so the inputs stay disabled.
+  const userInputsDisabled = isDrawerDataLoading || isDrawerDataError;
   const invalidateDrawerData = useInvalidateDrawerData(patternId, userId);
 
   const userRatingData = drawerData?.userRating ?? null;
@@ -161,61 +170,93 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
 
   return (
     <Box>
-      {/* ── Community Rating ──────────────────────────────── */}
-      <SectionLabel>Community Rating</SectionLabel>
+      {isDrawerDataError && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => void refetchDrawerData()}>
+              Retry
+            </Button>
+          }
+        >
+          Could not load the ratings for this pattern.
+        </Alert>
+      )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, justifyContent: 'space-between' }}>
-        <Rating
-          readOnly
-          precision={0.1}
-          value={communityRatingData?.average_rating || 0}
-          sx={{
-            '& .MuiRating-iconFilled': { color: 'primary.main' },
-            '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
-          }}
-        />
-        {hasCommunityRating && (
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {communityRatingData!.average_rating.toFixed(1)} stars · {communityRatingData!.total_ratings} ratings
-          </Typography>
-        )}
-      </Box>
+      {isDrawerDataLoading ? (
+        <Box aria-busy="true" aria-label="Loading ratings">
+          <SectionLabel>Community Rating</SectionLabel>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, justifyContent: 'space-between' }}>
+            <Skeleton variant="rounded" width={120} height={24} />
+            <Skeleton variant="text" width={130} />
+          </Box>
 
-      {/* ── Community Difficulty ──────────────────────────── */}
-      <SectionLabel>Community Difficulty</SectionLabel>
+          <SectionLabel>Community Difficulty</SectionLabel>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, justifyContent: 'space-between' }}>
+            <Skeleton variant="rounded" width={180} height={24} />
+            <Skeleton variant="text" width={60} />
+          </Box>
+        </Box>
+      ) : (
+        <>
+          {/* ── Community Rating ──────────────────────────────── */}
+          <SectionLabel>Community Rating</SectionLabel>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, justifyContent: 'space-between' }}>
-        {communityDifficultyInfo && communityDifficultyData ? (
-          <>
-            <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-              <Rating
-                readOnly
-                precision={0.1}
-                value={toRatingVal(communityDifficultyData.average_rating)}
-                icon={<BrokenImageOutlinedIcon fontSize="inherit" />}
-                emptyIcon={<BrokenImageOutlinedIcon fontSize="inherit" />}
-                sx={{
-                  '& .MuiRating-iconFilled': { color: communityDifficultyInfo.hex },
-                  '& .MuiRating-iconEmpty': { color: alpha(communityDifficultyInfo.hex, 0.22) },
-                }}
-              />
-              <Chip
-                label={communityDifficultyInfo.label}
-                color={communityDifficultyInfo.color}
-                size="small"
-                sx={{ color: '#000' }}
-              />
-            </Stack>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {communityDifficultyData.total_ratings} rating{communityDifficultyData.total_ratings !== 1 ? 's' : ''}
-            </Typography>
-          </>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            No ratings yet
-          </Typography>
-        )}
-      </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5, justifyContent: 'space-between' }}>
+            <Rating
+              readOnly
+              precision={0.1}
+              value={communityRatingData?.average_rating || 0}
+              sx={{
+                '& .MuiRating-iconFilled': { color: 'primary.main' },
+                '& .MuiRating-iconEmpty': { color: alpha('#C8A96E', 0.5) },
+              }}
+            />
+            {hasCommunityRating && (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {communityRatingData!.average_rating.toFixed(1)} stars · {communityRatingData!.total_ratings} ratings
+              </Typography>
+            )}
+          </Box>
+
+          {/* ── Community Difficulty ──────────────────────────── */}
+          <SectionLabel>Community Difficulty</SectionLabel>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, justifyContent: 'space-between' }}>
+            {communityDifficultyInfo && communityDifficultyData ? (
+              <>
+                <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
+                  <Rating
+                    readOnly
+                    precision={0.1}
+                    value={toRatingVal(communityDifficultyData.average_rating)}
+                    icon={<BrokenImageOutlinedIcon fontSize="inherit" />}
+                    emptyIcon={<BrokenImageOutlinedIcon fontSize="inherit" />}
+                    sx={{
+                      '& .MuiRating-iconFilled': { color: communityDifficultyInfo.hex },
+                      '& .MuiRating-iconEmpty': { color: alpha(communityDifficultyInfo.hex, 0.22) },
+                    }}
+                  />
+                  <Chip
+                    label={communityDifficultyInfo.label}
+                    color={communityDifficultyInfo.color}
+                    size="small"
+                    sx={{ color: '#fff' }}
+                  />
+                </Stack>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {communityDifficultyData.total_ratings} rating{communityDifficultyData.total_ratings !== 1 ? 's' : ''}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {isDrawerDataError ? 'Not available' : 'No ratings yet'}
+              </Typography>
+            )}
+          </Box>
+        </>
+      )}
 
       {/* ── User rating sections (collapsible) ────────────── */}
       {authData && (
@@ -228,6 +269,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
               size={isCoarsePointer ? 'large' : 'medium'}
               value={userStarRating}
               onChange={handleStarChange}
+              disabled={userInputsDisabled}
               sx={{
                 fontSize: isCoarsePointer ? '2.5rem' : undefined,
                 '& .MuiRating-iconFilled': { color: 'primary.main' },
@@ -262,6 +304,7 @@ export const PatternRatingsContainer = (props: TypeViewData) => {
                 size={isCoarsePointer ? 'large' : 'medium'}
                 value={userDifficultyVal}
                 onChange={handleDifficultyChange}
+                disabled={userInputsDisabled}
                 onChangeActive={(_, newHover) => setDiffHover(newHover)}
                 getLabelText={(value) => {
                   const d = toScale10(value);

@@ -11,6 +11,7 @@ import { AdminComplaintsModal } from '@/components/admin/AdminComplaintsModal.ts
 import { AdminContentReportModal } from '@/components/admin/AdminContentReportModal.tsx';
 import { AdminHeaderContainer } from '@/components/admin/AdminHeaderContainer.tsx';
 import { generatePatternLink } from '@/functions/utilities/generate-pattern-link';
+import { getVisibleReporterEmail, HIDDEN_REPORTER_EMAIL_LABEL } from '@/functions/utilities/reporter-email';
 
 import {
   Avatar,
@@ -176,7 +177,7 @@ function RouteComponent() {
 
                         <TableCell>
                           <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-                            {complaint.email}
+                            {getVisibleReporterEmail(complaint) ?? HIDDEN_REPORTER_EMAIL_LABEL}
                           </Typography>
                         </TableCell>
 
@@ -277,7 +278,7 @@ function RouteComponent() {
 
                         <TableCell>
                           <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-                            {report.email}
+                            {getVisibleReporterEmail(report) ?? HIDDEN_REPORTER_EMAIL_LABEL}
                           </Typography>
                         </TableCell>
 

@@ -2,9 +2,9 @@ import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { pocketbase } from '@/functions/database/authentication-setup';
 import { useGlobalAuthData } from '@/data/auth-data';
 import type { TypePatternResponse } from '@/functions/database/patterns';
+import { getUserNotificationsOptions } from '@/functions/database/user-notifications';
 
 export const PATTERN_SETS_QUERY_KEY = ['PatternSets'] as const;
-export const FOLLOWED_SETS_QUERY_KEY = ['FollowedSets'] as const;
 
 export type TypePatternSet = {
   id: string;
@@ -145,17 +145,15 @@ export const useMutationDeleteSet = () => {
 
 // ─── Set follow mutations & queries ───────────────────────────────────────────
 
-/** Fetch all sets the logged-in user follows, with the set expanded. */
+/**
+ * All sets the logged-in user follows, with the set expanded. A view of the
+ * shared /api/user-notifications query (NotificationBell reads the same
+ * data), so this makes no request of its own.
+ */
 export const useQueryGetUserFollowedSets = (userId: string) => {
   return useQuery({
-    queryKey: [...FOLLOWED_SETS_QUERY_KEY, userId],
-    queryFn: async (): Promise<TypeFollowedSetResponse[]> =>
-      pocketbase.collection('user_followed_sets').getFullList({
-        filter: `owner_id = "${userId}"`,
-        expand: 'set_id',
-        sort: '-created',
-      }),
-    enabled: !!userId,
+    ...getUserNotificationsOptions(userId),
+    select: (data): TypeFollowedSetResponse[] => data.followedSets,
   });
 };
 

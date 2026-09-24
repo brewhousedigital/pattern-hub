@@ -1,12 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
-import { useQueryGetPublicSiteStats } from '@/functions/database/site-stats';
-import {
-  bucketPublicStatsByPeriod,
-  computeGrowthSeries,
-  useQueryGetPublicDatabaseStatsHistory,
-} from '@/functions/database/database-stats';
+import { useQueryGetCommunityData } from '@/functions/database/community-data';
+import { bucketPublicStatsByPeriod, computeGrowthSeries } from '@/functions/database/database-stats';
 import { TrendChartCard } from '@/components/charts/TrendChartCard';
 import { COMMUNITY_BANNERS, type CommunityBanner } from '@/constants/community-banners';
 import { copyToClipboard } from '@/functions/utilities/copy-to-clipboard';
@@ -89,8 +85,10 @@ export const Route = createFileRoute('/community/')({
 });
 
 function RouteComponent() {
-  const { data: stats, isPending: statsPending } = useQueryGetPublicSiteStats();
-  const { data: statsHistory } = useQueryGetPublicDatabaseStatsHistory();
+  // Stats strip and growth-chart history come from one request.
+  const { data: communityData, isPending: statsPending } = useQueryGetCommunityData();
+  const stats = communityData?.stats;
+  const statsHistory = communityData?.history;
 
   // Monthly, not weekly - a year+ of raw weekly points would be too dense for
   // a simple public-facing chart. Admin's page exposes the full period/year

@@ -225,7 +225,8 @@ export const useQueryGetMySubmissions = (userId: string, page: number) => {
 // Backs the "approved/rejected" entries in NotificationBell.tsx. Rows are
 // created server-side by the pb_hooks onRecordAfterUpdateSuccess hook on
 // user_submitted_patterns (see pb_hooks/main.pb.js) - the client never
-// creates these directly, only reads and dismisses (deletes) its own.
+// creates these directly, only reads and dismisses (deletes) its own. Reads
+// go through /api/user-notifications (see user-notifications.ts).
 export type TypeSubmissionNotificationStatus = 'published' | 'rejected';
 
 export type TypeUserSubmissionNotificationResponse = {
@@ -241,22 +242,6 @@ export type TypeUserSubmissionNotificationResponse = {
   expand?: {
     submission?: TypeUserSubmittedPatternResponse;
   };
-};
-
-export const SUBMISSION_NOTIFICATIONS_QUERY_KEY = ['UserSubmissionNotifications'] as const;
-
-export const useQueryGetUserSubmissionNotifications = (userId: string) => {
-  return useQuery({
-    queryKey: [...SUBMISSION_NOTIFICATIONS_QUERY_KEY, userId],
-    queryFn: async (): Promise<TypeUserSubmissionNotificationResponse[]> => {
-      return await pocketbase.collection('user_submission_notifications').getFullList({
-        filter: `submitter = "${userId}"`,
-        expand: 'submission,submission.resulting_pattern',
-        sort: '-created',
-      });
-    },
-    enabled: !!userId,
-  });
 };
 
 // Dismissing a submission notification deletes the row outright (unlike the

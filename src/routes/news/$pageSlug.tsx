@@ -1,5 +1,5 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
-import { getWikiPageOptions, useQueryGetWikiPage, useQueryGetAllWikiPages } from '@/functions/database/wiki';
+import { findWikiPage, getWikiDataOptions, useQueryGetWikiData } from '@/functions/database/wiki';
 import { WikiPageContent } from '@/components/wiki/WikiPageContent';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
@@ -16,7 +16,10 @@ const NEWS_CATEGORY_SLUG = 'pattern-archive-news';
 export const Route = createFileRoute('/news/$pageSlug')({
   component: RouteComponent,
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(getWikiPageOptions(NEWS_CATEGORY_SLUG, params.pageSlug)).catch(() => undefined),
+    context.queryClient.ensureQueryData(getWikiDataOptions()).then(
+      (data) => findWikiPage(data.pages, NEWS_CATEGORY_SLUG, params.pageSlug),
+      () => undefined,
+    ),
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.title,
@@ -32,10 +35,12 @@ export const Route = createFileRoute('/news/$pageSlug')({
 function RouteComponent() {
   const { pageSlug } = useParams({ from: '/news/$pageSlug' });
 
-  const { data: page, isLoading, isError } = useQueryGetWikiPage(NEWS_CATEGORY_SLUG, pageSlug);
-
-  // All pages are fetched for [[wiki-link]] resolution - cached by React Query
-  const { data: allPages = [] } = useQueryGetAllWikiPages();
+  // One cached request for every wiki page - this page, and all the others
+  // for [[wiki-link]] resolution.
+  const { data, isLoading, isError: isWikiError } = useQueryGetWikiData();
+  const allPages = data?.pages ?? [];
+  const page = findWikiPage(allPages, NEWS_CATEGORY_SLUG, pageSlug);
+  const isError = isWikiError || (!!data && !page);
 
   return (
     <GeneralLayout>
