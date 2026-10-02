@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { pocketbase } from '@/functions/database/authentication-setup';
+import { pocketbase, pocketbaseDomain } from '@/functions/database/authentication-setup';
 import { slugifyTag } from '@/functions/utilities/slugify-tag';
 import type { TypeReadOnlyDatabaseItem } from '@/functions/types/types';
 
@@ -854,21 +854,30 @@ export async function resolveOrCreateTagRefs(
   tagNames: string[],
   preferredIds?: Map<string, string>,
 ): Promise<string[]> {
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  for (const raw of tagNames) {
-    const norm = raw.trim().toLowerCase();
-    if (!norm || seen.has(norm)) continue;
-    seen.add(norm);
-    const preferredId = preferredIds?.get(norm);
-    if (preferredId) {
-      ids.push(preferredId);
-      continue;
-    }
-    const resolved = await resolveOrCreateTagV2Row(raw);
-    ids.push(resolved.row.id);
+  if (!tagNames.some((name) => name.trim())) return [];
+
+  // One request for the whole list (see pb_hooks/main.pb.js
+  // /api/admin-resolve-tag-refs), not one or more per tag. A pattern with
+  // ~30 tags used to send 30-90 requests here and hit PocketHost's rate
+  // limit. The server applies the same rules resolveOrCreateTagV2Row does
+  // (preferred id, then General-type row, then any row, then create), in one
+  // transaction.
+  const res = await fetch(`${pocketbaseDomain}/api/admin-resolve-tag-refs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${pocketbase.authStore.token}`,
+    },
+    body: JSON.stringify({ names: tagNames, preferredIds: Object.fromEntries(preferredIds ?? []) }),
+  });
+  if (!res.ok) {
+    // The 400 case has a message written for an admin (a tag with no letters
+    // or numbers) - callers show error.message in a snackbar as it is.
+    const data: { error?: string } | null = await res.json().catch(() => null);
+    throw new Error(data?.error || 'Could not save the tags for this pattern. Try again in a minute.');
   }
-  return ids;
+  const data: { ids: string[] } = await res.json();
+  return data.ids;
 }
 
 // ─── Implied tags ─────────────────────────────────────────────────────────────

@@ -2908,6 +2908,111 @@ routerAdd(
   $apis.requireAuth('admins'),
 );
 
+// Resolves a whole list of tag names to tags_v2 ids in one request - the
+// server-side counterpart to resolveOrCreateTagRefs (src/functions/database/
+// tags.ts). That function used to look up each tag with its own GET from the
+// browser (a General-type lookup, then a type-blind fallback, then a slug
+// check and a create for a new tag), one after the other. A submission with
+// ~30 tags sent 30-90 requests on save and hit PocketHost's rate limit. The
+// lookups here are direct database reads inside the hook, so they never count
+// against that limit, and the whole batch runs in one transaction - a
+// failure partway through creates no tag rows at all, instead of leaving the
+// ones that were already created behind.
+//
+// Same rules as the client version it replaces: a name in `preferredIds`
+// (norm(tag) -> tags_v2 id) is used as it is; otherwise a General-type row
+// wins, then any row with that name, and a name with no row at all gets a new
+// General-type row with a slug that no other row (current or in
+// previous_slugs) uses.
+//
+// Body: { names: string[], preferredIds?: { [normalizedName]: tagsV2Id } }.
+// Returns { ids } in the same relative order as `names`, one per distinct name.
+routerAdd(
+  'POST',
+  '/api/admin-resolve-tag-refs',
+  (c) => {
+    function slugify(tag) {
+      return String(tag)
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    const body = c.requestInfo().body || {};
+    const names = Array.isArray(body.names) ? body.names : [];
+    const preferred = body.preferredIds && typeof body.preferredIds === 'object' ? body.preferredIds : {};
+
+    const ids = [];
+    let createdCount = 0;
+
+    try {
+      $app.runInTransaction((txApp) => {
+        const tagsCollection = txApp.findCollectionByNameOrId('tags_v2');
+        const seen = {};
+
+        for (let i = 0; i < names.length; i++) {
+          const raw = String(names[i] == null ? '' : names[i]);
+          const norm = raw.trim().toLowerCase();
+          if (!norm || seen['k:' + norm]) continue;
+          seen['k:' + norm] = true;
+
+          if (Object.prototype.hasOwnProperty.call(preferred, norm) && preferred[norm]) {
+            ids.push(String(preferred[norm]));
+            continue;
+          }
+
+          const rows = txApp.findRecordsByFilter('tags_v2', 'tag = {:t}', 'created', 0, 0, { t: raw });
+          let found = rows.length > 0 ? rows[0] : null;
+          for (let j = 0; j < rows.length; j++) {
+            if (rows[j].getString('type') === '') {
+              found = rows[j];
+              break;
+            }
+          }
+          if (found) {
+            ids.push(found.id);
+            continue;
+          }
+
+          const baseSlug = slugify(raw);
+          if (!baseSlug) throw new Error('NO_SLUG:' + raw);
+
+          let slug = baseSlug;
+          let suffix = 2;
+          while (
+            txApp.findRecordsByFilter('tags_v2', '(slug = {:s} || previous_slugs ~ {:q})', '', 1, 0, {
+              s: slug,
+              q: '"' + slug + '"',
+            }).length > 0
+          ) {
+            slug = baseSlug + '-' + suffix++;
+          }
+
+          const record = new Record(tagsCollection, { tag: raw, slug, previous_slugs: [] });
+          txApp.save(record);
+          ids.push(record.id);
+          createdCount++;
+        }
+      });
+
+      return c.json(200, { ids, created: createdCount });
+    } catch (err) {
+      const message = String((err && err.message) || '');
+      const noSlugAt = message.indexOf('NO_SLUG:');
+      if (noSlugAt !== -1) {
+        const badName = message.slice(noSlugAt + 'NO_SLUG:'.length);
+        return c.json(400, {
+          error: '"' + badName + '" has no letters or numbers, so it can\'t be given a URL-safe slug.',
+        });
+      }
+      console.log('>>>admin-resolve-tag-refs error', message);
+      return c.json(500, { error: 'Unable to resolve tags', message });
+    }
+  },
+  $apis.requireAuth('admins'),
+);
+
 // Keeps an author's tag identity in sync with their account name. Without
 // this, renaming an
 // account would stop automatically updating that person's credit on every
