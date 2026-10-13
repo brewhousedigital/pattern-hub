@@ -77,28 +77,6 @@ export const Footer = () => {
           <Grid size={{ xs: 12, md: 3 }} sx={{ mb: { xs: 4, md: 0 } }}>
             <Logo />
 
-            <Box>
-              <Button
-                size="small"
-                variant="contained"
-                component="a"
-                href={KOFI_LINK}
-                target="_blank"
-                startIcon={
-                  <img
-                    loading="lazy"
-                    width="88"
-                    height="71"
-                    style={{ border: 0, maxWidth: 24, width: '100%', height: 'auto' }}
-                    src="/images/icons/kofi-logo.png"
-                    alt="Support the developer of Pattern Archive"
-                  />
-                }
-              >
-                Support the developer of Pattern Archive
-              </Button>
-            </Box>
-
             <VisitorCounter />
           </Grid>
 
