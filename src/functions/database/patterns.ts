@@ -56,6 +56,8 @@ export type TypePatternResponse = {
   size_height_cm?: number;
   size_height_mm?: number;
   is_draft: boolean;
+  /** Soft-delete flag - set instead of removing the row (see useMutationSoftDeletePattern). */
+  isDeleted: boolean;
   tag_count?: number;
   avg_rating?: number;
   total_ratings?: number;

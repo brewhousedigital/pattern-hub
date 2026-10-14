@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { ClientResponseError } from 'pocketbase';
 import { getPatternByIdOptions, useQueryGetPatternById } from '@/functions/database/patterns';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { PatternViewContent } from '@/components/PatternViewContent';
@@ -15,8 +16,31 @@ import { Alert, Box, Container, Link as MuiLink } from '@mui/material';
 
 export const Route = createFileRoute('/pattern/$patternId')({
   component: RouteComponent,
-  loader: ({ params, context }) =>
-    context.queryClient.query({ ...getPatternByIdOptions(params.patternId), staleTime: 'static' }),
+  // PocketBase's viewRule on `patterns` is public, so getOne also returns
+  // soft-deleted and draft rows (and the list/search endpoints are the only
+  // place that filter them out). Treat a soft-deleted pattern, a draft, and an
+  // ID that does not exist, as a real 404 - the SSR response gets the 404 status and the
+  // router's defaultNotFoundComponent renders.
+  loader: async ({ params, context }) => {
+    let pattern;
+    try {
+      pattern = await context.queryClient.query({
+        ...getPatternByIdOptions(params.patternId),
+        staleTime: 'static',
+      });
+    } catch (error) {
+      if (error instanceof ClientResponseError && error.status === 404) {
+        throw notFound();
+      }
+      throw error;
+    }
+
+    if (pattern.isDeleted || pattern.is_draft) {
+      throw notFound();
+    }
+
+    return pattern;
+  },
   head: ({ loaderData, match }) =>
     generateSEO(
       loaderData?.name,

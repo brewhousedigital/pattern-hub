@@ -485,6 +485,7 @@ function CustomToolbar() {
           has_layers={false}
           layers_map={[]}
           is_draft={false}
+          isDeleted={false}
         />
 
         <OpenAdminPatternTableHowToSearchButton />
