@@ -1,5 +1,5 @@
 import React from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { GeneralLayout } from '@/components/layout/GeneralLayout';
 import { generateSEO } from '@/functions/utilities/seo';
 import { staticCacheHeaders } from '@/functions/utilities/cache-headers';
@@ -114,10 +114,10 @@ function RouteComponent() {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.8 }}>
-              If you have any questions or concerns about this policy or how your data is handled, reach out to us at{' '}
+              If you have any questions or concerns about this policy or how your data is handled, use our{' '}
               <Typography
-                component="a"
-                href="mailto:team@celestial.dev"
+                component={Link}
+                to="/help/contact"
                 variant="body2"
                 sx={{
                   color: 'primary.main',
@@ -125,7 +125,7 @@ function RouteComponent() {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                team@celestial.dev
+                contact form
               </Typography>
               . We'll respond promptly.
             </Typography>
