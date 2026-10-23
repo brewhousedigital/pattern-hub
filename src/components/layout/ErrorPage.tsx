@@ -220,12 +220,15 @@ export const StainedGlassPanel = () => (
 );
 
 interface ErrorPageProps {
-  error?: Error | null;
+  /** Router error components receive `unknown`, so any thrown value is accepted. */
+  error?: unknown;
   /** Call this to attempt recovery (e.g. reset an error boundary) */
   onReset?: () => void;
 }
 
 export default function ErrorPage({ error, onReset }: ErrorPageProps) {
+  const errorMessage = error instanceof Error ? error.message : '';
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -317,7 +320,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
           </Typography>
 
           {/* Optional error message */}
-          {error?.message && (
+          {errorMessage && (
             <Box
               sx={{
                 borderLeft: '3px solid #4ade80',
@@ -346,7 +349,7 @@ export default function ErrorPage({ error, onReset }: ErrorPageProps) {
                   wordBreak: 'break-word',
                 }}
               >
-                {error.message}
+                {errorMessage}
               </Typography>
             </Box>
           )}
